@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | FIT-verse</title>
+    <link rel="stylesheet" href="contact.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script defer src="contact.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <a href="index.html" class="logo">FIT<span>-verse</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-item">Home</a></li>
+                <li><a href="#" class="nav-item">About</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-item">Services</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="personaltraining.html">Personal Training</a></li>
+                        <li><a href="membership-plans.html">Membership Plans</a></li>
+                        <li><a href="dietplans.html">Diet Plans</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html" class="active">Contact</a></li>
+                 <!-- 👤 Shown only when user is logged in -->
+                 <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                    <a href="/frontend/public/userprofile.html" class="nav-item">
+                        <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="edit-profile.html">Edit Profile</a></li>
+                        <li class="settings-option">
+                            <a href="#">Settings</a>
+                            <ul class="settings-submenu">
+                                <li><a href="#">Account Settings</a></li>
+                                <li><a href="#">Privacy</a></li>
+                                <li><a href="#">Notifications</a></li>
+                                <li><a href="#">Theme</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#" onclick="logout()">Logout</a></li>
+                    </ul>
+                </li>
+                
+                <!-- 🔐 Shown only when user is logged out -->
+                <li class="nav-item" id="login-signup-nav" style="display: none;">
+                    <a href="/frontend/public/login.html">Login / Signup</a>
+                </li>
+            </ul>
+            <div class="menu-toggle">&#9776;</div>
+                
+           
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="fade-in">Get In Touch</h1>
+            <p class="slide-up">We're here to help you on your fitness journey</p>
+        </div>
+    </section>
+
+    <section class="contact-section">
+        <div class="container">
+            <div class="section-title slide-up">
+                <h2>Contact Us</h2>
+                <p>Have questions about our gyms, services, or membership options? Reach out to us and we'll get back to you as soon as possible.</p>
+            </div>
+
+            <div class="contact-container">
+                <div class="contact-info slide-up">
+                    <h3>Contact Information</h3>
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div class="info-content">
+                            <h4>Address</h4>
+                            <p>123 Fitness Street, Health District, Faridabad, 120005</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-phone-alt"></i>
+                        <div class="info-content">
+                            <h4>Phone</h4>
+                            <p><a href="tel:+911234567890">+91 12345 67890</a></p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div class="info-content">
+                            <h4>Email</h4>
+                            <p><a href="mailto:info@fit-verse.com">info@fit-verse.com</a></p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <div class="info-content">
+                            <h4>Working Hours</h4>
+                            <p>Monday - Friday: 6:00 AM - 10:00 PM<br>Saturday - Sunday: 7:00 AM - 9:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-form slide-up">
+                    <h3>Send Us a Message</h3>
+                    <div class="success-message" id="successMessage">
+                        Thank you for your message! We'll get back to you soon.
+                    </div>
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <label for="name">Your Name</label>
+                            <input type="text" id="name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Your Email</label>
+                            <input type="email" id="email" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Subject</label>
+                            <select id="subject" class="form-control" required>
+                                <option value="">Select a subject</option>
+                                <option value="membership">Membership Inquiry</option>
+                                <option value="feedback">Feedback/Suggestions</option>
+                                <option value="complaint">Complaint</option>
+                                <option value="partnership">Partnership Opportunity</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Your Message</label>
+                            <textarea id="message" class="form-control" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Interested Activities (Optional)</label>
+                            <div class="activity-checkbox">
+                                <input type="checkbox" id="cardio" name="activities" value="cardio">
+                                <label for="cardio">Cardio</label>
+                            </div>
+                            <div class="activity-checkbox">
+                                <input type="checkbox" id="strength" name="activities" value="strength" checked>
+                                <label for="strength">Strength</label>
+                            </div>
+                            <div class="activity-checkbox">
+                                <input type="checkbox" id="zumba" name="activities" value="zumba">
+                                <label for="zumba">Zumba</label>
+                            </div>
+                            <div class="activity-checkbox">
+                                <input type="checkbox" id="yoga" name="activities" value="yoga">
+                                <label for="yoga">Yoga</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">Send Message</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="map-container slide-up">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3508.123456789012!2d77.319456!3d28.123456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjjCsDA3JzI0LjQiTiA3N8KwMTknMTQuMSJF!5e0!3m2!1sen!2sin!4v1234567890123!5m2!1sen!2sin" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <section class="gym-locations">
+        <div class="container">
+            <div class="section-title slide-up">
+                <h2>Our Gym Locations</h2>
+                <p>Find the nearest FIT-verse gym to start your fitness journey today</p>
+            </div>
+
+            <div class="location-cards">
+                <div class="location-card slide-up">
+                    <div class="location-img">
+                        <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Strength Fitness Gym">
+                    </div>
+                    <div class="location-info">
+                        <h3>Strength Fitness Gym</h3>
+                        <div class="location-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> Faridabad</span>
+                            <span><i class="fas fa-location-arrow"></i> 0.44 km</span>
+                            <span><i class="fas fa-code"></i> 12005</span>
+                        </div>
+                        <div class="location-activities">
+                            <span class="activity-tag">Strength</span>
+                            <span class="activity-tag">Crossfit</span>
+                            <span class="activity-tag">Zumba</span>
+                        </div>
+                        <div class="location-price">₹2,099/month</div>
+                        <a href="#" class="location-link">View Full Profile <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <div class="location-card slide-up" style="animation-delay: 0.2s;">
+                    <div class="location-img">
+                        <img src="https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1351&q=80" alt="Cardio Plus Gym">
+                    </div>
+                    <div class="location-info">
+                        <h3>Cardio Plus Gym</h3>
+                        <div class="location-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> Faridabad</span>
+                            <span><i class="fas fa-location-arrow"></i> 1.2 km</span>
+                            <span><i class="fas fa-code"></i> 12003</span>
+                        </div>
+                        <div class="location-activities">
+                            <span class="activity-tag">Cardio</span>
+                            <span class="activity-tag">Yoga</span>
+                            <span class="activity-tag">Pilates</span>
+                        </div>
+                        <div class="location-price">₹1,899/month</div>
+                        <a href="#" class="location-link">View Full Profile <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <div class="location-card slide-up" style="animation-delay: 0.4s;">
+                    <div class="location-img">
+                        <img src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Yoga Harmony Studio">
+                    </div>
+                    <div class="location-info">
+                        <h3>Yoga Harmony Studio</h3>
+                        <div class="location-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> Faridabad</span>
+                            <span><i class="fas fa-location-arrow"></i> 2.1 km</span>
+                            <span><i class="fas fa-code"></i> 12009</span>
+                        </div>
+                        <div class="location-activities">
+                            <span class="activity-tag">Yoga</span>
+                            <span class="activity-tag">Meditation</span>
+                            <span class="activity-tag">Pranayama</span>
+                        </div>
+                        <div class="location-price">₹1,599/month</div>
+                        <a href="#" class="location-link">View Full Profile <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <div class="container">
+            <div class="section-title slide-up">
+                <h2>Frequently Asked Questions</h2>
+                <p>Find answers to common questions about our gyms and services</p>
+            </div>
+
+            <div class="faq-container">
+                <div class="faq-item slide-up">
+                    <div class="faq-question">
+                        <span>What are your membership options?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We offer flexible membership options including monthly, quarterly, and annual plans. We also have special packages for students, seniors, and corporate clients. Visit our Services page or contact us for detailed pricing information.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item slide-up" style="animation-delay: 0.1s;">
+                    <div class="faq-question">
+                        <span>Do you offer personal training services?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we have certified personal trainers available at all our locations. You can choose from one-on-one sessions or small group training. Our trainers will work with you to create a customized fitness plan based on your goals and fitness level.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item slide-up" style="animation-delay: 0.2s;">
+                    <div class="faq-question">
+                        <span>What safety measures are in place?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Your safety is our priority. All our gyms follow strict hygiene protocols, including regular sanitization of equipment, social distancing measures, and mandatory temperature checks. Our staff is fully vaccinated and trained in COVID-19 safety procedures.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item slide-up" style="animation-delay: 0.3s;">
+                    <div class="faq-question">
+                        <span>Can I freeze my membership?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we understand that circumstances change. You can freeze your membership for up to 3 months per year with proper documentation (medical certificate, travel proof, etc.). Please contact our support team to initiate a freeze.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item slide-up" style="animation-delay: 0.4s;">
+                    <div class="faq-question">
+                        <span>Do you have women-only sections?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Most of our locations have dedicated women-only workout areas with separate changing rooms. Please check with your specific location for details about their women's section facilities.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-col">
+                    <h3>FIT-verse</h3>
+                    <p>Join the best gyms near you and achieve your fitness goals with our state-of-the-art facilities and expert trainers.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="login.html">Login</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Services</h3>
+                    <ul>
+                        <li><a href="#">Personal Training</a></li>
+                        <li><a href="#">Group Classes</a></li>
+                        <li><a href="#">Nutrition Plans</a></li>
+                        <li><a href="#">Corporate Wellness</a></li>
+                        <li><a href="#">Virtual Training</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> 123 Fitness Street, Faridabad</li>
+                        <li><i class="fas fa-phone-alt"></i> +91 12345 67890</li>
+                        <li><i class="fas fa-envelope"></i> info@fit-verse.com</li>
+                        <li><i class="fas fa-clock"></i> Mon-Fri: 6AM-10PM</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 FIT-verse. All Rights Reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+   
+</body>
+</html>

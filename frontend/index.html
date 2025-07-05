@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> FIT-verse - Find Your Perfect Gym</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script defer src="script.js"></script>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <a href="index.html" class="logo">FIT<span>-verse</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="#" class="nav-item">About</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-item">Services ⬇</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="personaltraining.html">Personal Training</a></li>
+                        <li><a href="membership-plans.html">Membership Plans</a></li>
+                        <li><a href="dietplans.html">Diet Plans</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html" class="nav-item">Contact</a></li>
+                <!-- 👤 Shown only when user is logged in -->
+                <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                    <a href="/frontend/public/userprofile.html" class="nav-item">
+                        <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="edit-profile.html">Edit Profile</a></li>
+                        <li class="settings-option">
+                            <a href="#">Settings</a>
+                            <ul class="settings-submenu">
+                                <li><a href="#">Account Settings</a></li>
+                                <li><a href="#">Privacy</a></li>
+                                <li><a href="#">Notifications</a></li>
+                                <li><a href="#">Theme</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#" onclick="logout()">Logout</a></li>
+                    </ul>
+                </li>
+                
+                <!-- 🔐 Shown only when user is logged out -->
+                <li class="nav-item" id="login-signup-nav" style="display: none;">
+                    <a href="/frontend/public/login.html">Login / Signup</a>
+                </li>
+            </ul>
+            <div class="menu-toggle">&#9776;</div>
+        </nav>
+    </header>
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="fade-in"><span>Welcome</span> To Fit-verse</h1>
+            <p class="slide-up">Join the best gyms near you and achieve your fitness goals.</p>
+            <button class="explore-btn">Explore Now</button>
+        </div>
+        <!--gym search container-->
+        <div class="gym-search-container">
+            <h2><i class="fas fa-search"></i> Find Your Perfect Gym</h2>
+        
+            <!-- City & Pincode -->
+            <div class="filter-group">
+                <label for="city"><i class="fas fa-city"></i> City:</label>
+                <input type="text" id="city" placeholder="Enter city name">
+                
+                <label for="pincode"><i class="fas fa-map-pin"></i> Pincode:</label>
+                <input type="text" id="pincode" placeholder="Enter pincode">
+            </div>
+        
+            <!-- Monthly Price -->
+            <div class="filter-group">
+                <label for="priceRange"><i class="fas fa-wallet"></i> Monthly Price:</label>
+                <input type="range" id="priceRange" min="500" max="5000" step="500" value="2000">
+                <span id="priceValue">₹2000</span>
+            </div>
+        
+        
+            <!-- Gym Activities -->
+            <div class="gym-activities">
+                <h3><i class="fas fa-bolt"></i> Available Activities:</h3>
+                <div class="activity-list">
+                    <div class="activity" data-activity="cardio">
+                        <i class="fas fa-heartbeat"></i> Cardio
+                    </div>
+                    <div class="activity" data-activity="strength">
+                        <i class="fas fa-dumbbell"></i> Strength
+                    </div>
+                    <div class="activity" data-activity="crossfit">
+                        <i class="fas fa-running"></i> CrossFit
+                    </div>
+                    <div class="activity" data-activity="zumba">
+                        <i class="fas fa-music"></i> Zumba
+                    </div>
+                    <div class="activity" data-activity="yoga">
+                        <i class="fas fa-spa"></i> Yoga
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Search Button and Counter -->
+            <div class="search-btn-row">
+                <button onclick="searchGyms()" class="searchGyms"><i class="fas fa-search"></i> Search</button>
+                <span id="gymSearchCounter" class="gym-search-counter" style="display:none;"></span>
+            </div>
+        
+            <!-- Gym List -->
+            <div id="results">
+                <!-- Gyms will be displayed here dynamically -->
+            </div>
+        </div>
+    
+    </section>
+    <section>
+        <div class="image-slider-container">
+            <div class="slider-text">
+                <h1>Change your fitness journey</h1>
+                <p>Discover the best gyms, fitness plans, and expert trainers in your city. Find personalized workout programs that suit your fitness goals!</p>
+            </div>
+        
+            <div class="image-slider">
+                <div class="slider">
+                    <img src="/frontend/data/stateofartequipment.png" alt="State-of-the-art Equipments">
+                    <img src="/frontend/data/experttraining.png" alt="Expert Training">
+                    <img src="/frontend/data/Convenienttraining.png" alt="Convenient training">
+                    <img src="/frontend/data/allfacilities.png" alt="All facilities">
+                </div>
+        
+                <!-- Navigation Arrows -->
+                <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
+                <button class="next" onclick="moveSlide(1)">&#10095;</button>
+            </div>
+        </div>
+    </section>
+   <!-- Features Section -->
+   <div class="features-section">
+    <div class="features">
+        <h2 class="slide-up">Our Features</h2>
+        <div class="features-container">
+            <div class="feature-box slide-up">
+                <i class="fa-solid fa-calendar-day feature-icon"></i>
+                <h3>Per Day plans</h3>
+                <p>We provide the per day plans for non regular users.</p>
+            </div>
+            <div class="feature-box slide-up" style="animation-delay: 0.1s;">
+                <i class="fas fa-clock feature-icon"></i>
+                <h3>Check rush hours</h3>
+                <p>You can check the rush hours to have a hassle-free workout</p>
+            </div>
+            <div class="feature-box slide-up" style="animation-delay: 0.2s;">
+                <i class="fas fa-map-marked-alt feature-icon"></i>
+                <h3>Find Gyms Nearby</h3>
+                <p>Locate the best gyms in your city with ease.</p>
+            </div>
+            <div class="feature-box slide-up" style="animation-delay: 0.3s;">
+                <i class="fas fa-wallet feature-icon"></i>
+                <h3>Affordable Plans</h3>
+                <p>Choose from flexible pricing plans that fit your budget.</p>
+            </div>
+            <div class="feature-box slide-up" style="animation-delay: 0.4s;">
+                <i class="fas fa-star feature-icon"></i>
+                <h3>Ratings & reviews</h3>
+                <p>You can rate the gyms based on your experience</p>
+            </div>
+            <div class="feature-box slide-up" style="animation-delay: 0.5s;">
+                <i class="fas fa-person-running feature-icon"></i>
+                <h3>Various gym activites</h3>
+                <p>Choose from various gym activites based on your goals</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--FAQ section-->
+
+<div class="faq-container">
+    <div class="faq-item">
+        <div class="faq-question">What is Fit-Verse? <span class="arrow">▼</span></div>
+        <div class="faq-answer">Fit-Verse is a platform which offers different gym memberships and ratings at affordable prices with many unique features.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-question">What is the per day plan? <span class="arrow">▼</span></div>
+        <div class="faq-answer">only Pay for the days you train</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-question">Do you offer personal training? <span class="arrow">▼</span></div>
+        <div class="faq-answer">Yes, we have certified trainers available in every gym for personalized training sessions.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-question">What are the different membership plans? <span class="arrow">▼</span></div>
+        <div class="faq-answer">Yes, Every gym having same rating will have three plans Basic, premium and per day.</div>
+    </div>
+</div>
+<script>
+    document.querySelectorAll('.faq-question').forEach(question => {
+        question.addEventListener('click', () => {
+            const faqItem = question.parentElement;
+            faqItem.classList.toggle('active');
+        });
+    });
+</script>
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <!-- About Section -->
+            <div class="footer-section about">
+                <h2>Fit-verse</h2>
+                <p>Manage your fitness journey with ease. Find the best gyms, membership plans, and exciting offers.</p>
+            </div>
+
+            <!-- Useful Links -->
+            <div class="footer-section links">
+                <h2>Useful Links</h2>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="membership-plans.html">Membership Plans</a></li>
+                    <li><a href="personaltraining.html">Personal Training</a></li>
+                    <li><a href="dietplans.html">Diet Plans</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                </ul>
+            </div>
+
+            <!-- Social Media Links -->
+            <div class="footer-section social">
+                <h2>Follow Us</h2>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Copyright Section -->
+        <div class="footer-bottom">
+            <p>&copy; 2025 Fit-verse | Designed by Aayush & Team</p>
+        </div>
+    </div>
+</footer>
+
+
+<script src="login.js"></script>
+
+
+    
+</body>
+</html>

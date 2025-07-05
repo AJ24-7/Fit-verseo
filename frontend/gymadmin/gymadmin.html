@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fit-Verse | Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="gymadmin.css">
+    <script defer src="gymadmin.js"></script>
+</head>
+<body>
+<!-- Hamburger Menu for Mobile (move outside sidebar, just after <body>) -->
+<button id="hamburgerMenuBtn" class="hamburger-menu" aria-label="Open menu">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+<!-- Backdrop for mobile sidebar -->
+<div id="mobileSidebarBackdrop" class="mobile-sidebar-backdrop"></div>
+<div class="dashboard">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-dumbbell"></i>
+            </div>
+            <div class="logo-text">Fit-Verse</div>
+        </div>
+        <ul class="menu">
+            <li class="menu-item">
+                <a href="#" class="menu-link active">
+                    <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+                    <span class="menu-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <span class="menu-icon"><i class="fas fa-users"></i></span>
+                    <span class="menu-text">Members</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
+                    <span class="menu-text">Attendance</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <span class="menu-icon"><i class="fas fa-credit-card"></i></span>
+                    <span class="menu-text">Payments</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
+                    <span class="menu-text">Trainers</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <span class="menu-icon"><i class="fas fa-dumbbell"></i></span>
+                    <span class="menu-text">Equipment</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <span class="menu-icon"><i class="fas fa-bell"></i></span>
+                    <span class="menu-text">Notifications</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <span class="menu-icon"><i class="fas fa-cog"></i></span>
+                    <span class="menu-text">Settings</span>
+                </a>
+            </li>
+        </ul>
+        <div class="toggle-btn" id="toggleBtn">
+            <i class="fas fa-chevron-left"></i>
+        </div>
+        
+    </div>
+    <!-- Mobile Sidebar Dropdown -->
+    <div id="mobileSidebarDropdown" class="mobile-sidebar-dropdown">
+      <div style="display:flex; justify-content:flex-end; padding:18px;">
+        <button id="closeMobileSidebar" aria-label="Close menu" style="background:none; border:none; font-size:2rem; cursor:pointer;">&times;</button>
+      </div>
+      <ul class="menu" style="padding:0 24px;">
+        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span> <span class="menu-text">Dashboard</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-users"></i></span> <span class="menu-text">Members</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-calendar-check"></i></span> <span class="menu-text">Attendance</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-credit-card"></i></span> <span class="menu-text">Payments</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-user-tie"></i></span> <span class="menu-text">Trainers</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-dumbbell"></i></span> <span class="menu-text">Equipment</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-bell"></i></span> <span class="menu-text">Notifications</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-cog"></i></span> <span class="menu-text">Settings</span></a></li>
+      </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Nav -->
+        <div class="top-nav" id="topNav">
+            <div class="user-actions">
+                <div class="notification">
+                    <span class="notification-icon"><i class="fas fa-bell"></i></span>
+                    <span class="notification-badge">5</span>
+                </div>
+             <div class="user-profile" id="userProfileToggle">
+        <div class="user-avatar">
+            <img id="adminAvatar" src="https://via.placeholder.com/40" alt="Admin">
+        </div>
+        <span class="user-name" id="adminName">Admin</span>
+        <i class="fas fa-chevron-down"></i>
+    </div>
+    <ul class="profile-dropdown-menu" id="profileDropdownMenu">
+        <li><a href="#" id="editProfileLink">Edit Profile</a></li>
+        <li><a href="#" id="logoutLink">Logout</a></li>
+    </ul>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="content">
+                <div class="page-header">
+                    <h1 class="page-title">Dashboard Overview</h1>
+                    <div class="page-actions">
+                        <button id="sendNotificationBtn">
+                            <i class="fas fa-bell"></i> Send Notification
+                        </button>
+                        
+                    </div>
+                </div>
+
+
+                <!-- Stats Cards -->
+                <div class="stats-cards">
+                    <div class="stat-card new-users" id="membersStatCard" tabindex="0" style="cursor:pointer;">
+                        <div class="stat-title">Members</div>
+                        <div class="stat-value"></div>
+                        <div class="stat-change"></div>
+                    </div>
+<!-- Interactive Members Detail Card (hidden by default) -->
+<div id="membersDetailCard" class="modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-content" style="max-width:480px; width:95%; border-radius:12px; box-shadow:0 4px 32px rgba(0,0,0,0.12);">
+    <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee; padding:18px 18px 10px 18px;">
+      <h2 style="margin:0; font-size:1.3rem; color:var(--primary, #1976d2);">Members Overview</h2>
+      <button id="closeMembersDetailCard" style="background:none; border:none; font-size:2rem; cursor:pointer; color:#888;">&times;</button>
+    </div>
+    <div style="padding:18px;">
+      <div id="membersDetailLoading" style="text-align:center; color:#888; display:none;">Loading...</div>
+      <div id="membersDetailError" style="text-align:center; color:#d32f2f; display:none;"></div>
+      <div id="membersDetailContent" style="display:none;">
+        <h3 style="margin-top:0; color:#333; font-size:1.1rem;">New Members (Joined in last 30 days)</h3>
+        <ul id="newMembersList" style="list-style:none; padding:0; margin-bottom:18px;"></ul>
+        <h3 style="margin-bottom:0; color:#333; font-size:1.1rem;">Existing Members (Joined 1+ months ago)</h3>
+        <ul id="existingMembersList" style="list-style:none; padding:0;"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+                    <div class="stat-card payments">
+                        <div class="stat-title">Total Payments</div>
+                        <div class="stat-value"></div>
+                        <div class="stat-change"></div>
+                    </div>
+                    <div class="stat-card attendance">
+                        <div class="stat-title">Today's Attendance</div>
+                        <div class="stat-value"></div>
+                        <div class="stat-change"></div>
+                    </div>
+                    <div class="stat-card trainers">
+                        <div class="stat-title">Active Trainers</div>
+                        <div class="stat-value"></div>
+                        <div class="stat-change"></div>
+                    </div>
+                </div>
+                 <!-- Interactive Gym Photos Grid -->
+                <section id="photoGridSection" class="card" style="margin-top: 24px;">
+                  <div class="card-header">
+                    <h1 class="card-title">Previously Uploaded Gym Photos</h1>
+                    <button class="upload-photo-btn" id="uploadPhotoBtn">
+                            <i class="fas fa-camera"></i> Upload Photo
+                        </button>
+                  </div>
+                  <div class="card-body">
+                    <div id="photoGrid" class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px;"></div>
+                  </div>
+                </section>
+                <!-- Rush Hour Indicator -->
+                <div class="rush-hour">
+                    <div class="rush-hour-info">
+                        <div class="rush-hour-icon pulse">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="rush-hour-text">
+                            <h4>Rush Hour Active</h4>
+                            <p>Extra staff deployed during peak hours (5PM-8PM)</p>
+                        </div>
+                    </div>
+                    <label class="rush-hour-toggle">
+                        <input type="checkbox" checked>
+                        <span class="rush-hour-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Main Grid -->
+                <div class="main-grid">
+                    <!-- Left Column -->
+                    <div class="left-column">
+                        <!-- New Members Card -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">New Members</h2>
+                                <div class="card-actions">
+                                    <button>View All</button>
+                                    <button>Export</button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Join Date</th>
+                                            <th>Plan</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>John Smith</td>
+                                            <td>Today</td>
+                                            <td>Premium</td>
+                                            <td><span class="status trial">Trial</span></td>
+                                            <td>
+                                                <button class="action-btn approve">Approve</button>
+                                                <button class="action-btn reject">Reject</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sarah Johnson</td>
+                                            <td>Today</td>
+                                            <td>Basic</td>
+                                            <td><span class="status trial">Trial</span></td>
+                                            <td>
+                                                <button class="action-btn approve">Approve</button>
+                                                <button class="action-btn reject">Reject</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Michael Brown</td>
+                                            <td>Yesterday</td>
+                                            <td>Premium</td>
+                                            <td><span class="status active">Active</span></td>
+                                            <td>
+                                                <button class="action-btn view">View</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Emily Davis</td>
+                                            <td>2 days ago</td>
+                                            <td>Standard</td>
+                                            <td><span class="status active">Active</span></td>
+                                            <td>
+                                                <button class="action-btn view">View</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Robert Wilson</td>
+                                            <td>3 days ago</td>
+                                            <td>Basic</td>
+                                            <td><span class="status pending">Pending</span></td>
+                                            <td>
+                                                <button class="action-btn approve">Approve</button>
+                                                <button class="action-btn reject">Reject</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Attendance Chart -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Attendance Trend</h2>
+                                <div class="card-actions">
+                                    <button>This Week</button>
+                                    <button>This Month</button>
+                                    <button>This Year</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <!-- Chart will be rendered here -->
+                                <div style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #f8f9fa; border-radius: 8px;">
+                                    <p>Attendance chart visualization would appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="right-column">
+                        <!-- Quick Actions -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Quick Actions</h2>
+                            </div>
+                            <div class="quick-actions">
+                                <div class="quick-action" id="addMemberBtn">
+                                    <i class="fas fa-user-plus"></i>
+                                    <div class="quick-action-title">Add Member</div>
+                                </div>
+                                <div class="quick-action" id="recordPaymentBtn">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <div class="quick-action-title">Record Payment</div>
+                                </div>
+                                <div class="quick-action" id="addTrainerBtn">
+                                    <i class="fas fa-user-tie"></i>
+                                    <div class="quick-action-title">Add Trainer</div>
+                                </div>
+                                <div class="quick-action" id="uploadEquipmentBtn">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <div class="quick-action-title">Add Equipment</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Recent Activity</h2>
+                                <div class="card-actions">
+                                    <button>View All</button>
+                                </div>
+                            </div>
+                            <ul class="activity-list">
+                                <li class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">New member registered - John Smith</div>
+                                        <div class="activity-time">10 minutes ago</div>
+                                    </div>
+                                </li>
+                                <li class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-credit-card"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">Payment received from Emily Davis</div>
+                                        <div class="activity-time">1 hour ago</div>
+                                    </div>
+                                </li>
+                                <li class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-dumbbell"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">New equipment added - Treadmill X200</div>
+                                        <div class="activity-time">3 hours ago</div>
+                                    </div>
+                                </li>
+                                <li class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">New notification sent to all members</div>
+                                        <div class="activity-time">Yesterday</div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Equipment Gallery -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Equipment Gallery</h2>
+                                <div class="card-actions">
+                                    <button>View All</button>
+                                </div>
+                            </div>
+                            <div class="equipment-gallery">
+                                <div class="equipment-item">
+                                    <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Treadmill">
+                                    <div class="equipment-overlay">Treadmill X200</div>
+                                </div>
+                                <div class="equipment-item">
+                                    <img src="https://images.unsplash.com/photo-1571019614245-c5f2ba9806b1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Dumbbells">
+                                    <div class="equipment-overlay">Dumbbell Set</div>
+                                </div>
+                                <div class="equipment-item">
+                                    <img src="https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Bench Press">
+                                    <div class="equipment-overlay">Bench Press</div>
+                                </div>
+                                <div class="equipment-item">
+                                    <img src="https://images.unsplash.com/photo-1576678927484-cc907957088c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Rowing Machine">
+                                    <div class="equipment-overlay">Rowing Machine</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="modal" id="notificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Send Notification</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Notification Title</label>
+                    <input type="text" class="form-control" placeholder="Enter notification title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-control" placeholder="Enter your message"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Send To</label>
+                    <select class="form-control">
+                        <option>All Members</option>
+                        <option>Premium Members</option>
+                        <option>Basic Members</option>
+                        <option>Specific Group</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-close">Cancel</button>
+                <button class="btn btn-primary">Send Notification</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Photo Modal -->
+    <div class="modal" id="uploadPhotoModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">Upload Gym Photo</h3>
+            <button class="modal-close">&times;</button>
+          </div>
+          <form id="uploadGymPhotoForm" enctype="multipart/form-data" data-field="gymPhotos">
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="form-label">Photo Title</label>
+                <input type="text" class="form-control" id="photoTitle" name="title" placeholder="Enter photo title" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" id="photoDescription" name="description" placeholder="Enter photo description" required></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Upload Photo</label>
+                <input type="file" id="photoFile" name="photo" accept="image/*" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select class="form-control" id="photoCategory" name="category" required>
+                  <option>Gym Facility</option>
+                  <option>Equipment</option>
+                  <option>Classes</option>
+                  <option>Events</option>
+                </select>
+              </div>
+            </div>
+            <div id="uploadPhotoMsg" style="margin-bottom: 10px; color: green; text-align: center;"></div>
+              <div class="modal-footer">
+              <button class="btn btn-secondary modal-close" type="button">Cancel</button>
+              <button class="btn btn-primary" type="submit">Upload Photo</button>
+            </div>
+          </form>
+        </div>
+      </div>
+       <!-- Edit Gym Photo Modal -->
+    <div class="modal" id="editPhotoModal" style="display:none;">
+      <div class="modal-content">
+        <span class="modal-close" id="closeEditPhotoModal">&times;</span>
+        <form id="editPhotoForm" enctype="multipart/form-data">
+          <input type="hidden" name="photoId" id="editPhotoId">
+          <label for="editPhotoTitle">Title</label>
+          <input type="text" name="title" id="editPhotoTitle" required>
+          <label for="editPhotoDescription">Description</label>
+          <textarea name="description" id="editPhotoDescription" required></textarea>
+          <label for="editPhotoFile">Change Image (optional)</label>
+          <input type="file" name="photo" id="editPhotoFile" accept="image/*">
+          <div id="editPhotoPreview" style="margin: 10px 0;"></div>
+          <div id="editPhotoMsg" style="margin-bottom: 10px; color: green; text-align: center;"></div>
+           <button type="submit" style="background:#1976d2; color:#fff; border:none; padding:8px 20px; border-radius:4px; margin-right:8px;">Save</button>
+          <button type="button" id="cancelEditPhotoBtn" style="background:#eee; color:#333; border:none; padding:8px 20px; border-radius:4px;">Cancel</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+<div class="modal" id="editProfileModal" style="display:none;">
+  <div class="modal-content">
+    <span class="modal-close" id="closeEditProfileModal">&times;</span>
+    <form id="editProfileForm">
+      <label for="editGymName">Gym Name</label>
+      <input type="text" id="editGymName" name="gymName" required>
+      <label for="editGymEmail">Email</label>
+      <input type="email" id="editGymEmail" name="email" required>
+      <label for="editGymPhone">Phone</label>
+      <input type="text" id="editGymPhone" name="phone" required>
+      <label for="editGymAddress">Address</label>
+      <input type="text" id="editGymAddress" name="address">
+      <label for="editGymCity">City</label>
+      <input type="text" id="editGymCity" name="city">
+      <label for="editGymPincode">Pincode</label>
+      <input type="text" id="editGymPincode" name="pincode">
+      <label for="editGymDescription">Description</label>
+      <textarea id="editGymDescription" name="description"></textarea>
+      <label for="editGymLogo">Logo</label>
+     <input type="file" id="editGymLogo" name="gymLogo">
+      <img id="logoPreviewImage" src="#" alt="Logo Preview" style="display:none;max-width:100px;margin-top:10px;">
+      <!-- Change Password Section -->
+<div id="changePasswordSection" style="margin-top:1rem;">
+  <button type="button" id="showChangePasswordFields" class="btn btn-secondary">Change Password</button>
+  <div id="passwordFields" style="display:none; margin-top:1rem;">
+    <label for="editGymPassword">New Password</label>
+    <input type="password" id="editGymPassword" name="password" autocomplete="new-password" minlength="8" placeholder="New password">
+    <label for="editGymPasswordConfirm">Confirm New Password</label>
+    <input type="password" id="editGymPasswordConfirm" name="passwordConfirm" autocomplete="new-password" minlength="8" placeholder="Repeat new password">
+  </div>
+</div>
+      <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Save</button>
+    </form>
+  </div>
+</div>
+   <!-- Password Confirmation Dialog -->
+<div id="passwordConfirmDialog" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width:350px;">
+    <span class="modal-close" id="closePasswordConfirmDialog">&times;</span>
+    <form id="passwordConfirmForm">
+      <label for="currentPassword">Please enter your current password to confirm changes:</label>
+      <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+      <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Confirm</button>
+    </form>
+  </div>
+</div>
+   <!-- Delete Photo Confirmation Modal -->
+<div class="modal" id="deletePhotoConfirmModal" style="display:none;">
+  <div class="modal-content" style="max-width:340px; text-align:center;">
+    <span class="modal-close" id="closeDeletePhotoConfirmModal" style="float:right;cursor:pointer;">&times;</span>
+    <h3 style="margin-bottom:18px;">Delete Photo</h3>
+    <p>Are you sure you want to delete this photo?</p>
+    <div style="margin-top:18px;">
+      <button id="confirmDeletePhotoBtn" class="btn btn-danger" style="margin-right:10px;">Delete</button>
+      <button id="cancelDeletePhotoBtn" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- Add Member Modal -->
+<div class="modal" id="addMemberModal" style="display:none;">
+  <div class="modal-content">
+    <span class="modal-close" id="closeAddMemberModal">&times;</span>
+    <h2>Add New Member</h2>
+    <form id="addMemberForm" enctype="multipart/form-data">
+      <div class="form-group" style="display: flex; flex-direction: column; align-items: center;">
+        <label for="memberProfileImage" style="margin-bottom: 0.5rem;">Profile Image</label>
+        <div id="memberImagePreview" style="width: 96px; height: 96px; border-radius: 50%; background: #f0f0f0; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+          <img src="https://via.placeholder.com/96?text=Photo" alt="Preview" style="width: 96px; height: 96px; object-fit: cover; border-radius: 50%;" id="memberImageTag">
+        </div>
+        <input type="file" id="memberProfileImage" name="profileImage" accept="image/*" style="display:none;">
+        <button type="button" id="uploadMemberImageBtn" style="margin-bottom: 0.5rem;">Choose Image</button>
+      </div>
+      <div class="form-group">
+        <label for="memberName">Name</label>
+        <input type="text" id="memberName" name="memberName" required>
+      </div>
+      <div class="form-group">
+        <label for="memberAge">Age</label>
+        <input type="number" id="memberAge" name="memberAge" min="10" max="100" required>
+      </div>
+      <div class="form-group">
+        <label for="memberGender">Gender</label>
+        <select id="memberGender" name="memberGender" required>
+          <option value="">Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="memberPhone">Phone No.</label>
+        <input type="tel" id="memberPhone" name="memberPhone" pattern="[0-9]{10}" required>
+      </div>
+      <div class="form-group">
+        <label for="memberEmail">Email</label>
+        <input type="email" id="memberEmail" name="memberEmail" required>
+      </div>
+      <div class="form-group">
+        <label for="paymentMode">Payment Mode</label>
+        <select id="paymentMode" name="paymentMode" required>
+          <option value="">Select</option>
+          <option value="Cash">Cash</option>
+          <option value="Card">Card</option>
+          <option value="UPI">UPI</option>
+          <option value="Online">Online</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="paymentAmount">Payment Amount</label>
+        <input type="number" id="paymentAmount" name="paymentAmount" min="0" required>
+      </div>
+      <div class="form-group">
+        <label for="planSelected">Plan Selected</label>
+        <select id="planSelected" name="planSelected" required>
+          <option value="">Select</option>
+          <option value="Basic">Basic</option>
+          <option value="Standard">Standard</option>
+          <option value="Premium">Premium</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="monthlyPlan">Monthly Plan</label>
+        <select id="monthlyPlan" name="monthlyPlan" required>
+          <option value="">Select</option>
+          <option value="1 Month">1 Month</option>
+          <option value="3 Months">3 Months</option>
+          <option value="6 Months">6 Months</option>
+          <option value="12 Months">12 Months</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="activityPreference">Activity Preference</label>
+        <input type="text" id="activityPreference" name="activityPreference" placeholder="e.g. Yoga, Cardio, Zumba" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Add Member</button>
+      <div id="addMemberSuccessMsg" style="display:none;"></div>
+    </form>
+  </div>
+</div>
+<!-- Member Display Tab (hidden by default) -->
+<div id="memberDisplayTab" style="display:none; padding: 24px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+    <h2 style="color: var(--primary); margin: 0;">All Members</h2>
+    <div class="member-action-btn-group">
+      <button id="addMemberBtnTab" class="member-action-btn add-member-action-btn">
+        <i class="fas fa-user-plus"></i><span class="btn-text"> Add Member</span>
+      </button>
+      <button id="removeMemberBtnTab" class="member-action-btn remove-member-action-btn">
+        <i class="fas fa-user-minus"></i><span class="btn-text"> Remove Members</span>
+      </button>
+    </div>
+  </div>
+  <div class="search-bar">
+    <span class="search-icon"><i class="fas fa-search"></i></span>
+    <input type="text" placeholder="Search...">
+  </div>
+  <div id="membersTableContainer">
+    <table id="membersTable" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Profile</th>
+          <th>Name</th>
+          <th>Membership ID</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Plan</th>
+          <th>Monthly</th>
+          <th>Activity</th>
+          <th>Join Date</th>
+          <th>Valid Until</th>
+          <th>Amount Paid</th>
+        </tr>
+      </thead>
+      <tbody id="membersTableBody">
+        <!-- Members will be loaded here -->
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

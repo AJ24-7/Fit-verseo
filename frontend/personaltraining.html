@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitLife - Personal Training</title>
+    <script defer src="personaltraining.js"></script>
+    <link rel="stylesheet" href="personaltraining.css">
+</head>
+<body>
+    <!-- Navbar consistent with your existing theme -->
+    <header>
+        <nav class="navbar">
+            <a href="index.html" class="logo">FIT<span>-verse</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-item">Home</a></li>
+                <li><a href="#" class="nav-item">About</a></li>
+                <li class="dropdown">
+                    <a href="#" class="active">Services</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="personaltraining.html" class="active">Personal Training</a></li>
+                        <li><a href="membership-plans.html">Membership Plans</a></li>
+                        <li><a href="dietplans.html">Diet Plans</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html" class="nav-item">Contact</a></li>
+                <!-- 👤 Shown only when user is logged in -->
+                <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                    <a href="/frontend/public/userprofile.html" class="nav-item">
+                        <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="edit-profile.html">Edit Profile</a></li>
+                        <li class="settings-option">
+                            <a href="#">Settings</a>
+                            <ul class="settings-submenu">
+                                <li><a href="#">Account Settings</a></li>
+                                <li><a href="#">Privacy</a></li>
+                                <li><a href="#">Notifications</a></li>
+                                <li><a href="#">Theme</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#" onclick="logout()">Logout</a></li>
+                    </ul>
+                </li>
+                
+                <!-- 🔐 Shown only when user is logged out -->
+                <li class="nav-item" id="login-signup-nav" style="display: none;">
+                    <a href="/frontend/public/login.html">Login / Signup</a>
+                </li>
+            </ul>
+            <div class="menu-toggle">&#9776;</div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <section class="page-header">
+            <h1>Personal Training</h1>
+            <p>Get one-on-one guidance from our certified personal trainers to help you reach your fitness goals faster and more effectively.</p>
+        </section>
+
+        <!-- Trainer Registration Option -->
+        <section class="registration-section">
+            <h2>Are you a certified personal trainer?</h2>
+            <p>Join our network of fitness professionals and connect with clients looking for your expertise.</p>
+            <a href="#" class="btn" id="registerBtn">Register as a Trainer</a>
+        </section>
+
+        <!-- Filter for Finding Trainers -->
+        <section class="filter-section">
+            <h2>Find Your Perfect Trainer</h2>
+            <form class="filter-form">
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <select id="location">
+                        <option value="All Cities">All Cities</option>
+                        <option value="Faridabad">Faridabad</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Gurugram">Gurugram</option>
+                        <option value="Noida">Noida</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="specialty">Specialty</label>
+                    <select id="specialty">
+                        <option value="">All Specialties</option>
+                        <option value="Weight Loss">Weight Loss</option>
+                        <option value="Bodybuilding">Bodybuilding</option>
+                        <option value="Functional Training">Functional Training</option>
+                        <option value="Sports Performance">Sports Performance</option>
+                        <option value="Rehabilitation">Rehabilitation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="availability">Availability</label>
+                    <select id="availability">
+                        <option value="">Any Time</option>
+                        <option value="morning">Mornings</option>
+                        <option value="afternoon">Afternoons</option>
+                        <option value="evening">Evenings</option>
+                        <option value="weekends">Weekends</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">Find Trainers</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Trainers by Gym Sections -->
+   <div class="trainers-container">
+    <section class="gym-section">
+        <h2>Beast Fitness Trainers</h2>
+        <div class="trainers-grid">
+            <!-- Trainer cards will be inserted here by JavaScript -->
+        </div>
+    </section>
+
+    <section class="gym-section">
+        <h2>Midtown Gym Trainers</h2>
+        <div class="trainers-grid">
+            <!-- Trainer cards will be inserted here by JavaScript -->
+        </div>
+    </section>
+</div>
+
+        
+    </div>
+
+    <!-- Trainer Profile Modal -->
+   <!-- Trainer Profile Modal -->
+<div class="modal" id="trainerModal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div class="trainer-profile">
+            <div class="profile-main">
+                <div class="profile-header">
+                    <div class="profile-image">
+                        <img src="" alt="">
+                    </div>
+                    <div class="profile-name">
+                        <h2></h2>
+                        <p></p>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>About Me</h3>
+                    <p class="about-text"></p>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Specialties</h3>
+                    <ul class="specialties-list"></ul>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Availability</h3>
+                    <ul class="availability-list"></ul>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Client Success Stories</h3>
+                    <div class="testimonials-container"></div>
+                </div>
+            </div>
+
+            <div class="profile-sidebar">
+                <div class="profile-section">
+                    <h3>Contact Information</h3>
+                    <div class="contact-info"></div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Certifications</h3>
+                    <ul class="certifications-list"></ul>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Book a Session</h3>
+                    <form class="booking-form">
+                        <!-- Form fields will be populated by JS if needed -->
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--loading -->
+<div class="loading-indicator" style="display: none;">
+    <div class="spinner"></div>
+    <p>Loading trainers...</p>
+</div>
+<!--Error msg-->
+<div class="error-message" style="display: none;">
+    <p>⚠️ Failed to load trainer data. Please try again later.</p>
+    <button class="btn retry-loading">Retry</button>
+</div>
+
+    <!-- Registration Form Modal -->
+    <div class="modal" id="registrationModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Trainer Registration</h2>
+            <p>Please fill out the form below to join our network of certified personal trainers.</p>
+            
+            <form class="registration-form" id="registrationForm" enctype="multipart/form-data" action="javascript:void(0);">
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName"  name="firstName"  required>
+                    </div>
+                    <div class="form-col">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-col">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="specialty">Primary Specialty</label>
+                        <select id="specialty" name="specialty" required>
+                            <option value="">Select your specialty</option>
+                            <option value="weight-loss">Weight Loss</option>
+                            <option value="strength">Strength Training</option>
+                            <option value="functional">Functional Training</option>
+                            <option value="sports">Sports Performance</option>
+                            <option value="rehab">Rehabilitation</option>
+                            <option value="yoga">Yoga/Pilates</option>
+                            <option value="senior">Senior Fitness</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-col">
+                        <label for="experience">Years of Experience</label>
+                        <input type="number" id="experience" min="0" name="experience" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="locations">Preferred Gym Locations</label>
+                        <select id="city" name="city" multiple required>
+                            <option value="Faridabad">Faridabad</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Gurugram">Gurugram</option>
+                            <option value="Noida">Noida</option>
+                          </select>
+                        <small>Hold Ctrl/Cmd to select multiple locations</small>
+                    </div>
+                </div>
+                <!-- Gym Dropdown -->
+<div class="form-group">
+    <label for="gym">Select Gym</label>
+    <select id="gym" name="gym" required>
+      <option value="">-- Select Gym --</option>
+      <!-- gyms will be added here dynamically -->
+    </select>
+  </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="availability">Availability</label>
+                        <textarea id="availability" placeholder="Please describe your typical availability (days/times)" name="availability"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Certifications</label>
+                        <div class="certification-upload">
+                            <p>Upload copies of your certifications (PDF, JPG, or PNG)</p>
+                            <input type="file" id="certifications" multiple accept=".pdf,.jpg,.jpeg,.png" name="certifications" multiple/>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="bio">Professional Bio</label>
+                        <textarea id="bio" placeholder="Tell us about your training philosophy and approach" name="bio"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="rate">Hourly Rate (₹)</label>
+                        <input type="number" id="rate" min="0" step="5" name="rate" required>
+                    </div>
+                    <div class="form-col">
+                        <label for="photo">Profile Photo</label>
+                        <input type="file" id="photo" accept=".jpg,.jpeg,.png" name="photo"/>
+                    </div>
+                </div>
+
+                <div id="formResponseMessage" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
+
+                <div class="form-actions" style="margin-top: 20px; text-align: right;">
+                    <button type="submit" class="btn btn-primary" id="submitRegistrationBtn">Register Profile</button>
+                </div>
+            </form>
+                <!-- Success Message Container -->
+          <div id="registration-success-message" style="display: none; margin-top: 20px; padding: 15px; border-radius: 8px; text-align: center; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">🎉 Registration Submitted!</h4>
+            <p style="margin-bottom: 5px;">Your application is now awaiting admin approval.</p>
+            <p>You'll receive an email soon with the status.</p>
+          </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Fit-verse. All rights reserved.</p>
+        <ul class="footer-links">
+            <li><a href="privacy.html">Privacy Policy</a></li>
+            <li><a href="terms.html">Terms of Service</a></li>
+            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="index.html">Home</a></li>
+        </ul>
+    </footer>
+
+</body>
+</html>

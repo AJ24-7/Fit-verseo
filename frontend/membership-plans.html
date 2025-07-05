@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fit-verse - Gym Memberships Near You</title>
+    <link rel="stylesheet" href="membership-plans.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="membership-plans.js"></script>
+    
+</head>
+<body>
+    <header>
+         <nav class="navbar">
+            <a href="index.html" class="logo">FIT<span>-verse</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-item">Home</a></li>
+                <li><a href="#" class="nav-item">About</a></li>
+                <li class="dropdown">
+                    <a href="#" class="active">Services</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="personaltraining.html">Personal Training</a></li>
+                        <li><a href="membership-plans.html" class="active">Membership Plans</a></li>
+                        <li><a href="dietplans.html">Diet Plans</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html" class="nav-item">Contact</a></li>
+                <!-- 👤 Shown only when user is logged in -->
+                <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                    <a href="/frontend/public/userprofile.html" class="nav-item">
+                        <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="edit-profile.html">Edit Profile</a></li>
+                        <li class="settings-option">
+                            <a href="#">Settings</a>
+                            <ul class="settings-submenu">
+                                <li><a href="#">Account Settings</a></li>
+                                <li><a href="#">Privacy</a></li>
+                                <li><a href="#">Notifications</a></li>
+                                <li><a href="#">Theme</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#" onclick="logout()">Logout</a></li>
+                    </ul>
+                </li>
+                
+                <!-- 🔐 Shown only when user is logged out -->
+                <li class="nav-item" id="login-signup-nav" style="display: none;">
+                    <a href="/frontend/public/login.html">Login / Signup</a>
+                </li>
+            </ul>
+            <div class="menu-toggle">&#9776;</div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h1>Find the Perfect Gym Membership</h1>
+            <p>Discover top-rated gyms near you with flexible membership options to fit your lifestyle and budget.</p>
+            
+            <div class="location-filter">
+                <select id="locationSelect">
+                    <option value="Cities">All Cities</option>
+                    <option value="city">Delhi</option>
+                    <option value="city">Faridabad</option>
+                    <option value="city">Gurugram</option>
+                    <option value="city">Noida</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="gym-profiles" id="gymProfilesContainer">
+            <!-- Gym profiles will be dynamically inserted here -->
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <!-- About Section -->
+                <div class="footer-section about">
+                    <h2>Fit-verse</h2>
+                    <p>Manage your fitness journey with ease. Find the best gyms, membership plans, and exciting offers.</p>
+                </div>
+    
+                <!-- Useful Links -->
+                <div class="footer-section links">
+                    <h2>Useful Links</h2>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="membership-plans.html">Membership Plans</a></li>
+                        <li><a href="personaltraining.html">Personal Training</a></li>
+                        <li><a href="dietplans.html">Diet Plans</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                    </ul>
+                </div>
+    
+                <!-- Social Media Links -->
+                <div class="footer-section social">
+                    <h2>Follow Us</h2>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Copyright Section -->
+            <div class="footer-bottom">
+                <p>&copy; 2025 Fit-verse | Designed by Aayush & Team</p>
+            </div>
+        </div>
+    </footer>
+    <!-- Font Awesome for icons (in a real app, you might want to use the actual kit) -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>

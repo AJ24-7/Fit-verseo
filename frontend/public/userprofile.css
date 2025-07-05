@@ -1,0 +1,3009 @@
+:root {
+  --primary-color: #2a9d8f;
+--secondary-color: #264653;
+--accent-color: #e9c46a;
+--dark-color: #2b2d42;
+--light-color: #f8f9fa;
+--danger-color: #e76f51;
+--primary: #2a9d8f;
+  --secondary: #264653;
+  --accent: #4895ef;
+  --success: #4cc9f0;
+  --danger: #f72585;
+  --warning: #f8961e;
+  --info: #43aa8b;
+  --light: #f8f9fa;
+  --dark: #212529;
+  --gray: #6c757d;
+  --light-gray: #e9ecef;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body {
+    background-color: var(--light-color);
+    color: var(--dark-color);
+    line-height: 1.6;
+    padding-top: 80px;
+    overflow-x: hidden; 
+}
+
+header {
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    color: white;
+    padding: 1rem 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    overflow-x: hidden; /* Added to prevent horizontal scrolling */
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    text-decoration: none;
+}
+
+.logo span {
+    color: var(--accent-color);
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+}
+
+.nav-links li {
+    margin-left: 2rem;
+    position: relative;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 0.5rem 0;
+    position: relative;
+}
+
+.nav-links a.active, .nav-links a:hover {
+    color: var(--accent-color);
+}
+
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--accent-color);
+    transition: width 0.3s ease;
+}
+
+.nav-links a.active::after, .nav-links a:hover::after {
+    width: 100%;
+}
+.user-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--secondary-color);
+  }
+  .dropdown.user-profile {
+    position: relative;
+  }
+  
+
+/* ====== Unified Dropdown System ====== */
+.dropdown {
+    position: relative;
+  }
+  
+  /* Main dropdown menu styles (for both Services and User Profile) */
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    background: white;
+    min-width: 200px;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  
+  /* Services dropdown positions left */
+  .dropdown:not(.user-profile) .dropdown-menu {
+    left: 0;
+  }
+  
+  /* User profile dropdown positions right */
+  .user-profile .dropdown-menu {
+    right: 0;
+  }
+  
+  .dropdown:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  
+  /* Dropdown menu items */
+  .dropdown-menu li {
+    margin: 0;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #eee;
+    position: relative;
+  }
+  
+  .dropdown-menu li:last-child {
+    border-bottom: none;
+  }
+  
+  .dropdown-menu a {
+    color: var(--dark-color);
+    text-decoration: none;
+    display: block;
+  }
+  
+  .dropdown-menu a:hover {
+    color: var(--primary-color);
+  }
+  
+  /* ====== Settings Submenu ====== */
+  .settings-option {
+    position: relative;
+  }
+  
+  .settings-submenu {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    background: white;
+    min-width: 180px;
+    border-radius: 0 5px 5px 5px;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+    z-index: 1001;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  
+  .settings-option:hover .settings-submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
+  
+  /* Adjust submenu position for user profile dropdown */
+  .user-profile .settings-submenu {
+    left: auto;
+    right: 100%;
+    transform: translateX(10px);
+    border-radius: 5px 0 5px 5px;
+  }
+  
+  .user-profile .settings-option:hover .settings-submenu {
+    transform: translateX(0);
+  }
+  
+  /* ====== Mobile Toggle ====== */
+   .menu-toggle {
+    display: none;
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
+    margin-left: 1rem;
+    z-index: 1001;
+}
+/* Responsive Navbar for Mobile */
+@media (max-width: 900px) {
+  .navbar {
+    flex-direction: row;
+    padding: 0 10px;
+  }
+  .menu-toggle {
+    display: block;
+  }
+  .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    flex-direction: column;
+    align-items: flex-start;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
+  .nav-links.nav-active {
+    max-height: 600px;
+    padding-bottom: 1rem;
+  }
+  .nav-links li {
+    margin: 0;
+    width: 100%;
+  }
+  .nav-links a {
+    padding: 1rem 2rem;
+    width: 100%;
+    display: block;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .dropdown-menu {
+    position: static;
+    box-shadow: none;
+    min-width: 100%;
+    background: #fff;
+    border-radius: 0 0 8px 8px;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    display: none;
+  }
+  .dropdown.open > .dropdown-menu {
+    display: block;
+  }
+  .user-profile .dropdown-menu, .dropdown .dropdown-menu {
+    right: 0;
+    left: 0;
+  }
+  .settings-submenu {
+    position: static;
+    box-shadow: none;
+    min-width: 100%;
+    background: #fff;
+    border-radius: 0 0 8px 8px;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    display: none;
+  }
+  .settings-option.open > .settings-submenu {
+    display: block;
+  }
+}
+
+/* Main Content */
+.container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+.profile {
+  background-color: white;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  height: fit-content;
+}
+
+#profileImage {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid var(--secondary-color);
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s;
+}
+
+#profileImage:hover {
+  transform: scale(1.05);
+}
+
+.profile h2 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.profile p {
+  margin-bottom: 0.8rem;
+  color: #555;
+}
+
+.status {
+  padding: 0.5rem;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.active {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+h3, h4, h5 {
+  margin: 0 0 15px;
+  color: var(--dark);
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+/* Card Styles */
+.membership-card, 
+.stats-container, 
+.diet-plan, 
+.workout-scheduler, 
+.recent-activity {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Membership Card */
+.membership-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.progress-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  text-align: center;
+}
+
+.progress-ring circle {
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.progress-ring span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.membership-details {
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.detail-item i {
+  width: 30px;
+  height: 30px;
+  background: rgba(67, 97, 238, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-right: 12px;
+}
+
+.detail-item .label {
+  display: block;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.detail-item .value {
+  font-weight: 600;
+}
+
+.activity-preferences {
+  margin: 25px 0;
+}
+
+.preference-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.tag {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.tag i {
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.tag.active {
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.btn-renew {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-renew:hover {
+  background: var(--secondary);
+}
+
+.btn-renew i {
+  margin-right: 8px;
+}
+
+/* Stats Container */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 5px 0;
+}
+
+.stat-change {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.stat-change i {
+  margin-right: 3px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--light-gray);
+  border-radius: 4px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: var(--success);
+  border-radius: 4px;
+}
+
+.streak-days {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.day {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--light-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.day.active {
+  background: var(--success);
+  color: white;
+}
+
+.view-options {
+  display: flex;
+  gap: 8px;
+}
+
+.view-options button {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.view-options button.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Diet Plan */
+.meals-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.meal-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.meal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.meal-header i {
+  margin-right: 10px;
+  color: var(--accent);
+}
+
+.meal-header h4 {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.calories {
+  font-size: 12px;
+  background: rgba(72, 149, 239, 0.1);
+  padding: 3px 8px;
+  border-radius: 20px;
+  color: var(--accent);
+}
+
+.meal-items {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.meal-items li {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.macros-summary {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.macro {
+  flex: 1;
+  max-width: 100px;
+}
+
+.macro-progress {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 10px;
+}
+
+.macro-progress svg {
+  width: 100%;
+  height: 100%;
+}
+
+.macro-progress span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 600;
+}
+
+.macro h5 {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.macro p {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.btn-generate {
+  padding: 8px 15px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-generate i {
+  margin-left: 5px;
+}
+
+/* Workout Scheduler */
+.day-selector {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+
+.day-pill {
+  flex: 1;
+  text-align: center;
+  padding: 8px 5px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.day-pill.active {
+  background: var(--primary);
+  color: white;
+}
+
+.workout-form {
+  background: #f9fafc;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-group label i {
+  margin-right: 8px;
+  color: var(--accent);
+}
+
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+.focus-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.focus-pill {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.focus-pill:hover {
+  border-color: var(--accent);
+}
+
+.btn-add {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.scheduled-workouts {
+  margin-top: 20px;
+}
+
+.workout-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.workout-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(72, 149, 239, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  margin-right: 12px;
+}
+
+.workout-details {
+  flex-grow: 1;
+}
+
+.workout-details h5 {
+  margin: 0 0 3px;
+  font-size: 15px;
+}
+
+.workout-details p {
+  font-size: 12px;
+  color: var(--gray);
+  margin: 0;
+}
+
+.workout-tag {
+  display: inline-block;
+  font-size: 11px;
+  background: rgba(72, 149, 239, 0.1);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 5px;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+}
+
+.btn-save-schedule {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+/* Recent Activity */
+.activity-timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.activity-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15px;
+  height: 100%;
+  width: 2px;
+  background: var(--light-gray);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 15px 0;
+  display: flex;
+}
+
+.timeline-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  position: absolute;
+  left: -30px;
+}
+
+.timeline-content {
+  flex-grow: 1;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-left: 20px;
+}
+
+.timeline-content h5 {
+  margin: 0 0 5px;
+}
+
+.timeline-content p {
+  font-size: 13px;
+  color: var(--gray);
+  margin: 0 0 8px;
+}
+
+.timeline-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.timeline-meta i {
+  margin-right: 3px;
+}
+
+.btn-view-all {
+  width: 100%;
+  padding: 10px;
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+/* Interactive Edit Schedule Button */
+#edit-schedule-btn.btn {
+  background: var(--accent);
+  color: #fff;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.08);
+  transition: background 0.2s, transform 0.2s;
+  width: 100%;
+  max-width: 260px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+#edit-schedule-btn.btn:hover {
+  background: var(--primary);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Workout Scheduler Section */
+.workout-scheduler {
+  padding: 32px 24px 28px 24px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(72, 149, 239, 0.07);
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 600px) {
+  .workout-scheduler {
+    padding: 16px 6px 18px 6px;
+    max-width: 100%;
+  }
+}
+
+/* Suggest Workout and Clear Button Styles */
+.btn-suggest, .btn-clear {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  border: none;
+  margin-right: 10px;
+  margin-bottom: 8px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.06);
+  cursor: pointer;
+}
+
+.btn-suggest {
+  background: var(--success);
+  color: #fff;
+}
+.btn-suggest:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.btn-clear {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-clear:hover {
+  background: #c0392b;
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* Schedule Actions Container */
+.schedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* Add a little gap below the day pills */
+.day-selector {
+  margin-bottom: 18px;
+}
+
+/* Workout List Styling */
+#workout-list, .workout-list {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-left: 0;
+  list-style: none;
+}
+#workout-list li, .workout-list li {
+  background: var(--light-gray);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#workout-list li .tag {
+  margin-left: 8px;
+  font-size: 0.92em;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+#workout-list li .btn-remove {
+  margin-left: 12px;
+  color: var(--danger);
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+#workout-list li .btn-remove:hover {
+  color: #c0392b;
+}
+
+/* Responsive: Make sure everything fits on mobile */
+@media (max-width: 480px) {
+  .workout-scheduler {
+    padding: 8px 2px 10px 2px;
+    border-radius: 8px;
+  }
+  #edit-schedule-btn.btn {
+    font-size: 0.98rem;
+    padding: 0.7rem 0.5rem;
+    max-width: 100%;
+  }
+  .schedule-actions {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #workout-list li, .workout-list li {
+    font-size: 0.97rem;
+    padding: 8px 7px;
+  }
+}
+
+/* Main Content */
+.container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+.profile {
+  background-color: white;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  height: fit-content;
+}
+
+#profileImage {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid var(--secondary-color);
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s;
+}
+
+#profileImage:hover {
+  transform: scale(1.05);
+}
+
+.profile h2 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.profile p {
+  margin-bottom: 0.8rem;
+  color: #555;
+}
+
+.status {
+  padding: 0.5rem;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.active {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+h3, h4, h5 {
+  margin: 0 0 15px;
+  color: var(--dark);
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+/* Card Styles */
+.membership-card, 
+.stats-container, 
+.diet-plan, 
+.workout-scheduler, 
+.recent-activity {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Membership Card */
+.membership-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.progress-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  text-align: center;
+}
+
+.progress-ring circle {
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.progress-ring span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.membership-details {
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.detail-item i {
+  width: 30px;
+  height: 30px;
+  background: rgba(67, 97, 238, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-right: 12px;
+}
+
+.detail-item .label {
+  display: block;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.detail-item .value {
+  font-weight: 600;
+}
+
+.activity-preferences {
+  margin: 25px 0;
+}
+
+.preference-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.tag {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.tag i {
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.tag.active {
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.btn-renew {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-renew:hover {
+  background: var(--secondary);
+}
+
+.btn-renew i {
+  margin-right: 8px;
+}
+
+/* Stats Container */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 5px 0;
+}
+
+.stat-change {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.stat-change i {
+  margin-right: 3px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--light-gray);
+  border-radius: 4px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: var(--success);
+  border-radius: 4px;
+}
+
+.streak-days {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.day {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--light-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.day.active {
+  background: var(--success);
+  color: white;
+}
+
+.view-options {
+  display: flex;
+  gap: 8px;
+}
+
+.view-options button {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.view-options button.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Diet Plan */
+.meals-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.meal-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.meal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.meal-header i {
+  margin-right: 10px;
+  color: var(--accent);
+}
+
+.meal-header h4 {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.calories {
+  font-size: 12px;
+  background: rgba(72, 149, 239, 0.1);
+  padding: 3px 8px;
+  border-radius: 20px;
+  color: var(--accent);
+}
+
+.meal-items {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.meal-items li {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.macros-summary {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.macro {
+  flex: 1;
+  max-width: 100px;
+}
+
+.macro-progress {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 10px;
+}
+
+.macro-progress svg {
+  width: 100%;
+  height: 100%;
+}
+
+.macro-progress span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 600;
+}
+
+.macro h5 {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.macro p {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.btn-generate {
+  padding: 8px 15px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-generate i {
+  margin-left: 5px;
+}
+
+/* Workout Scheduler */
+.day-selector {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+
+.day-pill {
+  flex: 1;
+  text-align: center;
+  padding: 8px 5px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.day-pill.active {
+  background: var(--primary);
+  color: white;
+}
+
+.workout-form {
+  background: #f9fafc;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-group label i {
+  margin-right: 8px;
+  color: var(--accent);
+}
+
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+.focus-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.focus-pill {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.focus-pill:hover {
+  border-color: var(--accent);
+}
+
+.btn-add {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.scheduled-workouts {
+  margin-top: 20px;
+}
+
+.workout-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.workout-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(72, 149, 239, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  margin-right: 12px;
+}
+
+.workout-details {
+  flex-grow: 1;
+}
+
+.workout-details h5 {
+  margin: 0 0 3px;
+  font-size: 15px;
+}
+
+.workout-details p {
+  font-size: 12px;
+  color: var(--gray);
+  margin: 0;
+}
+
+.workout-tag {
+  display: inline-block;
+  font-size: 11px;
+  background: rgba(72, 149, 239, 0.1);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 5px;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+}
+
+.btn-save-schedule {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+/* Recent Activity */
+.activity-timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.activity-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15px;
+  height: 100%;
+  width: 2px;
+  background: var(--light-gray);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 15px 0;
+  display: flex;
+}
+
+.timeline-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  position: absolute;
+  left: -30px;
+}
+
+.timeline-content {
+  flex-grow: 1;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-left: 20px;
+}
+
+.timeline-content h5 {
+  margin: 0 0 5px;
+}
+
+.timeline-content p {
+  font-size: 13px;
+  color: var(--gray);
+  margin: 0 0 8px;
+}
+
+.timeline-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.timeline-meta i {
+  margin-right: 3px;
+}
+
+.btn-view-all {
+  width: 100%;
+  padding: 10px;
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+/* Interactive Edit Schedule Button */
+#edit-schedule-btn.btn {
+  background: var(--accent);
+  color: #fff;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.08);
+  transition: background 0.2s, transform 0.2s;
+  width: 100%;
+  max-width: 260px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+#edit-schedule-btn.btn:hover {
+  background: var(--primary);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Workout Scheduler Section */
+.workout-scheduler {
+  padding: 32px 24px 28px 24px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(72, 149, 239, 0.07);
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 600px) {
+  .workout-scheduler {
+    padding: 16px 6px 18px 6px;
+    max-width: 100%;
+  }
+}
+
+/* Suggest Workout and Clear Button Styles */
+.btn-suggest, .btn-clear {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  border: none;
+  margin-right: 10px;
+  margin-bottom: 8px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.06);
+  cursor: pointer;
+}
+
+.btn-suggest {
+  background: var(--success);
+  color: #fff;
+}
+.btn-suggest:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.btn-clear {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-clear:hover {
+  background: #c0392b;
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* Schedule Actions Container */
+.schedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* Add a little gap below the day pills */
+.day-selector {
+  margin-bottom: 18px;
+}
+
+/* Workout List Styling */
+#workout-list, .workout-list {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-left: 0;
+  list-style: none;
+}
+#workout-list li, .workout-list li {
+  background: var(--light-gray);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#workout-list li .tag {
+  margin-left: 8px;
+  font-size: 0.92em;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+#workout-list li .btn-remove {
+  margin-left: 12px;
+  color: var(--danger);
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+#workout-list li .btn-remove:hover {
+  color: #c0392b;
+}
+
+/* Responsive: Make sure everything fits on mobile */
+@media (max-width: 480px) {
+  .workout-scheduler {
+    padding: 8px 2px 10px 2px;
+    border-radius: 8px;
+  }
+  #edit-schedule-btn.btn {
+    font-size: 0.98rem;
+    padding: 0.7rem 0.5rem;
+    max-width: 100%;
+  }
+  .schedule-actions {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #workout-list li, .workout-list li {
+    font-size: 0.97rem;
+    padding: 8px 7px;
+  }
+}
+
+/* Main Content */
+.container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+.profile {
+  background-color: white;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  height: fit-content;
+}
+
+#profileImage {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid var(--secondary-color);
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s;
+}
+
+#profileImage:hover {
+  transform: scale(1.05);
+}
+
+.profile h2 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.profile p {
+  margin-bottom: 0.8rem;
+  color: #555;
+}
+
+.status {
+  padding: 0.5rem;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.active {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+h3, h4, h5 {
+  margin: 0 0 15px;
+  color: var(--dark);
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+/* Card Styles */
+.membership-card, 
+.stats-container, 
+.diet-plan, 
+.workout-scheduler, 
+.recent-activity {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Membership Card */
+.membership-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.progress-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  text-align: center;
+}
+
+.progress-ring circle {
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.progress-ring span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.membership-details {
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.detail-item i {
+  width: 30px;
+  height: 30px;
+  background: rgba(67, 97, 238, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-right: 12px;
+}
+
+.detail-item .label {
+  display: block;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.detail-item .value {
+  font-weight: 600;
+}
+
+.activity-preferences {
+  margin: 25px 0;
+}
+
+.preference-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.tag {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.tag i {
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.tag.active {
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.btn-renew {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-renew:hover {
+  background: var(--secondary);
+}
+
+.btn-renew i {
+  margin-right: 8px;
+}
+
+/* Stats Container */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 5px 0;
+}
+
+.stat-change {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.stat-change i {
+  margin-right: 3px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--light-gray);
+  border-radius: 4px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: var(--success);
+  border-radius: 4px;
+}
+
+.streak-days {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.day {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--light-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.day.active {
+  background: var(--success);
+  color: white;
+}
+
+.view-options {
+  display: flex;
+  gap: 8px;
+}
+
+.view-options button {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.view-options button.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Diet Plan */
+.meals-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.meal-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.meal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.meal-header i {
+  margin-right: 10px;
+  color: var(--accent);
+}
+
+.meal-header h4 {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.calories {
+  font-size: 12px;
+  background: rgba(72, 149, 239, 0.1);
+  padding: 3px 8px;
+  border-radius: 20px;
+  color: var(--accent);
+}
+
+.meal-items {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.meal-items li {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.macros-summary {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.macro {
+  flex: 1;
+  max-width: 100px;
+}
+
+.macro-progress {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 10px;
+}
+
+.macro-progress svg {
+  width: 100%;
+  height: 100%;
+}
+
+.macro-progress span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 600;
+}
+
+.macro h5 {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.macro p {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.btn-generate {
+  padding: 8px 15px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-generate i {
+  margin-left: 5px;
+}
+
+/* Workout Scheduler */
+.day-selector {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+
+.day-pill {
+  flex: 1;
+  text-align: center;
+  padding: 8px 5px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.day-pill.active {
+  background: var(--primary);
+  color: white;
+}
+
+.workout-form {
+  background: #f9fafc;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-group label i {
+  margin-right: 8px;
+  color: var(--accent);
+}
+
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+.focus-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.focus-pill {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.focus-pill:hover {
+  border-color: var(--accent);
+}
+
+.btn-add {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.scheduled-workouts {
+  margin-top: 20px;
+}
+
+.workout-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.workout-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(72, 149, 239, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  margin-right: 12px;
+}
+
+.workout-details {
+  flex-grow: 1;
+}
+
+.workout-details h5 {
+  margin: 0 0 3px;
+  font-size: 15px;
+}
+
+.workout-details p {
+  font-size: 12px;
+  color: var(--gray);
+  margin: 0;
+}
+
+.workout-tag {
+  display: inline-block;
+  font-size: 11px;
+  background: rgba(72, 149, 239, 0.1);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 5px;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+}
+
+.btn-save-schedule {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+/* Recent Activity */
+.activity-timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.activity-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15px;
+  height: 100%;
+  width: 2px;
+  background: var(--light-gray);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 15px 0;
+  display: flex;
+}
+
+.timeline-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  position: absolute;
+  left: -30px;
+}
+
+.timeline-content {
+  flex-grow: 1;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-left: 20px;
+}
+
+.timeline-content h5 {
+  margin: 0 0 5px;
+}
+
+.timeline-content p {
+  font-size: 13px;
+  color: var(--gray);
+  margin: 0 0 8px;
+}
+
+.timeline-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.timeline-meta i {
+  margin-right: 3px;
+}
+
+.btn-view-all {
+  width: 100%;
+  padding: 10px;
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+/* Interactive Edit Schedule Button */
+#edit-schedule-btn.btn {
+  background: var(--accent);
+  color: #fff;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.08);
+  transition: background 0.2s, transform 0.2s;
+  width: 100%;
+  max-width: 260px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+#edit-schedule-btn.btn:hover {
+  background: var(--primary);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Workout Scheduler Section */
+.workout-scheduler {
+  padding: 32px 24px 28px 24px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(72, 149, 239, 0.07);
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 600px) {
+  .workout-scheduler {
+    padding: 16px 6px 18px 6px;
+    max-width: 100%;
+  }
+}
+
+/* Suggest Workout and Clear Button Styles */
+.btn-suggest, .btn-clear {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  border: none;
+  margin-right: 10px;
+  margin-bottom: 8px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.06);
+  cursor: pointer;
+}
+
+.btn-suggest {
+  background: var(--success);
+  color: #fff;
+}
+.btn-suggest:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.btn-clear {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-clear:hover {
+  background: #c0392b;
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* Schedule Actions Container */
+.schedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* Add a little gap below the day pills */
+.day-selector {
+  margin-bottom: 18px;
+}
+
+/* Workout List Styling */
+#workout-list, .workout-list {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-left: 0;
+  list-style: none;
+}
+#workout-list li, .workout-list li {
+  background: var(--light-gray);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#workout-list li .tag {
+  margin-left: 8px;
+  font-size: 0.92em;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+#workout-list li .btn-remove {
+  margin-left: 12px;
+  color: var(--danger);
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+#workout-list li .btn-remove:hover {
+  color: #c0392b;
+}
+
+/* Responsive: Make sure everything fits on mobile */
+@media (max-width: 480px) {
+  .workout-scheduler {
+    padding: 8px 2px 10px 2px;
+    border-radius: 8px;
+  }
+  #edit-schedule-btn.btn {
+    font-size: 0.98rem;
+    padding: 0.7rem 0.5rem;
+    max-width: 100%;
+  }
+  .schedule-actions {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #workout-list li, .workout-list li {
+    font-size: 0.97rem;
+    padding: 8px 7px;
+  }
+}
+
+/* Main Content */
+.container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+.profile {
+  background-color: white;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  height: fit-content;
+}
+
+#profileImage {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid var(--secondary-color);
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s;
+}
+
+#profileImage:hover {
+  transform: scale(1.05);
+}
+
+.profile h2 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.profile p {
+  margin-bottom: 0.8rem;
+  color: #555;
+}
+
+.status {
+  padding: 0.5rem;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.active {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+h3, h4, h5 {
+  margin: 0 0 15px;
+  color: var(--dark);
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+/* Card Styles */
+.membership-card, 
+.stats-container, 
+.diet-plan, 
+.workout-scheduler, 
+.recent-activity {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Membership Card */
+.membership-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.progress-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  text-align: center;
+}
+
+.progress-ring circle {
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.progress-ring span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.membership-details {
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.detail-item i {
+  width: 30px;
+  height: 30px;
+  background: rgba(67, 97, 238, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-right: 12px;
+}
+
+.detail-item .label {
+  display: block;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.detail-item .value {
+  font-weight: 600;
+}
+
+.activity-preferences {
+  margin: 25px 0;
+}
+
+.preference-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.tag {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.tag i {
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.tag.active {
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.btn-renew {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-renew:hover {
+  background: var(--secondary);
+}
+
+.btn-renew i {
+  margin-right: 8px;
+}
+
+/* Stats Container */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 5px 0;
+}
+
+.stat-change {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.stat-change i {
+  margin-right: 3px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--light-gray);
+  border-radius: 4px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: var(--success);
+  border-radius: 4px;
+}
+
+.streak-days {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.day {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--light-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.day.active {
+  background: var(--success);
+  color: white;
+}
+
+.view-options {
+  display: flex;
+  gap: 8px;
+}
+
+.view-options button {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.view-options button.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Diet Plan */
+.meals-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.meal-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.meal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.meal-header i {
+  margin-right: 10px;
+  color: var(--accent);
+}
+
+.meal-header h4 {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.calories {
+  font-size: 12px;
+  background: rgba(72, 149, 239, 0.1);
+  padding: 3px 8px;
+  border-radius: 20px;
+  color: var(--accent);
+}
+
+.meal-items {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.meal-items li {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+

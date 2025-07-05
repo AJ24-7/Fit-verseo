@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fit-Verse Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script defer src="admin.js"></script>
+   
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="https://via.placeholder.com/40" alt="Fit-Verse Logo">
+            <h3>Fit-Verse Admin</h3>
+        </div>
+        <div class="sidebar-menu">
+            <ul>
+                <li><a href="#" class="active" id="dashboard-tab"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+                <li><a href="#" id="gym-tab"><i class="fas fa-dumbbell"></i> <span>Gym Management</span></a></li>
+                <li><a href="#" id="trial-booking-tab"><i class="fas fa-calendar-check"></i> <span>Trial Bookings</span></a></li>
+                <li><a href="#" id="trainer-management-tab"><i class="fas fa-users-cog"></i> <span>Trainer Management</span></a></li>
+                <li><a href="#" id="payment-tab"><i class="fas fa-credit-card"></i> <span>Payments</span></a></li>
+                <li><a href="#" id="attendance-tab"><i class="fas fa-calendar-check"></i> <span>Attendance</span></a></li>
+                <li><a href="#" id="users-tab"><i class="fas fa-users"></i> <span>Users</span></a></li>
+                <li><a href="#" id="support-tab"><i class="fas fa-headset"></i> <span>Support</span></a></li>
+                <li><a href="#" id="settings-tab"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+            </ul>
+        </div>
+        <div class="sidebar-footer">
+            <p>v1.0.0</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+<div class="top-navbar">
+    <div class="search-bar">
+      <input type="text" id="gymSearchInput" placeholder="Search gyms...">
+      <button onclick="handleSearch()"><i class="fas fa-search"></i></button>
+    </div>
+    <div class="user-info">
+      <div class="notification-bell" id="notificationBell" onclick="toggleNotifications()">
+        <i class="fas fa-bell"></i>
+        <span class="notification-count" id="notificationCount"></span>
+  
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown" style="display: none;">
+          <div class="notification-header">Notifications</div>
+          <div id="notificationList"></div>
+          <div class="notification-footer">
+            <a href="/admin/notifications">View All Notifications</a>
+          </div>
+        </div>
+      </div>
+      <div class="admin-dropdown">
+        <img src="/assets/admin-avatar.png" alt="Admin" onclick="toggleAdminMenu()">
+        <span>Admin User</span>
+        <div class="admin-menu" id="adminMenu" style="display: none;">
+          <a href="/admin/profile">Profile</a>
+          <a href="/admin/settings">Settings</a>
+          <a href="/admin/logout">Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Dashboard Content -->
+            <div id="dashboard-content" class="tab-content active">
+                <div class="page-header">
+                    <h2>Dashboard Overview</h2>
+                    <div>
+                        <button class="btn btn-primary"><i class="fas fa-download"></i> Generate Report</button>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Cards -->
+                <div class="dashboard-cards">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Total Users</h3>
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="total-users">--</h2>
+                            <p id="users-change"><span class="text-success">--</span> from last month</p>
+                        </div>
+                    </div>
+                    <div class="card success">
+                        <div class="card-header">
+                            <h3>Active Members</h3>
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="active-members">--</h2>
+                            <p id="members-change"><span class="text-success">--</span> from last month</p>
+                        </div>
+                    </div>
+                    <div class="card warning">
+                        <div class="card-header">
+                            <h3>Pending Approvals</h3>
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="pending-approvals">--</h2>
+                            <p id="approvals-detail">Gyms: --, Trainers: --</p>
+                        </div>
+                    </div>
+                    <div class="card danger">
+                        <div class="card-header">
+                            <h3>Revenue</h3>
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="total-revenue">--</h2>
+                            <p id="revenue-change"><span class="text-success">--</span> from last month</p>
+                        </div>
+                    </div>
+                    <div class="card info">
+                        <div class="card-header">
+                            <h3>Trial Bookings</h3>
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="total-trial-bookings">--</h2>
+                            <p id="pending-trial-approvals-text"><span class="text-warning">--</span> Pending Approvals</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Row -->
+                <div class="dashboard-cards">
+                    <div class="card" style="grid-column: span 2;">
+                        <div class="card-header">
+                            <h3>Revenue Overview</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="grid-column: span 2;">
+                        <div class="card-header">
+                            <h3>User Growth</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="usersChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activities -->
+                <div class="table-container">
+                    <h3>Recent Activities</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Activity</th>
+                                <th>User</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Gym Membership Renewal</td>
+                                <td>John Smith</td>
+                                <td>5 minutes ago</td>
+                                <td><span class="status status-approved">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>New Trainer Registration</td>
+                                <td>Mike Johnson</td>
+                                <td>15 minutes ago</td>
+                                <td><span class="status status-pending">Pending</span></td>
+                            </tr>
+                            <tr>
+                                <td>Payment Received</td>
+                                <td>Sarah Williams</td>
+                                <td>30 minutes ago</td>
+                                <td><span class="status status-approved">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>Gym Registration</td>
+                                <td>Elite Fitness</td>
+                                <td>1 hour ago</td>
+                                <td><span class="status status-pending">Pending</span></td>
+                            </tr>
+                            <tr>
+                                <td>Support Ticket</td>
+                                <td>Robert Brown</td>
+                                <td>2 hours ago</td>
+                                <td><span class="status status-pending">Pending</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Gym Management Content -->
+            <div id="gym-content" class="tab-content">
+                <div class="page-header">
+                    <h2>Gym Management</h2>
+                    <div>
+                        <button class="btn btn-primary" id="add-gym-btn"><i class="fas fa-plus"></i> Add Gym</button>
+                    </div>
+                </div>
+            
+                <div class="gym-tabs">
+                    <div class="gym-tab active" data-tab="all-gyms">All Gyms</div>
+                    <div class="gym-tab" data-tab="pending-gyms">Pending Approval</div>
+                    <div class="gym-tab" data-tab="approved-gyms">Approved</div>
+                    <div class="gym-tab" data-tab="rejected-gyms">Rejected</div>
+                    <div class="gym-tab" data-tab="trial-bookings">Trial Bookings</div>
+                </div>
+            
+                <!-- All Gyms -->
+                <div class="gym-tab-content active" id="all-gyms">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Gym Name</th>
+                                    <th>Owner</th>
+                                    <th>Location</th>
+                                    <th>Members</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-gyms-body">
+                                <tr><td colspan="7">Loading gyms...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            
+                <!-- Pending Gyms -->
+                <div class="gym-tab-content" id="pending-gyms">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Gym Name</th>
+                                    <th>Owner</th>
+                                    <th>Location</th>
+                                    <th>Submitted On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pending-gyms-body">
+                                <tr><td colspan="6">Loading pending gyms...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            
+                <!-- Approved Gyms -->
+                <div class="gym-tab-content" id="approved-gyms">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Gym Name</th>
+                                    <th>Owner</th>
+                                    <th>Location</th>
+                                    <th>Members</th>
+                                    <th>Approved On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approved-gyms-body">
+                                <tr><td colspan="7">Loading approved gyms...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            
+                <!-- Rejected Gyms -->
+                <div class="gym-tab-content" id="rejected-gyms">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Gym Name</th>
+                                    <th>Owner</th>
+                                    <th>Location</th>
+                                    <th>Reason</th>
+                                    <th>Rejected On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rejected-gyms-body">
+                                <tr><td colspan="7">Loading rejected gyms...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trial Booking Content -->
+            <div id="trial-booking-content" class="tab-content">
+              <div class="trial-booking-container">
+                <h2>Trial Session Requests</h2>
+                <div class="filter-options">
+                  <select id="status-filter" class="filter-select">
+                    <option value="all">All Requests</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                  <input type="text" id="search-input" class="search-input" placeholder="Search clients...">
+                </div>
+                <div class="trial-requests-list">
+
+                  <!-- Dynamic content will be loaded here by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Trainer Management Content -->
+            <div id="trainer-management-content" class="tab-content">
+                <div class="trainer-mgmt-tabs">
+                    <button class="trainer-mgmt-tab-btn active">All Trainers</button>
+                    <button class="trainer-mgmt-tab-btn">Pending</button>
+                    <button class="trainer-mgmt-tab-btn">Approved</button>
+                    <button class="trainer-mgmt-tab-btn">Rejected</button>
+                    <button class="trainer-mgmt-tab-btn">Revoked</button>
+                </div>
+                
+                <div class="trainer-mgmt-grid">
+                    <!-- Trainer Card 1 -->
+                    <div class="trainer-mgmt-card">
+                        <div class="trainer-mgmt-status-badge trainer-mgmt-pending">Pending</div>
+                        <div class="trainer-mgmt-profile-header"></div>
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Trainer" class="trainer-mgmt-profile-img">
+                        <div class="trainer-mgmt-profile-body">
+                            <h3 class="trainer-mgmt-name">Alex Johnson</h3>
+                            <p class="trainer-mgmt-email">alex.johnson@example.com</p>
+                            
+                            <div class="trainer-mgmt-details">
+                                <div class="detail-item">
+                                    <div class="detail-value">5</div>
+                                    <div class="detail-label">Years</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-value">4.8</div>
+                                    <div class="detail-label">Rating</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-value">120</div>
+                                    <div class="detail-label">Clients</div>
+                                </div>
+                            </div>
+                            
+                            <div class="trainer-mgmt-gyms-list">
+                                <p class="trainer-mgmt-gyms-title">Currently Working At:</p>
+                                <div class="trainer-mgmt-gyms-container">
+                                    <span class="trainer-mgmt-gym-badge">FitLife Gym</span>
+                                    <span class="trainer-mgmt-gym-badge">Elite Fitness</span>
+                                </div>
+                            </div>
+                            
+                            <div class="trainer-mgmt-action-buttons">
+                                <button class="trainer-mgmt-action-btn trainer-mgmt-approve-btn" onclick="openModal('approve', 'Alex Johnson')">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="trainer-mgmt-action-btn trainer-mgmt-reject-btn" onclick="openModal('reject', 'Alex Johnson')">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                                <button class="trainer-mgmt-action-btn trainer-mgmt-delete-btn" onclick="openModal('delete', 'Alex Johnson')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trainer Card 2 -->
+                    <div class="trainer-mgmt-card">
+                        <div class="trainer-mgmt-status-badge trainer-mgmt-approved">Approved</div>
+                        <div class="trainer-mgmt-profile-header"></div>
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Trainer" class="trainer-mgmt-profile-img">
+                        <div class="trainer-mgmt-profile-body">
+                            <h3 class="trainer-mgmt-name">Sarah Williams</h3>
+                            <p class="trainer-mgmt-email">sarah.w@example.com</p>
+                            
+                            <div class="trainer-mgmt-details">
+                                <div class="detail-item">
+                                    <div class="detail-value">8</div>
+                                    <div class="detail-label">Years</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-value">4.9</div>
+                                    <div class="detail-label">Rating</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-value">210</div>
+                                    <div class="detail-label">Clients</div>
+                                </div>
+                            </div>
+                            
+                            <div class="trainer-mgmt-gyms-list">
+                                <p class="trainer-mgmt-gyms-title">Currently Working At:</p>
+                                <div class="trainer-mgmt-gyms-container">
+                                    <span class="trainer-mgmt-gym-badge">Power House</span>
+                                    <span class="trainer-mgmt-gym-badge">Iron Temple</span>
+                                    <span class="trainer-mgmt-gym-badge">FitZone</span>
+                                </div>
+                            </div>
+                            
+                            <div class="trainer-mgmt-action-buttons">
+                                <button class="trainer-mgmt-action-btn trainer-mgmt-approve-btn" onclick="openModal('approve', 'Sarah Williams')">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="trainer-mgmt-action-btn trainer-mgmt-reject-btn" onclick="openModal('reject', 'Sarah Williams')">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                                <button class="trainer-mgmt-action-btn trainer-mgmt-delete-btn" onclick="openModal('delete', 'Sarah Williams')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trainer Card 3 -->
+                    <div class="trainer-mgmt-card">
+                        <div class="trainer-mgmt-status-badge trainer-mgmt-rejected">Rejected</div>
+                        <div class="trainer-mgmt-profile-header"></div>
+                        <img src="https://randomuser.me/api/portraits/men/67.jpg" alt="Trainer" class="trainer-mgmt-profile-img">
+                        <div class="trainer-mgmt-profile-body">
+                            <h3 class="trainer-mgmt-name">Michael Brown</h3>
+                            <p class="trainer-mgmt-email">michael.b@example.com</p>
+                           
+                            <div class="trainer-details">
+                                <div class="detail-item">
+                                    <div class="detail-value">3</div>
+                                    <div class="detail-label">Years</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-value">4.2</div>
+                                    <div class="detail-label">Rating</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-value">45</div>
+                                    <div class="detail-label">Clients</div>
+                                </div>
+                            </div>
+                            
+                            <div class="gyms-list">
+                                <p class="gyms-title">Previously Worked At:</p>
+                                <div class="gyms-container">
+                                    <span class="gym-badge">Body Sculpt</span>
+                                </div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <button class="action-btn approve-btn" onclick="openModal('approve', 'Michael Brown')">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="action-btn delete-btn" onclick="openModal('delete', 'Michael Brown')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+           
+    <!-- Notification Container -->
+    <div id="notification-container" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+    "></div>
+</body>
+
+</html>

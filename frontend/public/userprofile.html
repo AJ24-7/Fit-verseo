@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Member Dashboard | FIT-verse</title>
+  <link rel="stylesheet" href="userprofile.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <script defer src="userprofile.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header>
+    <nav class="navbar">
+      <div class="logo">FIT<span>-verse</span></div>
+
+      <ul class="nav-links">
+        <li><a href="/frontend/index.html" class="nav-item">Home</a></li>
+        <li><a href="#" class="nav-item">About</a></li>
+        <li class="dropdown">
+          <a href="#" class="nav-item">Services ⬇</a>
+          <ul class="dropdown-menu">
+            <li><a href="/frontend/personaltraining.html">Personal Training</a></li>
+            <li><a href="/frontend/membership-plans.html">Membership Plans</a></li>
+            <li><a href="/frontend/dietplans.html">Diet Plans</a></li>
+          </ul>
+        </li>
+        <li><a href="/frontend/contact.html" class="nav-item">Contact</a></li>
+        <li class="dropdown user-profile">
+          <a href="#" class="active">
+            <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+          </a>
+          <ul class="dropdown-menu">
+            <li><a href="/frontend/edit-profile.html">Edit Profile</a></li>
+            <li><a href="#">Settings</a></li>
+            <li><a href="#" onclick="logout()">Logout</a></li>
+          </ul>
+        </li>
+      </ul>
+
+      <!-- Hamburger Menu Icon -->
+      <div class="menu-toggle">&#9776;</div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Profile Info Section -->
+    <div class="profile">
+      <img id="profileImage" src="/uploads/profile-pics/default.png" alt="Profile Picture" />
+      <h2 id="username">John Doe</h2>
+      <p>Email: <span id="useremail">user</span></p>
+      <p>Phone: <span id="userphone">phn no.</span></p>
+      <p class="status active">Membership: Active (Expires: 30-06-2025)</p>
+      <button class="btn" href="/frontend/edit-profile.html" style="background-color: var(--secondary-color); color: white; margin-top: 1rem;">Edit Profile</button>
+    </div>
+
+   <!-- Active Membership Info with Interactive Elements -->
+<div class="membership-card">
+  <div class="membership-header">
+    <h3><i class="fas fa-id-card"></i> Membership Details</h3>
+    <div class="progress-ring" data-progress="80">
+      <svg width="60" height="60">
+        <circle class="progress-ring-circle" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
+      </svg>
+      <span>12 left</span>
+    </div>
+  </div>
+  
+  <div class="membership-details">
+    <div class="detail-item">
+      <i class="fas fa-dumbbell"></i>
+      <div>
+        <span class="label">Gym</span>
+        <span class="value">FIT-verse Premium, Delhi</span>
+      </div>
+    </div>
+    <div class="detail-item">
+      <i class="fas fa-crown"></i>
+      <div>
+        <span class="label">Plan</span>
+        <span class="value">Gold (6 Months)</span>
+      </div>
+    </div>
+    <div class="detail-item">
+      <i class="fas fa-calendar-alt"></i>
+      <div>
+        <span class="label">Expires</span>
+        <span class="value">Dec 15, 2023</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="activity-preferences">
+    <h4><i class="fas fa-heartbeat"></i> Activity Preferences</h4>
+    <div class="preference-tags">
+      <span class="tag active"><i class="fas fa-running"></i> Cardio</span>
+      <span class="tag active"><i class="fas fa-dumbbell"></i> Strength</span>
+      <span class="tag"><i class="fas fa-spa"></i> Yoga</span>
+      <span class="tag"><i class="fas fa-fire"></i> crossfit</span>
+      <span class="tag"><i class="fas fa-biking"></i> HIIT</span>
+      <span class="tag"><i class="fas fa-weight-hanging"></i> Pilates</span>
+    </div>
+  </div>
+  
+  <button class="btn-renew">
+    <i class="fas fa-sync-alt"></i> Renew Membership
+  </button>
+</div>
+
+<!-- Interactive Stats with Goal Tracking -->
+<div class="stats-container">
+  <div class="stats-header">
+    <h3><i class="fas fa-chart-line"></i> Weekly Progress</h3>
+    <div class="view-options">
+      <button class="active">Week</button>
+      <button>Month</button>
+      <button>Year</button>
+    </div>
+  </div>
+  
+  <div class="stats-grid">
+    <div class="stat-card goal-tracker">
+      <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+      <div class="stat-content">
+        <h4>Goal: 5 workouts/week</h4>
+        <div class="progress-bar">
+          <div class="progress" style="width: 80%"></div>
+        </div>
+        <p>4/5 completed</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-fire"></i></div>
+      <div class="stat-content">
+        <h4>Calories Burned</h4>
+        <p class="stat-value">1,850</p>
+        <p class="stat-change"><i class="fas fa-arrow-up"></i> 12% from last week</p>
+      </div>
+    </div>
+    
+    <div class="stat-card streak">
+      <div class="stat-icon"><i class="fas fa-bolt"></i></div>
+      <div class="stat-content">
+        <h4>Current Streak</h4>
+        <p class="stat-value">8 days</p>
+        <p class="stat-target">Record: 21 days</p>
+      </div>
+      <div class="streak-days">
+        <span class="day active">M</span>
+        <span class="day active">T</span>
+        <span class="day active">W</span>
+        <span class="day active">T</span>
+        <span class="day active">F</span>
+        <span class="day active">S</span>
+        <span class="day">S</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-clock"></i></div>
+      <div class="stat-content">
+        <h4>Avg. Workout Time</h4>
+        <p class="stat-value">52 min</p>
+        <p class="stat-change"><i class="fas fa-arrow-up"></i> 8 min longer</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Diet Plan Section -->
+<div class="diet-plan">
+  <div class="section-header">
+    <h3><i class="fas fa-utensils"></i> Today's Diet Plan</h3>
+    <button class="btn-generate">Generate New Plan <i class="fas fa-magic"></i></button>
+  </div>
+  
+  <div class="meals-container">
+    <div class="meal-card">
+      <div class="meal-header">
+        <i class="fas fa-sun"></i>
+        <h4>Breakfast</h4>
+        <span class="calories">420 cal</span>
+      </div>
+      <ul class="meal-items">
+        <li>Oatmeal with berries</li>
+        <li>2 boiled eggs</li>
+        <li>Green tea</li>
+      </ul>
+    </div>
+    
+    <div class="meal-card">
+      <div class="meal-header">
+        <i class="fas fa-cloud-sun"></i>
+        <h4>Lunch</h4>
+        <span class="calories">580 cal</span>
+      </div>
+      <ul class="meal-items">
+        <li>Grilled chicken breast</li>
+        <li>Quinoa salad</li>
+        <li>Steamed vegetables</li>
+      </ul>
+    </div>
+    
+    <div class="meal-card">
+      <div class="meal-header">
+        <i class="fas fa-moon"></i>
+        <h4>Dinner</h4>
+        <span class="calories">450 cal</span>
+      </div>
+      <ul class="meal-items">
+        <li>Baked salmon</li>
+        <li>Roasted sweet potatoes</li>
+        <li>Mixed greens</li>
+      </ul>
+    </div>
+    
+    <div class="meal-card snacks">
+      <div class="meal-header">
+        <i class="fas fa-apple-alt"></i>
+        <h4>Snacks</h4>
+        <span class="calories">210 cal</span>
+      </div>
+      <ul class="meal-items">
+        <li>Protein shake</li>
+        <li>Handful of almonds</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="macros-summary">
+    <div class="macro">
+      <div class="macro-progress" data-value="45">
+        <svg viewBox="0 0 36 36">
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="3"/>
+          <path class="macro-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#4CAF50" stroke-width="3" stroke-dasharray="45, 100"/>
+        </svg>
+        <span>45%</span>
+      </div>
+      <h5>Carbs</h5>
+      <p>210g</p>
+    </div>
+    
+    <div class="macro">
+      <div class="macro-progress" data-value="30">
+        <svg viewBox="0 0 36 36">
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="3"/>
+          <path class="macro-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2196F3" stroke-width="3" stroke-dasharray="30, 100"/>
+        </svg>
+        <span>30%</span>
+      </div>
+      <h5>Protein</h5>
+      <p>140g</p>
+    </div>
+    
+    <div class="macro">
+      <div class="macro-progress" data-value="25">
+        <svg viewBox="0 0 36 36">
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="3"/>
+          <path class="macro-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FF9800" stroke-width="3" stroke-dasharray="25, 100"/>
+        </svg>
+        <span>25%</span>
+      </div>
+      <h5>Fats</h5>
+      <p>60g</p>
+    </div>
+  </div>
+</div>
+
+<!-- Workout Schedule Creator -->
+<div class="workout-scheduler">
+  <div class="section-header">
+    <h3><i class="fas fa-calendar-plus"></i> Create Weekly Workout Schedule</h3>
+    <div class="schedule-actions">
+      <button class="btn-suggest"><i class="fas fa-lightbulb"></i> Suggest Workout</button>
+      <button class="btn-clear"><i class="fas fa-trash"></i> Clear</button>
+    </div>
+  </div>
+
+  <div class="schedule-builder">
+    <div class="day-selector">
+      <div class="day-pill active" data-day="Monday">Mon</div>
+      <div class="day-pill" data-day="Tuesday">Tue</div>
+      <div class="day-pill" data-day="Wednesday">Wed</div>
+      <div class="day-pill" data-day="Thursday">Thu</div>
+      <div class="day-pill" data-day="Friday">Fri</div>
+      <div class="day-pill" data-day="Saturday">Sat</div>
+      <div class="day-pill" data-day="Sunday">Sun</div>
+    </div>
+
+    <div class="workout-form">
+      <div class="form-group">
+        <label><i class="fas fa-dumbbell"></i> Exercise Type</label>
+        <select id="exercise-type">
+          <option>Select Exercise</option>
+          <option>Back</option>
+          <option>Biceps</option>
+          <option>Chest</option>
+          <option>Cardio</option>
+          <option>Triceps</option>
+          <option>Shoulders</option>
+          <option>Legs</option>
+          <option>Abs</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-clock"></i> Duration</label>
+        <select id="exercise-duration">
+          <option>30 minutes</option>
+          <option>45 minutes</option>
+          <option>60 minutes</option>
+          <option>90 minutes</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-sun"></i> Time Slot</label>
+        <select id="exercise-time">
+          <option>Morning</option>
+          <option>Evening</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-tag"></i> Tag (optional)</label>
+        <input type="text" placeholder="e.g., Dumbbells, Home, Gym">
+      </div>
+
+      <button class="btn-add">
+        <i class="fas fa-plus"></i> Add to Day
+      </button>
+    </div>
+
+    <!-- Dynamic container: Will update according to selected day -->
+    <div class="scheduled-workouts">
+      <h4><i class="fas fa-list"></i> Monday's Workouts</h4>
+      <div class="workout-list" id="workout-list">
+        <!-- Dynamically added workouts go here -->
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-save-schedule">
+    <i class="fas fa-save"></i> Save Weekly Schedule
+  </button>
+</div>
+
+<!-- Recent Activity with Interactive Timeline -->
+<div class="recent-activity">
+  <div class="section-header">
+    <h3><i class="fas fa-history"></i> Recent Activity</h3>
+    <div class="view-options">
+      <button class="active">This Week</button>
+      <button>This Month</button>
+    </div>
+  </div>
+  
+  <div class="activity-timeline">
+    <div class="timeline-item completed">
+      <div class="timeline-icon"><i class="fas fa-running"></i></div>
+      <div class="timeline-content">
+        <h5>Cardio Session</h5>
+        <p>Treadmill run at moderate pace</p>
+        <div class="timeline-meta">
+          <span><i class="fas fa-clock"></i> Today, 7:30 AM - 45 min</span>
+          <span><i class="fas fa-fire"></i> 420 cal</span>
+        </div>
+      </div>
+      <button class="btn-log"><i class="fas fa-ellipsis-v"></i></button>
+    </div>
+    
+    <div class="timeline-item completed">
+      <div class="timeline-icon"><i class="fas fa-dumbbell"></i></div>
+      <div class="timeline-content">
+        <h5>Strength Training</h5>
+        <p>Upper body focus with free weights</p>
+        <div class="timeline-meta">
+          <span><i class="fas fa-clock"></i> Yesterday, 6:00 PM - 1 hour</span>
+          <span><i class="fas fa-fire"></i> 580 cal</span>
+        </div>
+      </div>
+      <button class="btn-log"><i class="fas fa-ellipsis-v"></i></button>
+    </div>
+    
+    <div class="timeline-item">
+      <div class="timeline-icon"><i class="fas fa-spa"></i></div>
+      <div class="timeline-content">
+        <h5>Yoga Class</h5>
+        <p>Vinyasa flow for flexibility</p>
+        <div class="timeline-meta">
+          <span><i class="fas fa-clock"></i> Scheduled: Tomorrow, 8:00 AM</span>
+          <span><i class="fas fa-bell"></i> Reminder set</span>
+        </div>
+      </div>
+      <button class="btn-log"><i class="fas fa-ellipsis-v"></i></button>
+    </div>
+  </div>
+  
+  <button class="btn-view-all">
+    <i class="fas fa-list"></i> View All Activity
+  </button>
+</div>
+  </div>
+
+ 
+</body>
+</html>

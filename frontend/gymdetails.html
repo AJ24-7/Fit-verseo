@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fit-Verse | Premium Gym Experience</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="gymdetails.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">Fit-Verse</div>
+            <nav class="nav">
+                <ul>
+                    <li><a href="#gym-photos">Gallery</a></li>
+                    <li><a href="#location">Location</a></li>
+                    <li><a href="#activities">Activities</a></li>
+                    <li><a href="#equipment">Equipment</a></li>
+                    <li><a href="#trainers">Trainers</a></li>
+                    <li><a href="#membership">Membership</a></li>
+                </ul>
+            </nav>
+            <button class="cta-button" id="book-trial-btn">Book Trial</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+<section class="hero" id="gym-hero">
+    <div class="hero-content">
+        <img id="gym-logo" src="" alt="Gym Logo" style="max-width:100px; max-height:100px; border-radius:50%; margin-bottom:0.5rem; display:none;">
+        <h1 id="gym-name" style="font-size:2.2rem; margin-bottom:0.5rem;">Loading...</h1>
+        <div id="gym-rating" class="rating-container" style="margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:0.3rem;"></div>
+        <p id="gym-tagline">Your premium fitness destination with state-of-the-art facilities and expert trainers</p>
+    </div>
+</section>
+
+        <!-- Gym Photos Slider -->
+        <section class="section" id="gym-photos">
+            <h2 class="section-title">Our Facility</h2>
+            <div class="slider-container">
+                <div class="slider" id="gym-slider">
+                    <!-- Images will be loaded dynamically from JS -->
+                </div>
+                <button class="slider-btn prev" id="prev-slide">&#10094;</button>
+                <button class="slider-btn next" id="next-slide">&#10095;</button>
+                <div class="slider-dots" id="slider-dots">
+                    <!-- Dots will be added dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Location Map -->
+        <section class="section" id="location">
+            <h2 class="section-title">Our Location</h2>
+            <div class="map-container">
+                <div id="gym-map"></div>
+                <div class="location-info">
+                    <h3>Find Us</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> 123 Fitness Street, Health District</p>
+                    <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> info@fit-verse.com</p>
+                    <p><i class="fas fa-clock"></i> Mon-Fri: 6AM - 10PM | Sat-Sun: 8AM - 8PM</p>
+                </div>
+            </div>
+        </section>
+        <!-- Rush Hour Section -->
+<section class="rush-hour">
+    <div class="container">
+        <h2 class="section-title">Peak Hours</h2>
+        <div class="rush-hour-chart">
+            <div class="day-row">
+                <div class="day-name">Monday</div>
+                <div class="time-slots">
+                    <div class="time-slot" style="left: 15%; width: 20%;" title="7:30-9:30 AM"></div>
+                    <div class="time-slot" style="left: 55%; width: 25%;" title="5:30-8:00 PM"></div>
+                </div>
+            </div>
+            <div class="day-row">
+                <div class="day-name">Tuesday</div>
+                <div class="time-slots">
+                    <div class="time-slot" style="left: 15%; width: 20%;" title="7:30-9:30 AM"></div>
+                    <div class="time-slot" style="left: 55%; width: 25%;" title="5:30-8:00 PM"></div>
+                </div>
+            </div>
+            <div class="day-row">
+                <div class="day-name">Wednesday</div>
+                <div class="time-slots">
+                    <div class="time-slot" style="left: 15%; width: 20%;" title="7:30-9:30 AM"></div>
+                    <div class="time-slot" style="left: 55%; width: 25%;" title="5:30-8:00 PM"></div>
+                </div>
+            </div>
+            <div class="day-row">
+                <div class="day-name">Thursday</div>
+                <div class="time-slots">
+                    <div class="time-slot" style="left: 15%; width: 20%;" title="7:30-9:30 AM"></div>
+                    <div class="time-slot" style="left: 55%; width: 25%;" title="5:30-8:00 PM"></div>
+                </div>
+            </div>
+            <div class="day-row">
+                <div class="day-name">Friday</div>
+                <div class="time-slots">
+                    <div class="time-slot" style="left: 15%; width: 20%;" title="7:30-9:30 AM"></div>
+                    <div class="time-slot" style="left: 50%; width: 30%;" title="5:00-8:00 PM"></div>
+                </div>
+            </div>
+            <div class="day-row">
+                <div class="day-name">Saturday</div>
+                <div class="time-slots">
+                    <div class="time-slot" style="left: 20%; width: 30%;" title="9:00 AM-12:00 PM"></div>
+                    <div class="time-slot" style="left: 60%; width: 20%;" title="4:00-6:00 PM"></div>
+                </div>
+            </div>
+            <div class="day-row">
+                <div class="day-name">Sunday</div>
+                <div class="time-slots">
+                    <div class="time-slot" style="left: 25%; width: 25%;" title="10:00 AM-12:30 PM"></div>
+                </div>
+            </div>
+            <div class="time-labels">
+                <span>6 AM</span>
+                <span>12 PM</span>
+                <span>6 PM</span>
+                <span>10 PM</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+        <!-- Activities Section -->
+        <section class="section" id="activities">
+            <h2 class="section-title">Our Activities</h2>
+            <div class="activities-grid" id="activities-container">
+                <!-- Activities will be loaded dynamically from JS -->
+            </div>
+        </section>
+
+        <!-- Equipment Section -->
+        <section class="section" id="equipment">
+            <h2 class="section-title">Our Equipment</h2>
+            <div class="equipment-tabs">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-category="cardio">Cardio</button>
+                    <button class="tab-btn" data-category="strength">Strength</button>
+                    <button class="tab-btn" data-category="functional">Functional</button>
+                </div>
+                <div class="tab-content" id="equipment-content">
+                    <!-- Equipment will be loaded dynamically from JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Trainers Section -->
+        <section class="section" id="trainers">
+            <h2 class="section-title">Our Trainers</h2>
+            <div class="trainers-grid" id="trainers-container">
+                <!-- Trainers will be loaded dynamically from JS -->
+            </div>
+        </section>
+
+        <!-- Membership Plans -->
+        <section class="section" id="membership">
+            <h2 class="section-title">Membership Plans</h2>
+            <div class="plans-container" id="plans-container">
+                <!-- Plans will be loaded dynamically from JS -->
+            </div>
+        </section>
+
+        <!-- Trial Booking Form (Modal) -->
+        <div class="modal" id="booking-modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2>Book Your Free Trial</h2>
+                <form id="trial-booking-form">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Preferred Date</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">Preferred Time</label>
+                        <select id="time" name="time" required>
+                            <option value="">Select a time</option>
+                            <option value="morning">Morning (6AM - 10AM)</option>
+                            <option value="afternoon">Afternoon (12PM - 4PM)</option>
+                            <option value="evening">Evening (6PM - 9PM)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="interest">Primary Interest</label>
+                        <select id="interest" name="interest">
+                            <option value="">Select an interest</option>
+                            <option value="weight-loss">Weight Loss</option>
+                            <option value="muscle-gain">Muscle Gain</option>
+                            <option value="functional-training">Functional Training</option>
+                            <option value="group-classes">Group Classes</option>
+                            <option value="personal-training">Personal Training</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="cta-button">Book Now</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Review Modal -->
+        <div class="modal" id="review-modal">
+          <div class="modal-content">
+            <span class="close-btn" id="close-review-modal">&times;</span>
+            <h2>Leave a Review</h2>
+            <form id="review-form">
+              <div class="form-group">
+                <label for="review-comment">Your Comment</label>
+                <textarea id="review-comment" name="comment" rows="3" required style="width:100%;resize:vertical;"></textarea>
+              </div>
+              <button type="submit" class="cta-button">Submit Review</button>
+              <div id="review-success-msg" style="display:none;color:green;margin-top:1rem;"></div>
+            </form>
+          </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Fit-Verse</h3>
+                    <p>Your ultimate fitness destination with state-of-the-art facilities and expert guidance.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#gym-photos">Gallery</a></li>
+                        <li><a href="#activities">Activities</a></li>
+                        <li><a href="#membership">Membership</a></li>
+                        <li><a href="#trainers">Trainers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> 123 Fitness Street</p>
+                    <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> info@fit-verse.com</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 Fit-Verse. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="gymdetails.js"></script>
+</body>
+</html>

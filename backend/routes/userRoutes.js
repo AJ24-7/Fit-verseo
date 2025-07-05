@@ -1,0 +1,57 @@
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const path = require('path');
+const multer = require('multer');
+const { googleAuth } = require('../controllers/userController');
+const { saveWorkoutSchedule, getWorkoutSchedule } = require('../controllers/userController');
+
+const User = require('../models/User');
+const authMiddleware = require('../middleware/authMiddleware');
+const { registerUser, loginUser, updateProfile, requestPasswordResetOTP, verifyPasswordResetOTP } = require('../controllers/userController');
+// ======================
+// ✅ Upload Config for Profile Images
+// ======================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/profile-pics'),
+  filename: (req, file, cb) => cb(null, `${Date.now()}${path.extname(file.originalname)}`)
+});
+const upload = multer({ storage });
+
+// ======================
+// ✅ Auth Routes
+// ======================
+router.post('/signup', registerUser);
+router.post('/login', loginUser);
+router.post('/google-auth', googleAuth);
+
+//Workout scheduler
+router.post('/workout-schedule', authMiddleware, saveWorkoutSchedule);
+router.get('/workout-schedule', authMiddleware, getWorkoutSchedule);
+
+// ======================
+// ✅ Forgot Password Routes
+// ======================
+router.post('/request-password-reset-otp', requestPasswordResetOTP);
+router.post('/verify-password-reset-otp', verifyPasswordResetOTP);
+
+// ======================
+// ✅ Profile Routes
+// ======================
+router.get('/profile', authMiddleware, async (req, res) => { // Use authMiddleware here as well
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ======================
+// ✅ Update Profile Route with controller
+// ======================
+router.put('/update-profile', authMiddleware, upload.single('profileImage'), updateProfile);
+
+module.exports = router;
