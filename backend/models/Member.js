@@ -16,6 +16,7 @@ const memberSchema = new mongoose.Schema({
   planSelected: { type: String, enum: ['Basic', 'Standard', 'Premium'], required: true },
   monthlyPlan: { type: String, enum: ['1 Month', '3 Months', '6 Months', '12 Months'], required: true },
   activityPreference: { type: String, required: true },
+  address: { type: String },
   joinDate: { type: Date, default: Date.now },
   profileImage: { type: String }
 });

@@ -120,6 +120,96 @@ document.addEventListener('DOMContentLoaded', function() {
           },
           body: formData
         });
+
+        // --- Member Detail Card Logic ---
+        const membersDetailCard = document.getElementById('membersDetailCard');
+        const closeMembersDetailCard = document.getElementById('closeMembersDetailCard');
+        const membersStatCard = document.getElementById('membersStatCard');
+        const newMembersList = document.getElementById('newMembersList');
+        const existingMembersList = document.getElementById('existingMembersList');
+        const membersDetailLoading = document.getElementById('membersDetailLoading');
+        const membersDetailError = document.getElementById('membersDetailError');
+        const membersDetailContent = document.getElementById('membersDetailContent');
+
+        // Helper to open/close the card
+        function openMembersDetailCard() {
+            if (membersDetailCard) {
+                membersDetailCard.style.display = 'flex';
+                if (membersDetailLoading) membersDetailLoading.style.display = 'block';
+                if (membersDetailError) membersDetailError.style.display = 'none';
+                if (membersDetailContent) membersDetailContent.style.display = 'none';
+                fetchAndRenderMembersDetail();
+            }
+        }
+        function closeMembersDetailCardFunc() {
+            if (membersDetailCard) membersDetailCard.style.display = 'none';
+        }
+        if (membersStatCard && membersDetailCard) {
+            membersStatCard.addEventListener('click', openMembersDetailCard);
+            membersStatCard.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') openMembersDetailCard();
+            });
+        }
+        if (closeMembersDetailCard && membersDetailCard) {
+            closeMembersDetailCard.addEventListener('click', closeMembersDetailCardFunc);
+        }
+        // Close on outside click
+        if (membersDetailCard) {
+            membersDetailCard.addEventListener('mousedown', function(e) {
+                if (e.target === membersDetailCard) closeMembersDetailCardFunc();
+            });
+        }
+
+        // Fetch and render members detail (new/existing)
+        async function fetchAndRenderMembersDetail() {
+            if (membersDetailLoading) membersDetailLoading.style.display = 'block';
+            if (membersDetailError) membersDetailError.style.display = 'none';
+            if (membersDetailContent) membersDetailContent.style.display = 'none';
+            if (newMembersList) newMembersList.innerHTML = '';
+            if (existingMembersList) existingMembersList.innerHTML = '';
+            const token = localStorage.getItem('gymAdminToken');
+            try {
+                const res = await fetch('http://localhost:5000/api/members', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await res.json();
+                if (!res.ok || !Array.isArray(data.members)) {
+                    throw new Error(data.message || 'Failed to fetch members');
+                }
+                // Split new/existing
+                const now = new Date();
+                const newMembers = [];
+                const existingMembers = [];
+                data.members.forEach(member => {
+                    if (!member.joinDate) return existingMembers.push(member); // fallback
+                    const join = new Date(member.joinDate);
+                    const diffDays = (now - join) / (1000 * 60 * 60 * 24);
+                    if (diffDays <= 30) newMembers.push(member);
+                    else existingMembers.push(member);
+                });
+                // Render lists
+                if (newMembersList) newMembersList.innerHTML = newMembers.length ? newMembers.map(m => renderMemberListItem(m)).join('') : '<li style="color:#888;">No new members in last 30 days.</li>';
+                if (existingMembersList) existingMembersList.innerHTML = existingMembers.length ? existingMembers.map(m => renderMemberListItem(m)).join('') : '<li style="color:#888;">No existing members.</li>';
+                if (membersDetailLoading) membersDetailLoading.style.display = 'none';
+                if (membersDetailContent) membersDetailContent.style.display = 'block';
+            } catch (err) {
+                if (membersDetailLoading) membersDetailLoading.style.display = 'none';
+                if (membersDetailError) {
+                    membersDetailError.textContent = err.message || 'Failed to load members.';
+                    membersDetailError.style.display = 'block';
+                }
+            }
+        }
+        // Helper to render a member list item
+        function renderMemberListItem(member) {
+            const img = member.profileImageUrl ? `<img src="${member.profileImageUrl}" alt="${member.name || member.memberName || ''}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<span style="display:inline-block;width:36px;height:36px;border-radius:50%;background:#eee;margin-right:10px;"></span>`;
+            const name = member.name || member.memberName || 'Member';
+            const plan = member.planSelected || member.plan || '';
+            const joinDate = member.joinDate ? new Date(member.joinDate).toLocaleDateString() : '';
+            return `<li style="display:flex;align-items:center;margin-bottom:10px;">${img}<div><div style="font-weight:500;">${name}</div><div style="font-size:0.95em;color:#888;">${plan}${joinDate ? ' | Joined: ' + joinDate : ''}</div></div></li>`;
+        }
         const data = await res.json();
         if (res.ok) {
           // 2. Send membership email (do not block UI if email fails)
@@ -1083,15 +1173,6 @@ if (addMemberForm) {
                 }
             });
         });
-
-        // Table row click
-        const tableRows = document.querySelectorAll('tbody tr');
-        tableRows.forEach(row => {
-            row.addEventListener('click', () => {
-                // You can implement view member details functionality here
-                console.log('View member details');
-            });
-        });
     }
 
 // Sidebar toggle logic for desktop and mobile
@@ -1376,6 +1457,300 @@ function renderMembersTable(members) {
     `;
   });
 }
+// Ensure only one event listener is attached and openMembersDetailCard is always available
+function openMembersDetailCard() {
+  const membersDetailCard = document.getElementById('membersDetailCard');
+  const membersDetailLoading = document.getElementById('membersDetailLoading');
+  const membersDetailError = document.getElementById('membersDetailError');
+  const membersDetailContent = document.getElementById('membersDetailContent');
+  const newMembersList = document.getElementById('newMembersList');
+  const existingMembersList = document.getElementById('existingMembersList');
+  if (membersDetailCard) {
+    membersDetailCard.style.display = 'flex';
+    if (membersDetailLoading) membersDetailLoading.style.display = 'block';
+    if (membersDetailError) membersDetailError.style.display = 'none';
+    if (membersDetailContent) membersDetailContent.style.display = 'none';
+    fetchAndRenderMembersDetail();
+  }
+  async function fetchAndRenderMembersDetail() {
+    if (membersDetailLoading) membersDetailLoading.style.display = 'block';
+    if (membersDetailError) membersDetailError.style.display = 'none';
+    if (membersDetailContent) membersDetailContent.style.display = 'none';
+    if (newMembersList) newMembersList.innerHTML = '';
+    if (existingMembersList) existingMembersList.innerHTML = '';
+    const token = localStorage.getItem('gymAdminToken');
+    try {
+      const res = await fetch('http://localhost:5000/api/members', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.members)) {
+        throw new Error(data.message || 'Failed to fetch members');
+      }
+      const now = new Date();
+      const newMembers = [];
+      const existingMembers = [];
+      data.members.forEach(member => {
+        if (!member.joinDate) return existingMembers.push(member);
+        const join = new Date(member.joinDate);
+        const diffDays = (now - join) / (1000 * 60 * 60 * 24);
+        if (diffDays <= 30) newMembers.push(member);
+        else existingMembers.push(member);
+      });
+      if (newMembersList) newMembersList.innerHTML = newMembers.length ? newMembers.map(m => renderMemberListItem(m)).join('') : '<li style="color:#888;">No new members in last 30 days.</li>';
+      if (existingMembersList) existingMembersList.innerHTML = existingMembers.length ? existingMembers.map(m => renderMemberListItem(m)).join('') : '<li style="color:#888;">No existing members.</li>';
+      if (membersDetailLoading) membersDetailLoading.style.display = 'none';
+      if (membersDetailContent) membersDetailContent.style.display = 'block';
+    } catch (err) {
+      if (membersDetailLoading) membersDetailLoading.style.display = 'none';
+      if (membersDetailError) {
+        membersDetailError.textContent = err.message || 'Failed to load members.';
+        membersDetailError.style.display = 'block';
+      }
+    }
+  }
+  function renderMemberListItem(member) {
+    const img = member.profileImageUrl ? `<img src="${member.profileImageUrl}" alt="${member.name || member.memberName || ''}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<span style="display:inline-block;width:36px;height:36px;border-radius:50%;background:#eee;margin-right:10px;"></span>`;
+    const name = member.name || member.memberName || 'Member';
+    const plan = member.planSelected || member.plan || '';
+    const joinDate = member.joinDate ? new Date(member.joinDate).toLocaleDateString() : '';
+    return `<li style="display:flex;align-items:center;margin-bottom:10px;">${img}<div><div style="font-weight:500;">${name}</div><div style="font-size:0.95em;color:#888;">${plan}${joinDate ? ' | Joined: ' + joinDate : ''}</div></div></li>`;
+  }
+}
+window.openMembersDetailCard = openMembersDetailCard;
+
+// --- Member Detail Card: Show details for clicked member row ---
+if (membersTableBody) {
+  membersTableBody.addEventListener('click', function(e) {
+    let tr = e.target;
+    while (tr && tr.tagName !== 'TR') tr = tr.parentElement;
+    if (tr) {
+      // Get all cells in the row
+      const cells = tr.querySelectorAll('td');
+      // Extract member info from the row (order must match table columns)
+      const member = {
+        profileImage: cells[0]?.querySelector('img')?.src || '',
+        memberName: cells[1]?.textContent.trim() || '',
+        membershipId: cells[2]?.textContent.trim() || '',
+        age: cells[3]?.textContent.trim() || '',
+        gender: cells[4]?.textContent.trim() || '',
+        phone: cells[5]?.textContent.trim() || '',
+        email: cells[6]?.textContent.trim() || '',
+        planSelected: cells[7]?.textContent.trim() || '',
+        monthlyPlan: cells[8]?.textContent.trim() || '',
+        activityPreference: cells[9]?.textContent.trim() || '',
+        joinDate: cells[10]?.textContent.trim() || '',
+        validUntil: cells[11]?.textContent.trim() || '',
+        paymentAmount: cells[12]?.textContent.trim() || ''
+      };
+      showMemberDetailCard(member);
+    }
+  });
+}
+
+function showMemberDetailCard(member) {
+  const modal = document.getElementById('membersDetailCard');
+  if (!modal) return;
+  // Build the detail HTML using only classes for styling
+  const content = `
+    <div class="modal-content member-detail-modal">
+      <div class="member-detail-header" style="position:relative;">
+        <button id="editMemberDetailBtn" title="Edit Member" style="position:absolute;left:18px;top:16px;background:none;border:none;cursor:pointer;font-size:1.25rem;color:#fff;z-index:3;transition:color 0.2s;"><i class='fas fa-edit'></i></button>
+        <h2 class="member-detail-title" style="margin-left:32px;">
+          <i class="fas fa-id-card-alt"></i> Member Details
+        </h2>
+        <button id="closeMembersDetailCard" class="modal-close" title="Close">&times;</button>
+      </div>
+      <div class="member-detail-body">
+        <div class="member-detail-top">
+          <img src="${member.profileImage}" alt="Profile" class="profile-pic" id="memberDetailProfilePic">
+          <div>
+            <div class="member-name">${member.memberName}</div>
+            <div class="member-id">${member.membershipId}</div>
+          </div>
+        </div>
+        <ul class="info-list" id="memberDetailInfoList">
+          <li><i class="fas fa-crown"></i> <span class="member-detail-label">Plan:</span> <span class="plan-badge">${member.planSelected} (${member.monthlyPlan})</span></li>
+          <li><i class="fas fa-dumbbell"></i> <span class="member-detail-label">Activity:</span> <span id="memberDetailActivity">${member.activityPreference}</span></li>
+          <li><i class="fas fa-phone"></i> <span class="member-detail-label">Phone:</span> <span id="memberDetailPhone">${member.phone}</span></li>
+          <li><i class="fas fa-envelope"></i> <span class="member-detail-label">Email:</span> <span id="memberDetailEmail">${member.email}</span></li>
+          <li><i class="fas fa-map-marker-alt"></i> <span class="member-detail-label">Address:</span> <span id="memberDetailAddress">${member.address || ''}</span></li>
+          <li><i class="fas fa-venus-mars"></i> <span class="member-detail-label">Gender:</span> ${member.gender} <span class="member-detail-label">Age:</span> ${member.age}</li>
+          <li><i class="fas fa-calendar-plus"></i> <span class="member-detail-label">Join Date:</span> ${member.joinDate}</li>
+          <li><i class="fas fa-calendar-check"></i> <span class="member-detail-label">Valid Until:</span> ${member.validUntil}</li>
+          <li><i class="fas fa-rupee-sign"></i> <span class="member-detail-label">Amount Paid:</span> ${member.paymentAmount}</li>
+        </ul>
+      </div>
+    </div>
+  `;
+  modal.innerHTML = content;
+  modal.style.display = 'flex';
+  // Add close logic
+  const closeBtn = document.getElementById('closeMembersDetailCard');
+  if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
+  // Close on outside click
+  modal.addEventListener('mousedown', function handler(e) {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+      modal.removeEventListener('mousedown', handler);
+    }
+  });
+
+  // Edit logic
+  const editBtn = document.getElementById('editMemberDetailBtn');
+  if (editBtn) {
+    editBtn.onclick = function() {
+      enableMemberDetailEdit(member);
+    };
+  }
+}
+
+// Enable editing for allowed fields in the member detail card
+function enableMemberDetailEdit(member) {
+  const modal = document.getElementById('membersDetailCard');
+  if (!modal) return;
+  // Build the edit form
+  const content = `
+    <div class="modal-content member-detail-modal">
+      <div class="member-detail-header" style="position:relative;">
+        <button id="saveMemberDetailBtn" title="Save Changes" style="position:absolute;left:18px;top:16px;background:none;border:none;cursor:pointer;font-size:1.25rem;color:#fff;z-index:3;transition:color 0.2s;"><i class='fas fa-save'></i></button>
+        <h2 class="member-detail-title" style="margin-left:32px;">
+          <i class="fas fa-id-card-alt"></i> Edit Member
+        </h2>
+        <button id="closeMembersDetailCard" class="modal-close" title="Close">&times;</button>
+      </div>
+      <form id="memberDetailEditForm" class="member-detail-body" autocomplete="off" enctype="multipart/form-data">
+        <div class="member-detail-top">
+          <label for="editMemberProfilePic" style="cursor:pointer;">
+            <img src="${member.profileImage}" alt="Profile" class="profile-pic" id="editMemberProfilePicPreview">
+            <input type="file" id="editMemberProfilePic" name="profileImage" accept="image/*" style="display:none;">
+            <div style="font-size:0.95em;color:#1976d2;text-align:center;margin-top:4px;">Change Photo</div>
+          </label>
+          <div>
+            <div class="member-name">${member.memberName}</div>
+            <div class="member-id">${member.membershipId}</div>
+          </div>
+        </div>
+        <ul class="info-list">
+          <li><i class="fas fa-crown"></i> <span class="member-detail-label">Plan:</span> <span class="plan-badge">${member.planSelected} (${member.monthlyPlan})</span></li>
+          <li><i class="fas fa-dumbbell"></i> <span class="member-detail-label">Activity:</span> <input type="text" id="editMemberActivity" name="activityPreference" value="${member.activityPreference}" class="edit-input"></li>
+          <li><i class="fas fa-phone"></i> <span class="member-detail-label">Phone:</span> <input type="tel" id="editMemberPhone" name="phone" value="${member.phone}" class="edit-input"></li>
+          <li><i class="fas fa-envelope"></i> <span class="member-detail-label">Email:</span> <input type="email" id="editMemberEmail" name="email" value="${member.email}" class="edit-input"></li>
+          <li><i class="fas fa-map-marker-alt"></i> <span class="member-detail-label">Address:</span> <input type="text" id="editMemberAddress" name="address" value="${member.address || ''}" class="edit-input"></li>
+          <li><i class="fas fa-venus-mars"></i> <span class="member-detail-label">Gender:</span> ${member.gender} <span class="member-detail-label">Age:</span> ${member.age}</li>
+          <li><i class="fas fa-calendar-plus"></i> <span class="member-detail-label">Join Date:</span> ${member.joinDate}</li>
+          <li><i class="fas fa-calendar-check"></i> <span class="member-detail-label">Valid Until:</span> ${member.validUntil}</li>
+          <li><i class="fas fa-rupee-sign"></i> <span class="member-detail-label">Amount Paid:</span> ${member.paymentAmount}</li>
+        </ul>
+      </form>
+    </div>
+  `;
+  modal.innerHTML = content;
+  modal.style.display = 'flex';
+  // Add close logic
+  const closeBtn = document.getElementById('closeMembersDetailCard');
+  if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
+  // Save logic
+  const saveBtn = document.getElementById('saveMemberDetailBtn');
+  if (saveBtn) {
+    saveBtn.onclick = function() {
+      submitMemberDetailEdit(member);
+    };
+  }
+  // Profile image preview logic
+  const fileInput = document.getElementById('editMemberProfilePic');
+  const imgPreview = document.getElementById('editMemberProfilePicPreview');
+  if (fileInput && imgPreview) {
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          imgPreview.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+}
+
+// Handle submit for member detail edit (calls backend API)
+async function submitMemberDetailEdit(originalMember) {
+  const modal = document.getElementById('membersDetailCard');
+  if (!modal) return;
+  const form = document.getElementById('memberDetailEditForm');
+  if (!form) return;
+  // Find memberId (from membershipId cell, which should be unique)
+  const memberId = originalMember.membershipId;
+  if (!memberId) {
+    alert('Member ID not found. Cannot update.');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('activityPreference', form.activityPreference.value);
+  formData.append('phone', form.phone.value);
+  formData.append('email', form.email.value);
+  formData.append('address', form.address.value);
+  // Profile image
+  const fileInput = form.profileImage;
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    formData.append('profileImage', fileInput.files[0]);
+  }
+  try {
+    const token = localStorage.getItem('gymAdminToken');
+    // Use the backend API: PUT /api/members/:memberId
+    const response = await fetch(`http://localhost:5000/api/members/${memberId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      }
+    );
+    const result = await response.json();
+    if (response.ok) {
+      // Show updated card with new data
+      showMemberDetailCard(result.member);
+      showMemberUpdateMessage('Member details updated successfully!', 'success');
+      // Optionally refresh the members table
+      if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
+    } else {
+      showMemberUpdateMessage(result.message || 'Failed to update member.', 'error');
+    }
+  } catch (err) {
+    showMemberUpdateMessage('Network error. Please try again.', 'error');
+  }
+}
+
+// Show update message for member detail edits
+function showMemberUpdateMessage(message, type) {
+  let msgDiv = document.getElementById('memberUpdateMessage');
+  if (!msgDiv) {
+    msgDiv = document.createElement('div');
+    msgDiv.id = 'memberUpdateMessage';
+    msgDiv.style.position = 'fixed';
+    msgDiv.style.top = '80px';
+    msgDiv.style.left = '50%';
+    msgDiv.style.transform = 'translateX(-50%)';
+    msgDiv.style.zIndex = 10000;
+    msgDiv.style.padding = '12px 28px';
+    msgDiv.style.borderRadius = '6px';
+    msgDiv.style.fontWeight = 'bold';
+    msgDiv.style.fontSize = '1.1rem';
+    msgDiv.style.boxShadow = '0 2px 12px rgba(0,0,0,0.07)';
+    document.body.appendChild(msgDiv);
+  }
+  msgDiv.textContent = message;
+  msgDiv.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
+  msgDiv.style.color = type === 'success' ? '#155724' : '#721c24';
+  msgDiv.style.border = type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
+  msgDiv.style.display = 'block';
+  clearTimeout(msgDiv._hideTimeout);
+  msgDiv._hideTimeout = setTimeout(() => { msgDiv.style.display = 'none'; }, 3000);
+}
 document.addEventListener('DOMContentLoaded', function() {
   // Mobile sidebar logic with backdrop and animation
   const hamburger = document.getElementById('hamburgerMenuBtn');
@@ -1428,7 +1803,92 @@ document.addEventListener('DOMContentLoaded', function() {
       closeMobileSidebar();
     }
   });
+  document.addEventListener('DOMContentLoaded', function() {
+  const membersTableBody = document.getElementById('membersTableBody');
+  const membersDetailCard = document.getElementById('membersDetailCard');
+  const closeMembersDetailCard = document.getElementById('closeMembersDetailCard');
+  const membersDetailLoading = document.getElementById('membersDetailLoading');
+  const membersDetailError = document.getElementById('membersDetailError');
+  const membersDetailContent = document.getElementById('membersDetailContent');
+  const newMembersList = document.getElementById('newMembersList');
+  const existingMembersList = document.getElementById('existingMembersList');
 
+  function openMembersDetailCard() {
+    if (membersDetailCard) {
+      membersDetailCard.style.display = 'flex';
+      if (membersDetailLoading) membersDetailLoading.style.display = 'block';
+      if (membersDetailError) membersDetailError.style.display = 'none';
+      if (membersDetailContent) membersDetailContent.style.display = 'none';
+      fetchAndRenderMembersDetail();
+    }
+  }
+  function closeMembersDetailCardFunc() {
+    if (membersDetailCard) membersDetailCard.style.display = 'none';
+  }
+  if (membersTableBody) {
+    membersTableBody.addEventListener('click', function(e) {
+      let tr = e.target;
+      while (tr && tr.tagName !== 'TR') tr = tr.parentElement;
+      if (tr) {
+        openMembersDetailCard();
+      }
+    });
+  }
+  if (closeMembersDetailCard) {
+    closeMembersDetailCard.addEventListener('click', closeMembersDetailCardFunc);
+  }
+  if (membersDetailCard) {
+    membersDetailCard.addEventListener('mousedown', function(e) {
+      if (e.target === membersDetailCard) closeMembersDetailCardFunc();
+    });
+  }
+  async function fetchAndRenderMembersDetail() {
+    if (membersDetailLoading) membersDetailLoading.style.display = 'block';
+    if (membersDetailError) membersDetailError.style.display = 'none';
+    if (membersDetailContent) membersDetailContent.style.display = 'none';
+    if (newMembersList) newMembersList.innerHTML = '';
+    if (existingMembersList) existingMembersList.innerHTML = '';
+    const token = localStorage.getItem('gymAdminToken');
+    try {
+      const res = await fetch('http://localhost:5000/api/members', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.members)) {
+        throw new Error(data.message || 'Failed to fetch members');
+      }
+      const now = new Date();
+      const newMembers = [];
+      const existingMembers = [];
+      data.members.forEach(member => {
+        if (!member.joinDate) return existingMembers.push(member);
+        const join = new Date(member.joinDate);
+        const diffDays = (now - join) / (1000 * 60 * 60 * 24);
+        if (diffDays <= 30) newMembers.push(member);
+        else existingMembers.push(member);
+      });
+      if (newMembersList) newMembersList.innerHTML = newMembers.length ? newMembers.map(m => renderMemberListItem(m)).join('') : '<li style="color:#888;">No new members in last 30 days.</li>';
+      if (existingMembersList) existingMembersList.innerHTML = existingMembers.length ? existingMembers.map(m => renderMemberListItem(m)).join('') : '<li style="color:#888;">No existing members.</li>';
+      if (membersDetailLoading) membersDetailLoading.style.display = 'none';
+      if (membersDetailContent) membersDetailContent.style.display = 'block';
+    } catch (err) {
+      if (membersDetailLoading) membersDetailLoading.style.display = 'none';
+      if (membersDetailError) {
+        membersDetailError.textContent = err.message || 'Failed to load members.';
+        membersDetailError.style.display = 'block';
+      }
+    }
+  }
+  function renderMemberListItem(member) {
+    const img = member.profileImageUrl ? `<img src="${member.profileImageUrl}" alt="${member.name || member.memberName || ''}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<span style="display:inline-block;width:36px;height:36px;border-radius:50%;background:#eee;margin-right:10px;"></span>`;
+    const name = member.name || member.memberName || 'Member';
+    const plan = member.planSelected || member.plan || '';
+    const joinDate = member.joinDate ? new Date(member.joinDate).toLocaleDateString() : '';
+    return `<li style="display:flex;align-items:center;margin-bottom:10px;">${img}<div><div style="font-weight:500;">${name}</div><div style="font-size:0.95em;color:#888;">${plan}${joinDate ? ' | Joined: ' + joinDate : ''}</div></div></li>`;
+  }
+});
   // --- Mobile Sidebar Menu Link Logic ---
   // Map menu text to tab IDs (update as needed)
   const tabMap = {

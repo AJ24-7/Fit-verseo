@@ -141,25 +141,7 @@
                         <div class="stat-value"></div>
                         <div class="stat-change"></div>
                     </div>
-<!-- Interactive Members Detail Card (hidden by default) -->
-<div id="membersDetailCard" class="modal" style="display:none; align-items:center; justify-content:center;">
-  <div class="modal-content" style="max-width:480px; width:95%; border-radius:12px; box-shadow:0 4px 32px rgba(0,0,0,0.12);">
-    <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee; padding:18px 18px 10px 18px;">
-      <h2 style="margin:0; font-size:1.3rem; color:var(--primary, #1976d2);">Members Overview</h2>
-      <button id="closeMembersDetailCard" style="background:none; border:none; font-size:2rem; cursor:pointer; color:#888;">&times;</button>
-    </div>
-    <div style="padding:18px;">
-      <div id="membersDetailLoading" style="text-align:center; color:#888; display:none;">Loading...</div>
-      <div id="membersDetailError" style="text-align:center; color:#d32f2f; display:none;"></div>
-      <div id="membersDetailContent" style="display:none;">
-        <h3 style="margin-top:0; color:#333; font-size:1.1rem;">New Members (Joined in last 30 days)</h3>
-        <ul id="newMembersList" style="list-style:none; padding:0; margin-bottom:18px;"></ul>
-        <h3 style="margin-bottom:0; color:#333; font-size:1.1rem;">Existing Members (Joined 1+ months ago)</h3>
-        <ul id="existingMembersList" style="list-style:none; padding:0;"></ul>
-      </div>
-    </div>
-  </div>
-</div>
+
                     <div class="stat-card payments">
                         <div class="stat-title">Total Payments</div>
                         <div class="stat-value"></div>
@@ -682,6 +664,21 @@
         <!-- Members will be loaded here -->
       </tbody>
     </table>
+  </div>
+</div>
+<!-- Interactive Members Detail Card (hidden by default) -->
+<div id="membersDetailCard" class="modal">
+  <div class="modal-content member-detail-modal">
+    <div class="member-detail-header" style="position:relative;">
+      <button id="editMemberDetailBtn" title="Edit Member" style="position:absolute;left:18px;top:16px;background:none;border:none;cursor:pointer;font-size:1.25rem;color:#fff;z-index:3;transition:color 0.2s;"><i class="fas fa-edit"></i></button>
+      <h2 class="member-detail-title" style="margin-left:32px;">
+        <i class="fas fa-id-card-alt"></i> Member Details
+      </h2>
+      <button id="closeMembersDetailCard" class="modal-close" title="Close">&times;</button>
+    </div>
+    <div id="memberDetailDynamicContent">
+      <!-- Dynamic content injected by JS -->
+    </div>
   </div>
 </div>
 </body>
