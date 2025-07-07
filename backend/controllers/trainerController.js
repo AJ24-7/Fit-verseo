@@ -216,6 +216,38 @@ exports.registerTrainer = async (req, res) => {
     });
 
     await newTrainer.save();
+
+    // Send notification email to admin (optional: you can add your admin email here)
+    try {
+      await sendEmail(
+        process.env.ADMIN_EMAIL || 'admin@fit-verse.com',
+        'New Trainer Registration Pending Approval',
+        `<p>A new trainer registration has been submitted and is pending approval:</p>
+         <ul>
+           <li>Name: ${firstName} ${lastName}</li>
+           <li>Email: ${email}</li>
+           <li>Phone: ${phone}</li>
+           <li>Specialty: ${specialty}</li>
+         </ul>`
+      );
+    } catch (err) {
+      console.error('Failed to send admin notification email:', err.message);
+    }
+
+    // Send confirmation email to trainer
+    try {
+      await sendEmail(
+        email,
+        'Trainer Registration Received - FIT-verse',
+        `<h3>Hello ${firstName} ${lastName},</h3>
+         <p>Your trainer registration has been received and is <strong>pending admin approval</strong>.</p>
+         <p>You will be notified by email once your application is reviewed.</p>
+         <br><p>Best regards,<br/>FIT-verse Team</p>`
+      );
+    } catch (err) {
+      console.error('Failed to send trainer confirmation email:', err.message);
+    }
+
     res.status(201).json({ message: 'Application submitted successfully. Awaiting admin approval.' });
   } catch (err) {
     console.error('Error during trainer registration:', err);

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,6 +40,12 @@
                     <span class="menu-text">Members</span>
                 </a>
             </li>
+             <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
+                    <span class="menu-text">Trainers</span>
+                </a>
+            </li>
             <li class="menu-item">
                 <a href="#" class="menu-link">
                     <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
@@ -49,12 +56,6 @@
                 <a href="#" class="menu-link">
                     <span class="menu-icon"><i class="fas fa-credit-card"></i></span>
                     <span class="menu-text">Payments</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
-                    <span class="menu-text">Trainers</span>
                 </a>
             </li>
             <li class="menu-item">
@@ -158,6 +159,31 @@
                         <div class="stat-change"></div>
                     </div>
                 </div>
+                <!-- Quick Actions -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Quick Actions</h2>
+                            </div>
+                            <div class="quick-action-list">
+                                <button class="quick-action-btn" id="addMemberBtn" type="button">
+                                    <i class="fas fa-user-plus"></i>
+                                    <span class="quick-action-title">Add Member</span>
+                                </button>
+                                <button class="quick-action-btn" id="recordPaymentBtn" type="button">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <span class="quick-action-title">Record Payment</span>
+                                </button>
+                                <button class="quick-action-btn" id="addTrainerBtn" type="button">
+                                    <i class="fas fa-user-tie"></i>
+                                    <span class="quick-action-title">Add Trainer</span>
+                                </button>
+                                <button class="quick-action-btn" id="uploadEquipmentBtn" type="button">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <span class="quick-action-title">Add Equipment</span>
+                                </button>
+                       
+                            </div>
+                        </div>
                  <!-- Interactive Gym Photos Grid -->
                 <section id="photoGridSection" class="card" style="margin-top: 24px;">
                   <div class="card-header">
@@ -176,7 +202,7 @@
                             <h2 class="card-title"><i class="fas fa-crown" style="color:#ffbe0b;margin-right:8px;"></i>Membership Plans</h2>
                             <button id="editPlansBtn" class="btn btn-primary" style="font-size:1em;padding:6px 18px;"><i class="fas fa-edit"></i> Edit Plans</button>
                           </div>
-                          <div class="plans-list" id="plansList" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;"></div>
+<div class="plans-list" id="plansList"></div>
                         </div>
                         <!-- Membership Plan Editor Modal -->
                         <div class="modal" id="planEditorModal" style="display:none;z-index:10001;align-items:flex-start;">
@@ -187,43 +213,8 @@
                             </div>
                             <form id="planEditorForm" style="margin-top:18px;">
                           <div id="planEditorCards" style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;"></div>
-                          <!-- Icon/Color Picker Modal Styles (for accessibility) -->
-                          <style>
-                            .icon-picker-grid {
-                              display: grid;
-                              grid-template-columns: repeat(6, 1fr);
-                              gap: 10px;
-                              margin-top: 8px;
-                              margin-bottom: 8px;
-                            }
-                            .icon-picker-option {
-                              display: flex;
-                              flex-direction: column;
-                              align-items: center;
-                              justify-content: center;
-                              cursor: pointer;
-                              border: 2px solid transparent;
-                              border-radius: 8px;
-                              padding: 6px 0 2px 0;
-                              transition: border 0.2s, background 0.2s;
-                              font-size: 1.3em;
-                              background: #f8f9fa;
-                            }
-                            .icon-picker-option.selected {
-                              border: 2px solid #1976d2;
-                              background: #e3f2fd;
-                            }
-                            .color-picker-input {
-                              width: 32px;
-                              height: 32px;
-                              border: none;
-                              border-radius: 50%;
-                              margin-left: 8px;
-                              cursor: pointer;
-                              box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-                              vertical-align: middle;
-                            }
-                          </style>
+                        
+                         
                               <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;">
                                 <button type="button" class="btn btn-secondary" id="cancelPlanEditBtn">Cancel</button>
                                 <button type="submit" class="btn btn-primary">Save All</button>
@@ -347,31 +338,7 @@
 
                     <!-- Right Column -->
                     <div class="right-column">
-                        <!-- Quick Actions -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h2 class="card-title">Quick Actions</h2>
-                            </div>
-                            <div class="quick-action-list">
-                                <button class="quick-action-btn" id="addMemberBtn" type="button">
-                                    <i class="fas fa-user-plus"></i>
-                                    <span class="quick-action-title">Add Member</span>
-                                </button>
-                                <button class="quick-action-btn" id="recordPaymentBtn" type="button">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                    <span class="quick-action-title">Record Payment</span>
-                                </button>
-                                <button class="quick-action-btn" id="addTrainerBtn" type="button">
-                                    <i class="fas fa-user-tie"></i>
-                                    <span class="quick-action-title">Add Trainer</span>
-                                </button>
-                                <button class="quick-action-btn" id="uploadEquipmentBtn" type="button">
-                                    <i class="fas fa-dumbbell"></i>
-                                    <span class="quick-action-title">Add Equipment</span>
-                                </button>
-                       
-                            </div>
-                        </div>
+                        
 
                         <!-- Recent Activity -->
                         <div class="card">
@@ -690,6 +657,110 @@
     </form>
   </div>
 </div>
+ <!-- Trainer Registration Modal (Quick Action) -->
+    <div class="modal" id="trainerRegistrationModal" style="display:none;">
+      <div class="modal-content">
+        <span class="modal-close" id="closeTrainerRegistrationModal">&times;</span>
+        <h2>Trainer Registration</h2>
+        <form class="registration-form" id="trainerRegistrationForm" enctype="multipart/form-data" action="javascript:void(0);">
+          <div class="form-row">
+            <div class="form-col">
+              <label for="trainerFirstName">First Name</label>
+              <input type="text" id="trainerFirstName" name="firstName" required>
+            </div>
+            <div class="form-col">
+              <label for="trainerLastName">Last Name</label>
+              <input type="text" id="trainerLastName" name="lastName" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <label for="trainerEmail">Email Address</label>
+              <input type="email" id="trainerEmail" name="email" required>
+            </div>
+            <div class="form-col">
+              <label for="trainerPhone">Phone Number</label>
+              <input type="tel" id="trainerPhone" name="phone" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <label for="trainerSpecialty">Primary Specialty</label>
+              <select id="trainerSpecialty" name="specialty" required>
+                <option value="">Select specialty of Trainer</option>
+                <option value="Weight Loss">Weight Loss</option>
+                <option value="Bodybuilding">Bodybuilding</option>
+                <option value="Functional Training">Functional Training</option>
+                <option value="Sports Performance">Sports Performance</option>
+                <option value="Rehabilitation">Rehabilitation</option>
+              </select>
+            </div>
+            <div class="form-col">
+              <label for="trainerExperience">Years of Experience</label>
+              <input type="number" id="trainerExperience" min="0" name="experience" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <label for="trainerAvailability">Availability</label>
+              <div id="availabilityFieldset" style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span style="font-weight:400;">Quick:</span>
+                  <button type="button" class="btn btn-secondary" id="setAllMorning">All Mornings</button>
+                  <button type="button" class="btn btn-secondary" id="setAllAfternoon">All Afternoons</button>
+                  <button type="button" class="btn btn-secondary" id="setAllEvening">All Evenings</button>
+                  <button type="button" class="btn btn-secondary" id="clearAllAvailability">Clear</button>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                  <div><label for="availMonday">Monday</label><input type="text" id="availMonday" class="day-availability" data-day="Monday" placeholder="e.g. 7am-11am, 5pm-8pm"></div>
+                  <div><label for="availTuesday">Tuesday</label><input type="text" id="availTuesday" class="day-availability" data-day="Tuesday" placeholder="e.g. 7am-11am, 5pm-8pm"></div>
+                  <div><label for="availWednesday">Wednesday</label><input type="text" id="availWednesday" class="day-availability" data-day="Wednesday" placeholder="e.g. 7am-11am, 5pm-8pm"></div>
+                  <div><label for="availThursday">Thursday</label><input type="text" id="availThursday" class="day-availability" data-day="Thursday" placeholder="e.g. 7am-11am, 5pm-8pm"></div>
+                  <div><label for="availFriday">Friday</label><input type="text" id="availFriday" class="day-availability" data-day="Friday" placeholder="e.g. 7am-11am, 5pm-8pm"></div>
+                  <div><label for="availSaturday">Saturday</label><input type="text" id="availSaturday" class="day-availability" data-day="Saturday" placeholder="e.g. 7am-11am, 5pm-8pm"></div>
+                  <div><label for="availSunday">Sunday</label><input type="text" id="availSunday" class="day-availability" data-day="Sunday" placeholder="e.g. 7am-11am, 5pm-8pm"></div>
+                </div>
+                <textarea id="trainerAvailability" name="availability" style="margin-top:8px;" placeholder="Or describe your typical availability (optional)"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <label for="trainerCertifications">Certifications</label>
+              <div class="certification-upload">
+                <p>Upload copies of certifications (PDF, JPG, or PNG)</p>
+                <input type="file" id="trainerCertifications" multiple accept=".pdf,.jpg,.jpeg,.png" name="certifications" />
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <label for="trainerBio">Professional Bio</label>
+              <textarea id="trainerBio" placeholder="write training philosophy and approach" name="bio"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <label for="trainerRate">Hourly Rate (₹)</label>
+              <input type="number" id="trainerRate" min="0" step="5" name="rate" required>
+            </div>
+            <div class="form-col">
+              <label for="trainerPhoto">Profile Photo</label>
+              <input type="file" id="trainerPhoto" accept=".jpg,.jpeg,.png" name="photo" />
+            </div>
+          </div>
+          <div id="trainerFormResponseMessage" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
+          <div class="form-actions" style="margin-top: 20px; text-align: right;">
+            <button type="submit" class="btn btn-primary" id="submitTrainerRegistrationBtn">Register Profile</button>
+          </div>
+        </form>
+        <div id="trainer-registration-success-message" style="display: none; margin-top: 20px; padding: 15px; border-radius: 8px; text-align: center; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
+          <h4 style="margin-top: 0; margin-bottom: 10px;">🎉 Registration Submitted!</h4>
+          <p style="margin-bottom: 5px;">Your application is now awaiting admin approval.</p>
+          <p>You'll receive an email soon with the status.</p>
+        </div>
+      </div>
+    </div>
 <!-- Member Display Tab (hidden by default) -->
 <div id="memberDisplayTab" style="display:none; padding: 24px;">
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
@@ -704,9 +775,14 @@
       <!-- Remove Member dropdown and modal will be created and managed by JS only -->
     </div>
   </div>
-  <div class="search-bar">
-    <span class="search-icon"><i class="fas fa-search"></i></span>
-    <input type="text" placeholder="Search...">
+  <div class="search-bar" style="display:flex;align-items:center;gap:12px;margin-bottom:18px;background:#f8f9fa;padding:10px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+    <span class="search-icon" style="color:#1976d2;font-size:1.2rem;margin-right:6px;"><i class="fas fa-search"></i></span>
+    <input type="text" id="memberSearchInput" placeholder="Search by Name, Email, Phone, Membership ID..." style="flex:1;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;outline:none;transition:border 0.2s;">
+    <select id="membershipExpiryFilter" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;background:#fff;">
+      <option value="">All Members</option>
+      <option value="3days">Expiring in 3 Days</option>
+      <option value="1day">Expiring in 1 Day</option>
+    </select>
   </div>
   <div id="membersTableContainer">
     <table id="membersTable" style="width:100%; border-collapse:collapse;">
@@ -749,6 +825,24 @@
     </div>
   </div>
 </div>
-<!-- Remove Member dropdown and modal will be created and managed by JS only -->
+<!-- Trainer Tab -->
+<div id="trainerTab" style="display:none; padding: 24px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+    <h2 style="color: var(--primary); margin: 0;">Trainers</h2>
+  </div>
+  <div class="trainer-tab-section" style="height:calc(100vh - 180px);display:flex;flex-direction:column;">
+    <div class="trainer-tab-nav" style="display:flex;gap:18px;margin-bottom:18px;">
+      <button class="trainer-tab-btn" id="pendingTrainersBtn" style="flex:1;padding:8px 18px;border-radius:6px;border:none;background:var(--warning);color:#fff;font-weight:600;">Pending Approval</button>
+      <button class="trainer-tab-btn" id="approvedTrainersBtn" style="flex:1;padding:8px 18px;border-radius:6px;border:none;background:var(--success);color:#fff;font-weight:600;">Approved</button>
+      <button class="trainer-tab-btn" id="rejectedTrainersBtn" style="flex:1;padding:8px 18px;border-radius:6px;border:none;background:var(--danger);color:#fff;font-weight:600;">Rejected</button>
+    </div>
+    <div id="trainerGridContainer" style="flex:1;display:block;width:100%;">
+      <div id="pendingTrainersGrid" class="trainer-grid" style="display:none;width:100%;overflow:auto;padding:8px 0;box-sizing:border-box;"></div>
+      <div id="approvedTrainersGrid" class="trainer-grid" style="display:none;width:100%;overflow:auto;padding:8px 0;box-sizing:border-box;"></div>
+      <div id="rejectedTrainersGrid" class="trainer-grid" style="display:none;width:100%;overflow:auto;padding:8px 0;box-sizing:border-box;"></div>
+    </div>
+   
+  </div>
+</div>
 </body>
 </html>

@@ -16,30 +16,25 @@ const cpUpload = upload.fields([
   { name: 'photo', maxCount: 1 }
 ]);
 
-router.post('/register', cpUpload, async (req, res) => {
+
+const trainerController = require('../controllers/trainerController');
+
+// GET /api/trainers?status=pending&gym=<gymId>
+router.get('/', async (req, res) => {
   try {
-    const {
-      firstName, lastName, email, phone,
-      specialty, experience, availability,
-      bio, rate
-    } = req.body;
-
-    const locations = req.body.locations ? [].concat(req.body.locations) : [];
-    const certifications = req.files['certifications']?.map(f => f.filename) || [];
-    const photo = req.files['photo']?.[0]?.filename || '';
-
-    const newTrainer = new Trainer({
-      firstName, lastName, email, phone,
-      specialty, experience, availability,
-      locations, bio, rate,
-      certifications, photo
-    });
-
-    await newTrainer.save();
-    res.status(200).json({ message: 'Application submitted. Awaiting admin approval.' });
+    const status = req.query.status;
+    const gym = req.query.gym;
+    let filter = {};
+    if (status) filter.status = status;
+    if (gym) filter.gym = gym;
+    const trainers = await Trainer.find(filter).select('-password');
+    res.status(200).json(trainers);
   } catch (err) {
-    res.status(500).json({ message: 'Submission failed.', error: err.message });
+    console.error('Error fetching trainers:', err);
+    res.status(500).json({ message: 'Error fetching trainers' });
   }
 });
+
+router.post('/register', cpUpload, trainerController.registerTrainer);
 
 module.exports = router;

@@ -1,52 +1,3 @@
-/* --- Custom Remove Members Modal Buttons --- */
-.btn.btn-primary {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background 0.2s;
-  margin-top: 0;
-  min-width: 90px;
-}
-.btn.btn-primary:hover {
-  background: #156dc1;
-}
-.btn.btn-secondary {
-  background: #6c757d;
-  color: #fff;
-  border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background 0.2s;
-  margin-top: 0;
-  min-width: 90px;
-}
-.btn.btn-secondary:hover {
-  background: #5a6268;
-}
-.btn.btn-danger {
-  background: var(--danger);
-  color: #fff;
-  border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background 0.2s;
-  margin-top: 0;
-  min-width: 90px;
-}
-.btn.btn-danger:hover {
-  background: #c82333;
-}
 
 :root {
     --primary: #3a86ff;
@@ -259,64 +210,48 @@ body {
     margin-bottom: 10px;
     color: var(--primary);
 }
+
+/* Enhanced Quick Action Buttons */
 .quick-action-list {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  margin: 0 0 10px 0;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
 }
-@media (max-width: 900px) {
-  .quick-action-list {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-}
-@media (max-width: 600px) {
-  .quick-action-list {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-}
-
-/* --- Enhanced Quick Action Button --- */
+/* White quick action button with colored icon/text */
 .quick-action-btn {
-  background: #f6f8fc;
+  background: #fff;
   color: var(--primary);
-  border: 1.5px solid #e0e7ef;
-  border-radius: 16px;
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  min-width: 0;
-  min-height: 110px;
-  max-height: 160px;
-  padding: 0;
+  border: 2px solid var(--primary);
+  border-radius: 10px;
+  padding: 18px 0 14px 0;
   font-size: 1.08rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(58,134,255,0.07);
-  transition: box-shadow 0.18s, border 0.18s, color 0.18s, background 0.18s, transform 0.13s;
-  position: relative;
-  overflow: hidden;
-  outline: none;
+  box-shadow: 0 2px 10px rgba(58,134,255,0.10);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  letter-spacing: 0.5px;
-  text-align: center;
+  gap: 8px;
+  position: relative;
+  transition: box-shadow 0.18s, transform 0.18s, background 0.18s, color 0.18s, border 0.18s;
+  min-height: 90px;
+  letter-spacing: 0.2px;
+  overflow: hidden;
 }
-.quick-action-btn:active {
-  background: #dbeafe;
-  color: #156dc1;
-  border: 1.5px solid #1976d2;
-  transform: scale(0.97);
-  box-shadow: 0 1px 4px rgba(58,134,255,0.08);
+.quick-action-btn i {
+  font-size: 2.1em;
+  margin-bottom: 6px;
+  color: var(--primary);
+  transition: color 0.18s;
 }
-.quick-action-btn:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  z-index: 2;
+.quick-action-btn .quick-action-title {
+  font-size: 1.08em;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+  letter-spacing: 0.2px;
 }
 .quick-action-btn::after {
   content: '';
@@ -325,63 +260,43 @@ body {
   top: 50%;
   width: 0;
   height: 0;
-  background: rgba(255,255,255,0.18);
+  background: var(--primary);
+  opacity: 0.08;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  transition: width 0.3s, height 0.3s, opacity 0.3s;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1;
+  transition: width 0.3s, height 0.3s;
+  z-index: 0;
 }
-.quick-action-btn:active::after {
-  width: 180%;
-  height: 400%;
-  opacity: 1;
-  transition: 0s;
+.quick-action-btn:hover::after, .quick-action-btn:focus::after {
+  width: 220%;
+  height: 220%;
 }
 .quick-action-btn:hover, .quick-action-btn:focus {
-  background: #e9f1ff;
-  color: #1976d2;
-  border: 1.5px solid #3a86ff;
-  box-shadow: 0 6px 24px rgba(58,134,255,0.16);
-  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 24px rgba(58,134,255,0.18), 0 2px 8px rgba(0,0,0,0.12);
+  transform: translateY(-2px) scale(1.035);
+  background: #f0f6ff;
+  color: var(--primary);
+  border: 2px solid var(--secondary);
 }
-
-/* Add icon animation for quick action buttons */
-.quick-action-btn i {
-  font-size: 2.1em;
-  margin: 0 0 6px 0;
-  color: inherit;
-  transition: transform 0.18s, color 0.18s;
+.quick-action-btn:hover i,
+.quick-action-btn:focus i,
+.quick-action-btn:hover .quick-action-title,
+.quick-action-btn:focus .quick-action-title {
+  color: var(--secondary);
 }
-.quick-action-btn:hover i, .quick-action-btn:focus i {
-  transform: scale(1.13) rotate(-6deg);
-  color: #1976d2;
-}
-
-/* Responsive quick action layout */
-@media (max-width: 900px) {
-  .quick-action-list {
-    gap: 8px;
-    justify-content: stretch;
-  }
-  .quick-action-btn {
-    width: 100%;
-    min-width: 0;
-    padding: 12px 0;
-    font-size: 1rem;
-  }
+.quick-action-btn:active {
+  transform: scale(0.97);
+  filter: brightness(0.95);
 }
 @media (max-width: 600px) {
   .quick-action-list {
-    flex-direction: column;
-    gap: 8px;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
   .quick-action-btn {
-    width: 100%;
-    min-width: 0;
-    padding: 12px 0;
-    font-size: 0.98rem;
+    font-size: 1rem;
+    padding: 14px 0 10px 0;
+    min-height: 70px;
   }
 }
 
@@ -394,11 +309,10 @@ body {
     margin-bottom: 24px;
 }
 .recent-activity-title {
-  font-size: 1.08em;
-  font-weight: 600;
-  color: inherit;
-  margin: 0;
-  line-height: 1.2;
+    font-size: 1.15em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--primary);
 }
 .activity-list {
     list-style: none;
@@ -795,8 +709,147 @@ tr:hover {
     border-radius: 5px;
     font-size: 14px;
 }
-
-
+.btn.btn-primary {
+    margin-top: 1.5rem;
+    background: #1e90ff;
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.btn.btn-primary:hover {
+    background: #156dc1;
+}
+.btn.btn-secondary {
+    background: #6c757d;
+    color: white;
+    margin-right: 10px;
+}
+.btn.btn-secondary:hover {
+    background: #5a6268;
+}
+.btn.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+.btn.btn-danger:hover {
+    background: #c82333;
+}
+/* --- Trainer Registration Modal Styles --- */
+#trainerRegistrationModal .modal-content {
+  max-width: 480px;
+  width: 98vw;
+  padding: 28px 18px 22px 18px;
+  box-shadow: 0 4px 32px rgba(25,118,210,0.14);
+  border-radius: 14px;
+  background: #fff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  animation: modalFadeIn 0.3s;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+#trainerRegistrationModal h2 {
+  text-align: center;
+  color: var(--primary);
+  margin-bottom: 1.2rem;
+}
+#trainerRegistrationModal .form-row {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 1.1rem;
+  flex-wrap: wrap;
+}
+#trainerRegistrationModal .form-col {
+  flex: 1 1 0;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+}
+#trainerRegistrationModal label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+  display: block;
+}
+#trainerRegistrationModal input,
+#trainerRegistrationModal select,
+#trainerRegistrationModal textarea {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-top: 0.2rem;
+  background: #f8f9fa;
+  transition: border 0.2s;
+}
+#trainerRegistrationModal input:focus,
+#trainerRegistrationModal select:focus,
+#trainerRegistrationModal textarea:focus {
+  border: 1.5px solid var(--primary);
+  outline: none;
+  background: #fff;
+}
+#trainerRegistrationModal .btn.btn-primary {
+  width: 100%;
+  margin-top: 1.2rem;
+  font-size: 1.1rem;
+  padding: 0.7rem 0;
+  border-radius: 6px;
+}
+#trainerRegistrationModal .modal-close {
+  position: absolute;
+  top: 10px;
+  right: 18px;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #888;
+  background: none;
+  border: none;
+  transition: color 0.2s;
+}
+#trainerRegistrationModal .modal-close:hover {
+  color: #1976d2;
+}
+#trainerRegistrationModal .certification-upload {
+  background: #f7fafd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 0.3rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.98em;
+  color: #1976d2;
+}
+#trainerRegistrationModal .certification-upload input[type="file"] {
+  margin-top: 6px;
+}
+#trainerRegistrationModal textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+#trainer-registration-success-message {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 20px;
+  text-align: center;
+  font-size: 1.08em;
+}
+@media (max-width: 600px) {
+  #trainerRegistrationModal .modal-content {
+    max-width: 99vw;
+    padding: 12px 4vw 12px 4vw;
+  }
+  #trainerRegistrationModal .form-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
 
 /* Responsive Dashboard Content */
 .content {
@@ -1489,6 +1542,91 @@ tr:hover {
   from { opacity: 0; transform: translateY(-8px);}
   to { opacity: 1; transform: translateY(0);}
 }
+/* --- Enhanced Member Tab Search Bar & Filter Styles --- */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  background: #f8f9fa;
+  padding: 10px 18px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 6px;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .search-bar .search-icon {
+    margin-right: 0;
+    margin-bottom: 2px;
+    font-size: 1.1rem;
+    align-self: flex-start;
+  }
+  #memberSearchInput, #membershipExpiryFilter {
+    font-size: 0.98rem;
+    padding: 8px 8px;
+    border-radius: 5px;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+}
+
+.search-bar .search-icon {
+  color: #1976d2;
+  font-size: 1.2rem;
+  margin-right: 6px;
+}
+#memberSearchInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s;
+}
+#memberSearchInput:focus {
+  border: 1.5px solid #1976d2;
+  background: #fff;
+}
+#membershipExpiryFilter {
+  padding: 8px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #fff;
+  color: #222;
+  cursor: pointer;
+  transition: border 0.2s;
+}
+#membershipExpiryFilter:focus {
+  border: 1.5px solid #1976d2;
+}
+.plans-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 900px) {
+  .plans-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .plans-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Hamburger menu button styles */
 .hamburger-menu {
   display: none;
@@ -1676,4 +1814,87 @@ tr:hover {
     top: 0;
     height: 100%;
   }
+}
+  /* Responsive grid for trainer cards: min 3, max 5 per row, always full width */
+/* --- Trainer Tab Responsive Grid --- */
+/* --- Trainer Tab Responsive Grid: Always rows and columns, never collapse to single column unless mobile --- */
+#trainerTab .trainer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  justify-items: stretch;
+  align-items: stretch;
+}
+@media (min-width: 1200px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+@media (min-width: 900px) and (max-width: 1199px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 899px) and (min-width: 701px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 700px) and (min-width: 481px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 1200px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+@media (min-width: 900px) and (max-width: 1199px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 899px) and (min-width: 701px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 700px) and (min-width: 481px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  #trainerTab .trainer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+#trainerTab .trainer-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(25,118,210,0.08);
+  padding: 22px 18px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 220px;
+  transition: box-shadow 0.18s, transform 0.18s;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+#trainerTab .trainer-card:hover {
+  box-shadow: 0 6px 24px rgba(25,118,210,0.16);
+  transform: translateY(-2px) scale(1.025);
 }

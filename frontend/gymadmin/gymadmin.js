@@ -1,3 +1,334 @@
+// --- Dialog Utility (Global) ---
+function showDialog({ title = '', message = '', confirmText = 'OK', iconHtml = '', onConfirm = null }) {
+  // Remove any existing dialog
+  let dialog = document.getElementById('customDialogBox');
+  if (dialog) dialog.remove();
+  dialog = document.createElement('div');
+  dialog.id = 'customDialogBox';
+  dialog.style.position = 'fixed';
+  dialog.style.top = '0';
+  dialog.style.left = '0';
+  dialog.style.width = '100vw';
+  dialog.style.height = '100vh';
+  dialog.style.background = 'rgba(0,0,0,0.25)';
+  dialog.style.display = 'flex';
+  dialog.style.alignItems = 'center';
+  dialog.style.justifyContent = 'center';
+  dialog.style.zIndex = '99999';
+  dialog.innerHTML = `
+    <div style="background:#fff;max-width:350px;width:90vw;padding:28px 22px 18px 22px;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,0.18);text-align:center;position:relative;">
+      <div style="margin-bottom:12px;">${iconHtml || ''}</div>
+      <div style="font-size:1.18em;font-weight:700;margin-bottom:8px;">${title}</div>
+      <div style="font-size:1em;color:#444;margin-bottom:18px;white-space:pre-line;">${message}</div>
+      <button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:8px 24px;border:none;border-radius:6px;font-size:1em;cursor:pointer;">${confirmText}</button>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  document.body.style.overflow = 'hidden';
+  dialog.querySelector('#dialogConfirmBtn').onclick = function() {
+    dialog.remove();
+    document.body.style.overflow = '';
+    if (typeof onConfirm === 'function') onConfirm();
+  };
+  dialog.addEventListener('mousedown', function(e) {
+    if (e.target === dialog) {
+      dialog.remove();
+      document.body.style.overflow = '';
+    }
+  });
+}
+
+// --- Trainer Tab Logic ---
+document.addEventListener('DOMContentLoaded', function() {
+  // Tab navigation
+  const trainerTab = document.getElementById('trainerTab');
+  const pendingBtn = document.getElementById('pendingTrainersBtn');
+  const approvedBtn = document.getElementById('approvedTrainersBtn');
+  const rejectedBtn = document.getElementById('rejectedTrainersBtn');
+  const pendingGrid = document.getElementById('pendingTrainersGrid');
+  const approvedGrid = document.getElementById('approvedTrainersGrid');
+  const rejectedGrid = document.getElementById('rejectedTrainersGrid');
+
+  // Helper: Show only the selected section and fetch correct trainers
+  async function showSection(section) {
+    if (!pendingGrid || !approvedGrid || !rejectedGrid) return;
+    pendingGrid.style.display = section === 'pending' ? 'flex' : 'none';
+    approvedGrid.style.display = section === 'approved' ? 'flex' : 'none';
+    rejectedGrid.style.display = section === 'rejected' ? 'flex' : 'none';
+    // Highlight the active tab button
+    if (pendingBtn && approvedBtn && rejectedBtn) {
+      if (section === 'pending') {
+        pendingBtn.style.background = 'var(--warning)';
+        pendingBtn.style.color = '#fff';
+        approvedBtn.style.background = '#f0f0f0';
+        approvedBtn.style.color = '#1976d2';
+        rejectedBtn.style.background = '#f0f0f0';
+        rejectedBtn.style.color = '#d32f2f';
+      } else if (section === 'approved') {
+        pendingBtn.style.background = '#f0f0f0';
+        pendingBtn.style.color = '#1976d2';
+        approvedBtn.style.background = 'var(--success)';
+        approvedBtn.style.color = '#fff';
+        rejectedBtn.style.background = '#f0f0f0';
+        rejectedBtn.style.color = '#d32f2f';
+      } else if (section === 'rejected') {
+        pendingBtn.style.background = '#f0f0f0';
+        pendingBtn.style.color = '#1976d2';
+        approvedBtn.style.background = '#f0f0f0';
+        approvedBtn.style.color = '#1976d2';
+        rejectedBtn.style.background = 'var(--danger)';
+        rejectedBtn.style.color = '#fff';
+      }
+    }
+    // Fetch and render trainers for the selected section
+    if (section === 'pending') {
+      const trainers = await fetchTrainersByStatus('pending');
+      renderPendingTrainers(trainers);
+    } else if (section === 'approved') {
+      const trainers = await fetchTrainersByStatus('approved');
+      renderApprovedTrainers(trainers);
+    } else if (section === 'rejected') {
+      const trainers = await fetchTrainersByStatus('rejected');
+      renderRejectedTrainers(trainers);
+    }
+  }
+
+  // Fetch trainers by status
+  async function fetchTrainersByStatus(status) {
+    const token = localStorage.getItem('gymAdminToken');
+    let gymId = null;
+    if (window.currentGymProfile && window.currentGymProfile._id) {
+      gymId = window.currentGymProfile._id;
+    } else if (window.currentGymProfile && window.currentGymProfile.id) {
+      gymId = window.currentGymProfile.id;
+    } else if (typeof currentGymProfile === 'object' && currentGymProfile._id) {
+      gymId = currentGymProfile._id;
+    }
+    if (!token || !gymId) return [];
+    try {
+      const res = await fetch(`http://localhost:5000/api/trainers?status=${status}&gym=${gymId}`,
+        { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Failed to fetch trainers');
+      const trainers = await res.json();
+      return Array.isArray(trainers) ? trainers.filter(t => t.gym === gymId || (t.gym && (t.gym._id === gymId || t.gym === gymId))) : [];
+    } catch (err) {
+      console.error('Error fetching trainers:', err);
+      return [];
+    }
+  }
+
+  // Render trainer cards in the pending grid
+  function renderPendingTrainers(trainers) {
+    if (!pendingGrid) return;
+    if (!Array.isArray(trainers) || trainers.length === 0) {
+      pendingGrid.innerHTML = '<div style="color:#888;text-align:center;width:100%;padding:32px 0;">No pending trainers found.</div>';
+      return;
+    }
+    pendingGrid.innerHTML = trainers.map(createTrainerCard).join('');
+  }
+  // Render trainer cards in the approved grid
+  function renderApprovedTrainers(trainers) {
+    if (!approvedGrid) return;
+    if (!Array.isArray(trainers) || trainers.length === 0) {
+      approvedGrid.innerHTML = '<div style="color:#888;text-align:center;width:100%;padding:32px 0;">No approved trainers found.</div>';
+      return;
+    }
+    approvedGrid.innerHTML = trainers.map(createTrainerCard).join('');
+  }
+  // Render trainer cards in the rejected grid
+  function renderRejectedTrainers(trainers) {
+    if (!rejectedGrid) return;
+    if (!Array.isArray(trainers) || trainers.length === 0) {
+      rejectedGrid.innerHTML = '<div style="color:#888;text-align:center;width:100%;padding:32px 0;">No rejected trainers found.</div>';
+      return;
+    }
+    rejectedGrid.innerHTML = trainers.map(createTrainerCard).join('');
+  }
+
+  if (pendingBtn) pendingBtn.addEventListener('click', () => showSection('pending'));
+  if (approvedBtn) approvedBtn.addEventListener('click', () => showSection('approved'));
+  if (rejectedBtn) rejectedBtn.addEventListener('click', () => showSection('rejected'));
+  showSection('pending');
+
+
+
+  // Create a trainer card (basic info)
+  function createTrainerCard(trainer) {
+    const imgSrc = trainer.photo ? `http://localhost:5000${trainer.photo}` : 'https://via.placeholder.com/80?text=Photo';
+    return `
+      <div class="trainer-card" style="background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.07);padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:220px;max-width:260px;margin:10px auto;">
+        <img src="${imgSrc}" alt="Profile" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #1976d2;">
+        <div style="font-weight:600;font-size:1.1em;">${trainer.firstName || ''} ${trainer.lastName || ''}</div>
+        <div style="color:#1976d2;font-size:0.98em;">${trainer.specialty || ''}</div>
+        <div style="font-size:0.97em;color:#555;">${trainer.email || ''}</div>
+        <div style="font-size:0.97em;color:#555;">${trainer.phone || ''}</div>
+        <div style="font-size:0.95em;color:#888;">Experience: ${trainer.experience || 0} yrs</div>
+        <div style="font-size:0.95em;color:#888;">Rate: ₹${trainer.rate || 0}/hr</div>
+        <div style="margin-top:8px;font-size:0.95em;color:#888;">Status: <span style="color:#ff9800;font-weight:600;">Pending</span></div>
+      </div>
+    `;
+  }
+
+  // Fetch and display pending trainers when tab is shown
+  window.showTrainerTab = async function() {
+    showSection('pending');
+    const trainers = await fetchPendingTrainers();
+    renderPendingTrainers(trainers);
+  };
+
+
+ // End Trainer Tab Logic
+  const availBtns = [
+    { id: 'setAllMorning', value: '7am-11am' },
+    { id: 'setAllAfternoon', value: '12pm-4pm' },
+    { id: 'setAllEvening', value: '5pm-9pm' }
+  ];
+  availBtns.forEach(btn => {
+    const el = document.getElementById(btn.id);
+    if (el) {
+      el.addEventListener('click', function() {
+        document.querySelectorAll('.day-availability').forEach(input => {
+          input.value = btn.value;
+        });
+      });
+    }
+  });
+  const clearBtn = document.getElementById('clearAllAvailability');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      document.querySelectorAll('.day-availability').forEach(input => {
+        input.value = '';
+      });
+    });
+  }
+
+  // Optional: On form submit, combine all day fields into a summary string (if needed)
+  const trainerForm = document.getElementById('trainerRegistrationForm');
+  if (trainerForm) {
+    trainerForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      // Combine per-day fields into a summary string for backend or textarea
+      const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+      let summary = days.map(day => {
+        const val = document.querySelector('.day-availability[data-day="'+day+'"]')?.value.trim();
+        return val ? `${day}: ${val}` : '';
+      }).filter(Boolean).join('; ');
+      // If textarea is empty, fill it with summary
+      const textarea = document.getElementById('trainerAvailability');
+      if (textarea && !textarea.value.trim() && summary) {
+        textarea.value = summary;
+      }
+
+      // Collect form data
+      const formData = new FormData(trainerForm);
+      // Add locations as array if present (checkboxes or multi-select)
+      const locations = Array.from(trainerForm.querySelectorAll('[name="locations"]:checked')).map(el => el.value);
+      if (locations.length) {
+        formData.delete('locations');
+        locations.forEach(loc => formData.append('locations', loc));
+      }
+
+      // Add availability summary (from textarea)
+      if (textarea && textarea.value.trim()) {
+        formData.set('availability', textarea.value.trim());
+      }
+
+      // Add gym id to form data
+      let gymId = null;
+      if (window.currentGymProfile && window.currentGymProfile._id) {
+        gymId = window.currentGymProfile._id;
+      } else if (window.currentGymProfile && window.currentGymProfile.id) {
+        gymId = window.currentGymProfile.id;
+      } else if (typeof currentGymProfile === 'object' && currentGymProfile._id) {
+        gymId = currentGymProfile._id;
+      }
+      if (gymId) {
+        formData.set('gym', gymId);
+      }
+
+      // Show loading or disable submit
+      const submitBtn = trainerForm.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+
+      try {
+        // Show success dialog box immediately after submission (before waiting for server response)
+        showDialog({
+          title: 'Trainer Registration Submitted',
+          message: 'Your trainer application has been submitted and is pending admin approval.',
+          confirmText: 'OK',
+          iconHtml: '<i class="fas fa-check-circle" style="color:#38b000;font-size:2em;"></i>',
+          onConfirm: function() {
+            // Optionally close modal after dialog
+            const trainerModal = document.getElementById('trainerRegistrationModal');
+            if (trainerModal) {
+              trainerModal.style.display = 'none';
+              document.body.style.overflow = '';
+            }
+          }
+        });
+        trainerForm.reset();
+        if (textarea) textarea.value = '';
+        // Now send the request in the background
+        const res = await fetch('http://localhost:5000/api/trainers/register', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          showDialog({
+            title: 'Registration Error',
+            message: (data && data.message) ? data.message : 'Submission failed.',
+            confirmText: 'OK',
+            iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#d32f2f;font-size:2em;"></i>'
+          });
+        }
+      } catch (err) {
+        showDialog({
+          title: 'Server Error',
+          message: err?.message ? err.message : 'Server error. Please try again.',
+          confirmText: 'OK',
+          iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#d32f2f;font-size:2em;"></i>'
+        });
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  }
+});
+// --- Trainer Registration Modal Logic ---
+document.addEventListener('DOMContentLoaded', function() {
+  // Add Trainer Quick Action Button (by class or id)
+  let addTrainerBtn = document.getElementById('addTrainerBtn');
+  if (!addTrainerBtn) {
+    // Try to find by quick action (if you use a quick-action-list)
+    addTrainerBtn = Array.from(document.querySelectorAll('.quick-action-btn')).find(btn => btn.textContent?.toLowerCase().includes('add trainer'));
+  }
+  const trainerModal = document.getElementById('trainerRegistrationModal');
+  const closeTrainerModal = document.getElementById('closeTrainerRegistrationModal');
+  // Open modal
+  if (addTrainerBtn && trainerModal) {
+    addTrainerBtn.addEventListener('click', function() {
+      trainerModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    });
+  }
+  // Close modal
+  if (closeTrainerModal && trainerModal) {
+    closeTrainerModal.onclick = function() {
+      trainerModal.style.display = 'none';
+      document.body.style.overflow = '';
+    };
+  }
+  // Close modal if clicking outside modal-content
+  if (trainerModal) {
+    trainerModal.addEventListener('mousedown', function(e) {
+      if (e.target === trainerModal) {
+        trainerModal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    });
+  }
+});
 // --- Membership Plans Section (Dynamic, Editable, Backend Sync) ---
 document.addEventListener('DOMContentLoaded', function() {
   // Membership plans state
@@ -524,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (filter) {
         const f = filter.toLowerCase();
         filtered = filtered.filter(m =>
-          (m.memberName && m.memberName.toLowerCase().includes(f)) ||
+          (m.memberName?.toLowerCase().includes(f)) ||
           (m.email && m.email.toLowerCase().includes(f)) ||
           (m.membershipId && m.membershipId.toLowerCase().includes(f))
         );
@@ -1765,12 +2096,59 @@ document.addEventListener('click', (event) => {
     }
 });
 
-// --- Member Display Tab Logic ---
+// --- Member & Trainer Display Tab Logic ---
 const sidebarMenuLinks = document.querySelectorAll('.sidebar .menu-link');
 const membersMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-users'));
+const trainersMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-user-tie'));
 const dashboardMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-tachometer-alt'));
 const memberDisplayTab = document.getElementById('memberDisplayTab');
+const trainerTab = document.getElementById('trainerTab');
 const dashboardContent = document.querySelector('.content');
+
+function hideAllMainTabs() {
+  if (dashboardContent) dashboardContent.style.display = 'none';
+  if (memberDisplayTab) memberDisplayTab.style.display = 'none';
+  if (trainerTab) trainerTab.style.display = 'none';
+}
+
+if (trainersMenuLink && trainerTab) {
+  trainersMenuLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    hideAllMainTabs();
+    trainerTab.style.display = 'block';
+    updateMainContentMargins();
+    if (typeof window.showTrainerTab === 'function') window.showTrainerTab();
+    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
+    trainersMenuLink.classList.add('active');
+  });
+}
+if (membersMenuLink && memberDisplayTab) {
+  membersMenuLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    hideAllMainTabs();
+    memberDisplayTab.style.display = 'block';
+    updateMainContentMargins();
+    if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
+    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
+    membersMenuLink.classList.add('active');
+  });
+}
+if (dashboardMenuLink && dashboardContent) {
+  dashboardMenuLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    hideAllMainTabs();
+    dashboardContent.style.display = 'block';
+    updateMainContentMargins();
+    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
+    dashboardMenuLink.classList.add('active');
+  });
+}
+// On page load, show only dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  hideAllMainTabs();
+  if (dashboardContent) dashboardContent.style.display = 'block';
+  updateMainContentMargins();
+});
 
 
 // --- Dynamic Members Stats Card ---
@@ -1913,23 +2291,20 @@ function updateMainContentMargins() {
   const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
   const dashboardTab = mainContent.querySelector('.content');
   const memberTab = document.getElementById('memberDisplayTab');
-  // --- Top Navbar dynamic left/width/height ---
-  // (All navbar collapse/expand logic is now handled by CSS classes)
-  // --- Main content margins ---
-  if (dashboardTab && dashboardTab.style.display !== 'none') {
+  const trainerTab = document.getElementById('trainerTab');
+
+  function setTabMargin(tab) {
+    if (!tab || tab.style.display === 'none') return;
     if (window.innerWidth > 900) {
-      dashboardTab.style.marginLeft = isCollapsed ? '80px' : '250px';
+      tab.style.marginLeft = isCollapsed ? '80px' : '250px';
     } else {
-      dashboardTab.style.marginLeft = '0';
+      tab.style.marginLeft = '0';
     }
   }
-  if (memberTab && memberTab.style.display !== 'none') {
-    if (window.innerWidth > 900) {
-      memberTab.style.marginLeft = isCollapsed ? '80px' : '250px';
-    } else {
-      memberTab.style.marginLeft = '0';
-    }
-  }
+
+  setTabMargin(dashboardTab);
+  setTabMargin(memberTab);
+  setTabMargin(trainerTab);
 }
 
 // Dynamic sidebar menu highlight
@@ -1964,22 +2339,68 @@ sidebarMenuLinks.forEach(link => {
   });
 });
 
+
+let allMembersCache = [];
+// --- Enhanced Member Search & Filter Logic ---
 async function fetchAndDisplayMembers() {
   const token = localStorage.getItem('gymAdminToken');
   if (!membersTableBody) return;
-  membersTableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading...</td></tr>';
+  membersTableBody.innerHTML = '<tr><td colspan="13" style="text-align:center;">Loading...</td></tr>';
   try {
     const res = await fetch('http://localhost:5000/api/members', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) throw new Error('Failed to fetch members');
     const members = await res.json();
-    let allMembersCache = Array.isArray(members) ? members : [];
+    allMembersCache = Array.isArray(members) ? members : [];
     renderMembersTable(allMembersCache);
   } catch (err) {
     console.error('Error loading members:', err);
-    membersTableBody.innerHTML = `<tr><td colspan="10" style="color:red;text-align:center;">Error loading members</td></tr>`;
+    membersTableBody.innerHTML = `<tr><td colspan="13" style="color:red;text-align:center;">Error loading members</td></tr>`;
   }
+}
+
+// --- Search & Filter Handlers ---
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('memberSearchInput');
+  const expiryFilter = document.getElementById('membershipExpiryFilter');
+  if (searchInput) {
+    searchInput.addEventListener('input', handleMemberSearchAndFilter);
+  }
+  if (expiryFilter) {
+    expiryFilter.addEventListener('change', handleMemberSearchAndFilter);
+  }
+});
+
+function handleMemberSearchAndFilter() {
+  const searchInput = document.getElementById('memberSearchInput');
+  const expiryFilter = document.getElementById('membershipExpiryFilter');
+  let filtered = allMembersCache.slice();
+  // --- Search ---
+  const q = (searchInput?.value || '').trim().toLowerCase();
+  if (q) {
+    filtered = filtered.filter(m => {
+      return (
+        (m.memberName && m.memberName.toLowerCase().includes(q)) ||
+        (m.email && m.email.toLowerCase().includes(q)) ||
+        (m.phone && m.phone.toLowerCase().includes(q)) ||
+        (m.membershipId && m.membershipId.toLowerCase().includes(q))
+      );
+    });
+  }
+  // --- Expiry Filter ---
+  const filterVal = expiryFilter?.value;
+  if (filterVal === '3days' || filterVal === '1day') {
+    const days = filterVal === '3days' ? 3 : 1;
+    const now = new Date();
+    filtered = filtered.filter(m => {
+      if (!m.membershipValidUntil) return false;
+      const validUntil = new Date(m.membershipValidUntil);
+      const diff = (validUntil - now) / (1000 * 60 * 60 * 24);
+      return diff >= 0 && diff <= days;
+    });
+  }
+  renderMembersTable(filtered);
 }
 
 function renderMembersTable(members) {
@@ -2317,6 +2738,7 @@ async function submitMemberDetailEdit(originalMember) {
       showMemberUpdateMessage(result.message || 'Failed to update member.', 'error');
     }
   } catch (err) {
+    console.error('Error updating member details:', err);
     showMemberUpdateMessage('Network error. Please try again.', 'error');
   }
 }
