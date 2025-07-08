@@ -1,9 +1,43 @@
+
 // backend/controllers/trainerController.js
 const Trainer = require('../models/trainerModel');
 const Gym = require('../models/gym');
 const sendEmail = require('../utils/sendEmail'); 
 const nodemailer = require('nodemailer'); 
-
+// GET /api/trainers/all?status=pending|approved|rejected
+exports.getAllTrainersForAdmin = async (req, res) => {
+  try {
+    const { status } = req.query;
+    let query = {};
+    if (status && status !== 'all') {
+      query.status = new RegExp(`^${status}$`, 'i');
+    }
+    const trainers = await Trainer.find(query)
+      .populate({ path: 'gym', select: 'gymName' })
+      .lean();
+    const formatted = trainers.map(tr => {
+      let gymNames = [];
+      if (Array.isArray(tr.gym)) {
+        gymNames = tr.gym.map(g => g?.gymName || '');
+      } else if (tr.gym && tr.gym.gymName) {
+        gymNames = [tr.gym.gymName];
+      }
+      let image = tr.image || tr.photo || '';
+      if (image && !/^https?:\/\//.test(image)) {
+        image = `/uploads/trainers/${image}`;
+      }
+      return {
+        ...tr,
+        gym: gymNames,
+        image,
+      };
+    });
+    res.json(formatted);
+  } catch (err) {
+    console.error('[getAllTrainersForAdmin] Error:', err);
+    res.status(500).json({ message: 'Failed to fetch trainers' });
+  }
+};
 // Get all approved trainers
 exports.getAllApprovedTrainers = async (req, res) => {
   try {
@@ -183,6 +217,9 @@ exports.deleteTrainer = async (req, res) => {
 // Controller function for trainer registration (moved from trainerRoutes.js for consistency)
 exports.registerTrainer = async (req, res) => {
   try {
+    // Debug: log incoming files and body
+    console.log('DEBUG Multer req.files:', req.files);
+    console.log('DEBUG Multer req.body:', req.body);
     const {
       firstName, lastName, email, phone,
       specialty, experience, availability,
@@ -197,10 +234,18 @@ exports.registerTrainer = async (req, res) => {
         locations = [];
     }
     
+
+    // Support both 'photo' and 'profileImage' for backward/forward compatibility
+    let photo = null;
+    if (req.files?.profileImage?.[0]) {
+      photo = req.files.profileImage[0].filename;
+    } else if (req.files?.photo?.[0]) {
+      photo = req.files.photo[0].filename;
+    }
     const certifications = req.files?.certifications?.map(f => `trainers/certifications/${f.filename}`) || [];
-    const photo = req.files?.photo?.[0] ? req.files.photo[0].filename : null;
 
     const gym = req.body.gym || null;
+
     const newTrainer = new Trainer({
       firstName, lastName, email, phone,
       specialty, 

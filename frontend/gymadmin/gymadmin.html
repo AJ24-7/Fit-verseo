@@ -160,30 +160,47 @@
                     </div>
                 </div>
                 <!-- Quick Actions -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h2 class="card-title">Quick Actions</h2>
-                            </div>
-                            <div class="quick-action-list">
-                                <button class="quick-action-btn" id="addMemberBtn" type="button">
-                                    <i class="fas fa-user-plus"></i>
-                                    <span class="quick-action-title">Add Member</span>
-                                </button>
-                                <button class="quick-action-btn" id="recordPaymentBtn" type="button">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                    <span class="quick-action-title">Record Payment</span>
-                                </button>
-                                <button class="quick-action-btn" id="addTrainerBtn" type="button">
-                                    <i class="fas fa-user-tie"></i>
-                                    <span class="quick-action-title">Add Trainer</span>
-                                </button>
-                                <button class="quick-action-btn" id="uploadEquipmentBtn" type="button">
-                                    <i class="fas fa-dumbbell"></i>
-                                    <span class="quick-action-title">Add Equipment</span>
-                                </button>
-                       
-                            </div>
-                        </div>
+                <div class="dashboard-row">
+                  <div class="card quick-action-card">
+                    <div class="card-header">
+                      <h2 class="card-title">Quick Actions</h2>
+                    </div>
+                    <div class="quick-action-list">
+                      <button class="quick-action-btn" id="addMemberBtn" type="button">
+                        <i class="fas fa-user-plus"></i>
+                        <span class="quick-action-title">Add Member</span>
+                      </button>
+                      <button class="quick-action-btn" id="recordPaymentBtn" type="button">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span class="quick-action-title">Record Payment</span>
+                      </button>
+                      <button class="quick-action-btn" id="addTrainerBtn" type="button">
+                        <i class="fas fa-user-tie"></i>
+                        <span class="quick-action-title">Add Trainer</span>
+                      </button>
+                      <button class="quick-action-btn" id="uploadEquipmentBtn" type="button">
+                        <i class="fas fa-dumbbell"></i>
+                        <span class="quick-action-title">Add Equipment</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="card activities-offered-card">
+                    <div class="card-header">
+                      <h2 class="card-title">Activities Offered</h2>
+                    </div>
+                    <div class="activities-list" id="activitiesList">
+                      <!-- Example static activities, replace or populate by JS as needed -->
+                      <span class="activity-badge">Yoga</span>
+                      <span class="activity-badge">Cardio</span>
+                      <span class="activity-badge">Zumba</span>
+                      <span class="activity-badge">Weight Training</span>
+                      <span class="activity-badge">CrossFit</span>
+                      <span class="activity-badge">Aerobics</span>
+                      <span class="activity-badge">Pilates</span>
+                      <span class="activity-badge">HIIT</span>
+                    </div>
+                  </div>
+                </div>
                  <!-- Interactive Gym Photos Grid -->
                 <section id="photoGridSection" class="card" style="margin-top: 24px;">
                   <div class="card-header">
@@ -243,75 +260,28 @@
                 <div class="main-grid">
                     <!-- Left Column -->
                     <div class="left-column">
-                        <!-- New Members Card -->
-                        <div class="card">
+                        <!-- New Members Card (Dynamic) -->
+                        <div class="card" id="newMembersCard">
                             <div class="card-header">
                                 <h2 class="card-title">New Members</h2>
                                 <div class="card-actions">
-                                    <button>View All</button>
-                                    <button>Export</button>
+                                    <button id="viewAllMembersBtn">View All</button>
+                                    <button id="exportMembersBtn">Export</button>
                                 </div>
                             </div>
                             <div class="table-responsive">
                                 <table>
                                     <thead>
                                         <tr>
+                                            <th>Profile</th>
                                             <th>Name</th>
                                             <th>Join Date</th>
                                             <th>Plan</th>
-                                            <th>Status</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>John Smith</td>
-                                            <td>Today</td>
-                                            <td>Premium</td>
-                                            <td><span class="status trial">Trial</span></td>
-                                            <td>
-                                                <button class="action-btn approve">Approve</button>
-                                                <button class="action-btn reject">Reject</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Sarah Johnson</td>
-                                            <td>Today</td>
-                                            <td>Basic</td>
-                                            <td><span class="status trial">Trial</span></td>
-                                            <td>
-                                                <button class="action-btn approve">Approve</button>
-                                                <button class="action-btn reject">Reject</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Michael Brown</td>
-                                            <td>Yesterday</td>
-                                            <td>Premium</td>
-                                            <td><span class="status active">Active</span></td>
-                                            <td>
-                                                <button class="action-btn view">View</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Emily Davis</td>
-                                            <td>2 days ago</td>
-                                            <td>Standard</td>
-                                            <td><span class="status active">Active</span></td>
-                                            <td>
-                                                <button class="action-btn view">View</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Robert Wilson</td>
-                                            <td>3 days ago</td>
-                                            <td>Basic</td>
-                                            <td><span class="status pending">Pending</span></td>
-                                            <td>
-                                                <button class="action-btn approve">Approve</button>
-                                                <button class="action-btn reject">Reject</button>
-                                            </td>
-                                        </tr>
+                                    <tbody id="newMembersTableBody">
+                                        <tr><td colspan="5" style="text-align:center;">Loading...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -626,10 +596,6 @@
         </select>
       </div>
       <div class="form-group">
-        <label for="paymentAmount">Payment Amount</label>
-        <input type="number" id="paymentAmount" name="paymentAmount" min="0" required>
-      </div>
-      <div class="form-group">
         <label for="planSelected">Plan Selected</label>
         <select id="planSelected" name="planSelected" required>
           <option value="">Select</option>
@@ -648,6 +614,10 @@
           <option value="12 Months">12 Months</option>
         </select>
       </div>
+       <div class="form-group">
+        <label for="paymentAmount">Payment Amount</label>
+        <input type="number" id="paymentAmount" name="paymentAmount" min="0" required>
+      </div>
       <div class="form-group">
         <label for="activityPreference">Activity Preference</label>
         <input type="text" id="activityPreference" name="activityPreference" placeholder="e.g. Yoga, Cardio, Zumba" required>
@@ -661,7 +631,16 @@
     <div class="modal" id="trainerRegistrationModal" style="display:none;">
       <div class="modal-content">
         <span class="modal-close" id="closeTrainerRegistrationModal">&times;</span>
-        <h2>Trainer Registration</h2>
+        <h2 style="text-align:center;">Trainer Registration</h2>
+        <!-- Profile Image Upload at Top Center -->
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; margin-top: 1rem;">
+          <label for="trainerProfileImage" style="margin-bottom: 0.5rem;">Profile Image</label>
+          <div id="trainerImagePreview" style="width: 96px; height: 96px; border-radius: 50%; background: #f0f0f0; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+            <img src="https://via.placeholder.com/96?text=Photo" alt="Preview" style="width: 96px; height: 96px; object-fit: cover; border-radius: 50%;" id="trainerImageTag">
+          </div>
+          <input type="file" id="trainerProfileImage" name="profileImage" accept="image/*" style="display:none;">
+          <button type="button" id="uploadTrainerImageBtn" style="margin-bottom: 0.5rem;">Choose Image</button>
+        </div>
         <form class="registration-form" id="trainerRegistrationForm" enctype="multipart/form-data" action="javascript:void(0);">
           <div class="form-row">
             <div class="form-col">
@@ -743,10 +722,6 @@
             <div class="form-col">
               <label for="trainerRate">Hourly Rate (₹)</label>
               <input type="number" id="trainerRate" min="0" step="5" name="rate" required>
-            </div>
-            <div class="form-col">
-              <label for="trainerPhoto">Profile Photo</label>
-              <input type="file" id="trainerPhoto" accept=".jpg,.jpeg,.png" name="photo" />
             </div>
           </div>
           <div id="trainerFormResponseMessage" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
@@ -832,8 +807,8 @@
   </div>
   <div class="trainer-tab-section" style="height:calc(100vh - 180px);display:flex;flex-direction:column;">
     <div class="trainer-tab-nav" style="display:flex;gap:18px;margin-bottom:18px;">
-      <button class="trainer-tab-btn" id="pendingTrainersBtn" style="flex:1;padding:8px 18px;border-radius:6px;border:none;background:var(--warning);color:#fff;font-weight:600;">Pending Approval</button>
       <button class="trainer-tab-btn" id="approvedTrainersBtn" style="flex:1;padding:8px 18px;border-radius:6px;border:none;background:var(--success);color:#fff;font-weight:600;">Approved</button>
+      <button class="trainer-tab-btn" id="pendingTrainersBtn" style="flex:1;padding:8px 18px;border-radius:6px;border:none;background:var(--warning);color:#fff;font-weight:600;">Pending Approval</button>
       <button class="trainer-tab-btn" id="rejectedTrainersBtn" style="flex:1;padding:8px 18px;border-radius:6px;border:none;background:var(--danger);color:#fff;font-weight:600;">Rejected</button>
     </div>
     <div id="trainerGridContainer" style="flex:1;display:block;width:100%;">

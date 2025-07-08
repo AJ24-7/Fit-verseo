@@ -2,7 +2,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   const menuToggle = document.querySelector('.menu-toggle');
   const navLinks = document.querySelector('.nav-links');
-  const links = document.querySelectorAll('.nav-link');
   const currentPage = window.location.pathname.split('/').pop() || 'index.html'; // Default to index.html if path is empty
 
   // Mobile menu toggle
@@ -67,6 +66,9 @@ document.addEventListener("DOMContentLoaded", function () {
     gsap.to(".btn", { scale: 1.2, duration: 1 });
   }
 });
+
+// === DYNAMIC BASE URL FOR API (works on mobile and desktop) ===
+const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
 //gym search logic //
 const userLocation = { lat: 28.357353, lng: 77.295289 };
 
@@ -107,7 +109,7 @@ function searchGyms() {
   activities.forEach(activity => params.append('activities', activity));
 
   // Make the API call with query parameters
-  fetch(`http://localhost:5000/api/gyms/search?${params.toString()}`)
+  fetch(`${BASE_URL}/api/gyms/search?${params.toString()}`)
     .then(res => {
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -189,38 +191,51 @@ function renderGymCards() {
     return;
   }
 
-  gymsToShow.forEach(gym => {
+    gymsToShow.forEach(gym => {
+      const card = createGymCard(gym);
+      resultsDiv.appendChild(card);
+    });
+  
+  /**
+   * Helper function to create a gym card element.
+   */
+  function getGymLogoUrl(gym) {
+    let fullLogoPath = 'https://via.placeholder.com/100x100.png?text=No+Logo';
+    if (gym.logoUrl) {
+      let logoPath = gym.logoUrl;
+      if (!logoPath.startsWith('http')) {
+        if (!logoPath.startsWith('/')) {
+          logoPath = '/' + logoPath;
+        }
+        if (!logoPath.startsWith('/uploads/')) {
+          logoPath = '/uploads' + (logoPath.startsWith('/') ? logoPath : '/' + logoPath);
+        }
+        fullLogoPath = `${BASE_URL}${logoPath}?${new Date().getTime()}`;
+      } else {
+        fullLogoPath = `${logoPath}?${new Date().getTime()}`;
+      }
+    }
+    return fullLogoPath;
+  }
+
+  function getActivitiesHTML(activitiesToDisplay) {
+    if (activitiesToDisplay.length > 0) {
+      return `<div class="activity-icons">${activitiesToDisplay.map(activity => 
+        `<span class="activity-icon"><i class="${getActivityIcon(activity)}"></i> ${activity}</span>`
+      ).join('')}</div>`;
+    }
+    return "<p>No activities listed</p>";
+  }
+
+  function createGymCard(gym) {
     const card = document.createElement("div");
     card.className = "gym-card";
 
     // Create activity icons HTML using processed (de-duplicated) activities
-    const activitiesToDisplay = gym.processedActivities || []; // Use processedActivities, fallback to empty array
-    const activitiesHTML = activitiesToDisplay.length > 0
-      ? `<div class="activity-icons">${activitiesToDisplay.map(activity => 
-          `<span class="activity-icon"><i class="${getActivityIcon(activity)}"></i> ${activity}</span>`
-        ).join('')}</div>`
-      : "<p>No activities listed</p>";
+    const activitiesToDisplay = gym.processedActivities || [];
+    const activitiesHTML = getActivitiesHTML(activitiesToDisplay);
 
-    let fullLogoPath = 'https://via.placeholder.com/100x100.png?text=No+Logo'; // Default placeholder
-    if (gym.logoUrl) {
-        let logoPath = gym.logoUrl;
-        if (!logoPath.startsWith('http')) { // If it's not a full external URL
-            if (!logoPath.startsWith('/')) {
-                logoPath = '/' + logoPath; // e.g., images/default.png -> /images/default.png
-            }
-            // Ensure the path is relative to /uploads if it's not already.
-            // This handles cases like "image.png" or "/image.png" becoming "/uploads/image.png"
-            // And "/uploads/image.png" remaining "/uploads/image.png"
-            if (!logoPath.startsWith('/uploads/')) {
-                 // If logoPath is like "/somefolder/image.png", it becomes "/uploads/somefolder/image.png"
-                 // If logoPath is like "image.png", it becomes "/uploads/image.png"
-                logoPath = '/uploads' + (logoPath.startsWith('/') ? logoPath : '/' + logoPath);
-            }
-            fullLogoPath = `http://localhost:5000${logoPath}?${new Date().getTime()}`;
-        } else {
-            fullLogoPath = `${logoPath}?${new Date().getTime()}`;
-        }
-    }
+    const fullLogoPath = getGymLogoUrl(gym);
 
     card.innerHTML = `
       <img src="${fullLogoPath}" alt="${gym.gymName} Logo" class="gym-card-logo">
@@ -236,8 +251,8 @@ function renderGymCards() {
       </div>
     `;
 
-    resultsDiv.appendChild(card);
-  });
+    return card;
+  }
 
   // Add Show More button if needed
   if (visibleCount < allGyms.length) {
@@ -340,7 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ✅ Try to fetch user profile if token exists
-  fetch('http://localhost:5000/api/users/profile', {
+  fetch(`${BASE_URL}/api/users/profile`, {
     method: 'GET',
     headers: {
       'Content-Type': "application/json",
@@ -355,9 +370,16 @@ document.addEventListener("DOMContentLoaded", () => {
       return res.json();
     })
     .then(user => {
-      const profilePicUrl = user.profileImage
-         ? (user.profileImage.startsWith('http') ? user.profileImage : `http://localhost:5000${user.profileImage}`)
-        : `http://localhost:5000/uploads/profile-pics/default.png`;
+      let profilePicUrl;
+      if (user.profileImage) {
+        if (user.profileImage.startsWith('http')) {
+          profilePicUrl = user.profileImage;
+        } else {
+          profilePicUrl = `${BASE_URL}${user.profileImage}`;
+        }
+      } else {
+        profilePicUrl = `${BASE_URL}/uploads/profile-pics/default.png`;
+      }
 
       const userIconImage = document.getElementById("profile-icon-img");
       if (userIconImage) userIconImage.src = profilePicUrl;

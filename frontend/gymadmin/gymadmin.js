@@ -40,8 +40,31 @@ function showDialog({ title = '', message = '', confirmText = 'OK', iconHtml = '
 
 // --- Trainer Tab Logic ---
 document.addEventListener('DOMContentLoaded', function() {
+  // --- Trainer Profile Image Upload Logic ---
+  const uploadTrainerImageBtn = document.getElementById('uploadTrainerImageBtn');
+  const trainerProfileImageInput = document.getElementById('trainerProfileImage');
+  const trainerImageTag = document.getElementById('trainerImageTag');
+
+  if (uploadTrainerImageBtn && trainerProfileImageInput) {
+    uploadTrainerImageBtn.addEventListener('click', function() {
+      trainerProfileImageInput.click();
+    });
+  }
+  if (trainerProfileImageInput && trainerImageTag) {
+    trainerProfileImageInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          trainerImageTag.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        trainerImageTag.src = 'https://via.placeholder.com/96?text=Photo';
+      }
+    });
+  }
   // Tab navigation
-  const trainerTab = document.getElementById('trainerTab');
   const pendingBtn = document.getElementById('pendingTrainersBtn');
   const approvedBtn = document.getElementById('approvedTrainersBtn');
   const rejectedBtn = document.getElementById('rejectedTrainersBtn');
@@ -97,9 +120,9 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchTrainersByStatus(status) {
     const token = localStorage.getItem('gymAdminToken');
     let gymId = null;
-    if (window.currentGymProfile && window.currentGymProfile._id) {
+    if (window.currentGymProfile?._id) {
       gymId = window.currentGymProfile._id;
-    } else if (window.currentGymProfile && window.currentGymProfile.id) {
+    } else if (window.currentGymProfile?.id) {
       gymId = window.currentGymProfile.id;
     } else if (typeof currentGymProfile === 'object' && currentGymProfile._id) {
       gymId = currentGymProfile._id;
@@ -154,9 +177,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Create a trainer card (basic info)
   function createTrainerCard(trainer) {
-    const imgSrc = trainer.photo ? `http://localhost:5000${trainer.photo}` : 'https://via.placeholder.com/80?text=Photo';
+    // Support both 'photo' and 'image' (backend may send either)
+    let imgSrc = 'https://via.placeholder.com/80?text=Photo';
+    if (trainer.photo && typeof trainer.photo === 'string' && trainer.photo.startsWith('/')) {
+      imgSrc = `http://localhost:5000${trainer.photo}`;
+    } else if (trainer.image && typeof trainer.image === 'string' && trainer.image.startsWith('/')) {
+      imgSrc = `http://localhost:5000${trainer.image}`;
+    } else if (trainer.photo && typeof trainer.photo === 'string') {
+      imgSrc = trainer.photo;
+    } else if (trainer.image && typeof trainer.image === 'string') {
+      imgSrc = trainer.image;
+    }
+    // Determine if approved
+    const isApproved = (trainer.status && trainer.status.toLowerCase() === 'approved');
     return `
-      <div class="trainer-card" style="background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.07);padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:220px;max-width:260px;margin:10px auto;">
+      <div class="trainer-card" style="background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.07);padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:220px;max-width:260px;margin:10px auto;position:relative;">
         <img src="${imgSrc}" alt="Profile" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #1976d2;">
         <div style="font-weight:600;font-size:1.1em;">${trainer.firstName || ''} ${trainer.lastName || ''}</div>
         <div style="color:#1976d2;font-size:0.98em;">${trainer.specialty || ''}</div>
@@ -164,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="font-size:0.97em;color:#555;">${trainer.phone || ''}</div>
         <div style="font-size:0.95em;color:#888;">Experience: ${trainer.experience || 0} yrs</div>
         <div style="font-size:0.95em;color:#888;">Rate: ₹${trainer.rate || 0}/hr</div>
-        <div style="margin-top:8px;font-size:0.95em;color:#888;">Status: <span style="color:#ff9800;font-weight:600;">Pending</span></div>
+        ${isApproved ? `<span class="approved-badge" style="position:absolute;top:10px;right:10px;background:#4CAF50;color:#fff;padding:5px 14px;border-radius:16px;font-size:0.98em;font-weight:700;display:flex;align-items:center;gap:6px;"><i class='fas fa-check-circle'></i> Approved</span>` : ''}
       </div>
     `;
   }
@@ -207,81 +242,28 @@ document.addEventListener('DOMContentLoaded', function() {
   if (trainerForm) {
     trainerForm.addEventListener('submit', async function(e) {
       e.preventDefault();
-      // Combine per-day fields into a summary string for backend or textarea
-      const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-      let summary = days.map(day => {
-        const val = document.querySelector('.day-availability[data-day="'+day+'"]')?.value.trim();
-        return val ? `${day}: ${val}` : '';
-      }).filter(Boolean).join('; ');
-      // If textarea is empty, fill it with summary
+
       const textarea = document.getElementById('trainerAvailability');
+      const summary = getAvailabilitySummary();
       if (textarea && !textarea.value.trim() && summary) {
         textarea.value = summary;
       }
 
-      // Collect form data
       const formData = new FormData(trainerForm);
-      // Add locations as array if present (checkboxes or multi-select)
-      const locations = Array.from(trainerForm.querySelectorAll('[name="locations"]:checked')).map(el => el.value);
-      if (locations.length) {
-        formData.delete('locations');
-        locations.forEach(loc => formData.append('locations', loc));
-      }
-
-      // Add availability summary (from textarea)
-      if (textarea && textarea.value.trim()) {
+      appendLocations(formData, trainerForm);
+      if (textarea?.value.trim()) {
         formData.set('availability', textarea.value.trim());
       }
+      appendGymId(formData);
+      appendProfileImage(formData);
 
-      // Add gym id to form data
-      let gymId = null;
-      if (window.currentGymProfile && window.currentGymProfile._id) {
-        gymId = window.currentGymProfile._id;
-      } else if (window.currentGymProfile && window.currentGymProfile.id) {
-        gymId = window.currentGymProfile.id;
-      } else if (typeof currentGymProfile === 'object' && currentGymProfile._id) {
-        gymId = currentGymProfile._id;
-      }
-      if (gymId) {
-        formData.set('gym', gymId);
-      }
-
-      // Show loading or disable submit
       const submitBtn = trainerForm.querySelector('button[type="submit"]');
       if (submitBtn) submitBtn.disabled = true;
 
       try {
-        // Show success dialog box immediately after submission (before waiting for server response)
-        showDialog({
-          title: 'Trainer Registration Submitted',
-          message: 'Your trainer application has been submitted and is pending admin approval.',
-          confirmText: 'OK',
-          iconHtml: '<i class="fas fa-check-circle" style="color:#38b000;font-size:2em;"></i>',
-          onConfirm: function() {
-            // Optionally close modal after dialog
-            const trainerModal = document.getElementById('trainerRegistrationModal');
-            if (trainerModal) {
-              trainerModal.style.display = 'none';
-              document.body.style.overflow = '';
-            }
-          }
-        });
-        trainerForm.reset();
-        if (textarea) textarea.value = '';
-        // Now send the request in the background
-        const res = await fetch('http://localhost:5000/api/trainers/register', {
-          method: 'POST',
-          body: formData
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          showDialog({
-            title: 'Registration Error',
-            message: (data && data.message) ? data.message : 'Submission failed.',
-            confirmText: 'OK',
-            iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#d32f2f;font-size:2em;"></i>'
-          });
-        }
+        showTrainerRegistrationDialog();
+        resetTrainerFormUI(trainerForm, textarea);
+        await submitTrainerRegistration(formData);
       } catch (err) {
         showDialog({
           title: 'Server Error',
@@ -293,6 +275,82 @@ document.addEventListener('DOMContentLoaded', function() {
         if (submitBtn) submitBtn.disabled = false;
       }
     });
+
+    function getAvailabilitySummary() {
+      const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+      return days.map(day => {
+        const val = document.querySelector('.day-availability[data-day="'+day+'"]')?.value.trim();
+        return val ? `${day}: ${val}` : '';
+      }).filter(Boolean).join('; ');
+    }
+
+    function appendLocations(formData, form) {
+      const locations = Array.from(form.querySelectorAll('[name="locations"]:checked')).map(el => el.value);
+      if (locations.length) {
+        formData.delete('locations');
+        locations.forEach(loc => formData.append('locations', loc));
+      }
+    }
+
+    function appendGymId(formData) {
+      let gymId = null;
+      if (window.currentGymProfile?._id) {
+        gymId = window.currentGymProfile._id;
+      } else if (window.currentGymProfile?.id) {
+        gymId = window.currentGymProfile.id;
+      } else if (typeof currentGymProfile === 'object' && currentGymProfile._id) {
+        gymId = currentGymProfile._id;
+      }
+      if (gymId) {
+        formData.set('gym', gymId);
+      }
+    }
+
+    function appendProfileImage(formData) {
+      const profileImageInput = document.getElementById('trainerProfileImage');
+      if (profileImageInput?.files?.[0]) {
+        formData.set('profileImage', profileImageInput.files[0]);
+      }
+    }
+
+    function showTrainerRegistrationDialog() {
+      showDialog({
+        title: 'Trainer Registration Submitted',
+        message: 'Your trainer application has been submitted and is pending admin approval.',
+        confirmText: 'OK',
+        iconHtml: '<i class="fas fa-check-circle" style="color:#38b000;font-size:2em;"></i>',
+        onConfirm: function() {
+          const trainerModal = document.getElementById('trainerRegistrationModal');
+          if (trainerModal) {
+            trainerModal.style.display = 'none';
+            document.body.style.overflow = '';
+          }
+        }
+      });
+    }
+
+    function resetTrainerFormUI(form, textarea) {
+      form.reset();
+      if (textarea) textarea.value = '';
+      const trainerImageTag = document.getElementById('trainerImageTag');
+      if (trainerImageTag) trainerImageTag.src = 'https://via.placeholder.com/96?text=Photo';
+    }
+
+    async function submitTrainerRegistration(formData) {
+      const res = await fetch('http://localhost:5000/api/trainers/register', {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        showDialog({
+          title: 'Registration Error',
+          message: (data && data.message) ? data.message : 'Submission failed.',
+          confirmText: 'OK',
+          iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#d32f2f;font-size:2em;"></i>'
+        });
+      }
+    }
   }
 });
 // --- Trainer Registration Modal Logic ---
@@ -305,11 +363,20 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   const trainerModal = document.getElementById('trainerRegistrationModal');
   const closeTrainerModal = document.getElementById('closeTrainerRegistrationModal');
-  // Open modal
+  // Open modal (Quick Actions: remove any inline style set on the button or card)
   if (addTrainerBtn && trainerModal) {
+    // Remove inline style from the quick action button (if any)
+    addTrainerBtn.removeAttribute('style');
+    // Remove inline style from the parent card if it's a quick-action-card
+    const quickActionCard = addTrainerBtn.closest('.quick-action-card');
+    if (quickActionCard) quickActionCard.removeAttribute('style');
     addTrainerBtn.addEventListener('click', function() {
       trainerModal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
+      // Remove any inline style from Quick Actions card and its button (if present)
+      const quickActionCard = document.querySelector('.quick-action-card');
+      if (quickActionCard) quickActionCard.removeAttribute('style');
+      if (addTrainerBtn) addTrainerBtn.removeAttribute('style');
     });
   }
   // Close modal
@@ -357,7 +424,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = await res.json();
         if (Array.isArray(data) && data.length === 3) plans = data;
       }
-    } catch (e) { /* fallback to default */ }
+    } catch (e) { 
+      console.error('Error fetching plans:', e); // Log the error for debugging
+    }
     renderPlans();
     updateDiscountedFees();
   }
@@ -372,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="font-size:1.5em;font-weight:700;color:#1976d2;margin-bottom:6px;">₹${plan.price}/mo</div>
         <div style="color:${plan.color};font-weight:600;margin-bottom:8px;">${plan.discount > 0 ? `${plan.discount}% Off on ${plan.discountMonths}+ months` : 'No Discount'}</div>
         <ul style="list-style:none;padding:0;margin:0 0 10px 0;font-size:0.98em;color:#333;text-align:left;">
-          ${plan.benefits.map(b => `<li><i class=\"fas fa-check-circle\" style=\"color:${plan.color};margin-right:6px;\"></i> ${b}</li>`).join('')}
+          ${plan.benefits.map(b => `<li><i class="fas fa-check-circle" style="color:${plan.color};margin-right:6px;"></i> ${b}</li>`).join('')}
         </ul>
         <div style="font-size:0.95em;color:#888;">${plan.note || ''}</div>
       </div>
@@ -472,10 +541,7 @@ document.addEventListener('DOMContentLoaded', function() {
         plans[idx].icon = icon;
         renderPlanEditorCards();
         // Keep picker open after icon change
-        setTimeout(() => {
-          const picker = document.getElementById('iconColorPickerWrap' + idx);
-          if (picker) picker.style.display = 'block';
-        }, 0);
+        setTimeout(() => showIconColorPicker(idx), 0);
       });
     });
     // Color picker event
@@ -950,14 +1016,81 @@ document.addEventListener('DOMContentLoaded', function() {
   const memberProfileImageInput = document.getElementById('memberProfileImage');
   const memberImageTag = document.getElementById('memberImageTag');
 
-  // Helper to open modal
-  function openAddMemberModal() {
+  // --- Membership Plan Logic ---
+  let plansCache = [];
+  const planSelected = document.getElementById('planSelected');
+  const monthlyPlan = document.getElementById('monthlyPlan');
+  const paymentAmount = document.getElementById('paymentAmount');
+  // Discount info UI
+  let discountInfoDiv = document.getElementById('discountInfoDiv');
+  if (!discountInfoDiv && paymentAmount && paymentAmount.parentNode) {
+    discountInfoDiv = document.createElement('div');
+    discountInfoDiv.id = 'discountInfoDiv';
+    discountInfoDiv.style = 'margin-top:4px;font-size:0.98em;color:#1976d2;';
+    paymentAmount.parentNode.appendChild(discountInfoDiv);
+  }
+
+  async function fetchPlansForModal() {
+    const token = localStorage.getItem('gymAdminToken');
+    try {
+      const res = await fetch('/api/gyms/membership-plans', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch plans');
+      plansCache = await res.json();
+    } catch (err) {
+      plansCache = [];
+      console.error('Error fetching plans:', err);
+    }
+  }
+
+  function updatePlanOptions() {
+    if (planSelected && plansCache.length) {
+      planSelected.innerHTML = '<option value="">Select</option>' + plansCache.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+    }
+  }
+
+  function updatePaymentAmountAndDiscount() {
+    if (!planSelected || !monthlyPlan || !paymentAmount) return;
+    const selectedPlanName = planSelected.value;
+    const selectedMonthsText = monthlyPlan.options[monthlyPlan.selectedIndex]?.text || '';
+    let selectedMonths = 1;
+    if (/6/i.test(selectedMonthsText)) selectedMonths = 6;
+    else if (/12/i.test(selectedMonthsText)) selectedMonths = 12;
+    else if (/3/i.test(selectedMonthsText)) selectedMonths = 3;
+    // Find plan in cache
+    const plan = plansCache.find(p => p.name === selectedPlanName);
+    if (!plan) {
+      paymentAmount.value = '';
+      if (discountInfoDiv) discountInfoDiv.textContent = '';
+      return;
+    }
+    let baseAmount = plan.price * selectedMonths;
+    let discount = 0;
+    let discountText = '';
+    if (plan.discount && plan.discountMonths && selectedMonths >= plan.discountMonths) {
+      discount = plan.discount;
+      const discountedAmount = Math.round(baseAmount * (1 - discount / 100));
+      paymentAmount.value = discountedAmount;
+      discountText = `Discount: ${discount}% off for ${plan.discountMonths}+ months. Original: ₹${baseAmount}, Now: ₹${discountedAmount}`;
+    } else {
+      paymentAmount.value = baseAmount;
+      discountText = '';
+    }
+    if (discountInfoDiv) discountInfoDiv.textContent = discountText;
+  }
+
+  // Helper to open modal (now fetches plans and updates UI)
+  async function openAddMemberModal() {
     if (addMemberModal) {
       addMemberModal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
       if (addMemberSuccessMsg) addMemberSuccessMsg.style.display = 'none';
       if (addMemberForm) addMemberForm.reset();
       if (memberImageTag) memberImageTag.src = 'https://via.placeholder.com/96?text=Photo';
+      await fetchPlansForModal();
+      updatePlanOptions();
+      updatePaymentAmountAndDiscount();
     }
   }
   // Helper to close modal
@@ -974,14 +1107,21 @@ document.addEventListener('DOMContentLoaded', function() {
     addMemberBtn.addEventListener('click', function(e) {
       e.preventDefault();
       openAddMemberModal();
-  });
-}
+    });
+  }
   // Open modal from member tab button
   if (addMemberBtnTab && addMemberModal) {
     addMemberBtnTab.addEventListener('click', function(e) {
       e.preventDefault();
       openAddMemberModal();
     });
+  }
+  // Update payment amount and discount when plan or months changes
+  if (planSelected) planSelected.addEventListener('change', updatePaymentAmountAndDiscount);
+  if (monthlyPlan) monthlyPlan.addEventListener('change', updatePaymentAmountAndDiscount);
+  // Also update on modal open
+  if (addMemberModal) {
+    addMemberModal.addEventListener('show', updatePaymentAmountAndDiscount);
   }
   // Close modal on close button
   if (closeAddMemberModal && addMemberModal) {
@@ -1372,7 +1512,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(evt) {
-                    preview.innerHTML = `<img src="${evt.target.result}" style="max-width:180px;max-height:120px;border-radius:6px;">`;
+                    if (evt.target && typeof evt.target.result === 'string') {
+                        preview.innerHTML = `<img src="${evt.target.result}" style="max-width:180px;max-height:120px;border-radius:6px;">`;
+                    } else {
+                        preview.innerHTML = '';
+                    }
                 };
                 reader.readAsDataURL(file);
             } else {
@@ -1604,8 +1748,7 @@ if (addMemberForm) {
     const membershipId = `${gymShort}-${ym}-${planShort}-${random}`;
     let validDate = '';
     let months = 1;
-    if (/1\s*Month/i.test(monthlyPlan)) months = 1;
-    else if (/3\s*Month/i.test(monthlyPlan)) months = 3;
+    if (/3\s*Month/i.test(monthlyPlan)) months = 3;
     else if (/6\s*Month/i.test(monthlyPlan)) months = 6;
     else if (/12\s*Month/i.test(monthlyPlan)) months = 12;
     const validUntil = new Date(now);
@@ -1628,23 +1771,29 @@ if (addMemberForm) {
                             body: formData
                         });
                         const data = await res.json();
-                        if (res.ok && data.success) {
+        if (res.ok && data.success) {
+    handlePhotoUploadSuccess();
+    fetchGymPhotos();
+} else {
+    const msgDiv = document.getElementById('uploadPhotoMsg');
+    msgDiv.textContent = data.message || 'Upload failed';
+    msgDiv.style.color = 'red';
+}
+
+function handlePhotoUploadSuccess() {
     const msgDiv = document.getElementById('uploadPhotoMsg');
     msgDiv.textContent = 'Photo uploaded successfully!';
     msgDiv.style.color = 'green';
     uploadGymPhotoForm.reset();
-    setTimeout(() => {
-        msgDiv.textContent = '';
-        // Use style.display for modal closing (consistent with your other modals)
-        document.getElementById('uploadPhotoModal').style.display = 'none';
-    }, 1200);
-    fetchGymPhotos();
+    setTimeout(clearUploadPhotoMsgAndCloseModal, 1200);
 }
-                      else {
-                            const msgDiv = document.getElementById('uploadPhotoMsg');
-                            msgDiv.textContent = data.message || 'Upload failed';
-                            msgDiv.style.color = 'red';
-                        }
+
+function clearUploadPhotoMsgAndCloseModal() {
+    const msgDiv = document.getElementById('uploadPhotoMsg');
+    if (msgDiv) msgDiv.textContent = '';
+    const uploadPhotoModal = document.getElementById('uploadPhotoModal');
+    if (uploadPhotoModal) uploadPhotoModal.style.display = 'none';
+}
                     } catch (err) {
                         const msgDiv = document.getElementById('editPhotoMsg');
                         if (msgDiv) {
@@ -1826,7 +1975,6 @@ if (addMemberForm) {
                 }
                 // Password validation if changing password
                 const passwordFields = document.getElementById('passwordFields');
-                const passwordInput = document.getElementById('editGymPassword');
                 const passwordConfirmInput = document.getElementById('editGymPasswordConfirm');
                 if (passwordFields && passwordFields.style.display !== 'none' && passwordInput.value) {
                     const password = passwordInput.value;
@@ -1903,7 +2051,8 @@ if (addMemberForm) {
                         fetchAndUpdateAdminProfile(); // Refresh the displayed profile info
                     } else {
                         // Show specific error for invalid current password
-                        if (result.message && result.message.toLowerCase().includes('invalid current password')) {
+                        ; // Added empty statement to avoid 'if' as only statement in else block
+                        if (result.message?.toLowerCase().includes('invalid current password')) {
                             showProfileUpdateMessage('Current password is incorrect.', 'error');
                             if (typeof hidePasswordConfirmDialog === 'function') hidePasswordConfirmDialog(); // Close only the password dialog
                             // Do NOT close the edit profile modal
@@ -1949,7 +2098,6 @@ if (addMemberForm) {
         const showChangePasswordFields = document.getElementById('showChangePasswordFields');
         const passwordFields = document.getElementById('passwordFields');
         const passwordInput = document.getElementById('editGymPassword');
-        const passwordConfirmInput = document.getElementById('editGymPasswordConfirm');
 
         if (showChangePasswordFields && passwordFields) {
             showChangePasswordFields.addEventListener('click', function() {
@@ -2216,6 +2364,7 @@ async function updateMembersStatsCard() {
   }
 }
 
+
 // --- Dynamic Payments Stats Card ---
 async function updatePaymentsStatsCard() {
   const paymentsStatValue = document.querySelector('.stat-card.payments .stat-value');
@@ -2280,10 +2429,69 @@ async function updatePaymentsStatsCard() {
   }
 }
 
+// --- Dynamic Trainers Stats Card ---
+async function updateTrainersStatsCard() {
+  const trainersStatValue = document.querySelector('.stat-card.trainers .stat-value');
+  const trainersStatChange = document.querySelector('.stat-card.trainers .stat-change');
+  if (!trainersStatValue || !trainersStatChange) return;
+  try {
+    const token = localStorage.getItem('gymAdminToken');
+    let gymId = null;
+    // Try to get gymId from currentGymProfile, fallback to window.currentGymProfile
+    if (typeof currentGymProfile === 'object' && currentGymProfile._id) {
+      gymId = currentGymProfile._id;
+    } else if (window.currentGymProfile && window.currentGymProfile._id) {
+      gymId = window.currentGymProfile._id;
+    } else if (window.currentGymProfile && window.currentGymProfile.id) {
+      gymId = window.currentGymProfile.id;
+    }
+    // If gymId is still not set, try to fetch profile and retry
+    if (!token || !gymId) {
+      // Try to fetch profile and retry once
+      if (typeof fetchAndUpdateAdminProfile === 'function') {
+        await fetchAndUpdateAdminProfile();
+        if (typeof currentGymProfile === 'object' && currentGymProfile._id) {
+          gymId = currentGymProfile._id;
+        } else if (window.currentGymProfile && window.currentGymProfile._id) {
+          gymId = window.currentGymProfile._id;
+        } else if (window.currentGymProfile && window.currentGymProfile.id) {
+          gymId = window.currentGymProfile.id;
+        }
+      }
+    }
+    if (!token || !gymId) {
+      trainersStatValue.textContent = '--';
+      trainersStatChange.innerHTML = '<i class="fas fa-minus"></i> N/A';
+      return;
+    }
+    // Fetch approved trainers
+    const approvedRes = await fetch(`http://localhost:5000/api/trainers?status=approved&gym=${gymId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const pendingRes = await fetch(`http://localhost:5000/api/trainers?status=pending&gym=${gymId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    let approved = [];
+    let pending = [];
+    if (approvedRes.ok) approved = await approvedRes.json();
+    if (pendingRes.ok) pending = await pendingRes.json();
+    // Filter by gym (in case backend returns more)
+    approved = Array.isArray(approved) ? approved.filter(t => t.gym === gymId || (t.gym && (t.gym._id === gymId || t.gym === gymId))) : [];
+    pending = Array.isArray(pending) ? pending.filter(t => t.gym === gymId || (t.gym && (t.gym._id === gymId || t.gym === gymId))) : [];
+    trainersStatValue.textContent = approved.length;
+    trainersStatChange.innerHTML = `<span style="color:#ffbe0b;"><i class="fas fa-hourglass-half"></i> ${pending.length} pending approval</span>`;
+  } catch (err) {
+    console.error('Error updating trainers stats card:', err);
+    trainersStatValue.textContent = '--';
+    trainersStatChange.innerHTML = '<i class="fas fa-minus"></i> N/A';
+  }
+}
+
 // Call on load
 document.addEventListener('DOMContentLoaded', function() {
   updateMembersStatsCard();
   updatePaymentsStatsCard();
+  updateTrainersStatsCard();
 });
 
 function updateMainContentMargins() {
@@ -3001,4 +3209,63 @@ document.addEventListener('DOMContentLoaded', function() {
   // On load and on resize, always update margins
   updateMainContentMargins();
   window.addEventListener('resize', updateMainContentMargins);
+});
+// === Dynamic New Members Section ===
+document.addEventListener('DOMContentLoaded', function () {
+  const newMembersTableBody = document.getElementById('newMembersTableBody');
+  if (!newMembersTableBody) return;
+
+  // Fetch new members from the last 7 days with auth
+  const token = localStorage.getItem('gymAdminToken');
+  fetch('/api/members/new', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+    .then(res => res.json())
+    .then(members => {
+      if (!Array.isArray(members) || members.length === 0) {
+        newMembersTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No new members found.</td></tr>';
+        return;
+      }
+      newMembersTableBody.innerHTML = '';
+      members.forEach(member => {
+        const tr = document.createElement('tr');
+        // Profile image (robust fallback, avoid double /uploads/)
+        let profileImg = 'https://via.placeholder.com/48x48.png?text=User';
+        if (member.profileImage && member.profileImage !== '') {
+          if (member.profileImage.startsWith('http')) {
+            profileImg = member.profileImage;
+          } else if (member.profileImage.startsWith('/uploads/')) {
+            profileImg = member.profileImage;
+          } else {
+            profileImg = '/uploads/profile-pics/' + member.profileImage;
+          }
+        }
+        // Format join date
+        const joinDate = member.joinDate ? new Date(member.joinDate).toLocaleDateString() : 'N/A';
+        // Name and plan (robust)
+        const name = member.memberName || member.name || member.fullName || member.firstName || 'N/A';
+        const plan = member.planSelected || member.plan || (member.membershipPlan?.name) || 'N/A';
+        tr.innerHTML = `
+          <td><img src="${profileImg}" alt="Profile" style="width:40px;height:40px;border-radius:50%;object-fit:cover;"></td>
+          <td>${name}</td>
+          <td>${joinDate}</td>
+          <td>${plan}</td>
+          <td><button class="action-btn edit" data-member-id="${member._id}"><i class="fas fa-edit"></i> Edit</button></td>
+        `;
+        newMembersTableBody.appendChild(tr);
+      });
+      // Add click event for edit buttons
+      newMembersTableBody.querySelectorAll('.action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const memberId = this.getAttribute('data-member-id');
+          // TODO: Open edit modal for memberId
+          alert('Edit member: ' + memberId);
+        });
+      });
+    })
+    .catch(err => {
+      newMembersTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Failed to load members.</td></tr>';
+    });
 });

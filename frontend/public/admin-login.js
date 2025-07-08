@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch (err) {
         resetEmailError.textContent = "Network error";
         resetEmailError.style.display = "block";
+        console.error('Error sending OTP:', err);
       }
       resetButton.disabled = false;
       resetButton.textContent = "Send OTP";
@@ -191,6 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch (err) {
         resetOtpError.textContent = "Network error";
         resetOtpError.style.display = "block";
+        console.error('Error resetting password:', err);
       }
       submitNewPasswordButton.disabled = false;
       submitNewPasswordButton.textContent = "Reset Password";

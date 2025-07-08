@@ -11,8 +11,13 @@
    
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
+    <!-- Hamburger for mobile -->
+    <div class="hamburger" id="hamburgerMenu" aria-label="Open sidebar" tabindex="0">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="sidebar" id="sidebarMenu">
         <div class="sidebar-header">
             <img src="https://via.placeholder.com/40" alt="Fit-Verse Logo">
             <h3>Fit-Verse Admin</h3>
@@ -36,7 +41,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="main-content">
+    <div class="main-content" id="mainContent">
         <!-- Top Navbar -->
 <div class="top-navbar">
     <div class="search-bar">
@@ -333,149 +338,15 @@
 
             <!-- Trainer Management Content -->
             <div id="trainer-management-content" class="tab-content">
-                <div class="trainer-mgmt-tabs">
-                    <button class="trainer-mgmt-tab-btn active">All Trainers</button>
-                    <button class="trainer-mgmt-tab-btn">Pending</button>
-                    <button class="trainer-mgmt-tab-btn">Approved</button>
-                    <button class="trainer-mgmt-tab-btn">Rejected</button>
-                    <button class="trainer-mgmt-tab-btn">Revoked</button>
+                <div class="trainer-mgmt-tabs-row">
+                    <div class="trainer-mgmt-tab-section active" data-tab="All">All</div>
+                    <div class="trainer-mgmt-tab-section" data-tab="pending">Pending</div>
+                    <div class="trainer-mgmt-tab-section" data-tab="approved">Approved</div>
+                    <div class="trainer-mgmt-tab-section" data-tab="rejected">Rejected</div>
+                    <div class="trainer-mgmt-tab-section" data-tab="revoked">Revoked</div>
                 </div>
-                
-                <div class="trainer-mgmt-grid">
-                    <!-- Trainer Card 1 -->
-                    <div class="trainer-mgmt-card">
-                        <div class="trainer-mgmt-status-badge trainer-mgmt-pending">Pending</div>
-                        <div class="trainer-mgmt-profile-header"></div>
-                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Trainer" class="trainer-mgmt-profile-img">
-                        <div class="trainer-mgmt-profile-body">
-                            <h3 class="trainer-mgmt-name">Alex Johnson</h3>
-                            <p class="trainer-mgmt-email">alex.johnson@example.com</p>
-                            
-                            <div class="trainer-mgmt-details">
-                                <div class="detail-item">
-                                    <div class="detail-value">5</div>
-                                    <div class="detail-label">Years</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-value">4.8</div>
-                                    <div class="detail-label">Rating</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-value">120</div>
-                                    <div class="detail-label">Clients</div>
-                                </div>
-                            </div>
-                            
-                            <div class="trainer-mgmt-gyms-list">
-                                <p class="trainer-mgmt-gyms-title">Currently Working At:</p>
-                                <div class="trainer-mgmt-gyms-container">
-                                    <span class="trainer-mgmt-gym-badge">FitLife Gym</span>
-                                    <span class="trainer-mgmt-gym-badge">Elite Fitness</span>
-                                </div>
-                            </div>
-                            
-                            <div class="trainer-mgmt-action-buttons">
-                                <button class="trainer-mgmt-action-btn trainer-mgmt-approve-btn" onclick="openModal('approve', 'Alex Johnson')">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
-                                <button class="trainer-mgmt-action-btn trainer-mgmt-reject-btn" onclick="openModal('reject', 'Alex Johnson')">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                                <button class="trainer-mgmt-action-btn trainer-mgmt-delete-btn" onclick="openModal('delete', 'Alex Johnson')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Trainer Card 2 -->
-                    <div class="trainer-mgmt-card">
-                        <div class="trainer-mgmt-status-badge trainer-mgmt-approved">Approved</div>
-                        <div class="trainer-mgmt-profile-header"></div>
-                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Trainer" class="trainer-mgmt-profile-img">
-                        <div class="trainer-mgmt-profile-body">
-                            <h3 class="trainer-mgmt-name">Sarah Williams</h3>
-                            <p class="trainer-mgmt-email">sarah.w@example.com</p>
-                            
-                            <div class="trainer-mgmt-details">
-                                <div class="detail-item">
-                                    <div class="detail-value">8</div>
-                                    <div class="detail-label">Years</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-value">4.9</div>
-                                    <div class="detail-label">Rating</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-value">210</div>
-                                    <div class="detail-label">Clients</div>
-                                </div>
-                            </div>
-                            
-                            <div class="trainer-mgmt-gyms-list">
-                                <p class="trainer-mgmt-gyms-title">Currently Working At:</p>
-                                <div class="trainer-mgmt-gyms-container">
-                                    <span class="trainer-mgmt-gym-badge">Power House</span>
-                                    <span class="trainer-mgmt-gym-badge">Iron Temple</span>
-                                    <span class="trainer-mgmt-gym-badge">FitZone</span>
-                                </div>
-                            </div>
-                            
-                            <div class="trainer-mgmt-action-buttons">
-                                <button class="trainer-mgmt-action-btn trainer-mgmt-approve-btn" onclick="openModal('approve', 'Sarah Williams')">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
-                                <button class="trainer-mgmt-action-btn trainer-mgmt-reject-btn" onclick="openModal('reject', 'Sarah Williams')">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                                <button class="trainer-mgmt-action-btn trainer-mgmt-delete-btn" onclick="openModal('delete', 'Sarah Williams')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Trainer Card 3 -->
-                    <div class="trainer-mgmt-card">
-                        <div class="trainer-mgmt-status-badge trainer-mgmt-rejected">Rejected</div>
-                        <div class="trainer-mgmt-profile-header"></div>
-                        <img src="https://randomuser.me/api/portraits/men/67.jpg" alt="Trainer" class="trainer-mgmt-profile-img">
-                        <div class="trainer-mgmt-profile-body">
-                            <h3 class="trainer-mgmt-name">Michael Brown</h3>
-                            <p class="trainer-mgmt-email">michael.b@example.com</p>
-                           
-                            <div class="trainer-details">
-                                <div class="detail-item">
-                                    <div class="detail-value">3</div>
-                                    <div class="detail-label">Years</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-value">4.2</div>
-                                    <div class="detail-label">Rating</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-value">45</div>
-                                    <div class="detail-label">Clients</div>
-                                </div>
-                            </div>
-                            
-                            <div class="gyms-list">
-                                <p class="gyms-title">Previously Worked At:</p>
-                                <div class="gyms-container">
-                                    <span class="gym-badge">Body Sculpt</span>
-                                </div>
-                            </div>
-                            
-                            <div class="action-buttons">
-                                <button class="action-btn approve-btn" onclick="openModal('approve', 'Michael Brown')">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
-                                <button class="action-btn delete-btn" onclick="openModal('delete', 'Michael Brown')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="trainer-mgmt-grid" id="trainerMgmtGrid">
+                    <!-- Trainer cards will be rendered dynamically by admin.js -->
                 </div>
             </div>
             

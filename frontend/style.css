@@ -225,6 +225,19 @@ header {
   .navbar {
     flex-direction: row;
     padding: 0 10px;
+    margin: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    box-sizing: border-box;
+    position: static;
+    background: none;
+    height: auto;
+  }
+  header {
+    padding: 1rem 0;
+    left: 0;
   }
   .menu-toggle {
     display: block;
@@ -234,6 +247,8 @@ header {
     top: 100%;
     left: 0;
     width: 100%;
+    margin-left: 0;
+    padding-left: 0;
     background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
     flex-direction: column;
     align-items: flex-start;
@@ -288,6 +303,54 @@ header {
   }
   .settings-option.open > .settings-submenu {
     display: block;
+  }
+}
+
+@media (max-width: 900px) {
+  .container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 10px;
+    overflow-x: hidden;
+  }
+}
+
+/* --- FIX: Ensure nav-links shows on mobile when nav-active is toggled --- */
+@media (max-width: 900px) {
+  .nav-links {
+    display: flex;
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+  }
+  .nav-links:not(.nav-active) {
+    max-height: 0;
+    overflow: hidden;
+  }
+  .nav-links.nav-active {
+    display: flex;
+    max-height: 600px;
+    padding-bottom: 1rem;
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+  }
+}
+
+/* Remove or override this block to prevent display: none from hiding nav-links */
+@media (max-width: 768px) {
+  .navbar {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 10px;
+  }
+  .nav-links {
+    display: none;
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
   }
 }
 

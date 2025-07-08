@@ -48,6 +48,24 @@ router.post('/send-membership-email', gymadminAuth, async (req, res) => {
   }
 });
 
+
+// Get only new members added in the last 7 days (protected route)
+router.get('/new', gymadminAuth, async (req, res) => {
+  try {
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id)) || req.body.gymId;
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const members = await require('../models/Member').find({
+      gym: gymId,
+      joinDate: { $gte: sevenDaysAgo }
+    }).sort({ joinDate: -1 });
+    res.status(200).json(members);
+  } catch (err) {
+    console.error('Error fetching new members:', err);
+    res.status(500).json({ message: 'Server error while fetching new members' });
+  }
+});
+
 // Get all members for a gym (protected route)
 router.get('/', gymadminAuth, getMembers);
 

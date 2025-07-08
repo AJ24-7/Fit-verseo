@@ -1,3 +1,241 @@
+/* Redesigned Trainer Card Styles */
+.trainer-mgmt-card.redesigned {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(67,97,238,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
+    padding: 0;
+    margin: 18px 0;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    min-width: 320px;
+    max-width: 420px;
+    width: 100%;
+    position: relative;
+}
+.trainer-mgmt-card.redesigned:hover {
+    box-shadow: 0 8px 32px rgba(67,97,238,0.16), 0 3px 8px rgba(0,0,0,0.08);
+}
+.trainer-mgmt-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 22px 24px 10px 24px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.trainer-mgmt-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.trainer-mgmt-profile-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 5px solid white;
+    object-fit: cover;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    position: static;
+    margin: 0 auto;
+    display: block;
+}
+.trainer-mgmt-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 4px 12px;
+    margin-top: 6px;
+    background: #f5f7fa;
+    color: #555;
+    text-transform: capitalize;
+}
+.trainer-mgmt-status-badge.trainer-mgmt-pending { background: #fff3cd; color: #856404; }
+.trainer-mgmt-status-badge.trainer-mgmt-approved { background: #d4edda; color: #155724; }
+.trainer-mgmt-status-badge.trainer-mgmt-rejected { background: #f8d7da; color: #721c24; }
+.trainer-mgmt-status-badge.trainer-mgmt-revoked { background: #e0e0e0; color: #888; }
+.trainer-mgmt-main-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.trainer-mgmt-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+.trainer-mgmt-contact-row {
+    display: flex;
+    gap: 18px;
+    font-size: 0.98rem;
+    color: #555;
+    margin-bottom: 2px;
+}
+.trainer-mgmt-contact i {
+    color: var(--primary);
+    margin-right: 5px;
+}
+.trainer-mgmt-specialty-exp {
+    display: flex;
+    gap: 18px;
+    font-size: 0.98rem;
+    color: #555;
+}
+.trainer-mgmt-specialty i,
+.trainer-mgmt-experience i,
+.trainer-mgmt-availability i {
+    color: var(--accent);
+    margin-right: 5px;
+}
+.trainer-mgmt-card-body {
+    padding: 18px 24px 10px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.trainer-mgmt-gyms-list {
+    margin-bottom: 8px;
+}
+.trainer-mgmt-gyms-title {
+    font-weight: 600;
+    color: var(--secondary);
+    font-size: 1rem;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.trainer-mgmt-gyms-title i {
+    color: var(--primary);
+}
+.trainer-mgmt-gyms-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.trainer-mgmt-gym-badge {
+    background: var(--secondary);
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.trainer-mgmt-gym-badge i {
+    color: #4895ef;
+}
+.trainer-mgmt-cert-bio-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    margin-top: 8px;
+}
+.trainer-mgmt-toggle-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+.trainer-mgmt-toggle-btn:hover {
+    background: var(--secondary);
+}
+.trainer-mgmt-more-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 6px;
+    font-size: 0.98rem;
+    color: #333;
+    display: none;
+    min-width: 180px;
+    max-width: 100%;
+}
+.trainer-mgmt-bio {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.trainer-mgmt-bio i {
+    color: var(--primary);
+}
+.trainer-mgmt-certs {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.trainer-mgmt-certs i {
+    color: #f8961e;
+}
+.trainer-mgmt-certs ul {
+    margin: 0 0 0 8px;
+    padding: 0;
+    list-style: disc inside;
+    color: #333;
+    font-size: 0.97rem;
+}
+/* Removed duplicate .trainer-mgmt-action-buttons to fix CSS error */
+.trainer-mgmt-action-btn {
+    border: none;
+    border-radius: 50px;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #e9f0fb;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.trainer-mgmt-approve-btn {
+    background: #4CAF50;
+    color: #fff;
+}
+.trainer-mgmt-approve-btn:hover {
+    background: #388e3c;
+}
+/* Removed duplicate .trainer-mgmt-reject-btn selector to fix CSS error */
+.trainer-mgmt-delete-btn {
+    background: #f8d7da;
+    color: #721c24;
+}
+.trainer-mgmt-delete-btn:hover {
+    background: #f44336;
+    color: #fff;
+}
+
+@media (max-width: 600px) {
+    .trainer-mgmt-card.redesigned {
+        min-width: 90vw;
+        max-width: 98vw;
+        padding: 0;
+    }
+    .trainer-mgmt-card-header, .trainer-mgmt-card-body, .trainer-mgmt-action-buttons {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
  :root {
             --primary: #4361ee;
             --secondary: #3f37c9;
@@ -203,6 +441,8 @@
 .notification-item {
   padding: 12px;
   border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
 .notification-item.unread {
@@ -418,13 +658,6 @@ th {
     opacity: 0.8;
 }
 
-.trainer-mgmt-status-badge {
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: capitalize;
-}
 
 .status-badge.trainer-mgmt-pending { background: #fff3cd; color: #856404; }
 .status-badge.trainer-mgmt-approved { background: #d4edda; color: #155724; }
@@ -460,18 +693,7 @@ th {
     }
 }
 
-.btn-primary {
-    background: #007bff;
-    color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-primary:hover {
-    background: #0069d9;
-}
+/* Removed duplicate .btn-primary selector and hover styles */
         /* Dashboard Cards */
         .dashboard-cards {
             display: grid;
@@ -528,35 +750,6 @@ th {
         }
         
         /* Tables */
-        .table-container {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        
-        th {
-            background-color: #f8f9fa;
-            color: var(--dark);
-            font-weight: 600;
-        }
-        
-        tr:hover {
-            background-color: #f8f9fa;
-        }
         
         .status {
             padding: 5px 10px;
@@ -599,13 +792,6 @@ th {
             font-weight: 500;
         }
         
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
         
         /* Modal */
         .trainer-mgmt-modal {
@@ -618,23 +804,6 @@ th {
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             justify-content: center;
-            align-items: center;
-        }
-        
-        .trainer-mgmt-modal-content {
-            background-color: white;
-            border-radius: 8px;
-            width: 500px;
-            max-width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .trainer-mgmt-modal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
             align-items: center;
         }
         
@@ -761,10 +930,7 @@ th {
   margin-top: 10px;
 }
 
-.detail-item {
-  display: flex;
-  flex-direction: column;
-}
+/* Removed duplicate .detail-item selector merged above */
 
 .detail-label {
   font-size: 12px;
@@ -809,55 +975,16 @@ th {
   margin-top: 10px;
 }
 
-.trainer-mgmt-action-btn {
-  padding: 8px 15px;
-  border-radius: 6px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.trainer-mgmt-approve-btn {
-  background-color: #4CAF50;
-  color: white;
-}
 
 .approve-btn:hover {
   background-color: #3e8e41;
-}
-
-.trainer-mgmt-reject-btn {
-  background-color: #f44336;
-  color: white;
 }
 
 .reject-btn:hover {
   background-color: #d32f2f;
 }
 
-.trainer-mgmt-status-badge {
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
 
-.status-pending {
-  background-color: #FFC107;
-  color: #333;
-}
-
-.status-approved {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.status-rejected {
-  background-color: #f44336;
-  color: white;
-}
 
 .loading-animation {
   display: flex;
@@ -904,43 +1031,15 @@ th {
   }
 }
         
-        .notification-dropdown {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-            display: none;
-        }
-        
         .notification-dropdown.active {
             display: block;
-        }
-        
-        .notification-header {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            font-weight: 600;
-        }
-        
-        .notification-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: all 0.3s;
         }
         
         .notification-item:hover {
             background-color: #f8f9fa;
         }
         
-        .notification-item.unread {
-            background-color: #f0f7ff;
-        }
         
-        .notification-footer {
-            padding: 10px;
-            text-align: center;
-        }
         
         /* Chart Container */
         .chart-container {
@@ -991,56 +1090,73 @@ th {
             transform-origin: left;
         }
 
-        .trainer-mgmt-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            justify-content: center;
-        }
+       
+            /* Trainer Management Tabs Row (new design) */
+            .trainer-mgmt-tabs-row {
+                display: flex;
+                gap: 0;
+                border-bottom: 2px solid #e0e0e0;
+                margin-bottom: 24px;
+                background: #f8f9fa;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+            .trainer-mgmt-tab-section {
+                flex: 1;
+                text-align: center;
+                padding: 16px 0 12px 0;
+                font-size: 1.08rem;
+                font-weight: 600;
+                color: #555;
+                cursor: pointer;
+                border-bottom: 3px solid transparent;
+                transition: background 0.2s, color 0.2s, border-bottom 0.2s;
+                background: #f8f9fa;
+                user-select: none;
+            }
+            .trainer-mgmt-tab-section.active {
+                color: var(--primary);
+                background: #fff;
+                border-bottom: 3px solid var(--primary);
+                font-weight: 700;
+                box-shadow: 0 2px 8px rgba(67,97,238,0.04);
+            }
+            .trainer-mgmt-tab-section:hover:not(.active) {
+                background: #f1f5ff;
+                color: var(--secondary);
+            }
 
-        .trainer-mgmt-tab-btn {
-            padding: 0.8rem 1.5rem;
-            background: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            color: var(--dark);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
+            /* Trainer cards grid layout */
+            .trainer-mgmt-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                gap: 28px 22px;
+                margin-top: 0;
+                margin-bottom: 24px;
+                width: 100%;
+                align-items: stretch;
+            }
 
-        .tab-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--primary);
-            z-index: -1;
-            transform: scaleY(0);
-            transform-origin: bottom;
-            transition: transform 0.3s ease;
-            border-radius: 50px;
-        }
+            @media (max-width: 900px) {
+                .trainer-mgmt-grid {
+                    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                    gap: 18px 10px;
+                }
+                .trainer-mgmt-tabs-row {
+                    font-size: 0.98rem;
+                }
+            }
 
-        .tab-btn:hover {
-            color: white;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .tab-btn:hover::before {
-            transform: scaleY(1);
-        }
-
-        .trainer-mgmt-tab-btn.active {
-            background: var(--primary);
-            color: white;
-        }
+            @media (max-width: 600px) {
+                .trainer-mgmt-grid {
+                    grid-template-columns: 1fr;
+                    gap: 12px 0;
+                }
+                .trainer-mgmt-tabs-row {
+                    font-size: 0.93rem;
+                }
+            }
 
         .trainer-mgmt-grid {
             display: grid;
@@ -1062,17 +1178,7 @@ th {
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
         }
 
-        .trainer-mgmt-status-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 0.3rem 0.8rem;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: white;
-            text-transform: uppercase;
-        }
+        /* Removed duplicate .trainer-mgmt-status-badge selector to fix CSS error */
 
         .trainer-mgmt-pending {
             background: var(--warning);
@@ -1090,31 +1196,13 @@ th {
             background: var(--dark);
         }
 
-        .trainer-mgmt-profile-header {
-            height: 120px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            position: relative;
-        }
-
-        .trainer-mgmt-profile-header {
+.trainer-mgmt-profile-header {
+    height: 120px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    position: relative;
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding-top: 2rem;
-    padding-bottom: 1rem;
-    background: transparent;
-}
-.trainer-mgmt-profile-img {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 5px solid white;
-    object-fit: cover;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    position: static;
     margin: 0 auto;
-    display: block;
 }
 
         .trainer-card:hover .trainer-mgmt-profile-img {
@@ -1127,12 +1215,6 @@ th {
             text-align: center;
         }
 
-        .trainer-mgmt-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--dark);
-        }
 
         .trainer-mgmt-email {
             color: #666;
@@ -1149,72 +1231,8 @@ th {
 
         .detail-item {
             text-align: center;
-        }
-
-        .detail-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .detail-label {
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .trainer-mgmt-gyms-list {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 0.8rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .trainer-mgmt-gyms-title {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-            text-align: left;
-        }
-
-        .trainer-mgmt-gyms-container {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .trainer-mgmt-gym-badge {
-            background: var(--secondary);
-            color: white;
-            padding: 0.3rem 0.6rem;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .trainer-mgmt-action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-        }
-
-        .trainer-mgmt-action-btn {
-            padding: 0.6rem 1rem;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .trainer-mgmt-approve-btn {
-            background: var(--success);
-            color: white;
+            flex-direction: column;
         }
 
         .trainer-mgmt-reject-btn {
@@ -1227,10 +1245,6 @@ th {
             color: var(--dark);
         }
 
-        .trainer-mgmt-delete-btn {
-            background: var(--dark);
-            color: white;
-        }
 
         .trainer-mgmt-action-btn:hover {
             transform: translateY(-2px);
@@ -1242,18 +1256,7 @@ th {
         }
 
         /* Modal styles */
-        .trainer-mgmt-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
+        /* Removed duplicate .trainer-mgmt-modal selector to fix CSS error */
 
         .trainer-mgmt-modal-content {
             background: white;
@@ -1281,12 +1284,8 @@ th {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
-        }
-
-        .trainer-mgmt-modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--dark);
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
         }
 
         .trainer-mgmt-close-btn {
@@ -1302,16 +1301,8 @@ th {
             color: var(--danger);
         }
 
-        .trainer-mgmt-modal-body {
-            margin-bottom: 1.5rem;
-        }
 
-        .trainer-mgmt-modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-        }
-
+       
         /* Responsive adjustments */
         @media (max-width: 768px) {
            
@@ -1323,3 +1314,117 @@ th {
                 flex-wrap: wrap;
             }
         }
+         /* Responsive Hamburger Styles */
+      .hamburger {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        z-index: 2001;
+      }
+      .hamburger span {
+        height: 4px;
+        width: 100%;
+        background: #2563eb;
+        margin: 5px 0;
+        border-radius: 2px;
+        transition: all 0.3s;
+      }
+      @media (max-width: 900px) {
+        .sidebar {
+          position: fixed;
+          left: -260px;
+          top: 0;
+          width: 240px;
+          height: 100vh;
+          background: #fff;
+          box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+          z-index: 2002;
+          transition: left 0.3s;
+        }
+        .sidebar.active {
+          left: 0;
+        }
+        .main-content {
+          margin-left: 0 !important;
+        }
+        .hamburger {
+          display: flex;
+          position: fixed;
+          top: 18px;
+          left: 18px;
+          background: #fff;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .sidebar-header h3 {
+          font-size: 1.1rem;
+        }
+        .sidebar-menu ul {
+          padding-left: 0;
+        }
+      }
+      @media (max-width: 700px) {
+        .dashboard-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+        .card {
+          min-width: 0;
+        }
+        .page-header {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .content-area {
+          padding: 10px;
+        }
+        .table-container table, .table-container thead, .table-container tbody, .table-container th, .table-container td, .table-container tr {
+          display: block;
+        }
+        .table-container tr {
+          margin-bottom: 12px;
+          border-bottom: 1px solid #eee;
+        }
+        .table-container td, .table-container th {
+          padding: 8px 6px;
+          text-align: left;
+        }
+        .table-container th {
+          background: #f8f9fa;
+        }
+        .table-container td:before {
+          content: attr(data-label);
+          font-weight: bold;
+          display: block;
+          color: #2563eb;
+        }
+        .table-container thead {
+          display: none;
+        }
+        .trial-booking-container {
+          padding: 8px;
+        }
+        .trial-request-card {
+          padding: 10px;
+        }
+        .trainer-mgmt-card.redesigned {
+          min-width: 98vw;
+          max-width: 100vw;
+        }
+        .top-navbar {
+          flex-direction: column;
+          gap: 10px;
+          height: auto;
+          padding: 10px 6px;
+        }
+        .search-bar input {
+          width: 120px;
+        }
+        .user-info {
+          gap: 10px;
+        }
+      }

@@ -164,22 +164,44 @@ router.get('/search', async (req, res) => {
     if (useAggregation) {
       gyms = await Gym.aggregate([
         { $match: filter },
-        {
-          $addFields: {
-            'membershipPlans.basic.priceNum': { $toDouble: '$membershipPlans.basic.price' },
-            'membershipPlans.standard.priceNum': { $toDouble: '$membershipPlans.standard.price' },
-            'membershipPlans.premium.priceNum': { $toDouble: '$membershipPlans.premium.price' },
+        { $addFields: {
+            minPlanPrice: {
+              $let: {
+                vars: {
+                  plansArray: {
+                    $cond: [
+                      { $isArray: "$membershipPlans" },
+                      "$membershipPlans",
+                      []
+                    ]
+                  }
+                },
+                in: {
+                  $cond: [
+                    { $gt: [{ $size: "$$plansArray" }, 0] },
+                    {
+                      $min: {
+                        $map: {
+                          input: {
+                            $filter: {
+                              input: "$$plansArray",
+                              as: "plan",
+                              cond: { $ne: ["$$plan.price", null] }
+                            }
+                          },
+                          as: "plan",
+                          in: { $toDouble: "$$plan.price" }
+                        }
+                      }
+                    },
+                    null
+                  ]
+                }
+              }
+            }
           }
         },
-        {
-          $match: {
-            $or: [
-              { 'membershipPlans.basic.priceNum': { $lte: price } },
-              { 'membershipPlans.standard.priceNum': { $lte: price } },
-              { 'membershipPlans.premium.priceNum': { $lte: price } },
-            ]
-          }
-        }
+        { $match: { minPlanPrice: { $lte: price } } }
       ]);
     } else {
       gyms = await Gym.find(filter);
@@ -190,8 +212,19 @@ router.get('/search', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error in /search:', error);
+    if (error && error.stack) {
+      console.error('❌ Stack trace:', error.stack);
+    }
+    if (error && error.errors) {
+      console.error('❌ Mongoose errors:', error.errors);
+    }
     if (!res.headersSent) {
-      res.status(500).json({ message: 'Server error during gym search', error: error.message });
+      res.status(500).json({
+        message: 'Server error during gym search',
+        error: error.message,
+        stack: error.stack,
+        raw: error
+      });
     }
   }
 });

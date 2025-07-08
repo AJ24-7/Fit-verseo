@@ -119,6 +119,46 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 3000);
     }
 
+    // Global dialog box system
+    function showDialog({ title = 'Confirm', message = '', confirmText = 'Delete', cancelText = 'Cancel', onConfirm, onCancel }) {
+        // Remove any existing dialog
+        const existing = document.getElementById('global-dialog-box');
+        if (existing) existing.remove();
+
+        const dialog = document.createElement('div');
+        dialog.id = 'global-dialog-box';
+        dialog.style.position = 'fixed';
+        dialog.style.top = '0';
+        dialog.style.left = '0';
+        dialog.style.width = '100vw';
+        dialog.style.height = '100vh';
+        dialog.style.background = 'rgba(0,0,0,0.35)';
+        dialog.style.display = 'flex';
+        dialog.style.alignItems = 'center';
+        dialog.style.justifyContent = 'center';
+        dialog.style.zIndex = '2000';
+
+        dialog.innerHTML = `
+            <div style="background:#fff; border-radius:10px; box-shadow:0 4px 24px rgba(0,0,0,0.18); padding:32px 28px; min-width:320px; max-width:90vw; text-align:center;">
+                <h3 style="margin-bottom:16px; color:#d32f2f;">${title}</h3>
+                <p style="margin-bottom:24px; color:#333;">${message}</p>
+                <div style="display:flex; gap:16px; justify-content:center;">
+                    <button id="dialog-confirm-btn" style="background:#d32f2f; color:#fff; border:none; border-radius:5px; padding:8px 22px; font-weight:600; cursor:pointer;">${confirmText}</button>
+                    <button id="dialog-cancel-btn" style="background:#eee; color:#333; border:none; border-radius:5px; padding:8px 22px; font-weight:600; cursor:pointer;">${cancelText}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+        document.getElementById('dialog-confirm-btn').onclick = () => {
+            dialog.remove();
+            if (typeof onConfirm === 'function') onConfirm();
+        };
+        document.getElementById('dialog-cancel-btn').onclick = () => {
+            dialog.remove();
+            if (typeof onCancel === 'function') onCancel();
+        };
+    }
+
     async function loadTabData(tabId) {
         const tabContent = document.querySelector(`.gym-tab-content[id="${tabId}"]`);
         const tbody = tabContent ? tabContent.querySelector('tbody') : null;
@@ -566,7 +606,7 @@ function initTrialRequestsTab() {
 
     // ========== Trainer Management Dynamic ========== //
     const trainerMgmtGrid = document.getElementById('trainerMgmtGrid');
-    const trainerMgmtTabs = document.querySelectorAll('.trainer-mgmt-tab-btn');
+    const trainerMgmtTabSections = document.querySelectorAll('.trainer-mgmt-tab-section');
     let allTrainers = [];
     let currentTrainerTab = 'All';
 
@@ -575,13 +615,16 @@ function initTrialRequestsTab() {
         try {
             if (trainerMgmtGrid) trainerMgmtGrid.innerHTML = `<div class="loading-animation"><div class="spinner"></div><p>Loading trainers...</p></div>`;
             const token = localStorage.getItem('token');
+            // Fetch all trainers for admin, grouped by status
             const response = await fetch(`${BASE_URL}/api/trainers/all`, {
                 headers: {
                     'Authorization': `Bearer ${token || ''}`
                 }
             });
             if (!response.ok) throw new Error('Failed to fetch trainers');
-            allTrainers = await response.json();
+            const trainers = await response.json();
+            // Normalize status to lower-case for filtering
+            allTrainers = trainers.map(tr => ({ ...tr, status: (tr.status || '').toLowerCase() }));
             renderTrainerCards(currentTrainerTab);
         } catch (err) {
             console.error('[TrainerMgmt] Error fetching trainers:', err);
@@ -595,11 +638,10 @@ function initTrialRequestsTab() {
         trainerMgmtGrid.innerHTML = '';
         let trainers = allTrainers;
         if (tab !== 'All') {
-            const status = tab.toLowerCase();
-            trainers = allTrainers.filter(tr => (tr.status || '').toLowerCase() === status);
+            trainers = allTrainers.filter(tr => (tr.status || '') === tab.toLowerCase());
         }
         if (!trainers.length) {
-            trainerMgmtGrid.innerHTML = `<p class="no-trainers">No trainers found for this category.</p>`;
+            trainerMgmtGrid.innerHTML = `<div style="padding:32px; color:#888; text-align:center; width:100%;">No trainers found for <b>${tab.charAt(0).toUpperCase() + tab.slice(1)}</b>.</div>`;
             return;
         }
         trainers.forEach(trainer => {
@@ -610,43 +652,53 @@ function initTrialRequestsTab() {
 
     // Generate HTML for a trainer card
     function generateTrainerCard(trainer) {
-        const statusClass = `trainer-mgmt-${(trainer.status || 'pending').toLowerCase()}`;
-        const imgSrc = trainer.image ? `${BASE_URL}${trainer.image}` : 'https://via.placeholder.com/100';
+        const statusClass = `trainer-mgmt-${(trainer.status || 'pending')}`;
+        const imgSrc = trainer.image ? (trainer.image.startsWith('http') ? trainer.image : `${BASE_URL}${trainer.image}`) : 'https://via.placeholder.com/100';
         const gyms = Array.isArray(trainer.gym) ? trainer.gym : (trainer.gym ? [trainer.gym] : []);
+        const certifications = Array.isArray(trainer.certifications) && trainer.certifications.length ? trainer.certifications : [];
         return `
-        <div class="trainer-mgmt-card" data-id="${trainer._id}">
-            <div class="trainer-mgmt-status-badge ${statusClass}">${capitalize(trainer.status)}</div>
-            <div class="trainer-mgmt-profile-header">
-                <img src="${imgSrc}" alt="Trainer" class="trainer-mgmt-profile-img">
+        <div class="trainer-mgmt-card redesigned" data-id="${trainer._id}">
+            <div class="trainer-mgmt-card-header">
+                <div class="trainer-mgmt-avatar-section">
+                    <img src="${imgSrc}" alt="Trainer" class="trainer-mgmt-profile-img">
+                    <span class="trainer-mgmt-status-badge ${statusClass}" title="Status">
+                        <i class="fas fa-circle"></i> ${capitalize(trainer.status)}
+                    </span>
+                </div>
+                <div class="trainer-mgmt-main-info">
+                    <h3 class="trainer-mgmt-name">${trainer.firstName || ''} ${trainer.lastName || ''}</h3>
+                    <div class="trainer-mgmt-contact-row">
+                        <span class="trainer-mgmt-contact" title="Email"><i class="fas fa-envelope"></i> ${trainer.email || '-'}</span>
+                        <span class="trainer-mgmt-contact" title="Phone"><i class="fas fa-phone"></i> ${trainer.phone || '-'}</span>
+                    </div>
+                    <div class="trainer-mgmt-specialty-exp">
+                        <span class="trainer-mgmt-specialty" title="Specialty"><i class="fas fa-dumbbell"></i> ${trainer.specialty || '-'}</span>
+                        <span class="trainer-mgmt-experience" title="Experience"><i class="fas fa-briefcase"></i> ${trainer.experience || 0} yrs</span>
+                        <span class="trainer-mgmt-availability" title="Availability"><i class="fas fa-clock"></i> ${trainer.availability || '-'}</span>
+                    </div>
+                </div>
             </div>
-            <div class="trainer-mgmt-profile-body">
-                <h3 class="trainer-mgmt-name">${trainer.firstName || ''} ${trainer.lastName || ''}</h3>
-                <p class="trainer-mgmt-email">${trainer.email || ''}</p>
-                <div class="trainer-mgmt-details">
-                    <div class="detail-item">
-                        <div class="detail-value">${trainer.experience || 0}</div>
-                        <div class="detail-label">Years</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-value">${trainer.rate || '-'}</div>
-                        <div class="detail-label">Rating</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-value">${trainer.clients || '-'}</div>
-                        <div class="detail-label">Clients</div>
-                    </div>
-                </div>
+            <div class="trainer-mgmt-card-body">
                 <div class="trainer-mgmt-gyms-list">
-                    <p class="trainer-mgmt-gyms-title">${trainer.status === 'rejected' ? 'Previously Worked At:' : 'Currently Working At:'}</p>
+                    <span class="trainer-mgmt-gyms-title"><i class="fas fa-building"></i> ${trainer.status === 'rejected' ? 'Previously Worked At:' : 'Currently Working At:'}</span>
                     <div class="trainer-mgmt-gyms-container">
-                        ${gyms.map(g => `<span class="trainer-mgmt-gym-badge">${g}</span>`).join('')}
+                        ${gyms.map(g => `<span class="trainer-mgmt-gym-badge"><i class='fas fa-map-marker-alt'></i> ${g}</span>`).join('')}
                     </div>
                 </div>
-                <div class="trainer-mgmt-action-buttons">
-                    ${trainer.status !== 'approved' ? `<button class="trainer-mgmt-action-btn trainer-mgmt-approve-btn" data-action="approve"> <i class="fas fa-check"></i> Approve </button>` : ''}
-                    ${trainer.status !== 'rejected' ? `<button class="trainer-mgmt-action-btn trainer-mgmt-reject-btn" data-action="reject"> <i class="fas fa-times"></i> Reject </button>` : ''}
-                    <button class="trainer-mgmt-action-btn trainer-mgmt-delete-btn" data-action="delete"> <i class="fas fa-trash"></i> Delete </button>
+                <div class="trainer-mgmt-cert-bio-row">
+                    <button class="trainer-mgmt-action-btn trainer-mgmt-toggle-btn" data-action="toggle-details">
+                        <i class="fas fa-info-circle"></i> ${trainer.bio || certifications.length ? 'Show Details' : 'No More Info'}
+                    </button>
+                    <div class="trainer-mgmt-more-details" style="display:none;">
+                        ${trainer.bio ? `<div class="trainer-mgmt-bio"><i class='fas fa-user'></i> <strong>Bio:</strong> <span>${trainer.bio}</span></div>` : ''}
+                        ${certifications.length ? `<div class="trainer-mgmt-certs"><i class='fas fa-certificate'></i> <strong>Certifications:</strong> <ul>${certifications.map(c => `<li>${c}</li>`).join('')}</ul></div>` : ''}
+                    </div>
                 </div>
+            </div>
+            <div class="trainer-mgmt-action-buttons">
+                ${trainer.status !== 'approved' ? `<button class="trainer-mgmt-action-btn trainer-mgmt-approve-btn" data-action="approve" title="Approve"><i class="fas fa-check"></i></button>` : ''}
+                ${trainer.status !== 'rejected' ? `<button class="trainer-mgmt-action-btn trainer-mgmt-reject-btn" data-action="reject" title="Reject"><i class="fas fa-times"></i></button>` : ''}
+                <button class="trainer-mgmt-action-btn trainer-mgmt-delete-btn" data-action="delete" title="Delete"><i class="fas fa-trash"></i></button>
             </div>
         </div>
         `;
@@ -660,53 +712,100 @@ function initTrialRequestsTab() {
     // Add event listeners for approve/reject/delete
     function addTrainerActionListeners() {
         if (!trainerMgmtGrid) return;
+
+        // Toggle details
+        trainerMgmtGrid.querySelectorAll('.trainer-mgmt-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const moreDetails = btn.parentElement.querySelector('.trainer-mgmt-more-details');
+                if (moreDetails) {
+                    moreDetails.style.display = moreDetails.style.display === 'none' || !moreDetails.style.display ? 'block' : 'none';
+                    btn.innerHTML = `<i class="fas fa-info-circle"></i> ${moreDetails.style.display === 'block' ? 'Hide Details' : 'Show Details'}`;
+                }
+            });
+        });
+
+        // Action buttons (approve/reject/delete)
         trainerMgmtGrid.querySelectorAll('.trainer-mgmt-action-btn').forEach(btn => {
-            btn.addEventListener('click', async function() {
-                const card = this.closest('.trainer-mgmt-card');
-                const trainerId = card.getAttribute('data-id');
-                const action = this.getAttribute('data-action');
+            btn.addEventListener('click', async function (e) {
+                e.stopPropagation();
+                const action = btn.getAttribute('data-action');
+                const card = btn.closest('.trainer-mgmt-card');
+                const trainerId = card ? card.getAttribute('data-id') : null;
                 if (!trainerId || !action) return;
-                try {
-                    let endpoint, method, body = null;
-                    if (action === 'approve') {
-                        endpoint = `${BASE_URL}/api/trainers/${trainerId}/approve`;
-                        method = 'PATCH';
-                    } else if (action === 'reject') {
-                        endpoint = `${BASE_URL}/api/trainers/${trainerId}/reject`;
-                        method = 'PATCH';
-                    } else if (action === 'delete') {
-                        if (!confirm('Are you sure you want to delete this trainer?')) return;
-                        endpoint = `${BASE_URL}/api/trainers/${trainerId}`;
-                        method = 'DELETE';
+
+                // Use /api/trainers/:id for all actions (approve, reject, delete)
+                if (action === 'approve') {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const res = await fetch(`${BASE_URL}/api/trainers/${trainerId}/approve`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        if (!res.ok) throw new Error('Failed to approve trainer');
+                        showNotification('Trainer approved!', 'success');
+                        await fetchTrainers();
+                        renderTrainerCards(currentTrainerTab);
+                    } catch (err) {
+                        showNotification('Error approving trainer', 'error');
                     }
-                    const token = localStorage.getItem('token');
-                    const res = await fetch(endpoint, {
-                        method,
-                        headers: {
-                            'Authorization': `Bearer ${token || ''}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: body ? JSON.stringify(body) : undefined
+                } else if (action === 'reject') {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const res = await fetch(`${BASE_URL}/api/trainers/${trainerId}/reject`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        if (!res.ok) throw new Error('Failed to reject trainer');
+                        showNotification('Trainer rejected!', 'success');
+                        await fetchTrainers();
+                        renderTrainerCards(currentTrainerTab);
+                    } catch (err) {
+                        showNotification('Error rejecting trainer', 'error');
+                    }
+                } else if (action === 'delete') {
+                    showDialog({
+                        title: 'Delete Trainer',
+                        message: 'Are you sure you want to delete this trainer? This action cannot be undone.',
+                        confirmText: 'Delete',
+                        cancelText: 'Cancel',
+                        onConfirm: async () => {
+                            try {
+                                const token = localStorage.getItem('token');
+                                const res = await fetch(`${BASE_URL}/api/trainers/${trainerId}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                                if (!res.ok) throw new Error('Failed to delete trainer');
+                                showNotification('Trainer deleted!', 'success');
+                                await fetchTrainers();
+                                renderTrainerCards(currentTrainerTab);
+                            } catch (err) {
+                                showNotification('Error deleting trainer', 'error');
+                            }
+                        }
                     });
-                    if (!res.ok) throw new Error('Action failed');
-                    showNotification(`Trainer ${action}d successfully!`, 'success');
-                    await fetchTrainers();
-                } catch (err) {
-                    console.error(`[TrainerMgmt] Action failed:`, err);
-                    showNotification('An error occurred. Please try again.', 'error');
                 }
             });
         });
     }
 
     // Tab switching for trainer management
-    if (trainerMgmtTabs && trainerMgmtTabs.length) {
-        trainerMgmtTabs.forEach((tabBtn, idx) => {
-            tabBtn.addEventListener('click', function() {
-                trainerMgmtTabs.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                const tabNames = ['All', 'Pending', 'Approved', 'Rejected', 'Revoked'];
-                currentTrainerTab = tabNames[idx];
+    if (trainerMgmtTabSections && trainerMgmtTabSections.length) {
+        trainerMgmtTabSections.forEach(tabSection => {
+            tabSection.addEventListener('click', function () {
+                if (tabSection.classList.contains('active')) return;
+                document.querySelectorAll('.trainer-mgmt-tab-section.active').forEach(el => el.classList.remove('active'));
+                tabSection.classList.add('active');
+                currentTrainerTab = tabSection.getAttribute('data-tab');
                 renderTrainerCards(currentTrainerTab);
             });
         });
@@ -717,3 +816,65 @@ function initTrialRequestsTab() {
     // ========== End Trainer Management Dynamic ==========
 
 });
+ // Hamburger menu logic
+    document.addEventListener('DOMContentLoaded', function () {
+      const hamburger = document.getElementById('hamburgerMenu');
+      const sidebar = document.getElementById('sidebarMenu');
+      const mainContent = document.getElementById('mainContent');
+      function closeSidebar() {
+        sidebar.classList.remove('active');
+      }
+      function openSidebar() {
+        sidebar.classList.add('active');
+      }
+      hamburger.addEventListener('click', function () {
+        sidebar.classList.toggle('active');
+      });
+      hamburger.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          sidebar.classList.toggle('active');
+        }
+      });
+      // Close sidebar when clicking outside on mobile
+      mainContent.addEventListener('click', function (e) {
+        if (window.innerWidth <= 900 && sidebar.classList.contains('active')) {
+          closeSidebar();
+        }
+      });
+      // Optional: close sidebar on navigation
+      document.querySelectorAll('.sidebar-menu a').forEach(link => {
+        link.addEventListener('click', function () {
+          if (window.innerWidth <= 900) closeSidebar();
+        });
+      });
+      // Hide hamburger on desktop
+      function handleResize() {
+        if (window.innerWidth > 900) {
+          sidebar.classList.remove('active');
+          hamburger.style.display = 'none';
+        } else {
+          hamburger.style.display = 'flex';
+        }
+      }
+      window.addEventListener('resize', handleResize);
+      handleResize();
+    });
+    // Responsive table labels for mobile
+    document.addEventListener('DOMContentLoaded', function () {
+      function setTableLabels() {
+        document.querySelectorAll('.table-container table').forEach(table => {
+          const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+          table.querySelectorAll('tbody tr').forEach(row => {
+            Array.from(row.children).forEach((td, idx) => {
+              td.setAttribute('data-label', headers[idx] || '');
+            });
+          });
+        });
+      }
+      setTableLabels();
+      // Re-apply on dynamic content load (if using AJAX)
+      const observer = new MutationObserver(setTableLabels);
+      document.querySelectorAll('.table-container tbody').forEach(tbody => {
+        observer.observe(tbody, { childList: true });
+      });
+    });
