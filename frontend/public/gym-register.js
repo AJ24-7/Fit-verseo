@@ -1,155 +1,163 @@
-// --- Membership Plans Card Logic ---
-const membershipPlansGrid = document.getElementById('membershipPlansGrid');
-const planNames = [
-  { name: 'Basic', icon: 'fa-leaf', color: '#38b000' },
-  { name: 'Standard', icon: 'fa-star', color: '#1976d2' },
-  { name: 'Premium', icon: 'fa-crown', color: '#f59e42' }
-];
+document.getElementById('submitBtn')?.addEventListener('click', () => {
+  console.log('Button clicked!');
+});
+// --- Wait for DOMContentLoaded to ensure all elements exist before attaching handlers ---
+document.addEventListener('DOMContentLoaded', function () {
+  // --- Membership Plans Card Logic ---
+  const membershipPlansGrid = document.getElementById('membershipPlansGrid');
+  const planNames = [
+    { name: 'Basic', icon: 'fa-leaf', color: '#38b000' },
+    { name: 'Standard', icon: 'fa-star', color: '#1976d2' },
+    { name: 'Premium', icon: 'fa-crown', color: '#f59e42' }
+  ];
 
-function renderMembershipPlansGrid() {
-  if (!membershipPlansGrid) return;
-  membershipPlansGrid.innerHTML = '';
-  planNames.forEach((plan, idx) => {
-    const card = document.createElement('div');
-    card.className = 'plan-editor-card';
-    card.style = 'background:#f8f9fa;border-radius:10px;padding:16px 18px;min-width:260px;max-width:320px;box-shadow:0 2px 8px #0001;margin-bottom:10px;position:relative;';
-    card.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.6em;color:${plan.color};"><i class="fas ${plan.icon}"></i></div>
-        <input type="text" class="plan-name-input" value="${plan.name}" readonly style="flex:1;font-weight:700;background:#e3eafc;border:none;color:#222;">
-      </div>
-      <div style="margin-top:10px;display:flex;gap:10px;">
-        <input type="number" class="plan-price-input" name="planPrice[]" min="0" placeholder="Price* (₹)" style="width:90px;" required>
-        <input type="number" class="plan-discount-input" name="planDiscount[]" min="0" max="100" placeholder="Discount (%)" style="width:80px;">
-        <input type="number" class="plan-discount-months-input" name="planDiscountMonths[]" min="0" max="24" placeholder="Months" style="width:70px;">
-      </div>
-      <textarea class="plan-benefits-input" name="planBenefits[]" placeholder="Benefits (comma separated)*" style="margin-top:10px;width:100%;min-height:38px;resize:vertical;" required></textarea>
-      <input type="text" class="plan-note-input" name="planNote[]" placeholder="Note (optional)" style="margin-top:8px;width:100%;">
-      <input type="hidden" name="planName[]" value="${plan.name}">
-      <input type="hidden" name="planIcon[]" value="${plan.icon}">
-      <input type="hidden" name="planColor[]" value="${plan.color}">
-      <div class="plan-discounted-amount" style="margin-top:14px;font-size:1.08em;font-weight:600;color:#1976d2;min-height:22px;text-align:right;"></div>
-    `;
-    membershipPlansGrid.appendChild(card);
-  });
-}
+  function renderMembershipPlansGrid() {
+    if (!membershipPlansGrid) return;
+    membershipPlansGrid.innerHTML = '';
+    planNames.forEach((plan, idx) => {
+      const card = document.createElement('div');
+      card.className = 'plan-editor-card';
+      card.style = 'background:#f8f9fa;border-radius:10px;padding:16px 18px;min-width:260px;max-width:320px;box-shadow:0 2px 8px #0001;margin-bottom:10px;position:relative;';
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.6em;color:${plan.color};"><i class="fas ${plan.icon}"></i></div>
+          <input type="text" class="plan-name-input" value="${plan.name}" readonly style="flex:1;font-weight:700;background:#e3eafc;border:none;color:#222;">
+        </div>
+        <div style="margin-top:10px;display:flex;gap:10px;">
+          <input type="number" class="plan-price-input" name="planPrice[]" min="0" placeholder="Price* (₹)" style="width:90px;" required>
+          <input type="number" class="plan-discount-input" name="planDiscount[]" min="0" max="100" placeholder="Discount (%)" style="width:80px;">
+          <input type="number" class="plan-discount-months-input" name="planDiscountMonths[]" min="0" max="24" placeholder="Months" style="width:70px;">
+        </div>
+        <textarea class="plan-benefits-input" name="planBenefits[]" placeholder="Benefits (comma separated)*" style="margin-top:10px;width:100%;min-height:38px;resize:vertical;" required></textarea>
+        <input type="text" class="plan-note-input" name="planNote[]" placeholder="Note (optional)" style="margin-top:8px;width:100%;">
+        <input type="hidden" name="planName[]" value="${plan.name}">
+        <input type="hidden" name="planIcon[]" value="${plan.icon}">
+        <input type="hidden" name="planColor[]" value="${plan.color}">
+        <div class="plan-discounted-amount" style="margin-top:14px;font-size:1.08em;font-weight:600;color:#1976d2;min-height:22px;text-align:right;"></div>
+      `;
+      membershipPlansGrid.appendChild(card);
+    });
+  }
 
-renderMembershipPlansGrid();
+  renderMembershipPlansGrid();
 
-// --- Discounted Amount Calculation Logic ---
-function setupPlanDiscountCalculation() {
-  if (!membershipPlansGrid) return;
-  const cards = membershipPlansGrid.querySelectorAll('.plan-editor-card');
-  cards.forEach(card => {
-    const priceInput = card.querySelector('.plan-price-input');
-    const discountInput = card.querySelector('.plan-discount-input');
-    const monthsInput = card.querySelector('.plan-discount-months-input');
-    const discountedAmountDiv = card.querySelector('.plan-discounted-amount');
+  // --- Discounted Amount Calculation Logic ---
+  function setupPlanDiscountCalculation() {
+    if (!membershipPlansGrid) return;
+    const cards = membershipPlansGrid.querySelectorAll('.plan-editor-card');
+    cards.forEach(card => {
+      const priceInput = card.querySelector('.plan-price-input');
+      const discountInput = card.querySelector('.plan-discount-input');
+      const monthsInput = card.querySelector('.plan-discount-months-input');
+      const discountedAmountDiv = card.querySelector('.plan-discounted-amount');
 
-    function updateDiscountedAmount() {
-      const price = parseFloat(priceInput.value);
-      const discount = parseFloat(discountInput.value);
-      const months = parseInt(monthsInput.value);
-      if (!isNaN(price) && price > 0 && !isNaN(discount) && discount > 0 && !isNaN(months) && months > 0) {
-        const total = price * months;
-        const discountAmt = total * (discount / 100);
-        const finalAmt = total - discountAmt;
-        discountedAmountDiv.innerHTML = `Discounted: <span style="color:#38b000;">₹${finalAmt.toLocaleString(undefined, {maximumFractionDigits:2})}</span> <span style="font-size:0.95em;font-weight:400;color:#888;">(You save ₹${discountAmt.toLocaleString(undefined, {maximumFractionDigits:2})})</span>`;
-      } else {
-        discountedAmountDiv.innerHTML = '';
+      function updateDiscountedAmount() {
+        const price = parseFloat(priceInput.value);
+        const discount = parseFloat(discountInput.value);
+        const months = parseInt(monthsInput.value);
+        if (!isNaN(price) && price > 0 && !isNaN(discount) && discount > 0 && !isNaN(months) && months > 0) {
+          const total = price * months;
+          const discountAmt = total * (discount / 100);
+          const finalAmt = total - discountAmt;
+          discountedAmountDiv.innerHTML = `Discounted: <span style="color:#38b000;">₹${finalAmt.toLocaleString(undefined, {maximumFractionDigits:2})}</span> <span style="font-size:0.95em;font-weight:400;color:#888;">(You save ₹${discountAmt.toLocaleString(undefined, {maximumFractionDigits:2})})</span>`;
+        } else {
+          discountedAmountDiv.innerHTML = '';
+        }
       }
-    }
 
-    priceInput.addEventListener('input', updateDiscountedAmount);
-    discountInput.addEventListener('input', updateDiscountedAmount);
-    monthsInput.addEventListener('input', updateDiscountedAmount);
-  });
-}
+      priceInput.addEventListener('input', updateDiscountedAmount);
+      discountInput.addEventListener('input', updateDiscountedAmount);
+      monthsInput.addEventListener('input', updateDiscountedAmount);
+    });
+  }
 
-setupPlanDiscountCalculation();
+  setupPlanDiscountCalculation();
 
-// --- Membership Plan Card Field Hints ---
-function addPlanFieldHints() {
-  if (!membershipPlansGrid) return;
-  membershipPlansGrid.querySelectorAll('.plan-hint-msg').forEach(el => el.remove());
-  const cards = membershipPlansGrid.querySelectorAll('.plan-editor-card');
-  cards.forEach(card => {
-    const priceInput = card.querySelector('.plan-price-input');
-    const discountInput = card.querySelector('.plan-discount-input');
-    const monthsInput = card.querySelector('.plan-discount-months-input');
+  // --- Membership Plan Card Field Hints ---
+  function addPlanFieldHints() {
+    if (!membershipPlansGrid) return;
+    membershipPlansGrid.querySelectorAll('.plan-hint-msg').forEach(el => el.remove());
+    const cards = membershipPlansGrid.querySelectorAll('.plan-editor-card');
+    cards.forEach(card => {
+      const priceInput = card.querySelector('.plan-price-input');
+      const discountInput = card.querySelector('.plan-discount-input');
+      const monthsInput = card.querySelector('.plan-discount-months-input');
 
-    function createTooltip(input, msg) {
-      let tooltip = input.parentNode.querySelector('.plan-hint-tooltip');
-      if (!tooltip) {
-        tooltip = document.createElement('div');
-        tooltip.className = 'plan-hint-tooltip';
-        tooltip.style = `
-          position: absolute;
-          left: 0;
-          top: 100%;
-          z-index: 10;
-          background: #fff;
-          color: #1976d2;
-          border: 1.5px solid #1976d2;
-          border-radius: 7px;
-          padding: 7px 14px;
-          font-size: 0.98em;
-          box-shadow: 0 4px 16px #4361ee22;
-          margin-top: 6px;
-          white-space: nowrap;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.18s;
-        `;
+      function createTooltip(input, msg) {
+        let tooltip = input.parentNode.querySelector('.plan-hint-tooltip');
+        if (!tooltip) {
+          tooltip = document.createElement('div');
+          tooltip.className = 'plan-hint-tooltip';
+          tooltip.style = `
+            position: absolute;
+            left: 0;
+            top: 100%;
+            z-index: 10;
+            background: #fff;
+            color: #1976d2;
+            border: 1.5px solid #1976d2;
+            border-radius: 7px;
+            padding: 7px 14px;
+            font-size: 0.98em;
+            box-shadow: 0 4px 16px #4361ee22;
+            margin-top: 6px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s;
+          `;
+          tooltip.textContent = msg;
+          input.parentNode.style.position = 'relative';
+          input.parentNode.appendChild(tooltip);
+        }
         tooltip.textContent = msg;
-        input.parentNode.style.position = 'relative';
-        input.parentNode.appendChild(tooltip);
+        return tooltip;
       }
-      tooltip.textContent = msg;
-      return tooltip;
-    }
 
-    function showTooltip(input, msg) {
-      const tooltip = createTooltip(input, msg);
-      tooltip.style.opacity = '1';
-    }
-    function hideTooltip(input) {
-      const tooltip = input.parentNode.querySelector('.plan-hint-tooltip');
-      if (tooltip) tooltip.style.opacity = '0';
-    }
+      function showTooltip(input, msg) {
+        const tooltip = createTooltip(input, msg);
+        tooltip.style.opacity = '1';
+      }
+      function hideTooltip(input) {
+        const tooltip = input.parentNode.querySelector('.plan-hint-tooltip');
+        if (tooltip) tooltip.style.opacity = '0';
+      }
 
-    priceInput.addEventListener('mouseenter', () => showTooltip(priceInput, 'Fill per month price'));
-    priceInput.addEventListener('mouseleave', () => hideTooltip(priceInput));
-    discountInput.addEventListener('mouseenter', () => showTooltip(discountInput, 'Enter discount percentage'));
-    discountInput.addEventListener('mouseleave', () => hideTooltip(discountInput));
-    monthsInput.addEventListener('mouseenter', () => showTooltip(monthsInput, 'Enter discount applied on months'));
-    monthsInput.addEventListener('mouseleave', () => hideTooltip(monthsInput));
-  });
-}
+      priceInput.addEventListener('mouseenter', () => showTooltip(priceInput, 'Fill per month price'));
+      priceInput.addEventListener('mouseleave', () => hideTooltip(priceInput));
+      discountInput.addEventListener('mouseenter', () => showTooltip(discountInput, 'Enter discount percentage'));
+      discountInput.addEventListener('mouseleave', () => hideTooltip(discountInput));
+      monthsInput.addEventListener('mouseenter', () => showTooltip(monthsInput, 'Enter discount applied on months'));
+      monthsInput.addEventListener('mouseleave', () => hideTooltip(monthsInput));
+    });
+  }
 
-addPlanFieldHints();
+  addPlanFieldHints();
 
-// --- Membership Plans Section Hover Info ---
-const plansGrid = document.getElementById('membershipPlansGrid');
-if (plansGrid?.parentElement) {
-  const infoMsg = document.createElement('div');
-  infoMsg.className = 'plans-hover-info-msg';
-  infoMsg.style = 'display:none;margin-top:8px;padding:10px 14px;background:#e3eafc;border-radius:7px;color:#1976d2;font-size:0.98em;font-weight:500;position:relative;z-index:2;box-shadow:0 2px 8px #4361ee11;';
-  infoMsg.innerHTML = '<i class="fas fa-info-circle" style="margin-right:6px;"></i>You can change the Plans after Approval from the dashboard.';
-  plansGrid.parentElement.appendChild(infoMsg);
-  
-  plansGrid.addEventListener('mouseenter', () => infoMsg.style.display = 'block');
-  plansGrid.addEventListener('mouseleave', () => infoMsg.style.display = 'none');
-}
+  // --- Membership Plans Section Hover Info ---
+  const plansGrid = document.getElementById('membershipPlansGrid');
+  if (plansGrid?.parentElement) {
+    const infoMsg = document.createElement('div');
+    infoMsg.className = 'plans-hover-info-msg';
+    infoMsg.style = 'display:none;margin-top:8px;padding:10px 14px;background:#e3eafc;border-radius:7px;color:#1976d2;font-size:0.98em;font-weight:500;position:relative;z-index:2;box-shadow:0 2px 8px #4361ee11;';
+    infoMsg.innerHTML = '<i class="fas fa-info-circle" style="margin-right:6px;"></i>You can change the Plans after Approval from the dashboard.';
+    plansGrid.parentElement.appendChild(infoMsg);
+    
+    plansGrid.addEventListener('mouseenter', () => infoMsg.style.display = 'block');
+    plansGrid.addEventListener('mouseleave', () => infoMsg.style.display = 'none');
+  }
 
-console.log("✅ DOM Ready");
+  console.log("✅ DOM Ready");
 
-// --- Main Form Logic ---
-const form = document.getElementById('gymRegisterForm');
-if (!form) {
-  console.error('❌ Could not find form with id gymRegisterForm');
-} else {
-  console.log('✅ Form submit handler attached');
+  // --- Main Form Logic ---
+  const form = document.getElementById('gymRegisterForm');
+  if (!form) {
+    console.error('❌ Could not find form with id gymRegisterForm');
+    return; // Do not proceed further if form not found
+  } else {
+    console.log('✅ Form submit handler attached');
+  }
+
   const API_BASE_URL = 'http://localhost:5000/api';
 
   // --- Gym Logo Upload & Preview ---
@@ -509,11 +517,12 @@ if (!form) {
     const successMessage = document.getElementById('successMessage');
 
     if (!submitBtn) {
-    console.error('❌ Submit button with id submitBtn not found');
-    alert('Submit button not found: #submitBtn');
-  } else {
-    console.log('✅ Submit button found:', submitBtn);
-  }
+      console.error('❌ Submit button with id submitBtn not found');
+      alert('Submit button not found: #submitBtn');
+      return;
+    } else {
+      console.log('✅ Submit button found:', submitBtn);
+    }
 
     try {
       console.log("Validating form...");
@@ -664,4 +673,4 @@ if (!form) {
       });
     }
   });
-}
+});
