@@ -307,18 +307,15 @@ exports.registerGym = async (req, res) => {
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
 
-    // File handling (gymImages is an array of uploaded files)
-    // --- Updated: Parse gymImagesMeta for title, description, category ---
+    // File handling for registration: gymImages (multiple) and logo (single)
     let gymPhotos = [];
-    if (req.files && req.files.gymImages && req.body.gymImagesMeta) {
-      // gymImagesMeta is sent as indexed fields: gymImagesMeta[0][title], etc.
-      const files = req.files.gymImages;
-      // Parse meta fields
+    if (req.files && req.files.gymImages) {
+      // Parse meta fields for gymImages
       let metaArr = [];
-      // Find max index
+      // Find max index for meta fields
       let maxIdx = -1;
       Object.keys(req.body).forEach(key => {
-        const match = key.match(/^gymImagesMeta\[(\d+)\]\[title\]$/);
+        const match = key.match(/^gymImagesMeta\[(\d+)\]\[(title|description|category)\]$/);
         if (match) {
           const idx = parseInt(match[1], 10);
           if (idx > maxIdx) maxIdx = idx;
@@ -328,33 +325,24 @@ exports.registerGym = async (req, res) => {
         metaArr[i] = {
           title: req.body[`gymImagesMeta[${i}][title]`] || '',
           description: req.body[`gymImagesMeta[${i}][description]`] || '',
-          category: req.body[`gymImagesMeta[${i}][category]`] || '',
+          category: req.body[`gymImagesMeta[${i}][category]`] || ''
         };
       }
+      const files = req.files.gymImages;
+      // Only include photos with all required fields
       gymPhotos = files.map((file, i) => ({
         title: metaArr[i]?.title || '',
         description: metaArr[i]?.description || '',
         category: metaArr[i]?.category || '',
         imageUrl: `uploads/gymImages/${file.filename}`,
         uploadedAt: new Date()
-      }));
-    } else if (req.files && req.files.gymImages) {
-      // Fallback: just filenames
-      gymPhotos = req.files.gymImages.map(file => ({
-        title: '',
-        description: '',
-        category: '',
-        imageUrl: `uploads/gymImages/${file.filename}`,
-        uploadedAt: new Date()
-      }));
-    } else {
-      gymPhotos = [];
+      })).filter(photo => photo.title && photo.description && photo.category);
     }
 
     // Handle gym logo upload (single file, field name: 'logo')
     let logoUrl = '';
     if (req.files && req.files.logo && req.files.logo.length > 0) {
-      logoUrl = `uploads/gymImages/${req.files.logo[0].filename}`;
+      logoUrl = `/uploads/gymImages/${req.files.logo[0].filename}`;
     } else {
       logoUrl = '';
     }
@@ -404,9 +392,36 @@ exports.registerGym = async (req, res) => {
     }
 
 
-    // Parse membership plans (array of objects)
+    // Parse membership plans robustly (handle indexed fields from FormData)
     let membershipPlans = [];
-    if (Array.isArray(req.body.planName)) {
+    // Collect all membership plan fields by index
+    const planFieldRegex = /^membershipPlans\[(\d+)\]\[(\w+)\]$/;
+    const planMap = {};
+    Object.keys(req.body).forEach(key => {
+      const match = key.match(planFieldRegex);
+      if (match) {
+        const idx = parseInt(match[1], 10);
+        const field = match[2];
+        if (!planMap[idx]) planMap[idx] = {};
+        planMap[idx][field] = req.body[key];
+      }
+    });
+    // Convert planMap to array, parse benefits as array
+    membershipPlans = Object.keys(planMap).sort((a,b)=>a-b).map(idx => {
+      const plan = planMap[idx];
+      return {
+        name: plan.name || '',
+        price: plan.price || '',
+        discount: plan.discount || '',
+        discountMonths: plan.discountMonths || '',
+        benefits: plan.benefits ? plan.benefits.split(',').map(b => b.trim()).filter(Boolean) : [],
+        note: plan.note || '',
+        icon: plan.icon || '',
+        color: plan.color || ''
+      };
+    });
+    // Fallback: legacy array style (for backward compatibility)
+    if (membershipPlans.length === 0 && Array.isArray(req.body.planName)) {
       for (let i = 0; i < req.body.planName.length; i++) {
         membershipPlans.push({
           name: req.body.planName[i],
@@ -438,9 +453,7 @@ exports.registerGym = async (req, res) => {
       gymPhotos,
       logoUrl,
       equipment: Array.isArray(req.body.equipment) ? req.body.equipment : (typeof req.body.equipment === 'string' ? req.body.equipment.split(',').map(e => e.trim()) : []),
-      otherEquipment: req.body.otherEquipment || '',
       activities,
-      otherActivities: req.body.otherActivities || '',
       membershipPlans,
       contactPerson: req.body.contactPerson,
       supportEmail: req.body.supportEmail,
@@ -488,12 +501,20 @@ exports.getMyProfile = async (req, res) => {
     if (!gym) {
       return res.status(404).json({ message: 'Gym profile not found' });
     }
-    // Construct logo URL
-    let logoUrl = gym.gymImages && gym.gymImages.length > 0 
-      ? `/uploads/gymImages/${gym.gymImages[0]}` 
+    // Use the correct logoUrl field
+    let logoUrl = gym.logoUrl
+      ? (gym.logoUrl.startsWith('/') ? gym.logoUrl : `/${gym.logoUrl}`)
       : null;
     // Debug: Log the logoUrl being returned
     console.log('[getMyProfile] Returning logoUrl:', logoUrl);
+    // Ensure activities are returned as array of objects with name, icon, description
+    const activities = Array.isArray(gym.activities)
+      ? gym.activities.map(a => ({
+          name: a.name || '',
+          icon: a.icon || 'fa-dumbbell',
+          description: a.description || ''
+        }))
+      : [];
     res.json({
       gymName: gym.gymName,
       email: gym.email,
@@ -501,7 +522,7 @@ exports.getMyProfile = async (req, res) => {
       logoUrl: logoUrl,
       location: gym.location,
       description: gym.description,
-      activities: gym.activities || []
+      activities: activities
     });
   } catch (error) {
     console.error('Error fetching gym profile:', error);

@@ -41,7 +41,8 @@ router.options('/register', (req, res) => {
 
 router.post('/register',  upload.fields([
   { name: 'gymImages', maxCount: 5 },
-]), gymadminAuth, registerGym);
+  { name: 'logo', maxCount: 1 },
+]), registerGym);
 
 // ✅ Get All Gyms [GET] /
 router.get('/', gymadminAuth, async (req, res) => {
@@ -108,103 +109,94 @@ router.get('/status/rejected', async (req, res) => {
 router.post('/by-cities', getGymsByCities);
 
 // ✅ Search Gyms [GET] /search
+// Helper to normalize activities from query
+function normalizeActivities(activities) {
+  if (Array.isArray(activities)) {
+    return activities.filter(a => typeof a === 'string' && a.trim() !== '');
+  } else if (typeof activities === 'string' && activities.trim() !== '') {
+    return [activities.trim()];
+  }
+  return [];
+}
+
+// Helper to build filter object
+function buildGymFilter({ city, pincode, activities }) {
+  const filter = { status: 'approved' };
+  if (city && typeof city === 'string' && city.trim() !== '') {
+    filter['location.city'] = { $regex: new RegExp(city.trim(), 'i') };
+  }
+  if (pincode) {
+    filter['location.pincode'] = pincode;
+  }
+  if (activities.length > 0) {
+    const cleanedActivities = activities
+      .filter(a => typeof a === 'string' && a.trim() !== '')
+      .map(a => new RegExp(a.trim(), 'i'));
+    if (cleanedActivities.length > 0) {
+      filter.activities = { $in: cleanedActivities };
+    }
+  }
+  return filter;
+}
+
+// Helper to aggregate gyms by price
+async function aggregateGymsByPrice(filter, price) {
+  return Gym.aggregate([
+    { $match: filter },
+    { $addFields: {
+        minPlanPrice: {
+          $let: {
+            vars: {
+              plansArray: {
+                $cond: [
+                  { $isArray: "$membershipPlans" },
+                  "$membershipPlans",
+                  []
+                ]
+              }
+            },
+            in: {
+              $cond: [
+                { $gt: [{ $size: "$$plansArray" }, 0] },
+                {
+                  $min: {
+                    $map: {
+                      input: {
+                        $filter: {
+                          input: "$$plansArray",
+                          as: "plan",
+                          cond: { $ne: ["$$plan.price", null] }
+                        }
+                      },
+                      as: "plan",
+                      in: { $toDouble: "$$plan.price" }
+                    }
+                  }
+                },
+                null
+              ]
+            }
+          }
+        }
+      }
+    },
+    { $match: { minPlanPrice: { $lte: price } } }
+  ]);
+}
+
 router.get('/search', async (req, res) => {
   try {
     const { city, pincode, maxPrice } = req.query;
-    let activities = req.query.activities;
+    const activities = normalizeActivities(req.query.activities);
 
-    // Debug log: received activities
-    console.log('Received activities from query:', activities);
+    console.log('Received activities from query:', req.query.activities);
+    console.log('Normalized activityArray:', activities);
 
-    // Robust normalization for activities (handles undefined, string, array)
-    let activityArray = [];
-    if (Array.isArray(activities)) {
-      activityArray = activities;
-    } else if (typeof activities === 'string' && activities.trim() !== '') {
-      activityArray = [activities];
-    }
-    // Defensive: filter out empty strings
-    activityArray = activityArray.filter(a => typeof a === 'string' && a.trim() !== '');
-    console.log('Normalized activityArray:', activityArray);
-
-    const filter = { status: 'approved' };
-
-    // City filter (case-insensitive)
-    if (city && typeof city === 'string' && city.trim() !== '') {
-      filter['location.city'] = { $regex: new RegExp(city.trim(), 'i') };
-    }
-
-    // Pincode filter
-    if (pincode) {
-      filter['location.pincode'] = pincode;
-    }
-
-    // Activities filter: gyms must have ANY of the selected activities (case-insensitive)
-    if (activityArray.length > 0) {
-      const cleanedActivities = activityArray
-        .filter(a => typeof a === 'string' && a.trim() !== '')
-        .map(a => new RegExp(a.trim(), 'i'));
-
-      if (cleanedActivities.length > 0) {
-        filter.activities = { $in: cleanedActivities };
-      }
-    }
-
-    // Price handling
-    let useAggregation = false;
-    let price = null;
-    if (maxPrice) {
-      price = Number(maxPrice);
-      if (!isNaN(price)) {
-        useAggregation = true;
-      }
-    }
-
-    console.log('🔍 Final filter before price aggregation:\n', JSON.stringify(filter, null, 2));
+    const filter = buildGymFilter({ city, pincode, activities });
 
     let gyms;
-    if (useAggregation) {
-      gyms = await Gym.aggregate([
-        { $match: filter },
-        { $addFields: {
-            minPlanPrice: {
-              $let: {
-                vars: {
-                  plansArray: {
-                    $cond: [
-                      { $isArray: "$membershipPlans" },
-                      "$membershipPlans",
-                      []
-                    ]
-                  }
-                },
-                in: {
-                  $cond: [
-                    { $gt: [{ $size: "$$plansArray" }, 0] },
-                    {
-                      $min: {
-                        $map: {
-                          input: {
-                            $filter: {
-                              input: "$$plansArray",
-                              as: "plan",
-                              cond: { $ne: ["$$plan.price", null] }
-                            }
-                          },
-                          as: "plan",
-                          in: { $toDouble: "$$plan.price" }
-                        }
-                      }
-                    },
-                    null
-                  ]
-                }
-              }
-            }
-          }
-        },
-        { $match: { minPlanPrice: { $lte: price } } }
-      ]);
+    if (maxPrice && !isNaN(Number(maxPrice))) {
+      gyms = await aggregateGymsByPrice(filter, Number(maxPrice));
     } else {
       gyms = await Gym.find(filter);
     }
@@ -214,10 +206,10 @@ router.get('/search', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error in /search:', error);
-    if (error && error.stack) {
+    if (error?.stack) {
       console.error('❌ Stack trace:', error.stack);
     }
-    if (error && error.errors) {
+    if (error?.errors) {
       console.error('❌ Mongoose errors:', error.errors);
     }
     if (!res.headersSent) {
@@ -234,10 +226,10 @@ router.get('/search', async (req, res) => {
 // ✅ Get Single Gym by ID [GET] /:id
 router.get('/:id', async (req, res) => {
   try {
-    // Only return gym if status is 'approved'
-    const gym = await Gym.findOne({ _id: req.params.id, status: 'approved' });
+    // Return gym regardless of status (for admin panel detail view)
+    const gym = await Gym.findOne({ _id: req.params.id });
     if (!gym) {
-      return res.status(404).json({ message: 'Gym not found or not approved' });
+      return res.status(404).json({ message: 'Gym not found' });
     }
     res.status(200).json(gym);
   } catch (error) {

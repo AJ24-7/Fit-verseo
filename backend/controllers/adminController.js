@@ -75,6 +75,10 @@ exports.approveGym = async (req, res) => {
 
     if (!gym) return res.status(404).json({ error: 'Gym not found' });
 
+    // Assign admin id if not already set
+    if (!gym.admin) {
+      gym.admin = gym._id; // Use gym's own ObjectId as admin id (or replace with actual admin id logic)
+    }
     gym.status = 'approved';
     gym.approvedAt = new Date();
     await gym.save();
@@ -103,7 +107,9 @@ exports.approveGym = async (req, res) => {
 exports.rejectGym = async (req, res) => {
   try {
     const { reason } = req.body;
-
+    if (!reason || typeof reason !== 'string' || !reason.trim()) {
+      return res.status(400).json({ error: 'Rejection reason is required.' });
+    }
     const gym = await Gym.findByIdAndUpdate(
       req.params.id,
       {
@@ -113,9 +119,7 @@ exports.rejectGym = async (req, res) => {
       },
       { new: true }
     );
-
     if (!gym) return res.status(404).json({ error: 'Gym not found' });
-
     try {
       await sendEmail(
         gym.email,
@@ -130,7 +134,6 @@ exports.rejectGym = async (req, res) => {
     } catch (emailErr) {
       console.error(`❌ Failed to send rejection email to ${gym.email}:`, emailErr.message);
     }
-
     res.json({ message: 'Gym rejected successfully and email attempt made.', gym });
   } catch (error) {
     console.error('Error rejecting gym:', error);

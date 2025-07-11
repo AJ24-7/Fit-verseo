@@ -1,3 +1,168 @@
+/* ========== Gym Detail Modal & Card ========== */
+.gym-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.gym-detail-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.45);
+  z-index: 1;
+}
+.gym-detail-modal-content {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 36px 32px 28px 32px;
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.2s;
+  margin: 20px;
+}
+.gym-detail-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  background: none;
+  border: none;
+  font-size: 2em;
+  color: #888;
+  cursor: pointer;
+  z-index: 3;
+  transition: color 0.2s;
+}
+.gym-detail-modal-close:hover {
+  color: #d32f2f;
+}
+.gym-detail-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.gym-detail-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 3px solid #e3eafc;
+  background: #f8f9fa;
+  box-shadow: 0 2px 8px #0001;
+}
+.gym-detail-title {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: #1976d2;
+  margin: 0;
+  text-align: center;
+}
+.gym-detail-section {
+  width: 100%;
+  margin-top: 10px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px #0001;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gym-detail-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 1.05em;
+}
+.gym-detail-label {
+  min-width: 120px;
+  color: #555;
+  font-weight: 600;
+}
+.gym-detail-value {
+  color: #222;
+  flex: 1;
+  word-break: break-word;
+}
+.gym-detail-activities, .gym-detail-equipment, .gym-detail-membership-plans, .gym-detail-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.gym-detail-activity, .gym-detail-equipment-item, .gym-detail-plan, .gym-detail-photo {
+  background: #e3eafc;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.98em;
+  color: #1976d2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gym-detail-plan {
+  background: #fffbe7;
+  color: #b8860b;
+  border: 1.5px solid #ffe082;
+}
+.gym-detail-photo {
+  flex-direction: column;
+  align-items: flex-start;
+  background: #f8f9fa;
+  border: 1px solid #e3eafc;
+  padding: 10px;
+  min-width: 120px;
+  max-width: 180px;
+}
+.gym-detail-photo-img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  background: #e3eafc;
+}
+.gym-detail-photo-title {
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 2px;
+}
+.gym-detail-photo-category {
+  font-size: 0.95em;
+  color: #888;
+}
+.gym-detail-photo-desc {
+  font-size: 0.97em;
+  color: #444;
+}
+@media (max-width: 600px) {
+  .gym-detail-modal-content {
+    padding: 18px 6px 12px 6px;
+    max-width: 99vw;
+  }
+  .gym-detail-section {
+    padding: 10px 6px;
+  }
+}
 /* Redesigned Trainer Card Styles */
 .trainer-mgmt-card.redesigned {
     background: #fff;
@@ -1153,16 +1318,7 @@ th {
                     grid-template-columns: 1fr;
                     gap: 12px 0;
                 }
-                .trainer-mgmt-tabs-row {
-                    font-size: 0.93rem;
-                }
             }
-
-        .trainer-mgmt-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 2rem;
-        }
 
         .trainer-mgmt-card {
             background: white;
@@ -1428,3 +1584,92 @@ th {
           gap: 10px;
         }
       }
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 1em;
+  font-weight: 600;
+  border-radius: 50px;
+  padding: 7px 18px 7px 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border: none;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+  user-select: none;
+  min-width: 110px;
+  justify-content: center;
+}
+.status-badge.status-approved {
+  background: linear-gradient(90deg, #d4edda 80%, #b6f5c3 100%);
+  color: #218838;
+  border: 1.5px solid #b6f5c3;
+}
+.status-badge.status-pending {
+  background: linear-gradient(90deg, #fff3cd 80%, #ffe082 100%);
+  color: #b8860b;
+  border: 1.5px solid #ffe082;
+}
+.status-badge.status-rejected {
+  background: linear-gradient(90deg, #f8d7da 80%, #fbb1b1 100%);
+  color: #d32f2f;
+  border: 1.5px solid #fbb1b1;
+}
+.status-badge.status-unknown {
+  background: #e0e0e0;
+  color: #888;
+  border: 1.5px solid #e0e0e0;
+}
+.status-badge i {
+  font-size: 1.1em;
+  margin-right: 2px;
+}
+.status-badge:hover {
+  box-shadow: 0 4px 16px rgba(67,97,238,0.13), 0 2px 6px rgba(0,0,0,0.09);
+  filter: brightness(1.04);
+}
+/* Responsive modal media queries */
+@media (max-width: 768px) {
+  .gym-detail-modal {
+    padding: 10px;
+  }
+  
+  .gym-detail-modal-content {
+    max-width: 95vw;
+    max-height: 95vh;
+    margin: 10px;
+    padding: 15px;
+  }
+  
+  .gym-detail-modal-close {
+    top: 12px;
+    right: 16px;
+    font-size: 1.8em;
+  }
+}
+
+@media (max-width: 480px) {
+  .gym-detail-modal {
+    padding: 5px;
+  }
+  
+  .gym-detail-modal-content {
+    max-width: 98vw;
+    max-height: 98vh;
+    margin: 5px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  .gym-detail-modal-close {
+    top: 8px;
+    right: 12px;
+    font-size: 1.5em;
+  }
+}
+
+@media (max-height: 600px) {
+  .gym-detail-modal-content {
+    max-height: 85vh;
+  }
+}

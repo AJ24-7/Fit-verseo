@@ -1,7 +1,8 @@
 // === Dynamic Activities Offered Section ===
 document.addEventListener('DOMContentLoaded', function() {
   // --- State ---
-  let allPossibleActivities = [
+  // Use the same hardcoded activities as registration form for full sync
+  const allPossibleActivities = [
     { name: 'Yoga', icon: 'fa-person-praying', description: 'Improve flexibility, balance, and mindfulness.' },
     { name: 'Zumba', icon: 'fa-music', description: 'Fun dance-based cardio workout.' },
     { name: 'CrossFit', icon: 'fa-dumbbell', description: 'High-intensity functional training.' },
@@ -44,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
+      // Only set selected/current activities from backend, not allPossibleActivities
       currentActivities = Array.isArray(data.activities) ? data.activities : [];
       selectedActivities = currentActivities.map(a => a.name);
       renderActivitiesList();
@@ -150,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // --- Confirm Save Activities (send to backend) ---
   if (confirmSaveActivitiesBtn) {
     confirmSaveActivitiesBtn.onclick = async () => {
-      // Compose selected activity objects
+      // Compose selected activity objects from the hardcoded list
       const activitiesToSave = allPossibleActivities.filter(a => selectedActivities.includes(a.name));
       // Save to backend
       const token = localStorage.getItem('gymAdminToken');
@@ -1357,8 +1359,11 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('You must be logged in as a gym admin.');
         return;
       }
-      const formData = prepareMemberFormData(addMemberForm);
+      const formData = new FormData(addMemberForm);
       const { gymName, plan, monthlyPlan, memberEmail, memberName, membershipId, validDate } = getMemberFormMeta(formData);
+      formData.append('membershipId', membershipId);
+      formData.append('membershipValidUntil', validDate);
+
       try {
         const res = await fetch('http://localhost:5000/api/members', {
           method: 'POST',
@@ -1453,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
-let currentGymProfile = {}; // Store fetched profile data
+            let currentGymProfile = {}; // Store fetched profile data
 
             async function fetchAndUpdateAdminProfile() {
         logLocalStorageItems();
@@ -1568,7 +1573,6 @@ let currentGymProfile = {}; // Store fetched profile data
         if (adminAvatarElement) adminAvatarElement.src = 'https://via.placeholder.com/40';
         localStorage.removeItem('gymAdminToken');
         alert('Unable to fetch profile. Please try logging in again.');
-        window.location.replace('http://localhost:5000/public/admin-login.html');
     }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -1580,50 +1584,110 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchAndUpdateAdminProfile();
     fetchGymPhotos();
 
-    function fetchGymPhotos() {
+
+    // Fetch gym photos from backend and render them in the photo grid (dashboard view, modal preview only)
+    async function fetchGymPhotos() {
         const token = localStorage.getItem('gymAdminToken');
-        fetch('http://localhost:5000/api/gyms/photos', {
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && Array.isArray(data.photos)) {
-                    renderPhotoGridWithRemove(data.photos);
-                } else {
-                    renderPhotoGridWithRemove([]);
+        try {
+            const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
-            })
-            .catch(() => renderPhotoGridWithRemove([]));
+            });
+            if (!response.ok) throw new Error('Failed to fetch gym profile/photos');
+            const data = await response.json();
+            const photos = (data.gymPhotos || data.data?.gymPhotos || []);
+            renderPhotoGrid(photos);
+        } catch (err) {
+            console.error('Error fetching gym photos:', err);
+            renderPhotoGrid([]);
+        }
     }
 
-    function renderPhotoGridWithRemove(photos) {
-        window._lastPhotoGrid = photos;
-        const grid = document.getElementById('photoGrid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        if (!photos.length) {
-            grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: #888;">No photos uploaded yet.</div>';
+    // Render the photo grid with modal preview only (no edit/remove)
+    function renderPhotoGrid(photos) {
+        const photoGrid = document.getElementById('photoGrid');
+        if (!photoGrid) return;
+        photoGrid.innerHTML = '';
+        if (!photos || !photos.length) {
+            photoGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#888;padding:32px 0;">No photos uploaded yet.</div>';
             return;
         }
-        photos.forEach(photo => {
+        // Store the last photo grid for edit/remove lookup
+        window._lastPhotoGrid = photos;
+        photos.forEach((photo, idx) => {
+            // Support both string and object with url
+            const url = typeof photo === 'string' ? photo : (photo.url || photo.path || photo.imageUrl || '');
+            const title = typeof photo === 'object' ? (photo.title || '') : '';
+            const description = typeof photo === 'object' ? (photo.description || '') : '';
+            const category = typeof photo === 'object' ? (photo.category || '') : '';
+            const id = typeof photo === 'object' ? (photo._id || photo.id || '') : '';
+            if (!url) return;
             const card = document.createElement('div');
-            card.className = 'photo-card';
-            card.style = 'background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 12px; display: flex; flex-direction: column; align-items: center;';
+            card.className = 'photo-grid-item';
+            card.style.position = 'relative';
+            card.style.background = '#fff';
+            card.style.borderRadius = '10px';
+            card.style.boxShadow = '0 2px 8px #0001';
+            card.style.padding = '12px';
+            card.style.display = 'flex';
+            card.style.flexDirection = 'column';
+            card.style.alignItems = 'center';
             card.innerHTML = `
-                <img src="${photo.imageUrl}" alt="${photo.title || ''}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 10px;">
-                <h3 style="margin: 4px 0 2px 0; font-size: 1.1em;">${photo.title || ''}</h3>
-                <p style="margin: 0 0 6px 0; color: #666; font-size: 0.95em;">${photo.description || ''}</p>
-                <div style="font-size: 0.85em; color: #aaa; margin-bottom: 6px;">${photo.uploadedAt ? new Date(photo.uploadedAt).toLocaleString() : ''}</div>
-                <div style="display: flex; gap: 8px; justify-content: center;">
-                    <button class="edit-photo-btn" data-photo-id="${photo._id || ''}" style="padding: 4px 10px; border: none; background: #1976d2; color: #fff; border-radius: 4px; cursor: pointer;">Edit</button>
-                    <button class="remove-photo-btn" data-photo-id="${photo._id || ''}" style="padding: 4px 10px; border: none; background: #e53935; color: #fff; border-radius: 4px; cursor: pointer;">Remove</button>
+                <img src="${url}" alt="Gym Photo" style="width:100%;height:140px;object-fit:cover;border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:10px;" data-photo-idx="${idx}" />
+                <h3 style="margin:4px 0 2px 0;font-size:1.1em;">${title}</h3>
+                <p style="margin:0 0 6px 0;color:#666;font-size:0.95em;">${description}</p>
+                <div style="font-size:0.95em;color:#1976d2;margin-bottom:6px;">${category ? `<i class='fas fa-tag'></i> ${category}` : ''}</div>
+                <div style="display:flex;gap:8px;justify-content:center;">
+                    <button class="edit-photo-btn" data-photo-id="${id}" style="padding:4px 10px;border:none;background:#1976d2;color:#fff;border-radius:4px;cursor:pointer;">Edit</button>
+                    <button class="remove-photo-btn" data-photo-id="${id}" style="padding:4px 10px;border:none;background:#e53935;color:#fff;border-radius:4px;cursor:pointer;">Remove</button>
                 </div>
             `;
-            grid.appendChild(card);
+            // Click to open modal preview
+            card.querySelector('img').addEventListener('click', function() {
+                showPhotoModal(url);
+            });
+            photoGrid.appendChild(card);
+        });
+    }
+
+    // Modal preview for photo
+    function showPhotoModal(url) {
+        // Remove any existing modal
+        let modal = document.getElementById('photoPreviewModal');
+        if (modal) modal.remove();
+        modal = document.createElement('div');
+        modal.id = 'photoPreviewModal';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100vw';
+        modal.style.height = '100vh';
+        modal.style.background = 'rgba(0,0,0,0.7)';
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '10010';
+        modal.innerHTML = `
+            <div style="background:#fff;padding:18px 18px 10px 18px;border-radius:12px;max-width:90vw;max-height:90vh;box-shadow:0 4px 32px rgba(0,0,0,0.18);position:relative;display:flex;flex-direction:column;align-items:center;">
+                <button id="closePhotoPreviewModal" style="position:absolute;top:8px;right:12px;font-size:2rem;background:none;border:none;color:#333;cursor:pointer;">&times;</button>
+                <img src="${url}" alt="Gym Photo" style="max-width:80vw;max-height:70vh;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.12);margin-bottom:8px;" />
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+        document.getElementById('closePhotoPreviewModal').onclick = function() {
+            modal.remove();
+            document.body.style.overflow = '';
+        };
+        // Also close on click outside modal-content
+        modal.addEventListener('mousedown', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+                document.body.style.overflow = '';
+            }
         });
     }
 

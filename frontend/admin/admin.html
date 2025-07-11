@@ -44,10 +44,6 @@
     <div class="main-content" id="mainContent">
         <!-- Top Navbar -->
 <div class="top-navbar">
-    <div class="search-bar">
-      <input type="text" id="gymSearchInput" placeholder="Search gyms...">
-      <button onclick="handleSearch()"><i class="fas fa-search"></i></button>
-    </div>
     <div class="user-info">
       <div class="notification-bell" id="notificationBell" onclick="toggleNotifications()">
         <i class="fas fa-bell"></i>
@@ -215,16 +211,17 @@
             <div id="gym-content" class="tab-content">
                 <div class="page-header">
                     <h2>Gym Management</h2>
-                    <div>
+                    <div style="display:flex;align-items:center;gap:16px;">
+                         <span class="gym-count-label" style="font-size:1.1em;color:#1976d2;font-weight:600;">Total: <span id="count-all-gyms">(0)</span></span>
                         <button class="btn btn-primary" id="add-gym-btn"><i class="fas fa-plus"></i> Add Gym</button>
                     </div>
                 </div>
             
                 <div class="gym-tabs">
-                    <div class="gym-tab active" data-tab="all-gyms">All Gyms</div>
-                    <div class="gym-tab" data-tab="pending-gyms">Pending Approval</div>
-                    <div class="gym-tab" data-tab="approved-gyms">Approved</div>
-                    <div class="gym-tab" data-tab="rejected-gyms">Rejected</div>
+                    <div class="gym-tab active" data-tab="all-gyms">All Gyms <span id="count-all-gyms" class="gym-count-tab">(0)</span></div>
+                    <div class="gym-tab" data-tab="pending-gyms">Pending Approval <span id="count-pending-gyms" class="gym-count-tab">(0)</span></div>
+                    <div class="gym-tab" data-tab="approved-gyms">Approved <span id="count-approved-gyms" class="gym-count-tab">(0)</span></div>
+                    <div class="gym-tab" data-tab="rejected-gyms">Rejected <span id="count-rejected-gyms" class="gym-count-tab">(0)</span></div>
                     <div class="gym-tab" data-tab="trial-bookings">Trial Bookings</div>
                 </div>
             
@@ -260,6 +257,7 @@
                                     <th>Gym Name</th>
                                     <th>Owner</th>
                                     <th>Location</th>
+                                    <th>Status</th>
                                     <th>Submitted On</th>
                                     <th>Actions</th>
                                 </tr>
@@ -282,6 +280,7 @@
                                     <th>Owner</th>
                                     <th>Location</th>
                                     <th>Members</th>
+                                    <th>Status</th>
                                     <th>Approved On</th>
                                     <th>Actions</th>
                                 </tr>
@@ -303,6 +302,7 @@
                                     <th>Gym Name</th>
                                     <th>Owner</th>
                                     <th>Location</th>
+                                    <th>Status</th>
                                     <th>Reason</th>
                                     <th>Rejected On</th>
                                     <th>Actions</th>
@@ -314,6 +314,16 @@
                         </table>
                     </div>
                 </div>
+            </div>
+
+            <!-- Gym Detail Modal (hidden by default, shown via JS) -->
+            <div id="gymDetailModal" class="gym-detail-modal" style="display:none;">
+              <div class="gym-detail-modal-overlay"></div>
+              <div class="gym-detail-modal-content">
+                <!-- Dynamic gym info will be injected here by admin.js -->
+                <button class="gym-detail-modal-close" id="closeGymDetailModal" aria-label="Close">&times;</button>
+                <div id="gymDetailContent"></div>
+              </div>
             </div>
 
             <!-- Trial Booking Content -->
@@ -347,6 +357,7 @@
                 </div>
                 <div class="trainer-mgmt-grid" id="trainerMgmtGrid">
                     <!-- Trainer cards will be rendered dynamically by admin.js -->
+                </div>
                 </div>
             </div>
             

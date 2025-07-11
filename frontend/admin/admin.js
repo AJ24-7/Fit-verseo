@@ -2,85 +2,197 @@ console.log('[DEBUG] admin.js script started');
 const BASE_URL = "http://localhost:5000";
 
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('[DEBUG] DOMContentLoaded event fired');
-    // ========== Tab Switching ==========
-    function setupTabSwitching() {
-        const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
-        const tabContents = document.querySelectorAll('.tab-content');
+  
 
-        sidebarLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
+  // ========== GYM DETAIL MODAL LOGIC ========== //
+  function openGymDetailModal(gym) {
+    const modal = document.getElementById('gymDetailModal');
+    const content = document.getElementById('gymDetailContent');
+    if (!modal || !content || !gym) {
+      console.error('[MODAL] Modal or content or gym missing', {modal, content, gym});
+      return;
+    }
+    console.log('[MODAL] Opening gym detail modal for:', gym.gymName || gym._id);
+    console.log('[MODAL] Full gym object:', gym);
 
-                // Remove active class from all sidebar links
-                sidebarLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-
-                // Hide all tab contents
-                tabContents.forEach(content => {
-                    content.classList.remove('active');
-                    content.style.display = 'none';
-                });
-
-                // Show selected tab content
-                const targetTabId = this.id.replace('-tab', '-content');
-                console.log('[DEBUG] Clicked tab, targetTabId:', targetTabId); // Log the generated targetTabId
-                const targetTab = document.getElementById(targetTabId);
-                if (targetTab) {
-                    targetTab.classList.add('active');
-                    targetTab.style.display = 'block';
-
-                    // Load tab data if it's the gym management tab
-                    if (targetTabId === 'gym-content') {
-                        const activeGymTab = document.querySelector('.gym-tab.active');
-                        if (activeGymTab) {
-                            loadTabData(activeGymTab.getAttribute('data-tab'));
-                        }
-                    } else if (targetTabId === 'trial-booking-content') {
-                        initTrialRequestsTab();
-                    }
-                }
-            });
-        });
-
-        // Gym Management Tabs
-        const gymTabs = document.querySelectorAll('.gym-tab');
-        gymTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Remove active class from all gym tabs
-                gymTabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-
-                // Hide all gym tab contents
-                const gymTabContents = document.querySelectorAll('.gym-tab-content');
-                gymTabContents.forEach(content => content.classList.remove('active'));
-
-                // Show selected gym tab content
-                const tabId = this.getAttribute('data-tab');
-                const targetTabContent = document.getElementById(tabId);
-                if (targetTabContent) {
-                    targetTabContent.classList.add('active');
-                    loadTabData(tabId);
-                }
-            });
-        });
-    } // Added missing closing brace here
-
-    // Initialize tab switching
-    setupTabSwitching();
-
-    // Initial content loading
-    document.getElementById('dashboard-tab').classList.add('active');
-    document.getElementById('dashboard-content').classList.add('active');
-    document.getElementById('dashboard-content').style.display = 'block';
-
-    // Load initial gym data
-    const firstGymTab = document.querySelector('.gym-tab[data-tab="all-gyms"]');
-    if (firstGymTab) {
-        firstGymTab.classList.add('active');
-        loadTabData('all-gyms');
+    function formatDate(date) {
+      if (!date) return '';
+      return new Date(date).toLocaleString();
     }
 
+    let logoUrl = gym.logoUrl || gym.logo || gym.logoURL || gym.logo_path || '';
+    
+    // Debug: Log the raw logoUrl value
+    console.log('[DEBUG] Raw logoUrl from gym object:', logoUrl);
+    console.log('[DEBUG] Gym object keys:', Object.keys(gym));
+    
+    if (logoUrl && !logoUrl.startsWith('http')) {
+    
+      if (logoUrl.startsWith('/')) {
+        // Already has leading slash, just prepend BASE_URL
+        logoUrl = `${BASE_URL}${logoUrl}`;
+      } else if (logoUrl.startsWith('uploads/')) {
+        // Missing leading slash, add it
+        logoUrl = `${BASE_URL}/${logoUrl}`;
+      } else {
+        // Other format, assume it needs /uploads/ prefix
+        logoUrl = `${BASE_URL}/uploads/gymImages/${logoUrl}`;
+      }
+    }
+    
+    
+    if (!logoUrl) logoUrl = 'https://via.placeholder.com/96x96?text=Logo';
+
+    let photosHtml = '';
+    if (Array.isArray(gym.gymPhotos) && gym.gymPhotos.length) {
+      photosHtml = `<div class="gym-detail-photos">` +
+        gym.gymPhotos.map(photo => `
+          <div class="gym-detail-photo">
+            <img class="gym-detail-photo-img" src="${photo.imageUrl && !photo.imageUrl.startsWith('http') ? BASE_URL + photo.imageUrl : (photo.imageUrl || 'https://via.placeholder.com/120x80?text=Photo')}" alt="${photo.title || ''}">
+            <div class="gym-detail-photo-title">${photo.title || ''}</div>
+            <div class="gym-detail-photo-category">${photo.category || ''}</div>
+            <div class="gym-detail-photo-desc">${photo.description || ''}</div>
+          </div>
+        `).join('') + '</div>';
+    }
+
+    let activitiesHtml = '';
+    if (Array.isArray(gym.activities) && gym.activities.length) {
+      activitiesHtml = `<div class="gym-detail-activities">` +
+        gym.activities.map(act => `
+          <div class="gym-detail-activity"><i class="fas ${act.icon || 'fa-dumbbell'}"></i> ${act.name}</div>
+        `).join('') + '</div>';
+    }
+
+    let equipmentHtml = '';
+    if (Array.isArray(gym.equipment) && gym.equipment.length) {
+      equipmentHtml = `<div class="gym-detail-equipment">` +
+        gym.equipment.map(eq => `<div class="gym-detail-equipment-item">${eq}</div>`).join('') + '</div>';
+    }
+
+    let plansHtml = '';
+    if (Array.isArray(gym.membershipPlans) && gym.membershipPlans.length) {
+      plansHtml = `<div class="gym-detail-membership-plans">` +
+        gym.membershipPlans.map(plan => `
+          <div class="gym-detail-plan">
+            <i class="fas ${plan.icon || 'fa-leaf'}" style="color:${plan.color || '#38b000'}"></i> <b>${plan.name}</b> - ₹${plan.price || 0}
+            ${plan.discount ? `<span style='color:#38b000;font-weight:500;'>&nbsp;(${plan.discount}% off)</span>` : ''}
+            <br><span style="font-size:0.97em;color:#555;">${Array.isArray(plan.benefits) ? plan.benefits.join(', ') : plan.benefits || ''}</span>
+          </div>
+        `).join('') + '</div>';
+    }
+
+    content.innerHTML = `
+      <div class="gym-detail-card">
+        <img class="gym-detail-logo" 
+             src="${logoUrl}" 
+             alt="Gym Logo"
+             onerror="this.onerror=null; this.src='https://via.placeholder.com/96x96?text=Logo'; console.log('[ERROR] Failed to load logo:', this.src);"
+             onload="console.log('[SUCCESS] Logo loaded successfully:', this.src);">
+        <div class="gym-detail-title">${gym.gymName || ''}</div>
+        <div class="gym-detail-section">
+          <div class="gym-detail-row"><span class="gym-detail-label">Owner:</span><span class="gym-detail-value">${gym.contactPerson || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Email:</span><span class="gym-detail-value">${gym.email || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Phone:</span><span class="gym-detail-value">${gym.phone || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Support Email:</span><span class="gym-detail-value">${gym.supportEmail || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Support Phone:</span><span class="gym-detail-value">${gym.supportPhone || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Address:</span><span class="gym-detail-value">${gym.location?.address || ''}, ${gym.location?.city || ''}, ${gym.location?.state || ''} - ${gym.location?.pincode || ''} ${gym.location?.landmark ? '(' + gym.location.landmark + ')' : ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Description:</span><span class="gym-detail-value">${gym.description || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Members:</span><span class="gym-detail-value">${gym.membersCount || 0}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Status:</span><span class="gym-detail-value">${gym.status || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Opening Time:</span><span class="gym-detail-value">${gym.openingTime || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Closing Time:</span><span class="gym-detail-value">${gym.closingTime || ''}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Created At:</span><span class="gym-detail-value">${formatDate(gym.createdAt)}</span></div>
+          <div class="gym-detail-row"><span class="gym-detail-label">Updated At:</span><span class="gym-detail-value">${formatDate(gym.updatedAt)}</span></div>
+          ${gym.rejectionReason ? `<div class="gym-detail-row"><span class="gym-detail-label">Rejection Reason:</span><span class="gym-detail-value">${gym.rejectionReason}</span></div>` : ''}
+        </div>
+        ${activitiesHtml ? `<div class="gym-detail-section"><div class="gym-detail-label">Activities:</div>${activitiesHtml}</div>` : ''}
+        ${equipmentHtml ? `<div class="gym-detail-section"><div class="gym-detail-label">Equipment:</div>${equipmentHtml}</div>` : ''}
+        ${plansHtml ? `<div class="gym-detail-section"><div class="gym-detail-label">Membership Plans:</div>${plansHtml}</div>` : ''}
+        ${photosHtml ? `<div class="gym-detail-section"><div class="gym-detail-label">Photos:</div>${photosHtml}</div>` : ''}
+      </div>
+    `;
+    modal.style.display = 'flex';
+    modal.style.zIndex = '9999';
+    modal.style.border = '4px solid #38b000';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeGymDetailModal() {
+    const modal = document.getElementById('gymDetailModal');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.style.zIndex = '';
+      modal.style.border = '';
+      document.body.style.overflow = '';
+    }
+  }
+  // ========== GYM DETAIL MODAL LOGIC INIT ==========
+  const modal = document.getElementById('gymDetailModal');
+  if (modal) {
+    modal.addEventListener('mousedown', function (e) {
+      if (e.target === modal || e.target.classList.contains('gym-detail-modal-overlay')) {
+        closeGymDetailModal();
+      }
+    });
+  }
+  const closeBtn = document.getElementById('closeGymDetailModal');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeGymDetailModal);
+  }
+
+  // ========== Tab Switching ==========
+
+  function setupTabSwitching() {
+    const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        sidebarLinks.forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        tabContents.forEach(content => {
+          content.classList.remove('active');
+          content.style.display = 'none';
+        });
+        const targetTabId = this.id.replace('-tab', '-content');
+        console.log('[DEBUG] Clicked tab, targetTabId:', targetTabId);
+        const targetTab = document.getElementById(targetTabId);
+        if (targetTab) {
+          targetTab.classList.add('active');
+          targetTab.style.display = 'block';
+          if (targetTabId === 'gym-content') {
+            const activeGymTab = document.querySelector('.gym-tab.active');
+            if (activeGymTab) {
+              loadTabData(activeGymTab.getAttribute('data-tab'));
+            }
+          } else if (targetTabId === 'trial-booking-content') {
+            initTrialRequestsTab();
+          }
+        }
+      });
+    });
+    const gymTabs = document.querySelectorAll('.gym-tab');
+    gymTabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        gymTabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const gymTabContents = document.querySelectorAll('.gym-tab-content');
+        gymTabContents.forEach(content => content.classList.remove('active'));
+        const tabId = this.getAttribute('data-tab');
+        const targetTabContent = document.getElementById(tabId);
+        if (targetTabContent) {
+          targetTabContent.classList.add('active');
+          loadTabData(tabId);
+        }
+      });
+    });
+  }
+  setupTabSwitching();
+  document.getElementById('dashboard-tab').classList.add('active');
+  document.getElementById('dashboard-content').classList.add('active');
+  document.getElementById('dashboard-content').style.display = 'block';
 
     // ========== Dashboard Cards Fetch ==========
     fetch(`${BASE_URL}/api/admin/dashboard`)
@@ -150,8 +262,12 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
         document.body.appendChild(dialog);
         document.getElementById('dialog-confirm-btn').onclick = () => {
+            // Read textarea value before removing dialog
+            let rejectionReason = null;
+            const textarea = document.getElementById('rejectionReasonInput');
+            if (textarea) rejectionReason = textarea.value;
             dialog.remove();
-            if (typeof onConfirm === 'function') onConfirm();
+            if (typeof onConfirm === 'function') onConfirm(rejectionReason);
         };
         document.getElementById('dialog-cancel-btn').onclick = () => {
             dialog.remove();
@@ -159,18 +275,197 @@ document.addEventListener('DOMContentLoaded', function () {
         };
     }
 
+    // --- Attach event delegation to all gym table tbodys ONCE after DOMContentLoaded, never stack ---
+    function gymTbodyHandler(event) {
+      const btn = event.target.closest('.btn-action');
+      const gymNameCell = event.target.closest('.gym-info-clickable');
+      if (btn) {
+        event.preventDefault();
+        const gymId = btn.getAttribute('data-id');
+        (async () => {
+          try {
+            if (btn.classList.contains('view')) {
+              let gymObj = null;
+              const row = btn.closest('tr');
+              if (row) {
+                const gymNameCell = row.querySelector('.gym-info-clickable');
+                if (gymNameCell) {
+                  const id = gymNameCell.getAttribute('data-gym-id');
+                  if (id) {
+                    try {
+                      const resp = await fetch(`${BASE_URL}/api/gyms/${id}`, {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
+                      });
+                      if (resp.ok) {
+                        gymObj = await resp.json();
+                      }
+                    } catch (e) { gymObj = null; }
+                  }
+                }
+              }
+              if (gymObj) {
+                openGymDetailModal(gymObj);
+              } else {
+                showNotification('Could not load gym details', 'error');
+              }
+            } else if (btn.classList.contains('edit')) {
+              window.location.href = `/admin/edit-gym/${gymId}`;
+            } else if (btn.classList.contains('delete')) {
+              showDialog({
+                title: 'Delete Gym',
+                message: 'Are you sure you want to delete this gym? This action cannot be undone.',
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                onConfirm: async () => {
+                  const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}`, {
+                    method: 'DELETE',
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+                    }
+                  });
+                  if (response.ok) {
+                    showNotification('Gym deleted successfully!', 'success');
+                    loadTabData('all-gyms');
+                  } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    showNotification(errorData.message || 'Failed to delete gym', 'error');
+                  }
+                }
+              });
+            } else if (btn.classList.contains('approve')) {
+              const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}/approve`, {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+                }
+              });
+              if (response.ok) {
+                showNotification('Gym approved successfully!', 'success');
+                loadTabData('pending-gyms');
+                loadTabData('approved-gyms');
+              } else {
+                const errorData = await response.json().catch(() => ({}));
+                showNotification(errorData.message || 'Failed to approve gym', 'error');
+              }
+            } else if (btn.classList.contains('reject')) {
+              showDialog({
+                title: 'Reject Gym',
+                message: `<div style='margin-bottom:10px;'>Please provide a reason for rejection:</div><textarea id='rejectionReasonInput' style='width:100%;min-height:60px;resize:vertical;border-radius:5px;border:1px solid #ccc;padding:6px;'></textarea>`,
+                confirmText: 'Reject',
+                cancelText: 'Cancel',
+                onConfirm: async (reasonRaw) => {
+                  const reason = reasonRaw?.trim();
+                  if (!reason) {
+                    showNotification('Rejection reason is required.', 'error');
+                    return;
+                  }
+                  const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}/reject`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason })
+                  });
+                  if (response.ok) {
+                    showNotification('Gym rejected successfully!', 'success');
+                    loadTabData('pending-gyms');
+                    loadTabData('rejected-gyms');
+                  } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    showNotification(errorData.message || 'Failed to reject gym', 'error');
+                  }
+                }
+              });
+            } else if (btn.classList.contains('revoke')) {
+              const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}/revoke`, {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+                }
+              });
+              if (response.ok) {
+                showNotification('Gym approval revoked successfully!', 'success');
+                loadTabData('approved-gyms');
+                loadTabData('pending-gyms');
+              } else {
+                const errorData = await response.json().catch(() => ({}));
+                showNotification(errorData.message || 'Failed to revoke gym approval', 'error');
+              }
+            } else if (btn.classList.contains('reconsider')) {
+              const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}/reconsider`, {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+                }
+              });
+              if (response.ok) {
+                showNotification('Gym status reconsidered successfully!', 'success');
+                loadTabData('rejected-gyms');
+                loadTabData('pending-gyms');
+              } else {
+                const errorData = await response.json().catch(() => ({}));
+                showNotification(errorData.message || 'Failed to reconsider gym status', 'error');
+              }
+            }
+          } catch (error) {
+            console.error('Action failed:', error);
+            showNotification('An unexpected error occurred', 'error');
+          }
+        })();
+      } else if (gymNameCell) {
+        const id = gymNameCell.getAttribute('data-gym-id');
+        if (id) {
+          (async () => {
+            try {
+              const resp = await fetch(`${BASE_URL}/api/gyms/${id}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
+              });
+              if (resp.ok) {
+                const gymObj = await resp.json();
+                openGymDetailModal(gymObj);
+              } else {
+                showNotification('Could not load gym details', 'error');
+              }
+            } catch (e) {
+              showNotification('Could not load gym details', 'error');
+            }
+          })();
+        }
+      }
+    }
+
+    // Attach handler to all gym management tbodys
+    ['all-gyms','pending-gyms','approved-gyms','rejected-gyms'].forEach(tabId => {
+      const tbody = document.querySelector(`#${tabId}-body`);
+      if (tbody) {
+        tbody.addEventListener('click', gymTbodyHandler);
+        console.log(`[DEBUG] Event handler attached to ${tabId}-body`);
+      }
+    });
+
+  const firstGymTab = document.querySelector('.gym-tab[data-tab="all-gyms"]');
+  if (firstGymTab) {
+    firstGymTab.classList.add('active');
+    loadTabData('all-gyms');
+  }
+
     async function loadTabData(tabId) {
         const tabContent = document.querySelector(`.gym-tab-content[id="${tabId}"]`);
         const tbody = tabContent ? tabContent.querySelector('tbody') : null;
+        // Find the count span for this tab
+        const countSpan = document.getElementById(`count-${tabId}`);
 
         if (!tbody) {
             console.error(`No tbody found for tab: ${tabId}`);
+            if (countSpan) countSpan.textContent = '(0)';
             return;
         }
 
         const token = localStorage.getItem('token');
         if (!token) {
             tbody.innerHTML = '<tr><td colspan="7">Please log in to access this data</td></tr>';
+            if (countSpan) countSpan.textContent = '(0)';
             return;
         }
 
@@ -196,6 +491,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     break;
                 default:
                     tbody.innerHTML = '<tr><td colspan="7">No data found</td></tr>';
+                    if (countSpan) countSpan.textContent = '(0)';
                     return;
             }
 
@@ -217,25 +513,27 @@ document.addEventListener('DOMContentLoaded', function () {
             // Populate rows based on tab
             if (!data || data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7">No ${tabId.replace('-', ' ')} found</td></tr>`;
+                if (countSpan) countSpan.textContent = '(0)';
                 return;
             }
 
-            // Generate rows
+            // Generate all rows as a string, then set innerHTML ONCE
+            let rowsHtml = '';
             data.forEach(item => {
-                let rowHtml;
                 if (tabId === 'trial-bookings') {
-                    rowHtml = generateTrialBookingRow(item);
+                    rowsHtml += generateTrialBookingRow(item);
                 } else {
-                    rowHtml = generateGymRow(tabId, item);
+                    rowsHtml += generateGymRow(tabId, item);
                 }
-                tbody.innerHTML += rowHtml;
             });
-
-            // Add action button listeners
-            addActionButtonListeners();
+            tbody.innerHTML = rowsHtml;
+            // Set the count
+            if (countSpan) countSpan.textContent = `(${data.length})`;
+            // ...existing code...
         } catch (error) {
             console.error(`Error loading ${tabId}:`, error);
             tbody.innerHTML = `<tr><td colspan="7">Error loading ${tabId.replace('-', ' ')}: ${error.message}</td></tr>`;
+            if (countSpan) countSpan.textContent = '(0)';
         }
     }
 
@@ -264,9 +562,31 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function generateGymRow(tabId, gym) {
+        const status = (gym.status || '').toLowerCase();
+        let statusIcon = '';
+        let statusColor = '';
+        let statusText = '';
+        if (status === 'approved') {
+          statusIcon = '<i class="fas fa-check-circle"></i>';
+          statusColor = 'status-approved';
+          statusText = 'Approved';
+        } else if (status === 'pending') {
+          statusIcon = '<i class="fas fa-hourglass-half"></i>';
+          statusColor = 'status-pending';
+          statusText = 'Pending';
+        } else if (status === 'rejected') {
+          statusIcon = '<i class="fas fa-times-circle"></i>';
+          statusColor = 'status-rejected';
+          statusText = 'Rejected';
+        } else {
+          statusIcon = '<i class="fas fa-question-circle"></i>';
+          statusColor = 'status-unknown';
+          statusText = gym.status || 'Unknown';
+        }
+
         const commonColumns = `
             <td>${gym._id}</td>
-            <td>${gym.gymName || 'N/A'}</td>
+            <td class="gym-info-clickable" data-gym-id="${gym._id}" style="cursor:pointer;color:#1976d2;font-weight:600;">${gym.gymName || 'N/A'}</td>
             <td>${gym.contactPerson || 'N/A'}</td>
             <td>${gym.location?.city || ''}, ${gym.location?.state || ''}</td>
         `;
@@ -275,8 +595,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return `
                 <tr>
                     ${commonColumns}
-                    <td>${gym.totalMembers || 0}</td>
-                    <td><span class="status-badge ${gym.status}">${gym.status}</span></td>
+                    <td>${gym.totalMembers || gym.membersCount || 0}</td>
+                    <td><span class="status-badge ${statusColor}">${statusIcon} ${statusText}</span></td>
                     <td>
                         <button class="btn-action view" data-id="${gym._id}"><i class="fas fa-eye"></i></button>
                         <button class="btn-action edit" data-id="${gym._id}"><i class="fas fa-edit"></i></button>
@@ -295,6 +615,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return `
                 <tr>
                     ${commonColumns}
+                    <td><span class="status-badge ${statusColor}">${statusIcon} ${statusText}</span></td>
                     <td>${formattedCreatedDate}</td>
                     <td>
                         <button class="btn-action approve" data-id="${gym._id}"><i class="fas fa-check"></i> Approve</button>
@@ -314,7 +635,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return `
                 <tr>
                     ${commonColumns}
-                    <td>${gym.totalMembers || 0}</td>
+                    <td>${gym.totalMembers || gym.membersCount || 0}</td>
+                    <td><span class="status-badge ${statusColor}">${statusIcon} ${statusText}</span></td>
                     <td>${formattedApprovedDate}</td>
                     <td>
                         <button class="btn-action view" data-id="${gym._id}"><i class="fas fa-eye"></i></button>
@@ -326,6 +648,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return `
                 <tr>
                     ${commonColumns}
+                    <td><span class="status-badge ${statusColor}">${statusIcon} ${statusText}</span></td>
                     <td>${gym.rejectionReason || '-'}</td>
                     <td>${gym.rejectedAt ? new Date(gym.rejectedAt).toLocaleDateString() : '-'}</td>
                     <td>
@@ -337,108 +660,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function addActionButtonListeners() {
-
-        // Gym Action Listeners
-        document.querySelectorAll('.btn-action').forEach(btn => {
-            btn.addEventListener('click', async function (event) {
-                event.preventDefault();
-                const gymId = this.getAttribute('data-id');
-
-                try {
-                    if (this.classList.contains('view')) {
-                        window.location.href = `/admin/gym/${gymId}`;
-                    } else if (this.classList.contains('edit')) {
-                        window.location.href = `/admin/edit-gym/${gymId}`;
-                    } else if (this.classList.contains('delete')) {
-                        if (confirm('Are you sure you want to delete this gym?')) {
-                            const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}`, { 
-                                method: 'DELETE',
-                                headers: {
-                                    'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-                                }
-                            });
-
-                            if (response.ok) {
-                                showNotification('Gym deleted successfully!', 'success');
-                                loadTabData('all-gyms');
-                            } else {
-                                const errorData = await response.json().catch(() => ({}));
-                                showNotification(errorData.message || 'Failed to delete gym', 'error');
-                            }
-                        }
-                    } else if (this.classList.contains('approve')) {
-                        const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}/approve`, { 
-                            method: 'PATCH',
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-                            }
-                        });
-
-                        if (response.ok) {
-                            showNotification('Gym approved successfully!', 'success');
-                            loadTabData('pending-gyms');
-                            loadTabData('approved-gyms');
-                        } else {
-                            const errorData = await response.json().catch(() => ({}));
-                            showNotification(errorData.message || 'Failed to approve gym', 'error');
-                        }
-                    } else if (this.classList.contains('reject')) {
-                        const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}/reject`, { 
-                            method: 'PATCH',
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-                            }
-                        });
-
-                        if (response.ok) {
-                            showNotification('Gym rejected successfully!', 'success');
-                            loadTabData('pending-gyms');
-                            loadTabData('rejected-gyms');
-                        } else {
-                            const errorData = await response.json().catch(() => ({}));
-                            showNotification(errorData.message || 'Failed to reject gym', 'error');
-                        }
-                    } else if (this.classList.contains('revoke')) {
-                        const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}/revoke`, { 
-                            method: 'PATCH',
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-                            }
-                        });
-
-                        if (response.ok) {
-                            showNotification('Gym approval revoked successfully!', 'success');
-                            loadTabData('approved-gyms');
-                            loadTabData('pending-gyms');
-                        } else {
-                            const errorData = await response.json().catch(() => ({}));
-                            showNotification(errorData.message || 'Failed to revoke gym approval', 'error');
-                        }
-                    } else if (this.classList.contains('reconsider')) {
-                        const response = await fetch(`${BASE_URL}/api/admin/gyms/${gymId}/reconsider`, { 
-                            method: 'PATCH',
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-                            }
-                        });
-
-                        if (response.ok) {
-                            showNotification('Gym status reconsidered successfully!', 'success');
-                            loadTabData('rejected-gyms');
-                            loadTabData('pending-gyms');
-                        } else {
-                            const errorData = await response.json().catch(() => ({}));
-                            showNotification(errorData.message || 'Failed to reconsider gym status', 'error');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Action failed:', error);
-                    showNotification('An unexpected error occurred', 'error');
-                }
-            });
-        });
-    }
+    // ...existing code...
 // ========== TRIAL REQUESTS ==========
 function initTrialRequestsTab() {
   console.log('[DEBUG] initTrialRequestsTab called');
@@ -815,66 +1037,61 @@ function initTrialRequestsTab() {
     if (trainerMgmtGrid) fetchTrainers();
     // ========== End Trainer Management Dynamic ==========
 
-});
- // Hamburger menu logic
-    document.addEventListener('DOMContentLoaded', function () {
-      const hamburger = document.getElementById('hamburgerMenu');
-      const sidebar = document.getElementById('sidebarMenu');
-      const mainContent = document.getElementById('mainContent');
-      function closeSidebar() {
-        sidebar.classList.remove('active');
-      }
-      function openSidebar() {
-        sidebar.classList.add('active');
-      }
-      hamburger.addEventListener('click', function () {
+  // Hamburger menu logic
+  const hamburger = document.getElementById('hamburgerMenu');
+  const sidebar = document.getElementById('sidebarMenu');
+  const mainContent = document.getElementById('mainContent');
+  function closeSidebar() {
+    sidebar.classList.remove('active');
+  }
+  function openSidebar() {
+    sidebar.classList.add('active');
+  }
+  if (hamburger && sidebar && mainContent) {
+    hamburger.addEventListener('click', function () {
+      sidebar.classList.toggle('active');
+    });
+    hamburger.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
         sidebar.classList.toggle('active');
-      });
-      hamburger.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          sidebar.classList.toggle('active');
-        }
-      });
-      // Close sidebar when clicking outside on mobile
-      mainContent.addEventListener('click', function (e) {
-        if (window.innerWidth <= 900 && sidebar.classList.contains('active')) {
-          closeSidebar();
-        }
-      });
-      // Optional: close sidebar on navigation
-      document.querySelectorAll('.sidebar-menu a').forEach(link => {
-        link.addEventListener('click', function () {
-          if (window.innerWidth <= 900) closeSidebar();
-        });
-      });
-      // Hide hamburger on desktop
-      function handleResize() {
-        if (window.innerWidth > 900) {
-          sidebar.classList.remove('active');
-          hamburger.style.display = 'none';
-        } else {
-          hamburger.style.display = 'flex';
-        }
       }
-      window.addEventListener('resize', handleResize);
-      handleResize();
     });
-    // Responsive table labels for mobile
-    document.addEventListener('DOMContentLoaded', function () {
-      function setTableLabels() {
-        document.querySelectorAll('.table-container table').forEach(table => {
-          const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
-          table.querySelectorAll('tbody tr').forEach(row => {
-            Array.from(row.children).forEach((td, idx) => {
-              td.setAttribute('data-label', headers[idx] || '');
-            });
-          });
-        });
+    mainContent.addEventListener('click', function (e) {
+      if (window.innerWidth <= 900 && sidebar.classList.contains('active')) {
+        closeSidebar();
       }
-      setTableLabels();
-      // Re-apply on dynamic content load (if using AJAX)
-      const observer = new MutationObserver(setTableLabels);
-      document.querySelectorAll('.table-container tbody').forEach(tbody => {
-        observer.observe(tbody, { childList: true });
+    });
+    document.querySelectorAll('.sidebar-menu a').forEach(link => {
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 900) closeSidebar();
       });
     });
+    function handleResize() {
+      if (window.innerWidth > 900) {
+        sidebar.classList.remove('active');
+        hamburger.style.display = 'none';
+      } else {
+        hamburger.style.display = 'flex';
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+  }
+  // Responsive table labels for mobile
+  function setTableLabels() {
+    document.querySelectorAll('.table-container table').forEach(table => {
+      const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+      table.querySelectorAll('tbody tr').forEach(row => {
+        Array.from(row.children).forEach((td, idx) => {
+          td.setAttribute('data-label', headers[idx] || '');
+        });
+      });
+    });
+  }
+  setTableLabels();
+  // Re-apply on dynamic content load (if using AJAX)
+  const observer = new MutationObserver(setTableLabels);
+  document.querySelectorAll('.table-container tbody').forEach(tbody => {
+    observer.observe(tbody, { childList: true });
+  });
+});

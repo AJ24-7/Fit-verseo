@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const gymSchema = new mongoose.Schema({
   gymName: { type: String, required: true },
-  admin: { type: mongoose.Schema.Types.ObjectId, ref: 'GymAdmin', required: true },
+  admin: { type: mongoose.Schema.Types.ObjectId, ref: 'GymAdmin', required: false },
   email: { type: String, required: true },
   phone: { type: String, required: true },
   password: { type: String, required: true },
@@ -28,7 +28,6 @@ passwordResetOTPExpiry: { type: Date },
   logoUrl: { type: String },
 
   equipment: { type: [String], required: true },
-  otherEquipment: { type: String },
   activities: [{
     name: { type: String, required: true },
     icon: { type: String, default: 'fa-dumbbell' }, // FontAwesome icon class

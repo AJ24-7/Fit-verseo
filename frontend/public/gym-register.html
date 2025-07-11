@@ -9,7 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="gym-register.css">
-  
 </head>
 <body>
   <div class="fit-verse-container">
@@ -17,237 +16,292 @@
       <h1 class="animate__animated animate__fadeIn">Register Your Gym</h1>
       <p class="animate__animated animate__fadeIn animate__delay-1s">Join the Fit-verse network and reach thousands of fitness enthusiasts</p>
     </div>
-    <div class="form-container">
-    <form id="gymRegisterForm" class="gym-registration-form" enctype="multipart/form-data" method="POST">
-      <div class="form-section">
-        <h2 class="section-title">Basic Information</h2>
-        <div class="form-grid">
-          <!-- Gym Logo Upload & Preview -->
-          <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 24px;">
-            <div style="display: flex; flex-direction: column; align-items: center;">
-              <img id="logoPreviewImage" src="https://via.placeholder.com/96x96?text=Logo" alt="Gym Logo Preview" style="width: 96px; height: 96px; border-radius: 12px; object-fit: cover; border: 2px solid #1976d2; background: #f5f5f5; margin-bottom: 8px;">
-              <label for="gymLogo" style="cursor: pointer; color: #1976d2; font-weight: 500; font-size: 0.98em;">Upload Logo</label>
-              <input type="file" id="gymLogo" name="logo" accept="image/*" style="display: none;">
-            </div>
-            <div style="flex: 1;">
-              <span style="color: #888; font-size: 0.98em;">Recommended: Square image, PNG/JPG, max 1MB. This logo will appear on your gym profile and dashboard.</span>
-            </div>
-          </div>
-          <!-- End Gym Logo Upload -->
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="gymName">Gym Name*</label>
-            <input type="text" id="gymName" name="gymName" class="form-control" required>
-            <div class="error">Please enter your gym name</div>
-          </div>
-          <div class="form-group">
-            <label for="currentMembers">Current Members Count*</label>
-            <input type="number" id="currentMembers" name="currentMembers" class="form-control" min="0" required>
-            <div class="error">Please enter the current number of members</div>
-          </div>
-          <div class="form-group">
-            <label for="email">Email*</label>
-            <input type="email" id="email" name="email" class="form-control" required>
-            <div class="error">Please enter a valid email</div>
-          </div>
-          <div class="form-group">
-            <label for="phone">Phone Number*</label>
-            <input type="tel" id="phone" name="phone" class="form-control" required>
-            <div class="error">Please enter a valid phone number</div>
-          </div>
-          <div class="form-group">
-            <label for="password">Create Password*</label>
-            <input type="password" id="password" name="password" class="form-control" required />
-            <div class="error">Please enter a password</div>
-            <div id="passwordReminderMsg" style="display:none;margin-top:8px;padding:8px 12px;background:#fff3cd;color:#856404;border:1.5px solid #ffeeba;border-radius:6px;font-size:0.98em;font-weight:500;">
-              <i class="fas fa-info-circle" style="margin-right:6px;"></i> Remember this password, as it will be used to login after approval.
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="form-section">
-        <h2 class="section-title">Location Details</h2>
-        <div class="form-group">
-          <label for="address">Locality/Area*</label>
-          <input type="text" id="address" name="address" class="form-control" required>
-          <div class="error">Please enter your gym address</div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-      <label for="city">City*</label>
-      <input type="text" id="city" name="city" class="form-control" required>
-      <div class="error">Please enter your city</div>
-    </div>
     
-          <div class="form-group">
-            <label for="state">State*</label>
-            <input type="text" id="state" name="state" class="form-control" required>
-            <div class="error">Please enter your state</div>
-          </div>
-          <div class="form-group">
-            <label for="pincode">Pincode*</label>
-            <input type="text" id="pincode" name="pincode" class="form-control" required>
-            <div class="error">Please enter a valid pincode</div>
-          </div>
-          <div class="form-group">
-            <label for="landmark">Nearest Landmark</label>
-            <input type="text" id="landmark" name="landmark" class="form-control">
-          </div>
-        </div>
-      </div>
-      
-      <div class="form-section">
-        <h2 class="section-title">Gym Facilities</h2>
-        <div class="form-group">
-          <label for="description">Gym Description*</label>
-          <textarea id="description" name="description" class="form-control" required></textarea>
-          <div class="error">Please describe your gym facilities</div>
-        </div>
-        
-        <div class="form-group">
-          <label for="gymPhotosInput">Gym Photos*</label>
-          <input type="file" id="gymPhotosInput" name="gymPhotos[]" accept="image/*" multiple style="display:none;">
-          <div id="gymPhotoCardsContainer" style="display: flex; flex-wrap: wrap; gap: 18px;"></div>
-          <button type="button" class="btn btn-secondary" id="addGymPhotoCardBtn" style="margin-top:10px;">Add Photo</button>
-        </div>
-        
-        <div class="form-group">
-          <label for="equipment-treadmills">Available Equipment*</label>
-          <div class="checkbox-grid" id="equipmentGrid">
-            <label class="checkbox-label">
-              <input type="checkbox" id="equipment-treadmills" name="equipment" value="Treadmills"> Treadmills
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Dumbbells"> Dumbbells
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Barbells"> Barbells
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Weight Machines"> Weight Machines
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Ellipticals"> Ellipticals
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Stationary Bikes"> Stationary Bikes
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Rowing Machines"> Rowing Machines
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Kettlebells"> Kettlebells
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Resistance Bands"> Resistance Bands
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Yoga Mats"> Yoga Mats
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Pilates Equipment"> Pilates Equipment
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="equipment" value="Other"> Other
-            </label>
-          </div>
-          <div class="error" id="equipmentError">Please select at least one equipment type</div>
-          <div class="equipment-info-msg" style="margin-top:10px;padding:10px 14px;background:#e3eafc;border-radius:7px;color:#1976d2;font-size:0.98em;font-weight:500;">
-            <i class="fas fa-info-circle" style="margin-right:6px;"></i> Select the equipments you actually have in your gym.<br>
-            <span style="color:#3f37c9;font-weight:400;display:block;margin-top:4px;"><i class="fas fa-image" style="margin-right:6px;"></i>You'll be able to add images for the equipment selected after admin approval.</span>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="activitiesInteractiveGrid">Activities & Classes Offered*</label>
-          <div id="activitiesInteractiveGrid" class="activities-interactive-grid"></div>
-          <!-- Removed: Other Activities input, not used in JS -->
-          <div class="error" id="activitiesError">Please select at least one activity</div>
-        </div>
-      </div>
-      
-      <div class="form-section">
-        <h2 class="section-title">Membership Plans (₹)</h2>
-        <div id="membershipPlansGrid" class="membership-plans-grid"></div>
-        <!-- Membership Plan Creator Modal -->
-        <div class="modal" id="planCreatorModal" style="display:none;z-index:10001;align-items:flex-start;">
-          <div class="modal-content" style="max-width:700px;margin-top:48px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <h3 style="margin:0;font-size:1.4em;color:#1976d2;font-weight:700;">Membership Plan Editor</h3>
-              <!-- Close button removed for registration modal -->
-            </div>
-            <form id="planCreatorForm" style="margin-top:18px;">
-              <div id="planEditorCards" style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;"></div>
-              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;">
-                <!-- Add Plan and Save Plans buttons removed for registration modal -->
+    <div class="form-container">
+      <form id="gymRegisterForm" class="gym-registration-form" enctype="multipart/form-data" method="POST" novalidate>
+        <!-- Basic Information Section -->
+        <div class="form-section">
+          <h2 class="section-title">Basic Information</h2>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 24px;">
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <img id="logoPreviewImage" src="https://via.placeholder.com/96x96?text=Logo" alt="Gym Logo Preview" style="width: 96px; height: 96px; border-radius: 12px; object-fit: cover; border: 2px solid #1976d2; background: #f5f5f5; margin-bottom: 8px;">
+                <label for="gymLogo" style="cursor: pointer; color: #1976d2; font-weight: 500; font-size: 0.98em;">Upload Logo</label>
+                <input type="file" id="gymLogo" name="logo" accept="image/*" style="display: none;">
               </div>
-            </form>
+              <div style="flex: 1;">
+                <span style="color: #888; font-size: 0.98em;">Recommended: Square image, PNG/JPG, max 1MB. This logo will appear on your gym profile and dashboard.</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="form-section">
-        <h2 class="section-title">Customer Support</h2>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="contactPerson">Contact Person*</label>
-            <input type="text" id="contactPerson" name="contactPerson" class="form-control" required>
-            <div class="error">Please enter a contact person</div>
-          </div>
-          <div class="form-group">
-            <label for="supportEmail">Support Email*</label>
-            <input type="email" id="supportEmail" name="supportEmail" class="form-control" required>
-            <div class="error">Please enter a valid support email</div>
-          </div>
-          <div class="form-group">
-            <label for="supportPhone">Support Phone*</label>
-            <input type="tel" id="supportPhone" name="supportPhone" class="form-control" required>
-            <div class="error">Please enter a valid support phone</div>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <span class="section-label" id="operatingHoursLabel">Operating Hours*</span>
+          
           <div class="form-grid">
             <div class="form-group">
-              <label for="openingTime">Opening Time*</label>
-              <input type="time" id="openingTime" name="openingTime" class="form-control" required aria-labelledby="operatingHoursLabel openingTimeLabel" title="Select opening time" placeholder="HH:MM">
-              <div class="error">Please specify opening time</div>
+              <label for="gymName">Gym Name*</label>
+              <input type="text" id="gymName" name="gymName" class="form-control" required>
+              <div class="error">Please enter your gym name</div>
             </div>
+            
             <div class="form-group">
-              <label for="closingTime">Closing Time*</label>
-              <input type="time" id="closingTime" name="closingTime" class="form-control" required aria-labelledby="operatingHoursLabel closingTimeLabel" title="Select closing time" placeholder="HH:MM">
-              <div class="error">Please specify closing time</div>
+              <label for="currentMembers">Current Members Count*</label>
+              <input type="number" id="currentMembers" name="currentMembers" class="form-control" min="0" required>
+              <div class="error">Please enter the current number of members</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="email">Email*</label>
+              <input type="email" id="email" name="email" class="form-control" required>
+              <div class="error">Please enter a valid email</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="phone">Phone Number*</label>
+              <input type="tel" id="phone" name="phone" class="form-control" required>
+              <div class="error">Please enter a valid phone number</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="password">Create Password*</label>
+              <input type="password" id="password" name="password" class="form-control" required>
+              <div class="error">Please enter a password</div>
+              <div id="passwordReminderMsg" style="display:none;margin-top:8px;padding:8px 12px;background:#fff3cd;color:#856404;border:1.5px solid #ffeeba;border-radius:6px;font-size:0.98em;font-weight:500;">
+                <i class="fas fa-info-circle" style="margin-right:6px;"></i> Remember this password, as it will be used to login after approval.
+              </div>
             </div>
           </div>
         </div>
+        
+        <!-- Location Details Section -->
+        <div class="form-section">
+          <h2 class="section-title">Location Details</h2>
+          <div class="form-group">
+            <label for="address">Locality/Area*</label>
+            <input type="text" id="address" name="address" class="form-control" required>
+            <div class="error">Please enter your gym address</div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="city">City*</label>
+              <input type="text" id="city" name="city" class="form-control" required>
+              <div class="error">Please enter your city</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="state">State*</label>
+              <input type="text" id="state" name="state" class="form-control" required>
+              <div class="error">Please enter your state</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="pincode">Pincode*</label>
+              <input type="text" id="pincode" name="pincode" class="form-control" required>
+              <div class="error">Please enter a valid pincode</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="landmark">Nearest Landmark</label>
+              <input type="text" id="landmark" name="landmark" class="form-control">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Gym Facilities Section -->
+        <div class="form-section">
+          <h2 class="section-title">Gym Facilities</h2>
+          <div class="form-group">
+            <label for="description">Gym Description*</label>
+            <textarea id="description" name="description" class="form-control" required></textarea>
+            <div class="error">Please describe your gym facilities</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="gymPhotosInput">Gym Photos*</label>
+            <input type="file" id="gymPhotosInput" name="gymPhotos[]" accept="image/*" multiple style="display:none;">
+            <div id="gymPhotoCardsContainer" style="display: flex; flex-wrap: wrap; gap: 18px;"></div>
+            <button type="button" class="btn btn-secondary" id="addGymPhotoCardBtn" style="margin-top:10px;">Add Another Photo</button>
+          </div>
+          
+          <div class="form-group">
+            <label for="equipment-treadmills">Available Equipment*</label>
+            <div class="checkbox-grid" id="equipmentGrid">
+              <label class="checkbox-label">
+                <input type="checkbox" id="equipment-treadmills" name="equipment" value="Treadmills"> Treadmills
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Dumbbells"> Dumbbells
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Barbells"> Barbells
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Weight Machines"> Weight Machines
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Ellipticals"> Ellipticals
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Stationary Bikes"> Stationary Bikes
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Rowing Machines"> Rowing Machines
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Kettlebells"> Kettlebells
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Resistance Bands"> Resistance Bands
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Yoga Mats"> Yoga Mats
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Pilates Equipment"> Pilates Equipment
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="equipment" value="Other"> Other
+              </label>
+            </div>
+            <div class="error" id="equipmentError">Please select at least one equipment type</div>
+            <div class="equipment-info-msg" style="margin-top:10px;padding:10px 14px;background:#e3eafc;border-radius:7px;color:#1976d2;font-size:0.98em;font-weight:500;">
+              <i class="fas fa-info-circle" style="margin-right:6px;"></i> Select the equipments you actually have in your gym.<br>
+              <span style="color:#3f37c9;font-weight:400;display:block;margin-top:4px;"><i class="fas fa-image" style="margin-right:6px;"></i>You'll be able to add images for the equipment selected after admin approval.</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="activitiesInteractiveGrid">Activities & Classes Offered*</label>
+            <div id="activitiesInteractiveGrid" class="activities-grid"></div>
+            <div id="activitiesError" class="activities-error" style="display: none;">Please select at least one activity.</div>
+          </div>
+        </div>
+        
+        <!-- Membership Plans Section -->
+        <div class="form-section">
+          <h2 class="section-title">Membership Plans (₹)</h2>
+          <div id="membershipPlansGrid" class="membership-plans-grid"></div>
+          
+          <div class="modal" id="planCreatorModal" style="display:none;z-index:10001;align-items:flex-start;">
+            <div class="modal-content" style="max-width:700px;margin-top:48px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <h3 style="margin:0;font-size:1.4em;color:#1976d2;font-weight:700;">Membership Plan Editor</h3>
+              </div>
+              <!-- Removed nested form to avoid invalid HTML structure -->
+              <div id="planEditorCards" style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;"></div>
+              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Customer Support Section -->
+        <div class="form-section">
+          <h2 class="section-title">Customer Support</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="contactPerson">Contact Person*</label>
+              <input type="text" id="contactPerson" name="contactPerson" class="form-control" required>
+              <div class="error">Please enter a contact person</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="supportEmail">Support Email*</label>
+              <input type="email" id="supportEmail" name="supportEmail" class="form-control" required>
+              <div class="error">Please enter a valid support email</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="supportPhone">Support Phone*</label>
+              <input type="tel" id="supportPhone" name="supportPhone" class="form-control" required>
+              <div class="error">Please enter a valid support phone</div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <span class="section-label" id="operatingHoursLabel">Operating Hours*</span>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="openingTime">Opening Time*</label>
+                <input type="time" id="openingTime" name="openingTime" class="form-control" required aria-labelledby="operatingHoursLabel openingTimeLabel" title="Select opening time" placeholder="HH:MM">
+                <div class="error">Please specify opening time</div>
+              </div>
+              
+              <div class="form-group">
+                <label for="closingTime">Closing Time*</label>
+                <input type="time" id="closingTime" name="closingTime" class="form-control" required aria-labelledby="operatingHoursLabel closingTimeLabel" title="Select closing time" placeholder="HH:MM">
+                <div class="error">Please specify closing time</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span id="btnText">Register Gym</span>
+          <span id="loader" style="display:none;">
+            <i class="fas fa-spinner fa-spin"></i>
+          </span>
+        </button>
+      </form>
+    </div>
+    <!-- Registration Success Modal -->
+    <div id="registrationSuccessModal" class="modal" style="display:none;z-index:10001;align-items:center;justify-content:center;">
+      <div class="modal-content" style="max-width:400px;margin:auto;padding:32px 24px 24px 24px;border-radius:14px;box-shadow:0 4px 32px rgba(0,0,0,0.18);background:#fff;text-align:center;position:relative;">
+        <div style="font-size:2.5em;color:#38b000;margin-bottom:10px;"><i class="fas fa-check-circle"></i></div>
+        <h3 style="margin:0 0 10px 0;">Registration Successful!</h3>
+        <p style="color:#444;">Thank you for registering with Fit-verse.<br>Our team will contact you shortly.</p>
+        <button id="closeSuccessModalBtn" class="btn" style="margin-top:18px;background:#1976d2;color:#fff;padding:8px 24px;border:none;border-radius:6px;font-size:1em;cursor:pointer;">Close</button>
       </div>
-      <div class="form-footer">
-  <button type="submit" class="submit-btn" id="submitBtn">
-    <span id="btnText">Register Gym</span>
-    <span id="loader" style="display:none;">
-      <i class="fas fa-spinner fa-spin"></i>
-    </span>
-  </button>
-</div>
-    
-    </form>
     </div>
-    <div id="successMessage" class="success-message" style="display: none;">
-      <h3>🎉 Registration Successful!</h3>
-      <p>Thank you for registering with Fit-verse. Our team will contact you shortly.</p>
-    </div>
-    <div id="pendingMessage" class="pending-message" style="display: none;">
-      <h3>🔒 Pending Approval</h3>
-      <p>Your gym registration is under review. Our team will contact you shortly.</p>
-  </div>
-  
   </div>
 
- 
+  <!-- Templates -->
+  <!-- Membership Plan Card Template -->
+  <template id="plan-card-template">
+    <div class="plan-editor-card" style="background:#f8f9fa;border-radius:10px;padding:16px 18px;min-width:260px;max-width:320px;box-shadow:0 2px 8px #0001;margin-bottom:10px;position:relative;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="plan-icon" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1.6em;"></div>
+        <input type="text" class="plan-name-input" readonly style="flex:1;font-weight:700;background:#e3eafc;border:none;color:#222;">
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;">
+        <input type="number" class="plan-price-input" name="planPrice[]" min="0" placeholder="Price* (₹)" style="width:90px;" required>
+        <input type="number" class="plan-discount-input" name="planDiscount[]" min="0" max="100" placeholder="Discount (%)" style="width:80px;">
+        <input type="number" class="plan-discount-months-input" name="planDiscountMonths[]" min="0" max="24" placeholder="Months" style="width:70px;">
+      </div>
+      <textarea class="plan-benefits-input" name="planBenefits[]" placeholder="Benefits (comma separated)*" style="margin-top:10px;width:100%;min-height:38px;resize:vertical;" required></textarea>
+      <input type="text" class="plan-note-input" name="planNote[]" placeholder="Note (optional)" style="margin-top:8px;width:100%;">
+      <input type="hidden" name="planName[]">
+      <input type="hidden" name="planIcon[]">
+      <input type="hidden" name="planColor[]">
+      <div class="plan-discounted-amount" style="margin-top:14px;font-size:1.08em;font-weight:600;color:#1976d2;min-height:22px;text-align:right;"></div>
+    </div>
+  </template>
 
- <script src="gym-register.js"></script>
+  <!-- Gym Photo Card Template -->
+  <template id="gym-photo-card-template">
+    <div class="gym-photo-card" style="width: 180px; background: #f8f9fa; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; box-shadow: 0 2px 8px #0001;">
+      <div class="photo-upload-container" style="width:100%;height:110px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;">
+        <div class="photo-upload-placeholder" style="width:100%;height:100px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1.5px solid #1976d2;background:#e3eafc;position:relative;">
+          <i class="fas fa-upload" style="font-size:2.2em;color:#1976d2;"></i>
+          <img src="" alt="Photo Preview" class="photo-preview" style="display:none;width:100%;height:100px;object-fit:cover;border-radius:8px;position:absolute;left:0;top:0;">
+        </div>
+        <input type="file" name="photoFile[]" accept="image/*" style="opacity:0;position:absolute;left:0;top:0;width:100%;height:100%;cursor:pointer;" required>
+      </div>
+      <input type="text" name="photoTitle[]" class="form-control" placeholder="Title*" style="margin-top:8px;" required>
+      <select name="photoCategory[]" class="form-control" style="margin-top:6px;" required>
+        <option value="">Select Category*</option>
+        <option value="Equipment">Equipment</option>
+        <option value="Facility">Facility</option>
+        <option value="Group Class">Group Class</option>
+        <option value="Trainer">Trainer</option>
+        <option value="Member">Member</option>
+        <option value="Event">Event</option>
+        <option value="Other">Other</option>
+      </select>
+      <textarea name="photoDescription[]" class="form-control" placeholder="Description*" style="margin-top:6px;resize:vertical;min-height:38px;max-height:80px;" required></textarea>
+      <button type="button" class="btn btn-danger remove-gym-photo-card" style="position:absolute;top:6px;right:6px;padding:2px 8px;font-size:0.95em;display:none;">Remove</button>
+    </div>
+  </template>
+
+  <script src="gym-register.js"></script>
 </body>
 </html>
