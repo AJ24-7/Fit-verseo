@@ -14,6 +14,7 @@ toPlanResponse = (plan) => ({
 
 exports.getMembershipPlans = async (req, res) => {
   try {
+    console.log('[API] getMembershipPlans called for admin:', req.admin && req.admin.id);
     const gym = await Gym.findOne({ admin: req.admin.id });
     if (!gym) return res.status(404).json({ message: 'Gym not found' });
     // Always return exactly 3 plans (Basic, Standard, Premium)
@@ -28,8 +29,10 @@ exports.getMembershipPlans = async (req, res) => {
       gym.membershipPlans = plans;
       await gym.save();
     }
+    console.log('[API] Returning plans:', plans.map(toPlanResponse));
     res.json(plans.map(toPlanResponse));
   } catch (err) {
+    console.error('[API] Error in getMembershipPlans:', err);
     res.status(500).json({ message: 'Error fetching membership plans', error: err.message });
   }
 };

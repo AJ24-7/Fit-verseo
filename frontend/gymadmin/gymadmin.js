@@ -1252,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       list.innerHTML = filtered.map(m => `
         <label style="display:flex;align-items:center;padding:6px 12px;cursor:pointer;">
-          <input type="checkbox" class="custom-remove-checkbox" value="${m._id}" style="margin-right:10px;">
+          <input type="checkbox" class="custom-remove-checkbox" value="${m.membershipId || ''}" style="margin-right:10px;">
           <img src="${m.profileImage ? `http://localhost:5000${m.profileImage}` : 'https://via.placeholder.com/32?text=Photo'}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;margin-right:10px;">
           <span style="font-weight:500;">${m.memberName || ''}</span>
           <span style="color:#888;font-size:0.95em;margin-left:8px;">${m.membershipId || ''}</span>
@@ -1286,7 +1286,7 @@ document.addEventListener('DOMContentLoaded', function () {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ memberIds: selected })
+                body: JSON.stringify({ membershipIds: selected })
               });
               const data = await res.json();
               if (!res.ok) {
@@ -1324,186 +1324,458 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 });
-// --- Unified Add Member Modal Logic (Dashboard Quick Action & Member Tab) ---
+// --- Add Member Modal Logic (Single Consolidated Implementation) ---
 document.addEventListener('DOMContentLoaded', function() {
-  const addMemberBtn = document.getElementById('addMemberBtn'); // Dashboard quick action
-  const addMemberBtnTab = document.getElementById('addMemberBtnTab'); // Member tab button
+  console.log('[AddMember] Initializing add member modal functionality');
+  
+  // DOM elements
+  const addMemberBtn = document.getElementById('addMemberBtn');
+  const addMemberBtnTab = document.getElementById('addMemberBtnTab');
   const addMemberModal = document.getElementById('addMemberModal');
   const closeAddMemberModal = document.getElementById('closeAddMemberModal');
   const addMemberForm = document.getElementById('addMemberForm');
   const addMemberSuccessMsg = document.getElementById('addMemberSuccessMsg');
   const memberProfileImageInput = document.getElementById('memberProfileImage');
   const memberImageTag = document.getElementById('memberImageTag');
+  const uploadMemberImageBtn = document.getElementById('uploadMemberImageBtn');
 
-  // --- Membership Plan Logic ---
-  let plansCache = [];
+  // Form elements for payment calculation
   const planSelected = document.getElementById('planSelected');
   const monthlyPlan = document.getElementById('monthlyPlan');
   const paymentAmount = document.getElementById('paymentAmount');
-  // Discount info UI
-  let discountInfoDiv = document.getElementById('discountInfoDiv');
-  if (!discountInfoDiv && paymentAmount && paymentAmount.parentNode) {
-    discountInfoDiv = document.createElement('div');
-    discountInfoDiv.id = 'discountInfoDiv';
-    discountInfoDiv.style = 'margin-top:4px;font-size:0.98em;color:#1976d2;';
-    paymentAmount.parentNode.appendChild(discountInfoDiv);
-  }
 
+  console.log('[AddMember] DOM elements found:', {
+    addMemberBtn: !!addMemberBtn,
+    addMemberModal: !!addMemberModal,
+    planSelected: !!planSelected,
+    monthlyPlan: !!monthlyPlan,
+    paymentAmount: !!paymentAmount,
+    memberProfileImageInput: !!memberProfileImageInput,
+    uploadMemberImageBtn: !!uploadMemberImageBtn
+  });
+
+  // Additional debugging - check actual element IDs in DOM
+  console.log('[AddMember] Checking DOM element IDs:');
+  console.log('planSelected element:', document.getElementById('planSelected'));
+  console.log('monthlyPlan element:', document.getElementById('monthlyPlan'));
+  console.log('paymentAmount element:', document.getElementById('paymentAmount'));
+  console.log('uploadMemberImageBtn element:', document.getElementById('uploadMemberImageBtn'));
+  console.log('memberProfileImage element:', document.getElementById('memberProfileImage'));
+
+  // Debug: Log actual element IDs to see if we're targeting the right elements
+  if (planSelected) console.log('[AddMember] Plan select element ID:', planSelected.id);
+  if (monthlyPlan) console.log('[AddMember] Monthly plan element ID:', monthlyPlan.id);
+  if (paymentAmount) console.log('[AddMember] Payment amount element ID:', paymentAmount.id);
+  if (uploadMemberImageBtn) console.log('[AddMember] Upload button element ID:', uploadMemberImageBtn.id);
+  if (memberProfileImageInput) console.log('[AddMember] File input element ID:', memberProfileImageInput.id);
+
+  // Cache for membership plans
+  let plansCache = [];
+
+  // Fetch membership plans from backend
   async function fetchPlansForModal() {
-    const token = localStorage.getItem('gymAdminToken');
     try {
-      const res = await fetch('/api/gyms/membership-plans', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      console.log('[AddMember] Fetching membership plans...');
+      
+      // Use the same waitForToken pattern as the admin profile fetch
+      const token = await waitForToken('gymAdminToken', 10, 100);
+      
+      if (!token) {
+        console.warn('[AddMember] No authentication token found after retry');
+        
+        // Try alternative token names if gymAdminToken is not available
+        const alternativeTokens = ['token', 'authToken', 'gymAuthToken'];
+        let alternativeToken = null;
+        
+        for (const tokenName of alternativeTokens) {
+          alternativeToken = localStorage.getItem(tokenName);
+          if (alternativeToken) {
+            console.log(`[AddMember] Found alternative token: ${tokenName}`);
+            break;
+          }
+        }
+        
+        if (!alternativeToken) {
+          console.error('[AddMember] No valid authentication token found');
+          plansCache = [];
+          return;
+        }
+        
+        // Use the alternative token
+        const response = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${alternativeToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText} (using alternative token)`);
+        }
+        
+        const data = await response.json();
+        console.log('[AddMember] Plans API response (alternative token):', data);
+        
+        // Handle both response formats: direct array or {success: true, plans: [...]}
+        if (Array.isArray(data)) {
+          plansCache = data;
+          console.log('[AddMember] Plans cached (direct array):', plansCache.length, 'plans');
+        } else if (data.success && Array.isArray(data.plans)) {
+          plansCache = data.plans;
+          console.log('[AddMember] Plans cached (nested):', plansCache.length, 'plans');
+        } else {
+          console.warn('[AddMember] Invalid API response format:', data);
+          plansCache = [];
+        }
+        return;
+      }
+      
+      console.log('[AddMember] Using gymAdminToken for API request');
+      const response = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
-      if (!res.ok) throw new Error('Failed to fetch plans');
-      plansCache = await res.json();
-    } catch (err) {
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[AddMember] Plans API response:', data);
+      
+      // Handle both response formats: direct array or {success: true, plans: [...]}
+      if (Array.isArray(data)) {
+        plansCache = data;
+        console.log('[AddMember] Plans cached (direct array):', plansCache.length, 'plans');
+      } else if (data.success && Array.isArray(data.plans)) {
+        plansCache = data.plans;
+        console.log('[AddMember] Plans cached (nested):', plansCache.length, 'plans');
+      } else {
+        console.warn('[AddMember] Invalid API response format:', data);
+        plansCache = [];
+      }
+    } catch (error) {
+      console.error('[AddMember] Error fetching plans:', error);
       plansCache = [];
-      console.error('Error fetching plans:', err);
     }
   }
 
-  function updatePlanOptions() {
-    if (planSelected && plansCache.length) {
-      planSelected.innerHTML = '<option value="">Select</option>' + plansCache.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
-    }
-  }
-
+  // Update payment amount based on plan and duration
   function updatePaymentAmountAndDiscount() {
-    if (!planSelected || !monthlyPlan || !paymentAmount) return;
-    const selectedPlanName = planSelected.value;
-    const selectedMonthsText = monthlyPlan.options[monthlyPlan.selectedIndex]?.text || '';
-    let selectedMonths = 1;
-    if (/6/i.test(selectedMonthsText)) selectedMonths = 6;
-    else if (/12/i.test(selectedMonthsText)) selectedMonths = 12;
-    else if (/3/i.test(selectedMonthsText)) selectedMonths = 3;
-    // Find plan in cache
-    const plan = plansCache.find(p => p.name === selectedPlanName);
-    if (!plan) {
-      paymentAmount.value = '';
-      if (discountInfoDiv) discountInfoDiv.textContent = '';
+    console.log('[AddMember] Calculating payment amount...');
+    
+    // Get fresh DOM references
+    const currentPlanSelected = document.getElementById('planSelected');
+    const currentMonthlyPlan = document.getElementById('monthlyPlan');
+    const currentPaymentAmount = document.getElementById('paymentAmount');
+    
+    if (!currentPlanSelected || !currentMonthlyPlan || !currentPaymentAmount) {
+      console.warn('[AddMember] Required elements not found for payment calculation');
       return;
     }
-    let baseAmount = plan.price * selectedMonths;
-    let discount = 0;
-    let discountText = '';
-    if (plan.discount && plan.discountMonths && selectedMonths >= plan.discountMonths) {
-      discount = plan.discount;
-      const discountedAmount = Math.round(baseAmount * (1 - discount / 100));
-      paymentAmount.value = discountedAmount;
-      discountText = `Discount: ${discount}% off for ${plan.discountMonths}+ months. Original: ₹${baseAmount}, Now: ₹${discountedAmount}`;
-    } else {
-      paymentAmount.value = baseAmount;
-      discountText = '';
+
+    const selectedPlan = currentPlanSelected.value;
+    const selectedDuration = currentMonthlyPlan.value;
+    
+    console.log('[AddMember] Selected:', { plan: selectedPlan, duration: selectedDuration });
+
+    if (!selectedPlan || !selectedDuration) {
+      console.log('[AddMember] Clearing payment amount - no selection');
+      currentPaymentAmount.value = '';
+      return;
     }
-    if (discountInfoDiv) discountInfoDiv.textContent = discountText;
+
+    // Extract months from duration
+    const monthsMatch = selectedDuration.match(/(\d+)\s*Months?/i); // Updated regex to handle both "Month" and "Months"
+    const months = monthsMatch ? parseInt(monthsMatch[1]) : 1;
+    console.log('[AddMember] Extracted months:', months, 'from duration:', selectedDuration);
+
+    // Find plan in cache
+    const plan = plansCache.find(p => p.name === selectedPlan);
+    
+    if (!plan) {
+      console.warn('[AddMember] Plan not found in cache:', selectedPlan);
+      currentPaymentAmount.value = '';
+      return;
+    }
+
+    console.log('[AddMember] Found plan:', plan);
+
+    // Calculate amount
+    const baseAmount = plan.price * months;
+    let finalAmount = baseAmount;
+    
+    // Check if discount applies - handle both array and numeric discountMonths
+    let discountApplies = false;
+    if (plan.discount > 0 && plan.discountMonths) {
+      if (Array.isArray(plan.discountMonths)) {
+        discountApplies = plan.discountMonths.includes(months);
+      } else if (typeof plan.discountMonths === 'number') {
+        discountApplies = months >= plan.discountMonths;
+      }
+    }
+    
+    if (discountApplies) {
+      finalAmount = Math.round(baseAmount * (1 - plan.discount / 100));
+      console.log('[AddMember] Discount applied:', plan.discount + '%, Final:', finalAmount);
+    } else {
+      console.log('[AddMember] No discount applicable. Plan discount:', plan.discount, 'Plan discountMonths:', plan.discountMonths, 'Selected months:', months);
+    }
+
+    // Update UI
+    currentPaymentAmount.value = finalAmount;
+    console.log('[AddMember] Payment amount updated:', finalAmount);
   }
 
-  // Helper to open modal (now fetches plans and updates UI)
+  // Open modal
   async function openAddMemberModal() {
+    console.log('[AddMember] Opening modal...');
+    await fetchPlansForModal();
+    
     if (addMemberModal) {
       addMemberModal.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-      if (addMemberSuccessMsg) addMemberSuccessMsg.style.display = 'none';
-      if (addMemberForm) addMemberForm.reset();
-      if (memberImageTag) memberImageTag.src = 'https://via.placeholder.com/96?text=Photo';
-      await fetchPlansForModal();
-      updatePlanOptions();
-      updatePaymentAmountAndDiscount();
     }
-  }
-  // Helper to close modal
-  function closeAddMemberModalFunc() {
-    if (addMemberModal) addMemberModal.style.display = 'none';
-    document.body.style.overflow = '';
-    if (addMemberSuccessMsg) addMemberSuccessMsg.style.display = 'none';
+    
+    // Reset form
     if (addMemberForm) addMemberForm.reset();
-    if (memberImageTag) memberImageTag.src = 'https://via.placeholder.com/96?text=Photo';
+    if (paymentAmount) paymentAmount.value = '';
+    if (memberImageTag) memberImageTag.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik00OCA2NEM1Ni44MzY2IDY0IDY0IDU2LjgzNjYgNjQgNDhDNjQgMzkuMTYzNCA1Ni44MzY2IDMyIDQ4IDMyQzM5LjE2MzQgMzIgMzIgMzkuMTYzNCAzMiA0OEMzMiA1Ni44MzY2IDM5LjE2MzQgNjQgNDggNjRaIiBmaWxsPSIjQ0NDQ0NDIi8+CjxwYXRoIGQ9Ik0yNCA3Nkg3MlY4MEgyNFY3NloiIGZpbGw9IiNDQ0NDQ0MiLz4KPHRleHQgeD0iNDgiIHk9Ijg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTk5OTkiPlBob3RvPC90ZXh0Pgo8L3N2Zz4K';
+    if (addMemberSuccessMsg) addMemberSuccessMsg.style.display = 'none';
+    
+    // Populate plan dropdown
+    if (planSelected && plansCache.length > 0) {
+      console.log('[AddMember] Current planSelected element:', planSelected);
+      console.log('[AddMember] Current planSelected innerHTML before:', planSelected.innerHTML);
+      planSelected.innerHTML = '<option value="">Select Plan</option>' + 
+        plansCache.map(plan => `<option value="${plan.name}">${plan.name} - ₹${plan.price}/month</option>`).join('');
+      console.log('[AddMember] Plan dropdown populated with', plansCache.length, 'options');
+      console.log('[AddMember] Current planSelected innerHTML after:', planSelected.innerHTML);
+    } else {
+      console.warn('[AddMember] Plan dropdown not populated:', {
+        planSelected: !!planSelected,
+        plansCache: plansCache.length,
+        planSelectedElement: planSelected
+      });
+    }
+    
+    // Reattach event listeners after modal is opened and populated
+    setTimeout(() => {
+      attachPaymentListeners();
+      attachImageUploadListeners();
+      console.log('[AddMember] All listeners reattached after modal open');
+    }, 100);
+    
+    console.log('[AddMember] Modal opened and reset');
   }
 
-  // Open modal from dashboard quick action
-  if (addMemberBtn && addMemberModal) {
+  // Close modal
+  function closeAddMemberModalFunc() {
+    if (addMemberModal) addMemberModal.style.display = 'none';
+    console.log('[AddMember] Modal closed');
+  }
+
+  // Button event listeners
+  if (addMemberBtn) {
     addMemberBtn.addEventListener('click', function(e) {
       e.preventDefault();
+      console.log('[AddMember] Dashboard button clicked');
       openAddMemberModal();
     });
   }
-  // Open modal from member tab button
-  if (addMemberBtnTab && addMemberModal) {
+  
+  if (addMemberBtnTab) {
     addMemberBtnTab.addEventListener('click', function(e) {
       e.preventDefault();
+      console.log('[AddMember] Tab button clicked');
       openAddMemberModal();
     });
   }
-  // Update payment amount and discount when plan or months changes
-  if (planSelected) planSelected.addEventListener('change', updatePaymentAmountAndDiscount);
-  if (monthlyPlan) monthlyPlan.addEventListener('change', updatePaymentAmountAndDiscount);
-  // Also update on modal open
-  if (addMemberModal) {
-    addMemberModal.addEventListener('show', updatePaymentAmountAndDiscount);
+
+  // Payment calculation listeners - attach directly without DOM replacement
+  function attachPaymentListeners() {
+    console.log('[AddMember] Attaching payment calculation listeners...');
+    
+    // Get current DOM references
+    const currentPlanSelected = document.getElementById('planSelected');
+    const currentMonthlyPlan = document.getElementById('monthlyPlan');
+    
+    if (currentPlanSelected) {
+      // Remove any existing listeners by removing and re-adding the event listener
+      currentPlanSelected.removeEventListener('change', handlePlanChange);
+      currentPlanSelected.addEventListener('change', handlePlanChange);
+      console.log('[AddMember] Plan select listener attached');
+    } else {
+      console.warn('[AddMember] Plan select element not found!');
+    }
+    
+    if (currentMonthlyPlan) {
+      // Remove any existing listeners by removing and re-adding the event listener
+      currentMonthlyPlan.removeEventListener('change', handleMonthChange);
+      currentMonthlyPlan.addEventListener('change', handleMonthChange);
+      console.log('[AddMember] Monthly plan listener attached');
+    } else {
+      console.warn('[AddMember] Monthly plan select element not found!');
+    }
   }
-  // Close modal on close button
-  if (closeAddMemberModal && addMemberModal) {
+
+  // Event handler functions
+  function handlePlanChange(event) {
+    console.log('[AddMember] Plan changed to:', event.target.value);
+    updatePaymentAmountAndDiscount();
+  }
+
+  function handleMonthChange(event) {
+    console.log('[AddMember] Duration changed to:', event.target.value);
+    updatePaymentAmountAndDiscount();
+  }
+
+  // Initial attachment
+  attachPaymentListeners();
+
+  // Modal close listeners
+  if (closeAddMemberModal) {
     closeAddMemberModal.addEventListener('click', closeAddMemberModalFunc);
   }
-  // Close modal if clicking outside modal-content
+  
   if (addMemberModal) {
     addMemberModal.addEventListener('mousedown', function(e) {
       if (e.target === addMemberModal) closeAddMemberModalFunc();
     });
   }
 
-  // Image upload logic
-  const uploadMemberImageBtn = document.getElementById('uploadMemberImageBtn');
-  if (uploadMemberImageBtn && memberProfileImageInput) {
-    uploadMemberImageBtn.addEventListener('click', function() {
-      memberProfileImageInput.click();
-    });
-  }
-  if (memberProfileImageInput && memberImageTag) {
-    memberProfileImageInput.addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          memberImageTag.src = evt.target.result;
-        };
-        reader.readAsDataURL(file);
-      } else {
-        memberImageTag.src = 'https://via.placeholder.com/96?text=Photo';
-      }
-    });
+  // Image upload functionality - use direct event listeners
+  function attachImageUploadListeners() {
+    console.log('[AddMember] Attaching image upload listeners...');
+    
+    const currentUploadBtn = document.getElementById('uploadMemberImageBtn');
+    const currentFileInput = document.getElementById('memberProfileImage');
+    
+    if (currentUploadBtn && currentFileInput) {
+      // Remove existing listeners
+      currentUploadBtn.removeEventListener('click', handleUploadBtnClick);
+      currentUploadBtn.addEventListener('click', handleUploadBtnClick);
+      console.log('[AddMember] Upload button listener attached');
+    } else {
+      console.warn('[AddMember] Image upload button or input not found:', {
+        uploadMemberImageBtn: !!currentUploadBtn,
+        memberProfileImageInput: !!currentFileInput
+      });
+    }
+
+    if (currentFileInput) {
+      currentFileInput.removeEventListener('change', handleFileInputChange);
+      currentFileInput.addEventListener('change', handleFileInputChange);
+      console.log('[AddMember] File input listener attached');
+    }
   }
 
-  // Handle form submit (with image, membership ID, and email notification)
+  // Event handler functions for image upload
+  function handleUploadBtnClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[AddMember] Image upload button clicked');
+    const fileInput = document.getElementById('memberProfileImage');
+    if (fileInput) {
+      fileInput.click();
+      console.log('[AddMember] File dialog triggered');
+    } else {
+      console.error('[AddMember] File input not found when button clicked');
+    }
+  }
+
+  function handleFileInputChange(e) {
+    console.log('[AddMember] Image file selected');
+    const file = e.target.files[0];
+    const imageTag = document.getElementById('memberImageTag');
+    
+    if (file && imageTag) {
+      console.log('[AddMember] Processing image file:', file.name);
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        imageTag.src = evt.target.result;
+        console.log('[AddMember] Image preview updated');
+      };
+      reader.readAsDataURL(file);
+    } else if (imageTag) {
+      imageTag.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik00OCA2NEM1Ni44MzY2IDY0IDY0IDU2LjgzNjYgNjQgNDhDNjQgMzkuMTYzNCA1Ni44MzY2IDMyIDQ4IDMyQzM5LjE2MzQgMzIgMzIgMzkuMTYzNCAzMiA0OEMzMiA1Ni44MzY2IDM5LjE2MzQgNjQgNDggNjRaIiBmaWxsPSIjQ0NDQ0NDIi8+CjxwYXRoIGQ9Ik0yNCA3Nkg3MlY4MEgyNFY3NloiIGZpbGw9IiNDQ0NDQ0MiLz4KPHRleHQgeD0iNDgiIHk9Ijg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTk5OTkiPlBob3RvPC90ZXh0Pgo8L3N2Zz4K';
+      console.log('[AddMember] Image cleared');
+    }
+  }
+
+  // Initial attachment
+  attachImageUploadListeners();
+
+  // Form submission
   if (addMemberForm) {
     addMemberForm.onsubmit = async function(e) {
       e.preventDefault();
-      const token = localStorage.getItem('gymAdminToken');
+      console.log('[AddMember] Form submitted');
+      
+      // Use the same waitForToken pattern
+      let token = await waitForToken('gymAdminToken', 10, 100);
+      
       if (!token) {
-        alert('You must be logged in as a gym admin.');
-        return;
+        // Try alternative token names
+        const alternativeTokens = ['token', 'authToken', 'gymAuthToken'];
+        for (const tokenName of alternativeTokens) {
+          token = localStorage.getItem(tokenName);
+          if (token) {
+            console.log(`[AddMember] Using alternative token: ${tokenName}`);
+            break;
+          }
+        }
+        
+        if (!token) {
+          alert('You must be logged in as a gym admin.');
+          return;
+        }
       }
-      const formData = new FormData(addMemberForm);
+      
+      const formData = prepareMemberFormData(addMemberForm);
       const { gymName, plan, monthlyPlan, memberEmail, memberName, membershipId, validDate } = getMemberFormMeta(formData);
-      // Use set() instead of append() to avoid duplicates
-      formData.set('membershipId', membershipId);
-      formData.set('membershipValidUntil', validDate);
-
+      
+      // Debug: Log all the form data being sent
+      console.log('[AddMember] Form submission data:', {
+        gymName,
+        plan,
+        monthlyPlan,
+        memberEmail,
+        memberName,
+        membershipId,
+        validDate
+      });
+      
+      // Debug: Log FormData contents
+      console.log('[AddMember] FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`[AddMember] ${key}:`, value);
+      }
+      
       try {
         const res = await fetch('http://localhost:5000/api/members', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formData
         });
+        
+        console.log('[AddMember] Backend response status:', res.status);
         const data = await res.json();
+        console.log('[AddMember] Backend response data:', data);
+        
         if (res.ok) {
+          console.log('[AddMember] Member created successfully, sending email...');
           sendMembershipEmail({ token, memberEmail, memberName, membershipId, plan, monthlyPlan, validDate, gymName });
           showAddMemberSuccess(addMemberSuccessMsg, membershipId, addMemberForm, memberImageTag, closeAddMemberModalFunc);
         } else {
+          console.error('[AddMember] Backend error:', data);
           showAddMemberError(addMemberSuccessMsg, data.message || 'Failed to add member.');
         }
       } catch (err) {
+        console.error('[AddMember] Submission error:', err);
         showAddMemberError(addMemberSuccessMsg, 'Server error. Please try again.');
       }
     };
@@ -1518,32 +1790,69 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getMemberFormMeta(formData) {
+      // Debug gym profile
+      console.log('[AddMember] window.currentGymProfile:', window.currentGymProfile);
+      
       const gymName = (window.currentGymProfile && (window.currentGymProfile.gymName || window.currentGymProfile.name)) ? (window.currentGymProfile.gymName || window.currentGymProfile.name) : 'GYM';
       const plan = formData.get('planSelected') || 'PLAN';
       const monthlyPlan = formData.get('monthlyPlan') || '';
       const memberEmail = formData.get('memberEmail') || '';
       const memberName = formData.get('memberName') || '';
+      
+      console.log('[AddMember] Base form data extracted:', {
+        gymName,
+        plan,
+        monthlyPlan,
+        memberEmail,
+        memberName
+      });
+      
       const now = new Date();
       const ym = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
-      // Use a more unique random string for membership ID (alphanumeric, 6 chars)
       const random = Math.random().toString(36).substring(2, 8).toUpperCase();
       const gymShort = gymName.replace(/[^A-Za-z0-9]/g, '').substring(0,6).toUpperCase();
       const planShort = plan.replace(/[^A-Za-z0-9]/g, '').substring(0,6).toUpperCase();
       const membershipId = `${gymShort}-${ym}-${planShort}-${random}`;
-      formData.set('membershipId', membershipId);
+      
+      console.log('[AddMember] Membership ID generation:', {
+        ym,
+        random,
+        gymShort,
+        planShort,
+        membershipId
+      });
+      
+      formData.append('membershipId', membershipId);
       let validDate = '';
       let months = 1;
-      if (/3\s*Month/i.test(monthlyPlan)) months = 3;
-      else if (/6\s*Month/i.test(monthlyPlan)) months = 6;
-      else if (/12\s*Month/i.test(monthlyPlan)) months = 12;
+      if (/3\s*Months?/i.test(monthlyPlan)) months = 3;
+      else if (/6\s*Months?/i.test(monthlyPlan)) months = 6;
+      else if (/12\s*Months?/i.test(monthlyPlan)) months = 12;
       const validUntil = new Date(now);
       validUntil.setMonth(validUntil.getMonth() + months);
       validDate = validUntil.toISOString().split('T')[0];
-      formData.set('membershipValidUntil', validDate);
+      formData.append('membershipValidUntil', validDate);
+      
+      console.log('[AddMember] Membership validity:', {
+        monthlyPlan,
+        months,
+        validDate
+      });
+      
       return { gymName, plan, monthlyPlan, memberEmail, memberName, membershipId, validDate };
     }
 
     function sendMembershipEmail({ token, memberEmail, memberName, membershipId, plan, monthlyPlan, validDate, gymName }) {
+      console.log('[AddMember] Sending membership email with data:', {
+        to: memberEmail,
+        memberName,
+        membershipId,
+        plan,
+        monthlyPlan,
+        validUntil: validDate,
+        gymName
+      });
+      
       fetch('http://localhost:5000/api/members/send-membership-email', {
         method: 'POST',
         headers: {
@@ -1559,8 +1868,21 @@ document.addEventListener('DOMContentLoaded', function() {
           validUntil: validDate,
           gymName
         })
-      }).catch((err) => {
-        console.error('Failed to send membership email:', err);
+      })
+      .then(response => {
+        console.log('[AddMember] Email API response status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('[AddMember] Email API response:', data);
+        if (data.success) {
+          console.log('[AddMember] Email sent successfully!');
+        } else {
+          console.error('[AddMember] Email sending failed:', data.message);
+        }
+      })
+      .catch((err) => {
+        console.error('[AddMember] Email sending error:', err);
       });
     }
 
@@ -1570,7 +1892,7 @@ document.addEventListener('DOMContentLoaded', function() {
         msgElem.style.display = 'block';
       }
       form.reset();
-      if (imgTag) imgTag.src = 'https://via.placeholder.com/96?text=Photo';
+      if (imgTag) imgTag.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik00OCA2NEM1Ni44MzY2IDY0IDY0IDU2LjgzNjYgNjQgNDhDNjQgMzkuMTYzNCA1Ni44MzY2IDMyIDQ4IDMyQzM5LjE2MzQgMzIgMzIgMzkuMTYzNCAzMiA0OEMzMiA1Ni44MzY2IDM5LjE2MzQgNjQgNDggNjRaIiBmaWxsPSIjQ0NDQ0NDIi8+CjxwYXRoIGQ9Ik0yNCA3Nkg3MlY4MEgyNFY3NloiIGZpbGw9IiNDQ0NDQ0MiLz4KPHRleHQgeD0iNDgiIHk9Ijg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTk5OTkiPlBob3RvPC90ZXh0Pgo8L3N2Zz4K';
       setTimeout(() => {
         closeModalFunc();
       }, 1500);
@@ -1583,6 +1905,217 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   }
+  
+  console.log('[AddMember] Modal initialization complete');
+
+  // Add debugging function to check available tokens
+  window.debugTokens = function() {
+    console.log('[DEBUG] Available localStorage tokens:');
+    const tokenKeys = ['gymAdminToken', 'token', 'authToken', 'gymAuthToken'];
+    tokenKeys.forEach(key => {
+      const value = localStorage.getItem(key);
+      console.log(`[DEBUG] ${key}:`, value ? `${value.substring(0, 20)}...` : 'null');
+    });
+    
+    console.log('[DEBUG] All localStorage keys:');
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const value = localStorage.getItem(key);
+      console.log(`[DEBUG] ${key}:`, typeof value === 'string' && value.length > 50 ? `${value.substring(0, 20)}...` : value);
+    }
+  };
+
+  // Add global test function for debugging
+  window.testAddMemberPayment = function() {
+    console.log('[TEST] Testing payment calculation...');
+    
+    // Get fresh DOM references (not cached ones)
+    const planSelect = document.getElementById('planSelected');
+    const monthSelect = document.getElementById('monthlyPlan');
+    const paymentField = document.getElementById('paymentAmount');
+    
+    console.log('[TEST] Elements found:', {
+      planSelected: !!planSelect,
+      monthlyPlan: !!monthSelect,
+      paymentAmount: !!paymentField
+    });
+    
+    if (planSelect && monthSelect && paymentField) {
+      console.log('[TEST] Current values before setting:', {
+        plan: planSelect.value,
+        month: monthSelect.value,
+        payment: paymentField.value
+      });
+      
+      console.log('[TEST] Available month options:');
+      Array.from(monthSelect.options).forEach(option => {
+        console.log(`[TEST]   - "${option.value}": ${option.text}`);
+      });
+      
+      console.log('[TEST] Setting test values...');
+      planSelect.value = 'Basic';
+      monthSelect.value = '6 Months'; // Fixed: Use correct option value with 's'
+      
+      console.log('[TEST] Values after setting:', {
+        plan: planSelect.value,
+        month: monthSelect.value,
+        payment: paymentField.value
+      });
+      
+      console.log('[TEST] Triggering change events...');
+      planSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      monthSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      console.log('[TEST] Final payment amount:', paymentField.value);
+    }
+    
+    console.log('[TEST] plansCache:', plansCache);
+    
+    // Also call the update function directly
+    console.log('[TEST] Calling updatePaymentAmountAndDiscount directly...');
+    updatePaymentAmountAndDiscount();
+  };
+
+  // Add test function to debug plan fetching
+  window.testPlanFetching = async function() {
+    console.log('[TEST] Testing plan fetching process...');
+    
+    // Debug tokens
+    window.debugTokens();
+    
+    // Test fetchPlansForModal
+    console.log('[TEST] Calling fetchPlansForModal...');
+    await fetchPlansForModal();
+    
+    console.log('[TEST] Plans cache after fetch:', plansCache);
+    console.log('[TEST] Plans cache length:', plansCache.length);
+    
+    if (plansCache.length > 0) {
+      console.log('[TEST] First plan details:', plansCache[0]);
+    }
+    
+    // Test manual API call
+    console.log('[TEST] Testing manual API call...');
+    const token = localStorage.getItem('gymAdminToken');
+    if (token) {
+      try {
+        const response = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('[TEST] API Response status:', response.status);
+        const data = await response.json();
+        console.log('[TEST] API Response data:', data);
+        
+      } catch (error) {
+        console.error('[TEST] API call error:', error);
+      }
+    } else {
+      console.log('[TEST] No gymAdminToken found');
+    }
+  };
+
+  window.testImageUpload = function() {
+    console.log('[TEST] Testing image upload...');
+    const uploadBtn = document.getElementById('uploadMemberImageBtn');
+    const fileInput = document.getElementById('memberProfileImage');
+    
+    console.log('[TEST] Elements found:', {
+      uploadMemberImageBtn: !!uploadBtn,
+      memberProfileImage: !!fileInput
+    });
+    
+    console.log('[TEST] Button element details:', uploadBtn);
+    console.log('[TEST] File input element details:', fileInput);
+    
+    if (uploadBtn) {
+      console.log('[TEST] Triggering click on upload button');
+      
+      // Try clicking directly
+      uploadBtn.click();
+      
+      // Also try triggering a click event
+      console.log('[TEST] Also dispatching click event...');
+      uploadBtn.dispatchEvent(new Event('click', { bubbles: true }));
+      
+    } else {
+      console.log('[TEST] Upload button not found');
+    }
+  };
+
+  // Add function to test authentication
+  window.testAuthentication = async function() {
+    console.log('[TEST] Testing authentication...');
+    window.debugTokens();
+    
+    console.log('[TEST] Testing waitForToken...');
+    const token = await waitForToken('gymAdminToken', 5, 100);
+    console.log('[TEST] waitForToken result:', token ? `${token.substring(0, 20)}...` : 'null');
+    
+    console.log('[TEST] Testing API call...');
+    await fetchPlansForModal();
+    console.log('[TEST] Plans cache after fetch:', plansCache);
+  };
+
+  // Add test function to simulate opening the modal
+  window.testOpenModal = async function() {
+    console.log('[TEST] Testing modal opening process...');
+    
+    console.log('[TEST] Current plansCache before modal open:', plansCache);
+    
+    // Simulate opening the modal
+    await openAddMemberModal();
+    
+    console.log('[TEST] plansCache after modal open:', plansCache);
+    
+    // Check if plan dropdown was populated
+    const planSelect = document.getElementById('planSelected');
+    if (planSelect) {
+      console.log('[TEST] Plan dropdown options after modal open:');
+      Array.from(planSelect.options).forEach(option => {
+        console.log(`[TEST]   - "${option.value}": ${option.text}`);
+      });
+    }
+  };
+
+  // Add test function to check if event listeners are working
+  window.testEventListeners = function() {
+    console.log('[TEST] Testing if event listeners are working...');
+    
+    const planSelect = document.getElementById('planSelected');
+    const monthSelect = document.getElementById('monthlyPlan');
+    const paymentField = document.getElementById('paymentAmount');
+    
+    if (!planSelect || !monthSelect || !paymentField) {
+      console.log('[TEST] Elements not found - make sure modal is open');
+      return;
+    }
+    
+    console.log('[TEST] Simulating user selections...');
+    
+    // Clear payment first
+    paymentField.value = '';
+    
+    // Simulate user selecting Basic plan
+    planSelect.value = 'Basic';
+    planSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    
+    // Wait a moment, then select duration
+    setTimeout(() => {
+      monthSelect.value = '6 Months';
+      monthSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      // Check result after another moment
+      setTimeout(() => {
+        console.log('[TEST] Final payment amount after UI simulation:', paymentField.value);
+        console.log('[TEST] Expected: 2850 (Basic ₹500 × 6 months - 5% discount)');
+      }, 200);
+    }, 200);
+  };
 });
             let currentGymProfile = {}; // Store fetched profile data
 
@@ -2098,151 +2631,8 @@ document.addEventListener('DOMContentLoaded', function () {
     wirePhotoFilePreview();
     wireEditPhotoForm();
 });
-// --- Unified Add Member Modal Logic (Dashboard & Member Tab) ---
-const addMemberBtn = document.getElementById('addMemberBtn'); // Dashboard quick action
-const addMemberBtnTab = document.getElementById('addMemberBtnTab'); // Member tab button
-const addMemberModal = document.getElementById('addMemberModal');
-const closeAddMemberModal = document.getElementById('closeAddMemberModal');
-const addMemberForm = document.getElementById('addMemberForm');
-const addMemberSuccessMsg = document.getElementById('addMemberSuccessMsg');
-const memberProfileImageInput = document.getElementById('memberProfileImage');
-const memberImageTag = document.getElementById('memberImageTag');
-const uploadMemberImageBtn = document.getElementById('uploadMemberImageBtn');
 
-// Ensure modal is hidden on load
-if (addMemberModal) addMemberModal.style.display = 'none';
-
-// Open modal from either dashboard quick action or member tab
-function openAddMemberModal() {
-  addMemberModal.style.display = 'flex';
-  if (addMemberSuccessMsg) addMemberSuccessMsg.style.display = 'none';
-  if (addMemberForm) addMemberForm.reset();
-  if (memberImageTag) memberImageTag.src = 'https://via.placeholder.com/96?text=Photo';
-}
-if (addMemberBtn && addMemberModal) {
-  addMemberBtn.addEventListener('click', openAddMemberModal);
-}
-if (addMemberBtnTab && addMemberModal) {
-  addMemberBtnTab.addEventListener('click', function(e) {
-    e.preventDefault();
-    openAddMemberModal();
-    document.body.style.overflow = 'hidden';
-  });
-}
-
-// Close modal helper
-function closeAddMemberModalFunc() {
-  if (addMemberModal) addMemberModal.style.display = 'none';
-  if (addMemberSuccessMsg) addMemberSuccessMsg.style.display = 'none';
-  if (addMemberForm) addMemberForm.reset();
-  if (memberImageTag) memberImageTag.src = 'https://via.placeholder.com/96?text=Photo';
-  document.body.style.overflow = '';
-}
-
-// Close on close button
-if (closeAddMemberModal && addMemberModal) {
-  closeAddMemberModal.onclick = closeAddMemberModalFunc;
-}
-
-// Close on outside click (only for Add Member modal)
-if (addMemberModal) {
-  addMemberModal.addEventListener('mousedown', function(e) {
-    if (e.target === addMemberModal) closeAddMemberModalFunc();
-  });
-}
-
-// Image upload logic
-if (uploadMemberImageBtn && memberProfileImageInput) {
-  uploadMemberImageBtn.addEventListener('click', function() {
-    memberProfileImageInput.click();
-  });
-}
-if (memberProfileImageInput && memberImageTag) {
-  memberProfileImageInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        memberImageTag.src = evt.target.result;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      memberImageTag.src = 'https://via.placeholder.com/96?text=Photo';
-    }
-  });
-}
-
-// Handle form submit (with image, membership ID, and email notification)
-if (addMemberForm) {
-  addMemberForm.onsubmit = async function(e) {
-    e.preventDefault();
-    const token = localStorage.getItem('gymAdminToken');
-    if (!token) {
-      alert('You must be logged in as a gym admin.');
-      return;
-    }
-    const formData = new FormData(addMemberForm); // includes file
-
-    // Extract meta and generate membership ID/valid date
-    const { gymName, plan, monthlyPlan, memberEmail, memberName, membershipId, validDate } = getMemberFormMeta(formData, currentGymProfile);
-    formData.append('membershipId', membershipId);
-    formData.append('membershipValidUntil', validDate);
-
-    try {
-      // 1. Add member to backend
-      const res = await fetch('http://localhost:5000/api/members', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-      const data = await res.json();
-      if (res.ok) {
-        // 2. Send membership email (do not block UI if email fails)
-        fetch('http://localhost:5000/api/members/send-membership-email', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            to: memberEmail,
-            memberName,
-            membershipId,
-            plan,
-            monthlyPlan,
-            validUntil: validDate,
-            gymName
-          })
-        }).catch((err) => {
-          console.error('Failed to send membership email:', err);
-        });
-        if (addMemberSuccessMsg) {
-          addMemberSuccessMsg.textContent = `Member added! Membership ID: ${membershipId}`;
-          addMemberSuccessMsg.style.display = 'block';
-        }
-        addMemberForm.reset();
-        if (memberImageTag) memberImageTag.src = 'https://via.placeholder.com/96?text=Photo';
-        setTimeout(() => {
-          closeAddMemberModalFunc();
-        }, 1500);
-      } else {
-        if (addMemberSuccessMsg) {
-          addMemberSuccessMsg.textContent = data.message || 'Failed to add member.';
-          addMemberSuccessMsg.style.display = 'block';
-        }
-      }
-    } catch (err) {
-      console.error('Error while adding member:', err);
-      if (addMemberSuccessMsg) {
-        addMemberSuccessMsg.textContent = 'Server error. Please try again.';
-        addMemberSuccessMsg.style.display = 'block';
-      }
-    }
-  };
-}
-            // --- Gym Photo Upload Logic ---
+// --- Gym Photo Upload Logic ---
             const uploadGymPhotoForm = document.getElementById('uploadGymPhotoForm');
             if (uploadGymPhotoForm) {
                 uploadGymPhotoForm.addEventListener('submit', async function(e) {

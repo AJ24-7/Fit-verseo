@@ -1,3 +1,70 @@
+/* === Member Tab: Dark Theme Support === */
+body[data-theme="dark"] #memberDisplayTab {
+  background: #181c2a;
+  color: #e3e6f3;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+}
+body[data-theme="dark"] #membersTable {
+  background: #23273a;
+  color: #e3e6f3;
+  box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+}
+body[data-theme="dark"] #membersTable th {
+  background: #23273a;
+  color: #90caf9;
+}
+body[data-theme="dark"] #membersTable td {
+  background: #23273a;
+  color: #e3e6f3;
+}
+body[data-theme="dark"] #membersTable tr:hover {
+  background: #1a2233;
+}
+body[data-theme="dark"] .member-action-btn {
+  color: #fff;
+  box-shadow: 0 4px 18px 0 rgba(33,203,243,0.10);
+}
+body[data-theme="dark"] .member-action-btn.add-member-action-btn {
+  background: linear-gradient(90deg, #1565c0 0%, #00bcd4 100%);
+}
+body[data-theme="dark"] .member-action-btn.remove-member-action-btn {
+  background: linear-gradient(90deg, #b71c1c 0%, #ff5252 100%);
+}
+body[data-theme="dark"] .search-bar {
+  background: #23273a;
+  box-shadow: 0 2px 8px rgba(25,118,210,0.04);
+}
+body[data-theme="dark"] #memberSearchInput,
+body[data-theme="dark"] #membershipExpiryFilter {
+  background: #181c2a;
+  color: #e3e6f3;
+  border: 1px solid #394867;
+}
+body[data-theme="dark"] #memberSearchInput:focus,
+body[data-theme="dark"] #membershipExpiryFilter:focus {
+  border: 1.5px solid #1976d2;
+  background: #23273a;
+}
+body[data-theme="dark"] .modal-content.member-detail-modal {
+  background: #23273a;
+  color: #e3e6f3;
+}
+body[data-theme="dark"] .member-detail-header {
+  border-bottom: 1px solid #394867;
+  background: linear-gradient(90deg,#23273a 0%,#181c2a 100%);
+}
+body[data-theme="dark"] .member-detail-title {
+  color: #90caf9;
+}
+body[data-theme="dark"] .info-list li {
+  background: #181c2a;
+  color: #e3e6f3;
+  box-shadow: 0 1px 4px rgba(25,118,210,0.08);
+}
+body[data-theme="dark"] .plan-badge {
+  background: linear-gradient(90deg,#1976d2 60%,#00bcd4 100%);
+  color: #fff;
+}
 /* === Profile Dropdown Menu (Interactive, Theme-Aware) === */
 .profile-dropdown-menu {
   position: absolute;
