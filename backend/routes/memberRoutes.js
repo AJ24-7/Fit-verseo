@@ -15,15 +15,24 @@ router.post('/', gymadminAuth, memberImageUpload.single('profileImage'), addMemb
 
 // Send membership email (public endpoint for frontend fallback)
 router.post('/send-membership-email', gymadminAuth, async (req, res) => {
-  const { to, memberName, membershipId, plan, monthlyPlan, validUntil, gymName } = req.body;
+  const { to, memberName, membershipId, plan, monthlyPlan, validUntil, gymName, gymLogo } = req.body;
   const sendEmail = require('../utils/sendEmail');
   try {
+    // Use gym logo from profile if available, otherwise fallback to default icon
+    let gymLogoUrl = 'https://img.icons8.com/color/96/000000/gym.png';
+    if (gymLogo && typeof gymLogo === 'string' && gymLogo.trim() !== '') {
+      if (/^https?:\/\//i.test(gymLogo)) {
+        gymLogoUrl = gymLogo;
+      } else {
+        gymLogoUrl = `http://localhost:5000${gymLogo.startsWith('/') ? '' : '/'}${gymLogo}`;
+      }
+    }
     const html = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa; padding: 32px 0;">
         <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px #0002; padding: 32px 28px;">
           <div style="text-align: center; margin-bottom: 24px;">
-            <img src='https://img.icons8.com/color/96/000000/gym.png' alt='Gym Logo' style='width:64px;height:64px;border-radius:12px;box-shadow:0 2px 8px #0001;'>
-            <h2 style="color: #1976d2; margin: 18px 0 0 0; font-size: 2rem; letter-spacing: 1px;">Welcome to <span style='background: linear-gradient(90deg,#1976d2,#43e97b 99%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;'>${gymName || 'our gym'}</span>!</h2>
+            <img src='${gymLogoUrl}' alt='Gym Logo' style='width:64px;height:64px;border-radius:12px;box-shadow:0 2px 8px #0001;'>
+            <h2 style="color: #1976d2; margin: 18px 0 0 0; font-size: 2rem; letter-spacing: 1px;">Welcome to ${gymName || 'our gym'}!</h2>
           </div>
           <p style="font-size: 1.1rem; color: #333; margin-bottom: 18px;">Hi <b style='color:#1976d2;'>${memberName}</b>,</p>
           <div style="background: linear-gradient(90deg,#e3f2fd 60%,#fceabb 100%); border-radius: 10px; padding: 18px 20px; margin-bottom: 18px; box-shadow: 0 2px 8px #1976d220;">

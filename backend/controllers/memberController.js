@@ -6,6 +6,25 @@ const sendEmail = require('../utils/sendEmail');
 // Add a new member to a gym
 exports.addMember = async (req, res) => {
   try {
+    // Duplicate check: email or phone for this gym
+    const forceAdd = req.body.forceAdd === 'true' || req.body.forceAdd === true;
+    const email = req.body.memberEmail;
+    const phone = req.body.memberPhone;
+    if (!forceAdd && (email || phone)) {
+      const duplicate = await Member.findOne({
+        gym: ((req.admin && (req.admin.gymId || req.admin.id)) || req.body.gymId),
+        $or: [
+          { email: email },
+          { phone: phone }
+        ]
+      });
+      if (duplicate) {
+        return res.status(409).json({
+          code: 'DUPLICATE_MEMBER',
+          message: 'A member with this email or phone number already exists.'
+        });
+      }
+    }
     console.log('[MemberController] ===== ADD MEMBER REQUEST START =====');
     console.log('[MemberController] Received request body:', req.body);
     console.log('[MemberController] Received file:', req.file);
@@ -161,13 +180,23 @@ exports.addMember = async (req, res) => {
       
       if (req.body.memberEmail && req.body.memberName && membershipId && req.body.planSelected && req.body.monthlyPlan && membershipValidUntil && gym.gymName) {
         console.log('[MemberController] All required fields present, sending email...');
-        // Use the same HTML as in memberRoutes.js for consistency
+        // Use gym logo from profile if available, otherwise fallback to default icon
+        let gymLogoUrl = 'https://img.icons8.com/color/96/000000/gym.png';
+        if (gym.logo && typeof gym.logo === 'string' && gym.logo.trim() !== '') {
+          // If logo is a relative path, prepend server URL or use as is for absolute URLs
+          if (/^https?:\/\//i.test(gym.logo)) {
+            gymLogoUrl = gym.logo;
+          } else {
+            // Assuming logo is stored in /uploads/gymImages/ or similar
+            gymLogoUrl = `http://localhost:5000${gym.logo.startsWith('/') ? '' : '/'}${gym.logo}`;
+          }
+        }
         const html = `
           <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa; padding: 32px 0;">
             <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px #0002; padding: 32px 28px;">
               <div style="text-align: center; margin-bottom: 24px;">
-                <img src='https://img.icons8.com/color/96/000000/gym.png' alt='Gym Logo' style='width:64px;height:64px;border-radius:12px;box-shadow:0 2px 8px #0001;'>
-                <h2 style="color: #1976d2; margin: 18px 0 0 0; font-size: 2rem; letter-spacing: 1px;">Welcome to <span style='background: linear-gradient(90deg,#1976d2,#43e97b 99%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;'>${gym.gymName}</span>!</h2>
+                <img src='${gymLogoUrl}' alt='Gym Logo' style='width:64px;height:64px;border-radius:12px;box-shadow:0 2px 8px #0001;'>
+                <h2 style="color: #1976d2; margin: 18px 0 0 0; font-size: 2rem; letter-spacing: 1px;">Welcome to ${gym.gymName}!</h2>
               </div>
               <p style="font-size: 1.1rem; color: #333; margin-bottom: 18px;">Hi <b style='color:#1976d2;'>${req.body.memberName}</b>,</p>
               <div style="background: linear-gradient(90deg,#e3f2fd 60%,#fceabb 100%); border-radius: 10px; padding: 18px 20px; margin-bottom: 18px; box-shadow: 0 2px 8px #1976d220;">

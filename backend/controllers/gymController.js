@@ -31,23 +31,35 @@ const sendOTPEmail = async (email, otp) => {
     await transporter.sendMail(mailOptions);
 };
 
-// Admin Login (moved from gymadminController)
+
 // Unified Gym/Admin Login (use for both gym and admin dashboard)
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  console.log('🔐 Login attempt for email:', email);
+  console.log('🔐 Request body received:', { email: !!email, password: !!password });
+  
   try {
     // Find gym by email
     const gym = await Gym.findOne({ email });
     if (!gym) {
+      console.log('❌ Gym not found for email:', email);
       return res.status(401).json({ success: false, message: 'Invalid credentials or gym not found.' });
     }
+    
+    console.log('✅ Gym found:', { id: gym._id, email: gym.email, status: gym.status });
+    
     // Check password
     const isMatch = await bcrypt.compare(password, gym.password);
     if (!isMatch) {
+      console.log('❌ Password mismatch for email:', email);
       return res.status(401).json({ success: false, message: 'Invalid credentials or gym not found.' });
     }
+    
+    console.log('✅ Password verified for email:', email);
+    
     // Check approval status
     if (gym.status !== 'approved') {
+      console.log('❌ Gym not approved, status:', gym.status);
       if (gym.status === 'pending') {
         return res.status(403).json({ success: false, message: 'Your gym registration is pending approval. Please wait for the admin to review your application.' });
       } else if (gym.status === 'rejected') {
@@ -56,6 +68,9 @@ exports.login = async (req, res) => {
         return res.status(403).json({ success: false, message: 'Your gym registration is not approved.' });
       }
     }
+    
+    console.log('✅ Gym status approved, generating token');
+    
     // Create and assign a token
     const payload = {
       admin: {
@@ -64,6 +79,10 @@ exports.login = async (req, res) => {
       }
     };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    
+    console.log('✅ Token generated successfully for gym:', gym._id);
+    console.log('🔐 Returning login response with token length:', token.length);
+    
     res.status(200).json({
       success: true,
       message: 'Login successful! Redirecting...',
@@ -71,7 +90,7 @@ exports.login = async (req, res) => {
       gymId: gym.id
     });
   } catch (error) {
-    console.error('Unified gym login error:', error);
+    console.error('❌ Unified gym login error:', error);
     res.status(500).json({ success: false, message: 'Server error during login.' });
   }
 };
@@ -533,16 +552,30 @@ exports.registerGym = async (req, res) => {
 
 // Get Gym Profile for Logged-in Admin
 exports.getMyProfile = async (req, res) => {
+  console.log('👤 Profile request received');
+  console.log('👤 Request headers:', {
+    authorization: req.headers.authorization ? `Bearer ${req.headers.authorization.substring(0, 20)}...` : 'missing',
+    contentType: req.headers['content-type']
+  });
+  
   const adminId = req.admin && req.admin.id;
+  console.log('👤 Admin ID from token:', adminId);
+  
   if (!adminId) {
+    console.log('❌ No admin ID found in request');
     return res.status(401).json({ message: 'Not authorized, no admin ID found' });
   }
+  
   try {
+    console.log('👤 Searching for gym with ID:', adminId);
     // Find gym by its own ID, since the gym admin is the gym itself
     const gym = await Gym.findById(adminId).select('-password');
     if (!gym) {
+      console.log('❌ Gym profile not found for admin ID:', adminId);
       return res.status(404).json({ message: 'Gym profile not found for this admin' });
     }
+    
+    console.log('✅ Gym profile found:', { id: gym._id, name: gym.gymName, email: gym.email });
     
     // Ensure proper data formatting for frontend
     const gymProfile = gym.toObject();
@@ -570,10 +603,10 @@ exports.getMyProfile = async (req, res) => {
       gymProfile.activities = [];
     }
     
-    console.log('[getMyProfile] Returning gym profile:', gymProfile);
+    console.log('✅ [getMyProfile] Returning gym profile with keys:', Object.keys(gymProfile));
     res.status(200).json(gymProfile);
   } catch (error) {
-    console.error('Error fetching gym profile for admin:', error);
+    console.error('❌ Error fetching gym profile for admin:', error);
     res.status(500).json({ message: 'Server error while fetching profile' });
   }
 };

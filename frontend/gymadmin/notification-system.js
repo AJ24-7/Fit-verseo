@@ -403,12 +403,15 @@ class NotificationSystem {
   // Update notification badge
   updateNotificationBadge() {
     const badge = document.getElementById('notificationBadge');
+    const bell = document.getElementById('notificationBell');
     if (badge) {
       if (this.unreadCount > 0) {
         badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
         badge.style.display = 'flex';
+        if (bell) bell.classList.add('has-unread');
       } else {
         badge.style.display = 'none';
+        if (bell) bell.classList.remove('has-unread');
       }
     }
   }
@@ -454,12 +457,24 @@ class NotificationSystem {
 
   // Mark notification as read
   markNotificationRead(id) {
-    const notification = this.notifications.find(n => n.id === id);
+    const notification = this.notifications.find(n => n.id === id || n._id === id);
     if (notification && !notification.read) {
+      // Optimistically update UI
       notification.read = true;
       this.unreadCount = Math.max(0, this.unreadCount - 1);
       this.updateNotificationBadge();
       this.updateNotificationDropdown();
+      // Persist to backend
+      const token = localStorage.getItem('gymAdminToken');
+      if (token && (notification._id || notification.id)) {
+        fetch(`http://localhost:5000/api/notifications/${notification._id || notification.id}/read`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }).catch(err => console.error('Failed to mark notification as read on backend:', err));
+      }
     }
   }
 
@@ -473,7 +488,17 @@ class NotificationSystem {
     this.unreadCount = 0;
     this.updateNotificationBadge();
     this.updateNotificationDropdown();
-    
+    // Persist to backend
+    const token = localStorage.getItem('gymAdminToken');
+    if (token) {
+      fetch('http://localhost:5000/api/notifications/mark-all-read', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }).catch(err => console.error('Failed to mark all notifications as read on backend:', err));
+    }
     // Close dropdown
     const dropdown = document.getElementById('notificationDropdown');
     if (dropdown) {

@@ -103,19 +103,21 @@
         <!-- Top Nav -->
         <div class="top-nav" id="topNav">
             <div class="user-actions">
-                <!-- Removed static notification bell icon -->
-             <div class="user-profile" id="userProfileToggle">
-        <div class="user-avatar">
-            <img id="adminAvatar" src="https://via.placeholder.com/40" alt="Admin">
-        </div>
-        <span class="user-name" id="adminName">Admin</span>
-        <i class="fas fa-chevron-down"></i>
-    </div>
-    <div class="profile-dropdown-menu" id="profileDropdownMenu">
-        <button class="dropdown-item" id="editProfileLink" type="button"><i class="fas fa-user-edit"></i> Edit Profile</button>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item" id="logoutLink" type="button"><i class="fas fa-sign-out-alt"></i> Logout</button>
-    </div>
+                <!-- Interactive animated user box -->
+                <div class="user-profile user-profile-animated" id="userProfileToggle">
+                  <div class="user-profile-box">
+                    <div class="user-avatar">
+                      <img id="adminAvatar" src="https://via.placeholder.com/40" alt="Admin">
+                    </div>
+                    <span class="user-name" id="adminName">Admin</span>
+                  </div>
+                  <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="profile-dropdown-menu" id="profileDropdownMenu">
+                  <button class="dropdown-item" id="editProfileLink" type="button"><i class="fas fa-user-edit"></i> Edit Profile</button>
+                  <div class="dropdown-divider"></div>
+                  <button class="dropdown-item" id="logoutLink" type="button"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
                 </div>
             </div>
 
@@ -1019,8 +1021,8 @@
                 <div class="setting-description">Get notified when new members join</div>
               </div>
               <div class="toggle-switch">
-                <input type="checkbox" id="newMemberNotif" checked>
-                <label for="newMemberNotif" class="toggle-label"></label>
+                <input type="checkbox" id="newMemberNotif" checked aria-labelledby="newMemberNotifLabel">
+                <label for="newMemberNotif" id="newMemberNotifLabel" class="toggle-label"></label>
               </div>
             </div>
             
@@ -1030,8 +1032,8 @@
                 <div class="setting-description">Alerts for payment confirmations and due dates</div>
               </div>
               <div class="toggle-switch">
-                <input type="checkbox" id="paymentNotif" checked>
-                <label for="paymentNotif" class="toggle-label"></label>
+                <input type="checkbox" id="paymentNotif" checked aria-labbelledby="paymentNotifLabel">
+                <label for="paymentNotif" id="paymentNotifLabel" class="toggle-label"></label>
               </div>
             </div>
             
@@ -1041,8 +1043,8 @@
                 <div class="setting-description">Notifications about trainer applications and updates</div>
               </div>
               <div class="toggle-switch">
-                <input type="checkbox" id="trainerNotif" checked>
-                <label for="trainerNotif" class="toggle-label"></label>
+                <input type="checkbox" id="trainerNotif" checked aria-labelledby="trainerNotifLabel">
+                <label for="trainerNotif" id="trainerNotifLabel" class="toggle-label"></label>
               </div>
             </div>
             
@@ -1054,6 +1056,28 @@
               <div class="toggle-switch">
                 <input type="checkbox" id="emailNotif">
                 <label for="emailNotif" class="toggle-label"></label>
+              </div>
+            </div>
+            
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-label">Membership Expiry Alerts</div>
+                <div class="setting-description">Get notified when memberships are about to expire</div>
+              </div>
+              <div class="toggle-switch">
+                <input type="checkbox" id="membershipExpiryNotif" checked aria-labelledby="membershipExpiryNotifLabel">
+                <label for="membershipExpiryNotif" id="membershipExpiryNotifLabel" class="toggle-label"></label>
+              </div>
+            </div>
+            
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-label">Admin Updates</div>
+                <div class="setting-description">Notifications for admin-level system updates</div>
+              </div>
+              <div class="toggle-switch">
+                <input type="checkbox" id="adminUpdateNotif" checked aria-labelledby="adminUpdateNotifLabel">
+                <label for="adminUpdateNotif" id="adminUpdateNotifLabel" class="toggle-label"></label>
               </div>
             </div>
           </div>
@@ -1338,7 +1362,8 @@
 
   <!-- Include the notification system script -->
   <script src="notification-system.js"></script>
-  <script src="notification-integration.js"></script>
+  <!-- Notification integration with enhanced form handler compatibility -->
+  <script src="notification-integration.js"></script> -->
 </body>
 </html>
        

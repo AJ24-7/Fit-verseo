@@ -1,3 +1,94 @@
+/* === Animated User Profile Box (Top Nav) === */
+.user-profile-animated {
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  z-index: 10;
+  right: 10px;
+}
+.user-profile-animated .user-profile-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border-radius: 18px;
+  padding: 7px 18px 7px 10px;
+  box-shadow: 0 2px 12px rgba(58,134,255,0.13);
+  transition: box-shadow 0.22s, transform 0.22s, background 0.22s;
+  animation: userProfilePulse 2.2s infinite;
+  min-width: 0;
+}
+.user-profile-animated:hover .user-profile-box,
+.user-profile-animated:focus .user-profile-box {
+  box-shadow: 0 6px 24px rgba(58,134,255,0.22);
+  transform: scale(1.045) translateY(-2px);
+  background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+}
+.user-profile-animated .user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 6px rgba(58,134,255,0.10);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.user-profile-animated .user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.user-profile-animated .user-name {
+  font-size: 1.08em;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 4px rgba(58,134,255,0.10);
+  white-space: nowrap;
+  transition: color 0.18s;
+}
+.user-profile-animated i.fas.fa-chevron-down {
+  color: var(--primary);
+  margin-left: 8px;
+  font-size: 1.1em;
+  transition: color 0.18s, transform 0.18s;
+}
+.user-profile-animated.open .user-profile-box {
+  box-shadow: 0 8px 32px rgba(58,134,255,0.22);
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+.user-profile-animated.open i.fas.fa-chevron-down {
+  color: var(--secondary);
+  transform: rotate(180deg);
+}
+@keyframes userProfilePulse {
+  0% { box-shadow: 0 2px 12px rgba(58,134,255,0.13); }
+  50% { box-shadow: 0 6px 24px rgba(58,134,255,0.22); }
+  100% { box-shadow: 0 2px 12px rgba(58,134,255,0.13); }
+}
+body[data-theme="dark"] .user-profile-animated .user-profile-box {
+  background: linear-gradient(90deg, #23273a 60%, var(--primary) 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(25,118,210,0.18);
+}
+body[data-theme="dark"] .user-profile-animated:hover .user-profile-box,
+body[data-theme="dark"] .user-profile-animated:focus .user-profile-box {
+  background: linear-gradient(90deg, var(--primary), #23273a 100%);
+}
+body[data-theme="dark"] .user-profile-animated .user-avatar {
+  border: 2.5px solid var(--primary);
+  background: #23273a;
+}
+body[data-theme="dark"] .user-profile-animated .user-name {
+  color: #fff;
+}
+
 /* === Member Tab: Dark Theme Support === */
 body[data-theme="dark"] #memberDisplayTab {
   background: #181c2a;
@@ -72,7 +163,7 @@ body[data-theme="dark"] .plan-badge {
   right: 0;
   min-width: 180px;
   background: var(--card-bg, #fff);
-  color: var(--text-primary, #222);
+  color: var(--primary);
   border-radius: 12px;
   box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18);
   padding: 10px 0;
@@ -1247,7 +1338,7 @@ tr:hover {
 /* Top Nav */
 .top-nav {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     padding: 15px 30px;
     background:linear-gradient(135deg, var(--dark), #16213e);
@@ -1289,6 +1380,7 @@ tr:hover {
 .user-actions {
     display: flex;
     align-items: center;
+    margin-left: auto;
 }
 .notification {
     position: relative;
@@ -2879,6 +2971,7 @@ tr:hover {
   pointer-events: auto;
   cursor: pointer;
   border-left: 4px solid var(--primary);
+  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .notification-toast.show {
@@ -2889,6 +2982,7 @@ tr:hover {
 .notification-toast.removing {
   transform: translateX(100%);
   opacity: 0;
+   animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .notification-toast.high {
@@ -2950,7 +3044,54 @@ tr:hover {
   background: var(--hover-bg, #f0f0f0);
   color: var(--text-primary);
 }
-
+/* === Notification Bell Icon Styling === */
+#notificationBell .notification-icon {
+  color: #fff;
+  font-size: 1.6em;
+  transition: color 0.2s;
+}
+#notificationBell.has-unread .notification-icon {
+  color: #ffd600;
+  /* Material yellow */
+  animation: bell-shake 0.7s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes bell-shake {
+  10%, 90% { transform: rotate(-10deg); }
+  20%, 80% { transform: rotate(12deg); }
+  30%, 50%, 70% { transform: rotate(-14deg); }
+  40%, 60% { transform: rotate(16deg); }
+  100% { transform: rotate(0deg); }
+}
+#notificationBell .notification-badge {
+  background: #ffd600;
+  color: #222;
+  font-weight: bold;
+  border-radius: 50%;
+  padding: 2px 7px;
+  font-size: 0.85em;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 2;
+  border: 2px solid #fff;
+}
+body[data-theme="dark"] #notificationBell .notification-icon {
+  color: #fff;
+}
+body[data-theme="dark"] #notificationBell.has-unread .notification-icon {
+  color: #ffd600;
+}
+body[data-theme="dark"] #notificationBell .notification-badge {
+  background: #ffd600;
+  color: #222;
+  border: 2px solid #23273a;
+}
 /* Notification Modal */
 .notification-modal-content {
   max-width: 700px;
@@ -3188,12 +3329,5 @@ body[data-theme="dark"] .filter-btn {
   }
 }
 
-.notification-toast {
-  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.notification-toast.removing {
-  animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 /* === END NOTIFICATION SYSTEM STYLES === */

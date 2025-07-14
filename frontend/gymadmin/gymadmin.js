@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 description: parsedActivity.description || ''
               };
             } catch (parseErr) {
-              console.log('Failed to parse as JSON, treating as plain string:', activity);
+              console.error('Failed to parse as JSON, treating as plain string:', activity, parseErr);
               // If not JSON, find matching activity from predefined list
               const matchedActivity = allPossibleActivities.find(a => a.name === activity);
               const result = matchedActivity || { name: activity, icon: 'fa-dumbbell', description: '' };
@@ -103,7 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
                   description: parsedActivity.description || ''
                 };
               } catch (parseErr) {
-                console.log('Failed to parse JSON from name field, using original activity');
+               
+                console.warn('Failed to parse JSON from name field, using original activity:', parseErr);
+                // Optionally, you could set a default structure or leave as is
               }
             }
             
@@ -154,13 +156,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Rendering activities list. Current activities:', currentActivities);
     
-    if (!currentActivities || !currentActivities.length) {
+    if (!currentActivities?.length) {
       activitiesList.innerHTML = '<div style="color:#888;font-size:1em;text-align:center;padding:20px;">No activities added yet.</div>';
       return;
     }
     
     // Filter out any invalid activities
-    const validActivities = currentActivities.filter(a => a && a.name && typeof a.name === 'string');
+    const validActivities = currentActivities.filter(a => typeof a?.name === 'string');
     
     if (!validActivities.length) {
       activitiesList.innerHTML = '<div style="color:#888;font-size:1em;text-align:center;padding:20px;">No valid activities found.</div>';
@@ -318,10 +320,11 @@ document.addEventListener('DOMContentLoaded', function() {
   fetchAndRenderActivities();
 });
 // --- Dialog Utility (Global) ---
-function showDialog({ title = '', message = '', confirmText = 'OK', iconHtml = '', onConfirm = null }) {
+function showDialog({ title = '', message = '', confirmText = 'OK', cancelText = '', iconHtml = '', onConfirm = null, onCancel = null }) {
   // Remove any existing dialog
   let dialog = document.getElementById('customDialogBox');
   if (dialog) dialog.remove();
+  
   dialog = document.createElement('div');
   dialog.id = 'customDialogBox';
   dialog.style.position = 'fixed';
@@ -329,32 +332,71 @@ function showDialog({ title = '', message = '', confirmText = 'OK', iconHtml = '
   dialog.style.left = '0';
   dialog.style.width = '100vw';
   dialog.style.height = '100vh';
-  dialog.style.background = 'rgba(0,0,0,0.25)';
+  dialog.style.background = 'rgba(0,0,0,0.35)';
   dialog.style.display = 'flex';
   dialog.style.alignItems = 'center';
   dialog.style.justifyContent = 'center';
   dialog.style.zIndex = '99999';
+  dialog.style.backdropFilter = 'blur(2px)';
+  
+  // Prepare buttons HTML
+  const buttonsHtml = cancelText ? 
+    `<div style="display:flex;gap:12px;justify-content:center;">
+      <button id="dialogCancelBtn" style="background:#6c757d;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">${cancelText}</button>
+      <button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">${confirmText}</button>
+    </div>` :
+    `<button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">${confirmText}</button>`;
+  
   dialog.innerHTML = `
-    <div style="background:#fff;max-width:350px;width:90vw;padding:28px 22px 18px 22px;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,0.18);text-align:center;position:relative;">
-      <div style="margin-bottom:12px;">${iconHtml || ''}</div>
-      <div style="font-size:1.18em;font-weight:700;margin-bottom:8px;">${title}</div>
-      <div style="font-size:1em;color:#444;margin-bottom:18px;white-space:pre-line;">${message}</div>
-      <button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:8px 24px;border:none;border-radius:6px;font-size:1em;cursor:pointer;">${confirmText}</button>
+    <div style="background:#fff;max-width:450px;width:90vw;padding:30px 24px 20px 24px;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.2);text-align:center;position:relative;animation:dialogSlideIn 0.3s ease-out;">
+      <div style="margin-bottom:16px;">${iconHtml || ''}</div>
+      <div style="font-size:1.25em;font-weight:700;margin-bottom:12px;color:#333;">${title}</div>
+      <div style="font-size:1em;color:#555;margin-bottom:24px;line-height:1.5;white-space:pre-line;">${message}</div>
+      ${buttonsHtml}
     </div>
+    <style>
+      @keyframes dialogSlideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      #dialogConfirmBtn:hover {
+        background: #1565c0 !important;
+      }
+      #dialogCancelBtn:hover {
+        background: #5a6268 !important;
+      }
+    </style>
   `;
+  
   document.body.appendChild(dialog);
   document.body.style.overflow = 'hidden';
+  
+  // Confirm button handler
   dialog.querySelector('#dialogConfirmBtn').onclick = function() {
     dialog.remove();
     document.body.style.overflow = '';
     if (typeof onConfirm === 'function') onConfirm();
   };
-  dialog.addEventListener('mousedown', function(e) {
-    if (e.target === dialog) {
+  
+  // Cancel button handler (if exists)
+  const cancelBtn = dialog.querySelector('#dialogCancelBtn');
+  if (cancelBtn) {
+    cancelBtn.onclick = function() {
       dialog.remove();
       document.body.style.overflow = '';
-    }
-  });
+      if (typeof onCancel === 'function') onCancel();
+    };
+  }
+  
+  // Click outside to close (only if no cancel button, otherwise user must choose)
+  if (!cancelText) {
+    dialog.addEventListener('mousedown', function(e) {
+      if (e.target === dialog) {
+        dialog.remove();
+        document.body.style.overflow = '';
+      }
+    });
+  }
 }
 
 // --- Trainer Tab Logic ---
@@ -695,7 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Remove any inline style from Quick Actions card and its button (if present)
       const quickActionCard = document.querySelector('.quick-action-card');
       if (quickActionCard) quickActionCard.removeAttribute('style');
-      if (addTrainerBtn) addTrainerBtn.removeAttribute('style');
+      addTrainerBtn.removeAttribute('style');
     });
   }
   // Close modal
@@ -854,15 +896,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     // Icon picker event
     planEditorCards.querySelectorAll('.icon-picker-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const idx = +this.getAttribute('data-plan-idx');
-        const icon = this.getAttribute('data-icon');
-        plans[idx].icon = icon;
-        renderPlanEditorCards();
-        // Keep picker open after icon change
-        setTimeout(() => showIconColorPicker(idx), 0);
-      });
+      btn.addEventListener('click', iconPickerBtnClickHandler);
     });
+
+    function iconPickerBtnClickHandler() {
+      const idx = +this.getAttribute('data-plan-idx');
+      const icon = this.getAttribute('data-icon');
+      plans[idx].icon = icon;
+      renderPlanEditorCards();
+      // Keep picker open after icon change
+      setTimeout(() => showPlanIconColorPicker(idx), 0);
+    }
     // Color picker event
     planEditorCards.querySelectorAll('.plan-color-input').forEach(input => {
       input.addEventListener('input', function() {
@@ -870,10 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
         plans[idx].color = this.value;
         renderPlanEditorCards();
         // Keep picker open after color change
-        setTimeout(() => {
-          const picker = document.getElementById('iconColorPickerWrap' + idx);
-          if (picker) picker.style.display = 'block';
-        }, 0);
+        setTimeout(() => showPlanIconColorPicker(idx), 0);
       });
     });
     // Other field events (name, price, discount, etc.)
@@ -916,15 +957,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Icon picker event
     planEditorCards.querySelectorAll('.icon-picker-btn').forEach(btn => {
       btn.addEventListener('click', function() {
+    // Icon picker event
+    planEditorCards.querySelectorAll('.icon-picker-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
         const idx = +this.getAttribute('data-plan-idx');
         const icon = this.getAttribute('data-icon');
         plans[idx].icon = icon;
         renderPlanEditorCards();
+        // Keep picker open after icon change
+        setTimeout(() => showPlanIconColorPicker(idx), 0);
       });
     });
-    // Color picker event
-    planEditorCards.querySelectorAll('.plan-color-input').forEach(input => {
-      input.addEventListener('input', function() {
         const idx = +this.getAttribute('data-plan-idx');
         plans[idx].color = this.value;
         renderPlanEditorCards();
@@ -967,9 +1010,13 @@ document.addEventListener('DOMContentLoaded', function() {
         plans[idx].note = this.value;
       });
     });
-  // END of renderPlanEditorCards
 }
 
+// Helper function to keep the icon/color picker open after re-render
+function showPlanIconColorPicker(idx) {
+  const picker = document.getElementById('iconColorPickerWrap' + idx);
+  if (picker) picker.style.display = 'block';
+}
   // Save Plans to Backend
   if (planEditorForm) {
     planEditorForm.onsubmit = async function(e) {
@@ -1008,6 +1055,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }
       } catch (err) {
+        console.error('Error updating plans:', err); // Log the error for debugging
         showDialog({
           title: 'Error',
           message: 'Server error. Please try again.',
@@ -1158,6 +1206,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
               });
             } catch (err) {
+              console.error('Error occurred while removing expired members:', err);
               showDialog({
                 title: 'Error',
                 message: 'Error removing expired members.',
@@ -1241,8 +1290,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const f = filter.toLowerCase();
         filtered = filtered.filter(m =>
           (m.memberName?.toLowerCase().includes(f)) ||
-          (m.email && m.email.toLowerCase().includes(f)) ||
-          (m.membershipId && m.membershipId.toLowerCase().includes(f))
+          (m.email?.toLowerCase().includes(f)) ||
+          (m.membershipId?.toLowerCase().includes(f))
         );
       }
       if (!filtered.length) {
@@ -1711,15 +1760,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Form submission
   if (addMemberForm) {
+    // Mark form as having enhanced handler for notification integration detection
+    addMemberForm._hasEnhancedHandler = true;
+    
     addMemberForm.onsubmit = async function(e) {
       e.preventDefault();
       console.log('[AddMember] Form submitted');
-      
-      // Use the same waitForToken pattern
       let token = await waitForToken('gymAdminToken', 10, 100);
-      
       if (!token) {
-        // Try alternative token names
         const alternativeTokens = ['token', 'authToken', 'gymAuthToken'];
         for (const tokenName of alternativeTokens) {
           token = localStorage.getItem(tokenName);
@@ -1728,16 +1776,13 @@ document.addEventListener('DOMContentLoaded', function() {
             break;
           }
         }
-        
         if (!token) {
           alert('You must be logged in as a gym admin.');
           return;
         }
       }
-      
       const formData = prepareMemberFormData(addMemberForm);
       const { gymName, plan, monthlyPlan, memberEmail, memberName, membershipId, validDate } = getMemberFormMeta(formData);
-      
       // Debug: Log all the form data being sent
       console.log('[AddMember] Form submission data:', {
         gymName,
@@ -1748,35 +1793,104 @@ document.addEventListener('DOMContentLoaded', function() {
         membershipId,
         validDate
       });
-      
       // Debug: Log FormData contents
       console.log('[AddMember] FormData contents:');
       for (let [key, value] of formData.entries()) {
         console.log(`[AddMember] ${key}:`, value);
       }
-      
       try {
         const res = await fetch('http://localhost:5000/api/members', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formData
         });
-        
         console.log('[AddMember] Backend response status:', res.status);
         const data = await res.json();
         console.log('[AddMember] Backend response data:', data);
         
-        if (res.ok) {
-          console.log('[AddMember] Member created successfully, sending email...');
+        // Handle successful response
+        if (res.ok && (data.success || data.message === 'Member added successfully')) {
+          console.log('[AddMember] Member added successfully');
           sendMembershipEmail({ token, memberEmail, memberName, membershipId, plan, monthlyPlan, validDate, gymName });
-          showAddMemberSuccess(addMemberSuccessMsg, membershipId, addMemberForm, memberImageTag, closeAddMemberModalFunc);
-        } else {
-          console.error('[AddMember] Backend error:', data);
-          showAddMemberError(addMemberSuccessMsg, data.message || 'Failed to add member.');
+          showAddMemberSuccess(membershipId, addMemberForm, memberImageTag, closeAddMemberModalFunc, memberName);
+        } 
+        // Handle duplicate member error with "Add Anyway" option
+        else if (data && data.code === 'DUPLICATE_MEMBER') {
+          console.log('[AddMember] Duplicate member detected, showing confirmation dialog');
+          showDialog({
+            title: '⚠️ Duplicate Member Detected',
+            message: `A member with this email or phone number already exists in the system.\n\n🔍 <b>Details:</b>\n• Email: ${memberEmail}\n• Phone: ${formData.get('memberPhone') || 'Not provided'}\n\n👨‍👩‍👧‍👦 If this is a family member or the person already has a different membership, you can still add them.`,
+            confirmText: 'Add Anyway',
+            cancelText: 'Cancel',
+            iconHtml: '<i class="fas fa-user-friends" style="color:#ff9800;font-size:2.5em;"></i>',
+            onConfirm: async function() {
+              console.log('[AddMember] User chose to add duplicate member anyway');
+              // Try again with forceAdd flag
+              formData.set('forceAdd', 'true');
+              try {
+                const forceRes = await fetch('http://localhost:5000/api/members', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${token}` },
+                  body: formData
+                });
+                const forceData = await forceRes.json();
+                console.log('[AddMember] Force add response:', forceData);
+                
+                if (forceRes.ok && (forceData.success || forceData.message === 'Member added successfully')) {
+                  console.log('[AddMember] Force add successful');
+                  sendMembershipEmail({ token, memberEmail, memberName, membershipId, plan, monthlyPlan, validDate, gymName });
+                  showAddMemberSuccess(membershipId, addMemberForm, memberImageTag, closeAddMemberModalFunc, memberName);
+                } else {
+                  console.error('[AddMember] Force add failed:', forceData);
+                  showDialog({
+                    title: 'Error Adding Member',
+                    message: forceData.message || forceData.error || 'Failed to add member even with force option.',
+                    confirmText: 'OK',
+                    iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+                  });
+                }
+              } catch (err) {
+                console.error('[AddMember] Force add exception:', err);
+                showDialog({
+                  title: 'Connection Error',
+                  message: 'Unable to connect to server. Please check your connection and try again.',
+                  confirmText: 'OK',
+                  iconHtml: '<i class="fas fa-wifi" style="color:#e53935;font-size:2.2em;"></i>'
+                });
+              }
+            }
+          });
+        } 
+        // Handle other backend errors
+        else if (!res.ok || (data && (data.message || data.error))) {
+          console.error('[AddMember] Backend error:', { status: res.status, data });
+          const errorMessage = data.message || data.error || `Server responded with status ${res.status}`;
+          showDialog({
+            title: 'Error Adding Member',
+            message: errorMessage,
+            confirmText: 'OK',
+            iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+          });
+        } 
+        // Fallback for unexpected responses
+        else {
+          console.error('[AddMember] Unexpected response format:', data);
+          showDialog({
+            title: 'Unexpected Error',
+            message: 'An unexpected error occurred while adding the member. Please try again.',
+            confirmText: 'OK',
+            iconHtml: '<i class="fas fa-question-circle" style="color:#e53935;font-size:2.2em;"></i>'
+          });
         }
       } catch (err) {
-        console.error('[AddMember] Submission error:', err);
-        showAddMemberError(addMemberSuccessMsg, 'Server error. Please try again.');
+        console.error('[AddMember] Network or parsing error:', err);
+        // Handle network errors or JSON parsing errors
+        showDialog({
+          title: 'Connection Error',
+          message: 'Unable to connect to the server. Please check your internet connection and try again.',
+          confirmText: 'OK',
+          iconHtml: '<i class="fas fa-wifi" style="color:#e53935;font-size:2.2em;"></i>'
+        });
       }
     };
 
@@ -1791,7 +1905,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getMemberFormMeta(formData) {
       // Debug gym profile
-      console.log('[AddMember] window.currentGymProfile:', window.currentGymProfile);
       
       const gymName = (window.currentGymProfile && (window.currentGymProfile.gymName || window.currentGymProfile.name)) ? (window.currentGymProfile.gymName || window.currentGymProfile.name) : 'GYM';
       const plan = formData.get('planSelected') || 'PLAN';
@@ -1799,13 +1912,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const memberEmail = formData.get('memberEmail') || '';
       const memberName = formData.get('memberName') || '';
       
-      console.log('[AddMember] Base form data extracted:', {
-        gymName,
-        plan,
-        monthlyPlan,
-        memberEmail,
-        memberName
-      });
       
       const now = new Date();
       const ym = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -1814,13 +1920,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const planShort = plan.replace(/[^A-Za-z0-9]/g, '').substring(0,6).toUpperCase();
       const membershipId = `${gymShort}-${ym}-${planShort}-${random}`;
       
-      console.log('[AddMember] Membership ID generation:', {
-        ym,
-        random,
-        gymShort,
-        planShort,
-        membershipId
-      });
       
       formData.append('membershipId', membershipId);
       let validDate = '';
@@ -1833,25 +1932,11 @@ document.addEventListener('DOMContentLoaded', function() {
       validDate = validUntil.toISOString().split('T')[0];
       formData.append('membershipValidUntil', validDate);
       
-      console.log('[AddMember] Membership validity:', {
-        monthlyPlan,
-        months,
-        validDate
-      });
       
       return { gymName, plan, monthlyPlan, memberEmail, memberName, membershipId, validDate };
     }
 
     function sendMembershipEmail({ token, memberEmail, memberName, membershipId, plan, monthlyPlan, validDate, gymName }) {
-      console.log('[AddMember] Sending membership email with data:', {
-        to: memberEmail,
-        memberName,
-        membershipId,
-        plan,
-        monthlyPlan,
-        validUntil: validDate,
-        gymName
-      });
       
       fetch('http://localhost:5000/api/members/send-membership-email', {
         method: 'POST',
@@ -1870,13 +1955,10 @@ document.addEventListener('DOMContentLoaded', function() {
         })
       })
       .then(response => {
-        console.log('[AddMember] Email API response status:', response.status);
         return response.json();
       })
       .then(data => {
-        console.log('[AddMember] Email API response:', data);
         if (data.success) {
-          console.log('[AddMember] Email sent successfully!');
         } else {
           console.error('[AddMember] Email sending failed:', data.message);
         }
@@ -1886,27 +1968,49 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
-    function showAddMemberSuccess(msgElem, membershipId, form, imgTag, closeModalFunc) {
-      if (msgElem) {
-        msgElem.textContent = `Member added! Membership ID: ${membershipId}`;
-        msgElem.style.display = 'block';
-      }
-      form.reset();
+    function showAddMemberSuccess(membershipId, form, imgTag, closeModalFunc, memberName) {
+      showDialog({
+        title: '✅ Member Added Successfully!',
+        message: `Member <b>${memberName || 'Unknown'}</b> has been added successfully!<br><br>📋 <b>Membership ID:</b> ${membershipId}<br><br>📧 A welcome email with membership details has been sent to the member.`,
+        confirmText: 'Got it!',
+        iconHtml: '<i class="fas fa-user-check" style="color:#4caf50;font-size:2.5em;"></i>',
+        onConfirm: closeModalFunc
+      });
+      
+      // Clean up form and image
+      if (form) form.reset();
       if (imgTag) imgTag.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik00OCA2NEM1Ni44MzY2IDY0IDY0IDU2LjgzNjYgNjQgNDhDNjQgMzkuMTYzNCA1Ni44MzY2IDMyIDQ4IDMyQzM5LjE2MzQgMzIgMzIgMzkuMTYzNCAzMiA0OEMzMiA1Ni44MzY2IDM5LjE2MzQgNjQgNDggNjRaIiBmaWxsPSIjQ0NDQ0NDIi8+CjxwYXRoIGQ9Ik0yNCA3Nkg3MlY4MEgyNFY3NloiIGZpbGw9IiNDQ0NDQ0MiLz4KPHRleHQgeD0iNDgiIHk9Ijg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTk5OTkiPlBob3RvPC90ZXh0Pgo8L3N2Zz4K';
-      setTimeout(() => {
-        closeModalFunc();
-      }, 1500);
     }
 
-    function showAddMemberError(msgElem, message) {
-      if (msgElem) {
-        msgElem.textContent = message;
-        msgElem.style.display = 'block';
-      }
-    }
+    // Remove legacy error message display (all errors now use dialog)
+    function showAddMemberError() {}
   }
   
   console.log('[AddMember] Modal initialization complete');
+
+  // Debug functions for testing dialog scenarios:
+  // Use browser console: testDialogs.testSuccess(), testDialogs.testDuplicate(), etc.
+  window.testDialogs = {
+    testSuccess: () => showDialog({
+      title: '✅ Member Added Successfully!',
+      message: 'Member John Doe has been added!\nMembership ID: GYM-202501-BASIC-ABC123',
+      confirmText: 'Got it!',
+      iconHtml: '<i class="fas fa-user-check" style="color:#4caf50;font-size:2.5em;"></i>'
+    }),
+    testDuplicate: () => showDialog({
+      title: '⚠️ Duplicate Member Detected',
+      message: 'A member with this email already exists.\nAdd anyway?',
+      confirmText: 'Add Anyway',
+      cancelText: 'Cancel',
+      iconHtml: '<i class="fas fa-user-friends" style="color:#ff9800;font-size:2.5em;"></i>'
+    }),
+    testError: () => showDialog({
+      title: 'Error Adding Member',
+      message: 'Failed to add member. Please try again.',
+      confirmText: 'OK',
+      iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+    })
+  };
 
   // Add debugging function to check available tokens
   window.debugTokens = function() {
@@ -2063,21 +2167,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Add test function to simulate opening the modal
   window.testOpenModal = async function() {
-    console.log('[TEST] Testing modal opening process...');
     
-    console.log('[TEST] Current plansCache before modal open:', plansCache);
-    
-    // Simulate opening the modal
     await openAddMemberModal();
     
-    console.log('[TEST] plansCache after modal open:', plansCache);
-    
-    // Check if plan dropdown was populated
     const planSelect = document.getElementById('planSelected');
     if (planSelect) {
-      console.log('[TEST] Plan dropdown options after modal open:');
       Array.from(planSelect.options).forEach(option => {
-        console.log(`[TEST]   - "${option.value}": ${option.text}`);
       });
     }
   };
@@ -2120,44 +2215,152 @@ document.addEventListener('DOMContentLoaded', function() {
             let currentGymProfile = {}; // Store fetched profile data
 
             async function fetchAndUpdateAdminProfile() {
+        console.log('🚀 Starting admin profile fetch process');
         logLocalStorageItems();
-        const token = await waitForToken('gymAdminToken', 10, 100);
+        
+        // Increase retries to 50 (5 seconds) to avoid race condition after login redirect
+        const token = await waitForToken('gymAdminToken', 50, 100);
         const adminNameElement = document.getElementById('adminName');
         const adminAvatarElement = document.getElementById('adminAvatar');
         setDefaultAdminProfile(adminNameElement, adminAvatarElement);
     
         if (!token) {
+            console.error('❌ No token found after waiting. Redirecting to login.');
             handleMissingToken();
             return;
         }
+        
+        console.log('✅ Token found, proceeding with profile fetch');
     
         try {
             const responseData = await fetchAdminProfile(token);
             if (!responseData.ok) {
+                console.error('❌ Profile fetch failed with response:', responseData);
                 handleProfileFetchError(responseData, adminNameElement, adminAvatarElement);
                 return;
             }
+            
+            console.log('✅ Profile fetch successful, updating UI');
             currentGymProfile = responseData.data;
             updateAdminProfileUI(adminNameElement, adminAvatarElement, responseData.data);
         } catch (error) {
+            console.error('❌ Exception during profile fetch:', error);
             handleProfileFetchException(error, adminNameElement, adminAvatarElement);
         }
     }
     
     function logLocalStorageItems() {
-        console.log('All localStorage items:', Object.keys(localStorage).map(key => {
-            return { key, value: localStorage.getItem(key) };
-        }));
+        console.log('🔍 Detailed localStorage inspection:');
+        console.log('📊 Total localStorage keys:', localStorage.length);
+        console.log('🌐 Current origin:', window.location.origin);
+        console.log('🌐 Current pathname:', window.location.pathname);
+        
+        const allItems = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const value = localStorage.getItem(key);
+            allItems.push({
+                key,
+                value: value?.substring(0, 30) + '...',
+                length: value?.length || 0,
+                fullValue: value // Only for debugging - remove in production
+            });
+        }
+        
+        console.log('📦 All localStorage items:', allItems);
+        
+        // Specifically check for our target token
+        const targetToken = localStorage.getItem('gymAdminToken');
+        console.log('🎯 Target token (gymAdminToken):', {
+            exists: !!targetToken,
+            value: targetToken ? targetToken.substring(0, 30) + '...' : null,
+            length: targetToken?.length || 0
+        });
+        
+        // Check for any token-like keys
+        const tokenKeys = Object.keys(localStorage).filter(key => 
+            key.toLowerCase().includes('token') || key.toLowerCase().includes('auth')
+        );
+        console.log('🔐 Token-like keys found:', tokenKeys);
     }
     
     async function waitForToken(tokenKey, maxTries, delayMs) {
-        let token = localStorage.getItem(tokenKey);
+        console.log(`🔍 Waiting for token '${tokenKey}' (max ${maxTries} tries, ${delayMs}ms intervals)`);
+        
+        let token = null;
         let tries = 0;
-        while (!token && tries < maxTries) {
-            await new Promise(res => setTimeout(res, delayMs));
-            token = localStorage.getItem(tokenKey);
-            tries++;
+        
+        // Function to check multiple storage locations
+        function checkAllStorageLocations() {
+            // First check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlToken = urlParams.get('token');
+            if (urlToken) {
+                console.log('🔗 Token found in URL parameters');
+                // Store it in localStorage for future use
+                localStorage.setItem(tokenKey, urlToken);
+                // Clean the URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return { location: 'URL parameters', token: urlToken };
+            }
+            
+            // Check localStorage
+            let found = localStorage.getItem(tokenKey);
+            if (found) return { location: 'localStorage', token: found };
+            
+            // Check sessionStorage
+            found = sessionStorage.getItem(tokenKey);
+            if (found) return { location: 'sessionStorage', token: found };
+            
+            // Check alternative key names
+            const altKeys = ['authToken', 'token', 'gymAuthToken', 'adminToken'];
+            for (const altKey of altKeys) {
+                found = localStorage.getItem(altKey);
+                if (found) return { location: `localStorage[${altKey}]`, token: found };
+                
+                found = sessionStorage.getItem(altKey);
+                if (found) return { location: `sessionStorage[${altKey}]`, token: found };
+            }
+            
+            return null;
         }
+        
+        while (!token && tries < maxTries) {
+            const result = checkAllStorageLocations();
+            if (result) {
+                token = result.token;
+                console.log(`✅ Token found in ${result.location} after ${tries} attempts`);
+                // If found in alternative location, also store it in the expected location
+                if (result.location !== 'localStorage') {
+                    localStorage.setItem(tokenKey, token);
+                    console.log(`📝 Token copied to localStorage[${tokenKey}]`);
+                }
+                break;
+            }
+            
+            await new Promise(res => setTimeout(res, delayMs));
+            tries++;
+            console.log(`🔄 Token check attempt ${tries}/${maxTries} - Token found: false`);
+            
+            // Log all storage contents for debugging every 10th attempt
+            if (tries % 10 === 0) {
+                console.log('Current localStorage state:', Object.keys(localStorage).map(key => ({
+                    key, 
+                    value: localStorage.getItem(key)?.substring(0, 20) + '...'
+                })));
+                console.log('Current sessionStorage state:', Object.keys(sessionStorage).map(key => ({
+                    key, 
+                    value: sessionStorage.getItem(key)?.substring(0, 20) + '...'
+                })));
+            }
+        }
+        
+        if (token) {
+            console.log(`✅ Token '${tokenKey}' found after ${tries} attempts`);
+        } else {
+            console.log(`❌ Token '${tokenKey}' not found after ${maxTries} attempts`);
+        }
+        
         return token;
     }
     

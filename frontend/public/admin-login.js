@@ -245,49 +245,106 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission
     loginForm.addEventListener('submit', async function(e) {
       e.preventDefault();
+
+      // Clear any previous tokens to avoid stale state
+      console.log('🧹 Clearing previous tokens');
+      localStorage.removeItem('gymAdminToken');
       
+      console.log('📊 Current localStorage state before login:', Object.keys(localStorage));
+
       const isEmailValid = validateEmail();
       const isPasswordValid = validatePassword();
-      
+
       if (!isEmailValid || !isPasswordValid) {
         loginForm.classList.add('shake');
         setTimeout(() => loginForm.classList.remove('shake'), 500);
         return;
       }
-      
+
       // Show loading state
       buttonText.style.display = 'none';
       spinner.style.display = 'block';
       loginButton.disabled = true;
-      
+
       try {
+        // Use JSON for login. Backend must use express.json() middleware.
         const formData = new FormData(loginForm);
-        const response = await fetch('http://localhost:5000/api/gyms/login', { 
+        const loginPayload = Object.fromEntries(formData);
+        
+        console.log('🚀 Sending login request to backend');
+        console.log('📧 Login email:', loginPayload.email);
+        
+        const response = await fetch('http://localhost:5000/api/gyms/login', {
           method: 'POST',
-          body: JSON.stringify(Object.fromEntries(formData)),
+          body: JSON.stringify(loginPayload),
           headers: { 'Content-Type': 'application/json' }
         });
-        
+
+        console.log('📡 Login response received:', response.status, response.statusText);
         const data = await response.json();
-        
-        if (response.ok) {
+        console.log('📦 Login response data:', { success: data.success, message: data.message, hasToken: !!data.token });
+
+        if (response.ok && data.token) {
           // Successful login
           showSuccessMessage('Login successful! Redirecting...');
-          // Store JWT token in localStorage or cookies
-          localStorage.setItem('gymAdminToken', data.token);
-          // Ensure token is set before redirecting
-          let tries = 0;
-          function redirectIfTokenSet() {
-            if (localStorage.getItem('gymAdminToken')) {
-              window.location.replace('http://localhost:5000/gymadmin/gymadmin.html');
-            } else if (tries < 10) {
-              tries++;
-              setTimeout(redirectIfTokenSet, 100);
+          
+          console.log('🔑 About to store token:', data.token.substring(0, 20) + '...');
+          console.log('🌐 Current origin:', window.location.origin);
+          console.log('🌐 Current pathname:', window.location.pathname);
+          
+          // Store JWT token in localStorage with verification
+          try {
+            // Clear ALL potential old tokens first
+            const oldTokenKeys = ['gymAdminToken', 'token', 'authToken', 'gymAuthToken', 'adminToken'];
+            oldTokenKeys.forEach(key => {
+              if (localStorage.getItem(key)) {
+                console.log(`🧹 Removing old token: ${key}`);
+                localStorage.removeItem(key);
+              }
+            });
+            
+            // Store the new token in BOTH localStorage and sessionStorage for redundancy
+            localStorage.setItem('gymAdminToken', data.token);
+            sessionStorage.setItem('gymAdminToken', data.token);
+            
+            // Also store it with alternative keys as backup
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('token', data.token);
+            
+            // Verify token was actually stored
+            const storedToken = localStorage.getItem('gymAdminToken');
+            const sessionToken = sessionStorage.getItem('gymAdminToken');
+            
+            console.log('🔍 Token verification:', {
+              localStorage: !!storedToken,
+              sessionStorage: !!sessionToken,
+              matches: storedToken === data.token,
+              sessionMatches: sessionToken === data.token,
+              length: storedToken?.length || 0
+            });
+            
+            if (storedToken === data.token) {
+              console.log('✅ Token successfully stored in localStorage');
+              console.log('📊 Final localStorage state:', Object.keys(localStorage).map(key => ({
+                key, 
+                value: localStorage.getItem(key)?.substring(0, 20) + '...',
+                length: localStorage.getItem(key)?.length
+              })));
+              
+              // Use a longer delay to ensure localStorage has fully committed
+              setTimeout(() => {
+                console.log('🚀 Redirecting to dashboard...');
+                // Pass token as URL parameter as backup
+                const dashboardUrl = `http://localhost:5000/gymadmin/gymadmin.html?token=${encodeURIComponent(data.token)}`;
+                window.location.replace(dashboardUrl);
+              }, 1000); // Increased to 1 second
             } else {
-              showErrorMessage('Login failed to set token. Please try again.');
+              throw new Error('Token verification failed');
             }
+          } catch (storageError) {
+            console.error('❌ localStorage error:', storageError);
+            showErrorMessage('Failed to store authentication token. Please try again.');
           }
-          setTimeout(redirectIfTokenSet, 200); // Short delay to ensure storage
         } else {
           // Login failed
           showErrorMessage(data.message || 'Login failed. Please try again.');
