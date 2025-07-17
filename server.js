@@ -21,6 +21,11 @@ const dietRoutes = require('./backend/routes/dietRoutes');
 const memberRoutes = require('./backend/routes/memberRoutes');
 console.log("[DEBUG] server.js: memberRoutes type is:", typeof memberRoutes);
 const notificationRoutes = require('./backend/routes/notificationRoutes');
+const adminNotificationRoutes = require('./backend/routes/adminNotificationRoutes');
+const gymNotificationRoutes = require('./backend/routes/gymNotificationRoutes');
+const supportRoutes = require('./backend/routes/supportRoutes');
+const attendanceRoutes = require('./backend/routes/attendanceRoutes');
+console.log("[DEBUG] server.js: attendanceRoutes type is:", typeof attendanceRoutes);
 const NotificationScheduler = require('./backend/services/notificationScheduler');  
 
 console.log("[DEBUG] server.js: trainerRoutes type is:", typeof trainerRoutes);
@@ -76,6 +81,13 @@ app.use('/api/members', (req, res, next) => {
   next();
 }, memberRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin/notifications', adminNotificationRoutes);
+app.use('/api/gym/notifications', gymNotificationRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/attendance', (req, res, next) => {
+  console.log(`📊 Attendance route accessed: ${req.method} ${req.url}`);
+  next();
+}, attendanceRoutes);
 
 // ✅ Connect MongoDB and Start Server
 const startServer = async () => {

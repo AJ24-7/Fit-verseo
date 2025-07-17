@@ -2,6 +2,53 @@
 // Comprehensive notification system for admin dashboard
 
 class AdminNotificationSystem {
+  // Show Gym Details Modal
+  showGymDetailsModal(metadata = {}) {
+    let modal = document.getElementById('gymAdminNotificationModal');
+    if (!modal) {
+      const modalHTML = `
+        <div class="gym-admin-modal" id="gymAdminNotificationModal" style="display:none;">
+          <div class="gym-admin-modal-overlay" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);z-index:10001;"></div>
+          <div class="gym-admin-modal-content" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:32px;max-width:480px;width:95vw;z-index:10002;">
+            <button class="gym-admin-modal-close" id="closeGymAdminModal" style="position:absolute;top:18px;right:22px;background:none;border:none;font-size:2em;color:#888;cursor:pointer;z-index:3;">&times;</button>
+            <h2 style="color:#2563eb;margin-bottom:18px;">Gym Details</h2>
+            <div id="gymAdminModalContent"></div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      modal = document.getElementById('gymAdminNotificationModal');
+      document.getElementById('closeGymAdminModal').onclick = () => {
+        modal.style.display = 'none';
+      };
+      modal.querySelector('.gym-admin-modal-overlay').onclick = () => {
+        modal.style.display = 'none';
+      };
+    }
+    // Render notification and gym details
+    const content = document.getElementById('gymAdminModalContent');
+    if (content) {
+      if (!metadata || Object.keys(metadata).length === 0) {
+        content.innerHTML = '<div style="color:#888;">No gym details available.</div>';
+      } else {
+        // Show notification title/message if present
+        let html = '';
+        if (metadata.title || metadata.message) {
+          html += `<div style="margin-bottom:10px;"><strong>Notification Title:</strong> ${metadata.title || ''}</div>`;
+          html += `<div style="margin-bottom:10px;"><strong>Notification Message:</strong> ${metadata.message || ''}</div>`;
+        }
+        // Show gym details from metadata.gym if present
+        const gym = metadata.gym || {};
+        html += `<div style=\"margin-bottom:10px;\"><strong>Gym Name:</strong> ${gym.gymName || metadata.gymName || 'N/A'}</div>`;
+        html += `<div style=\"margin-bottom:10px;\"><strong>Gym ID:</strong> ${gym.gymId || metadata.gymId || 'N/A'}</div>`;
+        html += `<div style=\"margin-bottom:10px;\"><strong>Address:</strong> ${gym.address || metadata.address || 'N/A'}</div>`;
+        html += `<div style=\"margin-bottom:10px;\"><strong>Email:</strong> ${gym.email || metadata.email || 'N/A'}</div>`;
+        html += `<div style=\"margin-bottom:10px;\"><strong>Phone:</strong> ${gym.phone || metadata.phone || 'N/A'}</div>`;
+        content.innerHTML = html;
+      }
+    }
+    modal.style.display = 'flex';
+  }
   constructor() {
     this.notifications = [];
     this.unreadCount = 0;
@@ -62,6 +109,7 @@ class AdminNotificationSystem {
               <button class="admin-filter-btn" data-filter="trial">Trial Bookings</button>
               <button class="admin-filter-btn" data-filter="payment">Payments</button>
               <button class="admin-filter-btn" data-filter="system">System</button>
+              <button class="admin-filter-btn" data-filter="gym-admin">Gym Admin</button>
             </div>
             <div class="admin-notifications-modal-body">
               <div class="admin-notifications-modal-list" id="adminNotificationsModalList">
@@ -167,8 +215,13 @@ class AdminNotificationSystem {
   async fetchNotifications() {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        console.log('❌ No admin token found in localStorage');
+        return;
+      }
 
+      console.log('🔔 Fetching admin notifications...');
+      
       const response = await fetch(`${this.BASE_URL}/api/admin/notifications`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -178,12 +231,30 @@ class AdminNotificationSystem {
 
       if (response.ok) {
         const data = await response.json();
-        this.notifications = data.notifications || [];
+        console.log('✅ Fetched notifications:', data);
+        
+        const newNotifications = data.notifications || [];
+        
+        // Check for new notifications to show toast
+        if (this.notifications.length > 0) {
+          const existingIds = this.notifications.map(n => n._id);
+          const newOnes = newNotifications.filter(n => !existingIds.includes(n._id));
+          
+          // Show toast for new notifications
+          newOnes.forEach(notification => {
+            console.log('🔔 New notification received:', notification.title);
+            this.showToast(notification);
+          });
+        }
+        
+        this.notifications = newNotifications;
         this.unreadCount = data.unreadCount || 0;
         this.updateNotificationUI();
+      } else {
+        console.error('❌ Failed to fetch notifications:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('❌ Error fetching notifications:', error);
     }
   }
 
@@ -234,13 +305,16 @@ class AdminNotificationSystem {
   createNotificationItem(notification) {
     const timeAgo = this.getTimeAgo(notification.timestamp);
     const unreadClass = notification.read ? '' : 'unread';
+    const isGrievance = this.isGrievanceNotification(notification);
+    const grievanceClass = isGrievance ? 'grievance-notification' : '';
     
     return `
-      <div class="notification-item ${unreadClass}" data-id="${notification._id}">
+      <div class="notification-item ${unreadClass} ${grievanceClass}" data-id="${notification._id}">
         <div class="notification-content">
-          <strong>${notification.title}</strong>
+          <strong>${notification.title} ${isGrievance ? '🚨' : ''}</strong>
           <p>${notification.message}</p>
           <small>${timeAgo}</small>
+          ${isGrievance ? '<div class="grievance-badge">GRIEVANCE</div>' : ''}
         </div>
         <div class="notification-icon">
           <i class="fas ${notification.icon || 'fa-bell'}" style="color: ${notification.color || '#2563eb'}"></i>
@@ -318,6 +392,13 @@ class AdminNotificationSystem {
     const notification = this.notifications.find(n => n._id === notificationId);
     if (!notification) return;
 
+    console.log('🔔 Notification clicked:', {
+      id: notificationId,
+      title: notification.title,
+      type: notification.type,
+      metadata: notification.metadata
+    });
+
     // Navigate to relevant section based on notification type
     switch (notification.type) {
       case 'gym-registration':
@@ -331,6 +412,26 @@ class AdminNotificationSystem {
         break;
       case 'payment':
         this.navigateToPayments();
+        break;
+      case 'support':
+      case 'support-reply':
+        this.navigateToSupport(notification.metadata);
+        break;
+      case 'admin-system':
+        // Check if this is an error/grievance notification
+        const isGrievance = this.isGrievanceNotification(notification);
+        console.log('📊 Admin-system notification - isGrievance:', isGrievance);
+        
+        if (isGrievance) {
+          this.handleGrievanceNotification(notification);
+        } else {
+          // Show gym details modal with metadata for other admin-system notifications
+          this.showGymDetailsModal(notification.metadata);
+        }
+        break;
+      case 'system':
+        // Handle system notifications
+        console.log('System notification clicked:', notification.title);
         break;
       default:
         console.log('Unknown notification type:', notification.type);
@@ -370,6 +471,257 @@ class AdminNotificationSystem {
     if (paymentTab) {
       paymentTab.click();
     }
+  }
+
+  navigateToSupport(metadata = {}) {
+    console.log('🎯 navigateToSupport called with metadata:', metadata);
+    
+    const supportTab = document.getElementById('support-tab');
+    console.log('🔍 Support tab element:', supportTab);
+    
+    if (supportTab) {
+      console.log('🖱️ Clicking support tab...');
+      supportTab.click();
+      
+      // Wait for tab to be activated
+      setTimeout(() => {
+        console.log('🔍 Checking if support system is available...');
+        
+        // If support system is available, navigate with filters
+        if (window.supportSystem) {
+          console.log('✅ Support system found, applying filters...');
+          
+          const filters = {};
+          
+          // Extract filters from metadata
+          if (metadata.userType) {
+            filters.userType = metadata.userType;
+          }
+          if (metadata.priority) {
+            filters.priority = metadata.priority;
+          }
+          if (metadata.category) {
+            filters.category = metadata.category;
+          }
+          if (metadata.status) {
+            filters.status = metadata.status;
+          }
+          if (metadata.ticketId) {
+            filters.search = metadata.ticketId;
+          }
+          if (metadata.search) {
+            filters.search = metadata.search;
+          }
+          
+          console.log('📋 Applying filters to support system:', filters);
+          
+          // Navigate to support with filters
+          window.supportSystem.navigateToSupportTab(filters);
+        } else {
+          console.error('❌ Support system not available on window object');
+          console.log('🔍 Available window properties:', Object.keys(window).filter(k => k.includes('support')));
+        }
+      }, 200);
+    } else {
+      console.error('❌ Support tab element not found');
+    }
+  }
+
+  // Check if notification is a grievance/error notification
+  isGrievanceNotification(notification) {
+    if (!notification || !notification.title) return false;
+    
+    // Check for error-related keywords in title or message
+    const errorKeywords = [
+      'error', 'issue', 'problem', 'failed', 'failure', 'grievance', 
+      'complaint', 'bug', 'malfunction', 'broken', 'not working',
+      'system error', 'payment failure', 'facility issue', 'security alert'
+    ];
+    
+    const titleLower = notification.title.toLowerCase();
+    const messageLower = (notification.message || '').toLowerCase();
+    
+    const isGrievance = errorKeywords.some(keyword => 
+      titleLower.includes(keyword) || messageLower.includes(keyword)
+    );
+    
+    console.log('🔍 Checking grievance for notification:', {
+      title: notification.title,
+      message: notification.message,
+      isGrievance,
+      matchedKeywords: errorKeywords.filter(keyword => 
+        titleLower.includes(keyword) || messageLower.includes(keyword))
+    });
+    
+    return isGrievance;
+  }
+
+  // Handle grievance notifications by routing to support
+  handleGrievanceNotification(notification) {
+    console.log('🚨 Handling grievance notification:', notification.title);
+    console.log('📋 Notification metadata:', notification.metadata);
+    
+    // Navigate to support tab with gym admin filter and specific search
+    const filters = {
+      userType: 'gym-admins',
+      category: 'complaint',
+      priority: 'high',
+      status: 'open',
+      search: notification.metadata?.gymName || notification.metadata?.gym?.gymName || ''
+    };
+    
+    console.log('🎯 Navigating to support with filters:', filters);
+    this.navigateToSupport(filters);
+    
+    // Create a support ticket if one doesn't exist
+    setTimeout(() => {
+      this.createSupportTicketFromGrievance(notification);
+    }, 1000); // Wait a bit for navigation to complete
+  }
+
+  // Create support ticket from grievance notification
+  async createSupportTicketFromGrievance(notification) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No admin token found for support ticket creation');
+        return;
+      }
+
+      const gymInfo = notification.metadata?.gym || notification.metadata || {};
+      
+      // Check if a ticket already exists for this grievance
+      const existingTicketResponse = await fetch(
+        `${this.BASE_URL}/api/support/tickets?userType=gym&search=${encodeURIComponent(gymInfo.gymName || '')}&category=complaint&status=open`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (existingTicketResponse.ok) {
+        const existingData = await existingTicketResponse.json();
+        
+        // If there's already an open complaint ticket for this gym, don't create another
+        if (existingData.tickets && existingData.tickets.length > 0) {
+          console.log('📋 Existing support ticket found, not creating duplicate');
+          return;
+        }
+      }
+
+      // Create new support ticket with proper admin data
+      const ticketData = {
+        category: 'complaint',
+        priority: this.determineTicketPriority(notification),
+        subject: `Gym Admin Grievance: ${notification.title}`,
+        description: `
+**Grievance Details:**
+${notification.message || 'No additional details provided'}
+
+**Gym Information:**
+- Name: ${gymInfo.gymName || 'N/A'}
+- Email: ${gymInfo.email || 'N/A'}
+- Phone: ${gymInfo.phone || 'N/A'}
+- Address: ${gymInfo.address || 'N/A'}
+
+**Notification Timestamp:** ${new Date(notification.timestamp).toLocaleString()}
+
+This ticket was automatically created from a gym admin notification marked as a grievance.
+        `.trim(),
+        userType: 'Gym',
+        gymId: gymInfo.gymId || gymInfo._id,
+        gymName: gymInfo.gymName || 'Unknown Gym',
+        gymEmail: gymInfo.email || 'noemail@gym.com',
+        gymPhone: gymInfo.phone || 'No phone provided',
+        attachments: []
+      };
+
+      console.log('Creating support ticket with data:', ticketData);
+
+      const response = await fetch(`${this.BASE_URL}/api/support/admin/tickets`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ticketData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Support ticket created from grievance:', result.ticket?.ticketId);
+        
+        // Show success notification
+        this.showToast({
+          _id: Date.now().toString(),
+          title: 'Support Ticket Created',
+          message: `Ticket #${result.ticket?.ticketId} created for gym grievance`,
+          type: 'system',
+          icon: 'fa-ticket-alt',
+          color: '#28a745'
+        });
+        
+        // Refresh support system if available
+        if (window.supportSystem) {
+          setTimeout(() => {
+            window.supportSystem.loadSupportTickets();
+            window.supportSystem.loadSupportStats();
+          }, 500);
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Failed to create support ticket:', errorData);
+        
+        this.showToast({
+          _id: Date.now().toString(),
+          title: 'Ticket Creation Failed',
+          message: 'Failed to create support ticket for grievance',
+          type: 'system',
+          icon: 'fa-exclamation-triangle',
+          color: '#dc3545'
+        });
+      }
+    } catch (error) {
+      console.error('Error creating support ticket from grievance:', error);
+      
+      this.showToast({
+        _id: Date.now().toString(),
+        title: 'Error',
+        message: 'Error creating support ticket from grievance',
+        type: 'system',
+        icon: 'fa-exclamation-triangle',
+        color: '#dc3545'
+      });
+    }
+  }
+
+  // Determine ticket priority based on notification content
+  determineTicketPriority(notification) {
+    const highPriorityKeywords = [
+      'security alert', 'system error', 'payment failure', 'critical',
+      'urgent', 'emergency', 'broken', 'not working'
+    ];
+    
+    const mediumPriorityKeywords = [
+      'facility issue', 'equipment', 'maintenance', 'bug', 'problem'
+    ];
+    
+    const titleLower = notification.title.toLowerCase();
+    const messageLower = (notification.message || '').toLowerCase();
+    
+    if (highPriorityKeywords.some(keyword => 
+        titleLower.includes(keyword) || messageLower.includes(keyword))) {
+      return 'high';
+    }
+    
+    if (mediumPriorityKeywords.some(keyword => 
+        titleLower.includes(keyword) || messageLower.includes(keyword))) {
+      return 'medium';
+    }
+    
+    return 'low';
   }
 
   // Open notification modal
@@ -417,14 +769,19 @@ class AdminNotificationSystem {
   createModalNotificationItem(notification) {
     const timeAgo = this.getTimeAgo(notification.timestamp);
     const unreadClass = notification.read ? '' : 'unread';
+    const isGrievance = this.isGrievanceNotification(notification);
+    const grievanceClass = isGrievance ? 'grievance-notification' : '';
     
     return `
-      <div class="admin-modal-notification-item ${unreadClass}" data-id="${notification._id}">
+      <div class="admin-modal-notification-item ${unreadClass} ${grievanceClass}" data-id="${notification._id}">
         <div class="admin-modal-notification-icon">
           <i class="fas ${notification.icon || 'fa-bell'}" style="color: ${notification.color || '#2563eb'}"></i>
         </div>
         <div class="admin-modal-notification-content">
-          <div class="admin-modal-notification-title">${notification.title}</div>
+          <div class="admin-modal-notification-title">
+            ${notification.title} ${isGrievance ? '🚨' : ''}
+            ${isGrievance ? '<span class="grievance-badge">GRIEVANCE</span>' : ''}
+          </div>
           <div class="admin-modal-notification-message">${notification.message}</div>
           <div class="admin-modal-notification-time">${timeAgo}</div>
         </div>
@@ -440,7 +797,8 @@ class AdminNotificationSystem {
       'trainer-approval': 'Trainer Approval',
       'trial-booking': 'Trial Booking',
       'payment': 'Payment',
-      'system': 'System'
+      'system': 'System',
+      'admin-system': 'Gym Admin'
     };
     return labels[type] || 'General';
   }
@@ -465,6 +823,8 @@ class AdminNotificationSystem {
             return n.type === 'payment';
           case 'system':
             return n.type === 'system';
+          case 'gym-admin':
+            return n.type === 'admin-system';
           default:
             return true;
         }
@@ -495,14 +855,20 @@ class AdminNotificationSystem {
     const toastContainer = document.getElementById('adminNotificationToasts');
     if (!toastContainer) return;
 
+    const isGrievance = this.isGrievanceNotification(notification);
+    const grievanceClass = isGrievance ? 'grievance-toast' : '';
+
     const toast = document.createElement('div');
-    toast.className = 'admin-notification-toast';
+    toast.className = `admin-notification-toast ${grievanceClass}`;
     toast.innerHTML = `
       <div class="admin-toast-icon">
         <i class="fas ${notification.icon || 'fa-bell'}" style="color: ${notification.color || '#2563eb'}"></i>
       </div>
       <div class="admin-toast-content">
-        <div class="admin-toast-title">${notification.title}</div>
+        <div class="admin-toast-title">
+          ${notification.title} ${isGrievance ? '🚨' : ''}
+          ${isGrievance ? '<span class="grievance-badge">GRIEVANCE</span>' : ''}
+        </div>
         <div class="admin-toast-message">${notification.message}</div>
       </div>
       <button class="admin-toast-close">&times;</button>
@@ -522,12 +888,12 @@ class AdminNotificationSystem {
 
     toastContainer.appendChild(toast);
 
-    // Auto remove after 5 seconds
+    // Auto remove after longer time for grievances (8 seconds vs 5 seconds)
     setTimeout(() => {
       if (toast.parentNode) {
         toast.remove();
       }
-    }, 5000);
+    }, isGrievance ? 8000 : 5000);
   }
 
   // Create notification programmatically (for testing)
@@ -549,13 +915,71 @@ class AdminNotificationSystem {
     this.showToast(notification);
   }
 
-  // Cleanup method
-  destroy() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-    }
+  // Test function to create a grievance notification
+  testGrievanceNotification() {
+    const testNotification = {
+      _id: Date.now().toString(),
+      title: 'System Error Alert',
+      message: 'Payment failure reported at FitZone Gym',
+      type: 'admin-system',
+      icon: 'fa-exclamation-triangle',
+      color: '#dc3545',
+      timestamp: new Date().toISOString(),
+      read: false,
+      metadata: {
+        gym: {
+          gymName: 'FitZone Gym',
+          email: 'fitzone@example.com',
+          phone: '+1234567890',
+          address: '123 Fitness Street',
+          gymId: 'gym123'
+        }
+      }
+    };
+
+    console.log('🧪 Creating test grievance notification:', testNotification);
+    
+    this.notifications.unshift(testNotification);
+    this.unreadCount++;
+    this.updateNotificationUI();
+    this.showToast(testNotification);
   }
 }
+
+// Test functions for debugging
+window.testGrievanceSystem = {
+  createTestGrievance: () => {
+    if (window.adminNotificationSystem) {
+      window.adminNotificationSystem.testGrievanceNotification();
+    } else {
+      console.error('Admin notification system not initialized');
+    }
+  },
+  
+  testSupportNavigation: () => {
+    if (window.supportSystem) {
+      window.supportSystem.navigateToSupportTab({
+        userType: 'gym-admins',
+        category: 'complaint',
+        priority: 'high',
+        status: 'open',
+        search: 'test'
+      });
+    } else {
+      console.error('Support system not initialized');
+    }
+  },
+  
+  checkSystemsReady: () => {
+    console.log('System Status:', {
+      adminNotificationSystem: !!window.adminNotificationSystem,
+      supportSystem: !!window.supportSystem,
+      supportTab: !!document.getElementById('support-tab'),
+      supportContent: !!document.getElementById('support-content'),
+      gymAdminsSupport: !!document.getElementById('gym-admins-support')
+    });
+  }
+};
 
 // Initialize the admin notification system when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {

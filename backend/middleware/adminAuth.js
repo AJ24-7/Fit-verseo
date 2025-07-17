@@ -7,7 +7,8 @@ module.exports = (req, res, next) => {
     
     // Set the admin ID for the request (use string ID to match the service)
     req.admin = {
-      _id: '507f1f77bcf86cd799439011' // Default admin ID as string
+      id: '507f1f77bcf86cd799439011', // Default admin ID as string
+      _id: '507f1f77bcf86cd799439011'
     };
     
     console.log('Admin auth middleware - admin set:', req.admin);

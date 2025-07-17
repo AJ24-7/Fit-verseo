@@ -180,18 +180,16 @@ exports.approveTrainer = async (req, res) => {
 
     // Email to trainer (wrap in try/catch like adminController)
     try {
-      console.log('[DEBUG] About to send approval email to:', trainer.email);
-      console.log('[DEBUG] EMAIL_USER:', process.env.EMAIL_USER);
-      console.log('[DEBUG] EMAIL_PASS present:', !!process.env.EMAIL_PASS);
+     
       await sendEmail(
         trainer.email,
         '🎉 Your Trainer Registration is Approved!',
         `<h3>Hello ${greetingName},</h3>
          <p>Congratulations! Your trainer registration has been <strong>approved</strong> by the FIT-verse admin team.</p>
          <p>You can now <a href="http://localhost:5000/trainer-login">log in</a> and access your trainer dashboard.</p>
-         <p>Best regards,<br/>FIT-verse Team</p>`
+         <p>Best regards,<br/>Gym-Wale Team</p>`
       );
-      console.log('[DEBUG] sendEmail executed for:', trainer.email);
+      
     } catch (emailErr) {
       console.error('❌ Failed to send approval email to trainer:', emailErr.message);
     }

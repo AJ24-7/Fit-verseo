@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fit-Verse | Admin Dashboard</title>
+    <title>Gym-Wale | Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="gymadmin.css">
+    <link rel="stylesheet" href="attendance.css">
     <script defer src="gymadmin.js"></script>
     <script defer src="notification-modal.js"></script>
+    <script defer src="notification-system.js"></script>
+    <script defer src="attendance.js"></script>
 </head>
 <body>
 <!-- Hamburger Menu for Mobile (move outside sidebar, just after <body>) -->
@@ -25,7 +28,7 @@
             <div class="logo-icon">
                 <i class="fas fa-dumbbell"></i>
             </div>
-            <div class="logo-text">Fit-Verse</div>
+            <div class="logo-text">Gym-Wale</div>
         </div>
         <ul class="menu">
             <li class="menu-item">
@@ -130,7 +133,7 @@
                         <button id="openNotificationModalBtn">
                             <i class="fas fa-bell"></i> Send Notification
                         </button>
-                        
+                        <!-- Admin notification system will be inserted here automatically -->
                     </div>
                 </div>
 
@@ -1503,8 +1506,109 @@
     </div>
   </div>
 
-  <!-- Include the notification system script -->
-  <script src="notification-system.js"></script>
+<!-- Attendance Tab -->
+<div id="attendanceTab" style="display:none;">
+  <div class="attendance-container">
+    <!-- Attendance Header -->
+    <div class="attendance-header">
+      <h1 class="attendance-title">
+        <i class="fas fa-calendar-check"></i>
+        Attendance Management
+      </h1>
+      <div class="attendance-stats">
+        <div class="attendance-stat-card">
+          <div class="stat-number" id="totalCount">0</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="attendance-stat-card">
+          <div class="stat-number" id="presentCount">0</div>
+          <div class="stat-label">Present</div>
+        </div>
+        <div class="attendance-stat-card">
+          <div class="stat-number" id="absentCount">0</div>
+          <div class="stat-label">Absent</div>
+        </div>
+        <div class="attendance-stat-card">
+          <div class="stat-number" id="pendingCount">0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Tabs -->
+    <div class="attendance-tabs">
+      <button class="attendance-tab-btn active" data-tab="members">
+        <i class="fas fa-users"></i>
+        Members
+      </button>
+      <button class="attendance-tab-btn" data-tab="trainers">
+        <i class="fas fa-user-tie"></i>
+        Trainers
+      </button>
+    </div>
+
+    <!-- Date Selector -->
+    <div class="date-selector">
+      <label for="attendanceDate">
+        <i class="fas fa-calendar"></i>
+        Select Date:
+      </label>
+      <input type="date" id="attendanceDate" />
+      <button class="date-nav-btn" id="prevDay">
+        <i class="fas fa-chevron-left"></i>
+        Previous
+      </button>
+      <button class="date-nav-btn" id="nextDay">
+        Next
+        <i class="fas fa-chevron-right"></i>
+      </button>
+      <button class="today-btn" id="todayBtn">
+        <i class="fas fa-calendar-day"></i>
+        Today
+      </button>
+    </div>
+
+    <!-- Attendance Controls -->
+    <div class="attendance-controls">
+      <div class="search-box">
+        <input type="text" id="attendanceSearch" placeholder="Search by name or ID...">
+        <i class="fas fa-search"></i>
+      </div>
+      <select class="filter-select" id="attendanceFilter">
+        <option value="all">All</option>
+        <option value="present">Present</option>
+        <option value="absent">Absent</option>
+        <option value="pending">Pending</option>
+      </select>
+      <div class="bulk-actions">
+        <button class="bulk-btn bulk-present" id="bulkPresentBtn">
+          <i class="fas fa-check-circle"></i>
+          Mark All Present
+        </button>
+        <button class="bulk-btn bulk-absent" id="bulkAbsentBtn">
+          <i class="fas fa-times-circle"></i>
+          Mark All Absent
+        </button>
+      </div>
+    </div>
+
+    <!-- Attendance Summary -->
+    <div class="attendance-summary" id="attendanceSummary">
+      <!-- Summary will be populated by JavaScript -->
+    </div>
+
+    <!-- Attendance Grid -->
+    <div class="attendance-grid" id="attendanceGrid">
+      <!-- Attendance cards will be populated by JavaScript -->
+      <div class="loading">
+        <div class="spinner"></div>
+        Loading attendance data...
+      </div>
+    </div>
+  </div>
+</div>
+
+ 
   <!-- Notification integration with enhanced form handler compatibility -->
   <script src="notification-integration.js"></script>
   <!-- Notification Configuration -->

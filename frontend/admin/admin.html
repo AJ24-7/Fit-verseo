@@ -6,9 +6,11 @@
     <title>Fit-Verse Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin-support.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script defer src="admin.js"></script>
     <script defer src="admin-notification-system.js"></script>
+    <script defer src="admin-support.js"></script>
    
 </head>
 <body>
@@ -21,7 +23,7 @@
     <div class="sidebar" id="sidebarMenu">
         <div class="sidebar-header">
             <img src="https://via.placeholder.com/40" alt="Fit-Verse Logo">
-            <h3>Fit-Verse Admin</h3>
+            <h3>Gym-Wale</h3>
         </div>
         <div class="sidebar-menu">
             <ul>
@@ -65,7 +67,7 @@
         </div>
       </div>
       <div class="admin-dropdown" onclick="toggleAdminMenu()">
-        <img src="/assets/admin-avatar.png" alt="Admin" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMzNzQxNTEiLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDEyQzE0LjIwOTEgMTIgMTYgMTAuMjA5MSAxNiA4QzE2IDUuNzkwODYgMTQuMjA5MSA0IDEyIDRDOS43OTA4NiA0IDggNS43OTA4NiA4IDhDOCAxMC4yMDkxIDkuNzkwODYgMTIgMTIgMTJaTTEyIDEyVjEyWiIgZmlsbD0iI0Y5RkFGQiIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNCA1IDIxSDE5QzE5IDE3LjEzNCAxNS44NjYgMTQgMTIgMTRaIiBmaWxsPSIjRjlGQUZCIi8+Cjwvc3ZnPgo8L3N2Zz4K'">
+        <img src="/assets/admin-avatar.png" alt="Admin" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMzNzQxNTEiLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDEyQzE0LjIwOTEgMTIgMTYgMTAuMjA5MSAxNiA4QzE2IDUuNzkwODYgMTQuMjA5MSA0IDEyIDRDOS43OTA4NiA0IDggNS43OTA4NiA4IDhDOCAxMC4yMDkxIDkuNzkwODYgMTIgMTIgMTJaTTEyIDEyVjEyWiIgZmlsbD0iI0Y5RkFGQiIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNCA1IDIxSDE5QzE5IDE3LjEzNCAxNS44NjYgMTQgMTIgMTRaIiBmaWxsPSIjRjlGQUZCIi8+Cjwvc3ZnPgo8L3N2Zz4K'">
         <span>Admin User</span>
         <div class="admin-menu" id="adminMenu" style="display: none;">
           <a href="/admin/profile">Profile</a>
@@ -374,17 +376,272 @@
                 <div class="trainer-mgmt-grid" id="trainerMgmtGrid">
                     <!-- Trainer cards will be rendered dynamically by admin.js -->
                 </div>
+            </div>
+
+            <!-- Support Content -->
+            <div id="support-content" class="tab-content">
+                <div class="page-header">
+                    <h2>Support Management</h2>
+                    <div class="support-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Open Tickets:</span>
+                            <span class="stat-value" id="openTicketsCount">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Resolved Today:</span>
+                            <span class="stat-value" id="resolvedTodayCount">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Avg Response Time:</span>
+                            <span class="stat-value" id="avgResponseTime">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="support-tabs">
+                    <div class="support-tab active" data-tab="users">
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
+                        <span class="support-count" id="userTicketsCount">(0)</span>
+                    </div>
+                    <div class="support-tab" data-tab="gym-admins">
+                        <i class="fas fa-building"></i>
+                        <span>Gym Admins</span>
+                        <span class="support-count" id="gymAdminTicketsCount">(0)</span>
+                    </div>
+                    <div class="support-tab" data-tab="trainers">
+                        <i class="fas fa-dumbbell"></i>
+                        <span>Trainers</span>
+                        <span class="support-count" id="trainerTicketsCount">(0)</span>
+                    </div>
+                </div>
+
+                <!-- Support Filter Options -->
+                <div class="support-filters">
+                    <div class="filter-group">
+                        <label for="priorityFilter">Priority:</label>
+                        <select id="priorityFilter" class="filter-select">
+                            <option value="all">All Priorities</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="statusFilter">Status:</label>
+                        <select id="statusFilter" class="filter-select">
+                            <option value="all">All Status</option>
+                            <option value="open">Open</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="categoryFilter">Category:</label>
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="all">All Categories</option>
+                            <option value="technical">Technical Issue</option>
+                            <option value="billing">Billing & Payment</option>
+                            <option value="membership">Membership</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="general">General Inquiry</option>
+                            <option value="complaint">Complaint</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <input type="text" id="searchTickets" class="search-input" placeholder="Search tickets...">
+                    </div>
+                </div>
+
+                <!-- Support Tab Contents -->
+                <div class="support-tab-contents">
+                    <!-- Users Support Tab -->
+                    <div class="support-tab-content active" id="users-support">
+                        <div class="support-tickets-container">
+                            <div class="support-tickets-list" id="userTicketsList">
+                                <!-- Dynamic content will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gym Admins Support Tab -->
+                    <div class="support-tab-content" id="gym-admins-support">
+                        <div class="support-tickets-container">
+                            <div class="support-tickets-list" id="gymAdminTicketsList">
+                                <!-- Dynamic content will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trainers Support Tab -->
+                    <div class="support-tab-content" id="trainers-support">
+                        <div class="support-tickets-container">
+                            <div class="support-tickets-list" id="trainerTicketsList">
+                                <!-- Dynamic content will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-           
-    <!-- Notification Container -->
+
+            <!-- Notification Container -->
     <div id="notification-container" style="
         position: fixed;
         top: 20px;
         right: 20px;
         z-index: 1000;
     "></div>
-</body>
 
-</html>
+    <!-- Support Ticket Modal -->
+    <div id="supportTicketModal" class="support-ticket-modal" style="display: none;">
+        <div class="support-ticket-modal-overlay"></div>
+        <div class="support-ticket-modal-content">
+            <div class="support-ticket-modal-header">
+                <h3>Support Ticket Details</h3>
+                <button class="support-ticket-modal-close" id="closeSupportTicketModal">&times;</button>
+            </div>
+            <div class="support-ticket-modal-body">
+                <div class="ticket-info-section">
+                    <div class="ticket-meta">
+                        <div class="ticket-id">Ticket #<span id="ticketId"></span></div>
+                        <div class="ticket-status">
+                            <span class="status-badge" id="ticketStatus"></span>
+                        </div>
+                        <div class="ticket-priority">
+                            <span class="priority-badge" id="ticketPriority"></span>
+                        </div>
+                    </div>
+                    <div class="ticket-details">
+                        <div class="detail-row">
+                            <span class="detail-label">From:</span>
+                            <span class="detail-value" id="ticketFrom"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Category:</span>
+                            <span class="detail-value" id="ticketCategory"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Subject:</span>
+                            <span class="detail-value" id="ticketSubject"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Created:</span>
+                            <span class="detail-value" id="ticketCreated"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ticket-conversation">
+                    <div class="conversation-header">
+                        <h4>Conversation</h4>
+                    </div>
+                    <div class="conversation-messages" id="conversationMessages">
+                        <!-- Messages will be dynamically loaded -->
+                    </div>
+                </div>
+
+                <div class="ticket-reply-section">
+                    <div class="reply-header">
+                        <h4>Reply to Ticket</h4>
+                        <div class="reply-actions">
+                            <select id="ticketStatusUpdate" class="status-select">
+                                <option value="open">Open</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                            <select id="ticketPriorityUpdate" class="priority-select">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="reply-form">
+                        <textarea id="replyMessage" placeholder="Type your reply here..." rows="4"></textarea>
+                        <div class="reply-options">
+                            <div class="reply-channels">
+                                <label class="channel-option">
+                                    <input type="checkbox" id="replyViaEmail" checked>
+                                    <i class="fas fa-envelope"></i>
+                                    Email
+                                </label>
+                                <label class="channel-option">
+                                    <input type="checkbox" id="replyViaNotification" checked>
+                                    <i class="fas fa-bell"></i>
+                                    In-App Notification
+                                </label>
+                                <label class="channel-option">
+                                    <input type="checkbox" id="replyViaWhatsApp">
+                                    <i class="fab fa-whatsapp"></i>
+                                    WhatsApp
+                                </label>
+                            </div>
+                            <div class="reply-buttons">
+                                <button class="btn btn-secondary" id="saveReplyDraft">Save Draft</button>
+                                <button class="btn btn-primary" id="sendReply">Send Reply</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Reply Modal -->
+    <div id="quickReplyModal" class="quick-reply-modal" style="display: none;">
+        <div class="quick-reply-modal-overlay"></div>
+        <div class="quick-reply-modal-content">
+            <div class="quick-reply-modal-header">
+                <h3>Quick Reply</h3>
+                <button class="quick-reply-modal-close" id="closeQuickReplyModal">&times;</button>
+            </div>
+            <div class="quick-reply-modal-body">
+                <div class="quick-reply-templates">
+                    <h4>Select Template:</h4>
+                    <div class="template-buttons">
+                        <button class="template-btn" data-template="acknowledge">Acknowledge Receipt</button>
+                        <button class="template-btn" data-template="investigating">Investigating Issue</button>
+                        <button class="template-btn" data-template="resolved">Issue Resolved</button>
+                        <button class="template-btn" data-template="more-info">Need More Info</button>
+                        <button class="template-btn" data-template="escalate">Escalate to Team</button>
+                    </div>
+                </div>
+                <div class="quick-reply-channels">
+                    <h4>Send Reply Via:</h4>
+                    <div class="channel-options">
+                        <label class="channel-option" data-channel="email">
+                            <input type="checkbox" id="quickReplyViaEmail" checked>
+                            <span class="channel-icon">
+                                <i class="fas fa-envelope"></i>
+                            </span>
+                            <span class="channel-label">Email</span>
+                        </label>
+                        <label class="channel-option" data-channel="notification">
+                            <input type="checkbox" id="quickReplyViaNotification" checked>
+                            <span class="channel-icon">
+                                <i class="fas fa-bell"></i>
+                            </span>
+                            <span class="channel-label">Notification</span>
+                        </label>
+                        <label class="channel-option" data-channel="whatsapp">
+                            <input type="checkbox" id="quickReplyViaWhatsApp">
+                            <span class="channel-icon">
+                                <i class="fab fa-whatsapp"></i>
+                            </span>
+                            <span class="channel-label">WhatsApp</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="quick-reply-form">
+                    <textarea id="quickReplyMessage" placeholder="Type your quick reply..." rows="3"></textarea>
+                    <div class="quick-reply-actions">
+                        <button class="btn btn-primary" id="sendQuickReply">Send Quick Reply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

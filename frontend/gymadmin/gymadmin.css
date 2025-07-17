@@ -1,3 +1,4 @@
+
 /* === Animated User Profile Box (Top Nav) === */
 .user-profile-animated {
   display: flex;
@@ -780,7 +781,7 @@ body {
     flex-direction: column;
     align-items: flex-start;
     transition: box-shadow 0.2s, transform 0.2s, border 0.2s;
-    border: 2px solid transparent;
+    border: 2px solid var(--primary);
     cursor: pointer;
     position: relative;
     overflow: hidden;
@@ -3861,8 +3862,9 @@ body[data-theme="dark"] #notificationBell .notification-badge {
   color: var(--text-tertiary, #888);
 }
 
+
 .expiring-members {
-  margin: 4vh auto; /* Adds vertical space and centers horizontally */
+  margin: 5vh auto 5vh auto; /* More vertical margin for breathing room */
   padding: 1rem;
   background: var(--warning-light, #fff8e1);
   border-radius: 6px;
@@ -3870,6 +3872,9 @@ body[data-theme="dark"] #notificationBell .notification-badge {
   max-width: 90%;
   width: 100%;
   box-sizing: border-box;
+  max-height: 70vh;
+  overflow-y: auto;
+  min-height: 60px;
 }
 
 .expiring-members h4 {
@@ -3893,6 +3898,19 @@ body[data-theme="dark"] #notificationBell .notification-badge {
 @media (min-width: 768px) {
   .expiring-members {
     max-width: 600px;
+    margin-top: 6vh;
+    margin-bottom: 6vh;
+    max-height: 70vh;
+  }
+}
+
+@media (max-width: 600px) {
+  .expiring-members {
+    max-width: 98vw;
+    margin: 2vh 1vw 2vh 1vw;
+    padding: 0.5rem;
+    font-size: 0.97rem;
+    max-height: 60vh;
   }
 }
 
@@ -3934,31 +3952,81 @@ body[data-theme="dark"] .filter-btn {
 /* Responsive Design */
 @media (max-width: 768px) {
   .notification-dropdown {
-    width: calc(100vw - 40px);
-    right: -20px;
+    width: 98vw;
+    left: 1vw !important;
+    right: 1vw !important;
+    min-width: 0;
+    max-width: 98vw;
+    border-radius: 10px;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
   }
-  
   .notification-toast {
     width: calc(100vw - 40px);
     margin-right: 20px;
   }
-  
   .notification-modal-content {
     width: 95vw;
     margin: 20px;
   }
-  
   .notification-filters {
     flex-wrap: wrap;
     gap: 6px;
   }
-  
   .filter-btn {
     font-size: 0.8rem;
     padding: 5px 10px;
   }
 }
-
+/* Extra mobile-friendly notification dropdown styles */
+@media (max-width: 480px) {
+  .notification-dropdown {
+    width: 98vw;
+    left: 1vw !important;
+    right: 1vw !important;
+    min-width: unset;
+    max-width: 98vw;
+    border-radius: 10px;
+    padding: 0 2vw 0 2vw;
+    box-sizing: border-box;
+    font-size: 0.97rem;
+    z-index: 1000;
+  }
+  .notification-header,
+  .notification-list,
+  .notification-footer {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  .notification-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding-top: 14px !important;
+    padding-bottom: 10px !important;
+  }
+  .notification-header h4 {
+    font-size: 1rem;
+  }
+  .notification-list {
+    max-height: 220px;
+    font-size: 0.97rem;
+  }
+  .notification-item {
+    padding: 10px 0;
+    font-size: 0.97rem;
+  }
+  .notification-footer {
+    padding-bottom: 12px !important;
+    padding-top: 8px !important;
+  }
+  .view-all-notifications {
+    width: 100%;
+    font-size: 1rem;
+    padding: 8px 0;
+  }
+}
 /* Notification animations */
 @keyframes slideInRight {
   from {

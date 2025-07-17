@@ -254,6 +254,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
           } else if (targetTabId === 'trial-booking-content') {
             initTrialRequestsTab();
+          } else if (targetTabId === 'support-content') {
+            // Initialize support system when support tab is clicked
+            if (window.supportSystem) {
+              window.supportSystem.loadSupportStats();
+              window.supportSystem.loadSupportTickets();
+            }
           }
         }
       });

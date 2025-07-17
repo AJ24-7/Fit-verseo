@@ -410,22 +410,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            // Get recipients based on filter
-            const recipients = await getRecipients(sendTo);
-            console.log('Recipients found:', recipients.length);
+            let recipients = [];
             
-            if (recipients.length === 0) {
-                if (window.showDialog) {
-                    window.showDialog({
-                        title: 'No Recipients',
-                        message: 'No recipients found for the selected filter.',
-                        confirmText: 'OK',
-                        iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#ff9800;font-size:2rem;"></i>'
-                    });
-                } else {
-                    alert('No recipients found for the selected filter.');
+            // If mainAdmin channel is selected, skip recipient validation
+            if (channels.mainAdmin) {
+                recipients = []; // Empty array for main admin - handled by backend
+            } else {
+                // Get recipients based on filter for other channels
+                recipients = await getRecipients(sendTo);
+                console.log('Recipients found:', recipients.length);
+                
+                if (recipients.length === 0) {
+                    if (window.showDialog) {
+                        window.showDialog({
+                            title: 'No Recipients',
+                            message: 'No recipients found for the selected filter.',
+                            confirmText: 'OK',
+                            iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#ff9800;font-size:2rem;"></i>'
+                        });
+                    } else {
+                        alert('No recipients found for the selected filter.');
+                    }
+                    return;
                 }
-                return;
             }
 
             // Send through selected channels
@@ -442,7 +449,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show success message
             const usedChannels = Object.entries(channels).filter(([_, enabled]) => enabled).map(([channel, _]) => channel).join(', ');
-            const successMessage = `Successfully sent notification to ${recipients.length} recipient(s).\n\nChannels used: ${usedChannels}`;
+            const recipientCount = channels.mainAdmin ? 1 : recipients.length;
+            const successMessage = `Successfully sent notification to ${recipientCount} recipient(s).\n\nChannels used: ${usedChannels}`;
 
             if (window.showDialog) {
                 window.showDialog({
@@ -503,7 +511,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'trainers':
                     return await fetchTrainers();
                 case 'admin':
-                    return await fetchAdmin();
+                    // Admin notifications are handled separately through mainAdmin channel
+                    return [];
                 case 'new-members':
                     return await fetchNewMembers();
                 case 'custom':
@@ -664,6 +673,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (channels.mainAdmin) {
             try {
                 // Use a dedicated endpoint/type for main admin notification system
+                const gymProfile = window.currentGymProfile || {};
+                
+                // Determine if this is a grievance/error notification
+                const isGrievance = isGrievanceNotification(title, message);
+                
                 const response = await fetch('http://localhost:5000/api/admin/notifications/send', {
                     method: 'POST',
                     headers: {
@@ -674,7 +688,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         title,
                         message,
                         type: 'admin-system',
-                        // Optionally, you can add more fields if needed
+                        priority: isGrievance ? 'high' : 'medium',
+                        isGrievance: isGrievance,
+                        gym: {
+                            gymId: gymProfile._id || gymProfile.gymId || '',
+                            gymName: gymProfile.gymName || '',
+                            address: gymProfile.address || '',
+                            email: gymProfile.email || '',
+                            phone: gymProfile.phone || '',
+                            // Add more fields as needed
+                        }
                     })
                 });
                 results.mainAdmin = response.ok;
@@ -684,6 +707,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         return results;
+    }
+
+    // Check if notification is a grievance/error notification
+    function isGrievanceNotification(title, message) {
+        const errorKeywords = [
+            'error', 'issue', 'problem', 'failed', 'failure', 'grievance', 
+            'complaint', 'bug', 'malfunction', 'broken', 'not working',
+            'system error', 'payment failure', 'facility issue', 'security alert'
+        ];
+        
+        const titleLower = (title || '').toLowerCase();
+        const messageLower = (message || '').toLowerCase();
+        
+        return errorKeywords.some(keyword => 
+            titleLower.includes(keyword) || messageLower.includes(keyword)
+        );
     }
 
     // Update send status

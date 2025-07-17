@@ -540,11 +540,11 @@ exports.registerGym = async (req, res) => {
     try {
       await sendEmail(
         newGym.email,
-        'Your Gym Registration is Received - Fit-verse',
-        `<h2>Thank you for registering your gym on Fit-verse!</h2>
+        'Your Gym Registration is Received - Gym-Wale',
+        `<h2>Thank you for registering your gym on Gym-Wale!</h2>
         <p>Dear ${newGym.contactPerson || newGym.gymName},</p>
         <p>Your registration has been received and is under review. Our team will contact you soon.</p>
-        <p>Regards,<br/>Fit-verse Team</p>`
+        <p>Regards,<br/>Gym-Wale Team</p>`
       );
     } catch (mailErr) {
       console.error('Error sending registration email:', mailErr);

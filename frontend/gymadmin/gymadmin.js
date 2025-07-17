@@ -3381,9 +3381,11 @@ const membersMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySele
 const trainersMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-user-tie'));
 const dashboardMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-tachometer-alt'));
 const settingsMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-cog'));
+const attendanceMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-calendar-check'));
 const memberDisplayTab = document.getElementById('memberDisplayTab');
 const trainerTab = document.getElementById('trainerTab');
 const settingsTab = document.getElementById('settingsTab');
+const attendanceTab = document.getElementById('attendanceTab');
 const dashboardContent = document.querySelector('.content');
 
 function hideAllMainTabs() {
@@ -3391,6 +3393,23 @@ function hideAllMainTabs() {
   if (memberDisplayTab) memberDisplayTab.style.display = 'none';
   if (trainerTab) trainerTab.style.display = 'none';
   if (settingsTab) settingsTab.style.display = 'none';
+  if (attendanceTab) attendanceTab.style.display = 'none';
+}
+
+if (attendanceMenuLink && attendanceTab) {
+  attendanceMenuLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    hideAllMainTabs();
+    attendanceTab.style.display = 'block';
+    updateMainContentMargins();
+    // Initialize attendance manager if it exists
+    if (typeof window.attendanceManager !== 'undefined') {
+      window.attendanceManager.loadData();
+      window.attendanceManager.loadAttendanceForDate();
+    }
+    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
+    attendanceMenuLink.classList.add('active');
+  });
 }
 
 if (trainersMenuLink && trainerTab) {
@@ -3622,12 +3641,71 @@ async function updateTrainersStatsCard() {
     trainersStatChange.innerHTML = '<i class="fas fa-minus"></i> N/A';
   }
 }
+// --- Dynamic Attendance Stats Card ---
+async function updateAttendanceStatsCard() {
+  const attendanceStatValue = document.querySelector('.stat-card.attendance .stat-value');
+  const attendanceStatFooter = document.querySelector('.stat-card.attendance .stat-footer');
+  if (!attendanceStatValue) return;
+  try {
+    const token = localStorage.getItem('gymAdminToken');
+    const today = new Date().toISOString().split('T')[0];
+    // Fetch today's attendance data
+    const res = await fetch(`/api/attendance/${today}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch attendance');
+    const attendanceData = await res.json();
 
+    // Fetch members and trainers for correct denominator
+    const membersRes = await fetch('http://localhost:5000/api/members', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const trainersRes = await fetch('http://localhost:5000/api/trainers?status=approved', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    let members = [];
+    let trainers = [];
+    if (membersRes.ok) members = await membersRes.json();
+    if (trainersRes.ok) trainers = await trainersRes.json();
+    // Filter active members (not expired)
+    const todayDate = new Date(today);
+    members = Array.isArray(members) ? members.filter(m => {
+      if (!m.membershipValidUntil) return false;
+      const valid = new Date(m.membershipValidUntil);
+      return valid >= todayDate;
+    }) : [];
+    trainers = Array.isArray(trainers) ? trainers : [];
+
+    // Attendance calculation
+    let present = 0;
+    let total = members.length + trainers.length;
+    // Count present for both members and trainers
+    if (attendanceData && typeof attendanceData === 'object') {
+      for (const id in attendanceData) {
+        if (attendanceData[id] && typeof attendanceData[id] === 'object' && 'status' in attendanceData[id]) {
+          if (attendanceData[id].status === 'present') present++;
+        }
+      }
+    } else if (Array.isArray(attendanceData)) {
+      present = attendanceData.filter(a => a.status === 'present').length;
+    }
+    const attendanceRate = total > 0 ? Math.round((present / total) * 100) : 0;
+    attendanceStatValue.textContent = attendanceRate + '%';
+    // Add members and trainers count in footer
+    if (attendanceStatFooter) {
+      attendanceStatFooter.innerHTML = `<span style="color:#1976d2;font-weight:600;">${members.length} Members</span> &nbsp;|&nbsp; <span style="color:#1976d2;font-weight:600;">${trainers.length} Trainers</span>`;
+    }
+  } catch (err) {
+    attendanceStatValue.textContent = '--';
+    if (attendanceStatFooter) attendanceStatFooter.innerHTML = '';
+  }
+}
 // Call on load
 document.addEventListener('DOMContentLoaded', function() {
   updateMembersStatsCard();
   updatePaymentsStatsCard();
   updateTrainersStatsCard();
+  updateAttendanceStatsCard();
 });
 
 function updateMainContentMargins() {
@@ -3650,6 +3728,7 @@ function updateMainContentMargins() {
   setTabMargin(memberTab);
   setTabMargin(trainerTab);
   setTabMargin(settingsTab);
+  setTabMargin(attendanceTab);
 }
 
 // Dynamic sidebar menu highlight
@@ -4305,6 +4384,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const tabMap = {
     'Dashboard': 'dashboardTab',
     'Members': 'memberDisplayTab',
+    'Attendance': 'attendanceTab',
     'Settings': 'settingsTab',
     // Add more mappings as you implement more tabs
   };
@@ -4343,6 +4423,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (memberTab) memberTab.style.display = 'block';
         updateMainContentMargins();
         if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
+      } else if (tabName === 'Attendance') {
+        hideAllMainTabs();
+        const attendanceTab = document.getElementById('attendanceTab');
+        if (attendanceTab) attendanceTab.style.display = 'block';
+        updateMainContentMargins();
+        // Initialize attendance manager if it exists
+        if (typeof window.attendanceManager !== 'undefined') {
+          window.attendanceManager.loadData();
+          window.attendanceManager.loadAttendanceForDate();
+        }
       } else if (tabName === 'Settings') {
         hideAllMainTabs();
         const settingsTab = document.getElementById('settingsTab');

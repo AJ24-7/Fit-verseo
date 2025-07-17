@@ -17,7 +17,18 @@ router.delete('/bulk', gymadminAuth, removeMembersByIds);
 
 // Remove all expired members (membership expired > 7 days ago)
 router.delete('/expired', gymadminAuth, removeExpiredMembers);
-// Add a new member (protected route, with image upload)
+
+// Remove expired members (automatic cleanup)
+router.post('/remove-expired', gymadminAuth, async (req, res) => {
+  try {
+    const { expiredMemberIds } = req.body;
+    const result = await Member.deleteMany({ _id: { $in: expiredMemberIds } });
+    res.json({ message: `${result.deletedCount} expired members removed successfully` });
+  } catch (error) {
+    console.error('Error removing expired members:', error);
+    res.status(500).json({ error: 'Failed to remove expired members' });
+  }
+});
 
 // Add a new member (protected route, with image upload)
 router.post('/', gymadminAuth, memberImageUpload.single('profileImage'), addMember);
