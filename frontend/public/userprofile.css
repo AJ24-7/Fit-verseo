@@ -45,11 +45,19 @@ header {
 }
 
 .container {
-    width: 90%;
+    width: 95%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 15px;
     overflow-x: hidden; /* Added to prevent horizontal scrolling */
+    display: block; /* Ensure block layout */
+}
+
+/* Ensure sections stack vertically */
+.container > * {
+    width: 100%;
+    display: block;
+    clear: both;
 }
 
 .navbar {
@@ -305,6 +313,2168 @@ header {
 
 /* Main Content */
 .container {
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* Enhanced Profile Section */
+.profile-section {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  position: relative;
+  width: 100%;
+  display: block;
+  clear: both;
+}
+
+.profile-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  padding: 2rem;
+  color: white;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 2rem;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" patternUnits="userSpaceOnUse" width="100" height="100"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="50" cy="10" r="0.5" fill="%23ffffff" opacity="0.08"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+.profile-avatar-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Profile Completion Circle */
+.profile-completion-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-completion-circle {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 136px;
+  height: 136px;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.profile-completion-circle svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.profile-completion-circle .completion-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 4;
+}
+
+.profile-completion-circle .completion-progress {
+  fill: none;
+  stroke: #4CAF50;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dasharray 1s ease-in-out;
+}
+
+.profile-completion-circle.incomplete .completion-progress {
+  stroke: #FF9800;
+}
+
+.profile-completion-circle.very-incomplete .completion-progress {
+  stroke: #f44336;
+}
+
+.profile-completion-percentage {
+  position: absolute;
+  bottom: -15px;
+  right: -5px;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.profile-completion-percentage.incomplete {
+  background: linear-gradient(135deg, #FF9800, #f57c00);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.profile-completion-percentage.very-incomplete {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+#profileImage {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+#profileImage:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.online-indicator {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  background: #4CAF50;
+  border: 3px solid white;
+  border-radius: 50%;
+  z-index: 3;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+.loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(42, 157, 143, 0.3);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.profile-info {
+  flex: 1;
+  z-index: 2;
+  position: relative;
+}
+
+.profile-name-section {
+  margin-bottom: 1.5rem;
+}
+
+.profile-name {
+  font-size: 2.2rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.profile-title {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.profile-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge.premium {
+  background: rgba(233, 196, 106, 0.2);
+  color: #e9c46a;
+  border: 1px solid rgba(233, 196, 106, 0.3);
+}
+
+.badge.verified {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.profile-stats-quick {
+  display: flex;
+  gap: 2rem;
+}
+
+.quick-stat {
+  text-align: center;
+}
+
+.quick-stat .stat-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.quick-stat .stat-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  z-index: 2;
+  position: relative;
+}
+
+.profile-actions .btn-primary,
+.profile-actions .btn-secondary {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.profile-actions .btn-primary {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.profile-actions .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.profile-actions .btn-secondary {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.profile-actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Profile Details Grid */
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.detail-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+}
+
+.detail-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.detail-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.detail-header i {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.detail-header h3 {
+  margin: 0;
+  color: var(--dark-color);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem;
+  background: white;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.detail-item:hover {
+  background: #f1f3f4;
+}
+
+.detail-item i {
+  color: var(--primary-color);
+  width: 20px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.detail-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: var(--dark-color);
+  font-weight: 600;
+}
+
+/* Incomplete Profile Styles */
+.detail-card.incomplete {
+  border: 2px dashed #FF9800;
+  background: linear-gradient(145deg, #fff8e1 0%, #ffe0b2 100%);
+  position: relative;
+}
+
+.detail-card.incomplete::before {
+  content: '⚠️ Incomplete';
+  position: absolute;
+  top: -10px;
+  right: 15px;
+  background: #FF9800;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  z-index: 2;
+}
+
+.detail-item.incomplete .detail-value {
+  color: #FF9800;
+  font-style: italic;
+}
+
+.incomplete-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.btn-fill {
+  background: linear-gradient(135deg, #FF9800, #f57c00);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.btn-fill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.profile-completion-banner {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border: 2px solid #FF9800;
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  animation: slideInFromTop 0.8s ease-out;
+}
+
+.profile-completion-banner h4 {
+  color: #FF9800;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.profile-completion-banner p {
+  color: #f57c00;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+}
+
+.completion-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* No Membership Styles */
+.no-membership-card {
+  background: linear-gradient(145deg, #ffebee 0%, #ffcdd2 100%);
+  border: 2px dashed #f44336;
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: slideInFromBottom 0.8s ease-out;
+}
+
+.no-membership-card .icon {
+  font-size: 3rem;
+  color: #f44336;
+  margin-bottom: 1rem;
+}
+
+.no-membership-card h3 {
+  color: #d32f2f;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.4rem;
+}
+
+.no-membership-card p {
+  color: #c62828;
+  margin: 0 0 1.5rem 0;
+  font-size: 1rem;
+}
+
+.btn-join-now {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+}
+
+.btn-join-now:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading Effects */
+.loading-text {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  color: transparent;
+  width: 100px;
+  height: 1em;
+  display: inline-block;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+  height: 40px;
+  margin-bottom: 0.5rem;
+}
+
+/* Activity Preferences Grid */
+.activity-preferences-grid {
+  width: 100%;
+}
+
+.preference-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.preference-tags.loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.8rem;
+}
+
+.preference-tags .tag {
+  padding: 0.8rem 1.2rem;
+  background: white;
+  border: 2px solid #e9ecef;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: var(--dark-color);
+}
+
+.preference-tags .tag:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.preference-tags .tag.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.preference-tags .tag i {
+  font-size: 1.1rem;
+}
+
+/* Responsive Design for Enhanced Profile */
+@media (max-width: 1200px) {
+  .profile-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 1.5rem;
+  }
+  
+  .profile-stats-quick {
+    justify-content: center;
+  }
+  
+  .profile-actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    width: 100% !important;
+    padding: 0 10px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Enhanced Mobile Profile Section */
+  .profile-section {
+    margin: 0 0 1.5rem 0 !important;
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    animation: slideInFromLeft 0.8s ease-out;
+  }
+
+  @keyframes slideInFromLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .profile-header {
+    padding: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+    animation: sweep 3s infinite;
+  }
+
+  @keyframes sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  .profile-name {
+    font-size: 1.8rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .profile-stats-quick {
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .quick-stat {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 0.8rem;
+    min-width: 80px;
+    transition: all 0.3s ease;
+  }
+
+  .quick-stat:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+  }
+  
+  .quick-stat .stat-number {
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .profile-details-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .detail-card {
+    padding: 1rem;
+    margin: 0;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  }
+
+  .detail-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+  
+  .profile-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 1rem;
+  }
+  
+  .profile-actions .btn-primary,
+  .profile-actions .btn-secondary {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+    width: 100%;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-actions .btn-primary:hover,
+  .profile-actions .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.3);
+  }
+
+  /* Enhanced Mobile Membership Card */
+  .membership-card {
+    margin: 0 0 1.5rem 0 !important;
+    border-radius: 16px;
+    animation: slideInFromRight 0.8s ease-out;
+  }
+
+  @keyframes slideInFromRight {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .membership-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    margin: -20px -20px 1rem -20px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .membership-header h3 {
+    color: white;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .progress-ring {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    padding: 10px;
+    backdrop-filter: blur(10px);
+  }
+
+  .membership-details {
+    padding: 1rem;
+  }
+
+  .detail-item {
+    padding: 0.8rem;
+    margin-bottom: 0.8rem;
+    background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .detail-item:hover {
+    background: linear-gradient(145deg, #e2e8f0 0%, #cbd5e0 100%);
+    transform: translateX(5px);
+  }
+
+  .membership-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+
+  .btn-renew,
+  .btn-attendance {
+    width: 100%;
+    justify-content: center;
+    border-radius: 12px;
+    padding: 1rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-renew:hover,
+  .btn-attendance:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Enhanced Cards Animation */
+  .diet-plan,
+  .workout-scheduler,
+  .recent-activity {
+    margin: 0 0 1.5rem 0 !important;
+    border-radius: 16px;
+    animation: fadeInScale 0.6s ease-out;
+    animation-fill-mode: both;
+  }
+
+  .diet-plan {
+    animation-delay: 0.1s;
+  }
+
+  .workout-scheduler {
+    animation-delay: 0.2s;
+  }
+
+  .recent-activity {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* Extra responsive rules for small mobile devices */
+@media (max-width: 480px) {
+  .container {
+    width: 100% !important;
+    padding: 0 8px !important;
+  }
+
+  /* Ultra-compact mobile design */
+  .profile-section {
+    margin: 0 0 1rem 0 !important;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .profile-header {
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+  }
+
+  .profile-name {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-stats-quick {
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: space-around;
+  }
+
+  .quick-stat {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 0.6rem 0.4rem;
+    min-width: 70px;
+    flex: 1;
+  }
+
+  .quick-stat .stat-number {
+    font-size: 1rem;
+    display: block;
+  }
+
+  .quick-stat .stat-label {
+    font-size: 0.7rem;
+    display: block;
+    margin-top: 0.2rem;
+  }
+
+  .detail-card {
+    padding: 0.8rem;
+    margin-bottom: 0.8rem;
+    border-radius: 12px;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+  }
+
+  .detail-item i {
+    align-self: flex-start;
+    margin-bottom: 0.2rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .detail-info {
+    width: 100%;
+  }
+
+  .detail-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .detail-value {
+    font-size: 0.9rem;
+    color: #1e293b;
+    font-weight: 600;
+    margin-top: 0.1rem;
+  }
+
+  /* Enhanced Mobile Membership Card */
+  .membership-card {
+    margin: 0 0 1rem 0 !important;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .membership-header {
+    padding: 1rem;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    margin: -20px -20px 0.8rem -20px;
+  }
+
+  .membership-header h3 {
+    font-size: 1.1rem;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .progress-ring {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    padding: 8px;
+  }
+
+  .progress-ring svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  #days-left-display {
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .membership-details .detail-item {
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+    border-radius: 8px;
+    background: #f8fafc;
+    border-left: 3px solid var(--primary-color);
+  }
+
+  .membership-details .detail-item i {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem;
+    background: rgba(79, 70, 229, 0.1);
+  }
+
+  .membership-details .label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .membership-details .value {
+    font-size: 0.85rem;
+    color: #1e293b;
+    font-weight: 600;
+    margin-top: 0.1rem;
+  }
+
+  .membership-actions {
+    padding: 0.8rem;
+    gap: 0.6rem;
+  }
+
+  .btn-renew,
+  .btn-attendance {
+    padding: 0.8rem;
+    font-size: 0.85rem;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  /* Floating Action Effect */
+  .btn-renew {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-attendance {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+
+  /* Enhanced Card Animations for Mobile */
+  .diet-plan,
+  .workout-scheduler,
+  .recent-activity {
+    margin: 0 0 1rem 0 !important;
+    padding: 0.8rem !important;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Touch-friendly interactions */
+  .detail-card,
+  .detail-item,
+  .membership-card,
+  .btn-renew,
+  .btn-attendance {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    touch-action: manipulation;
+  }
+}
+/* Desktop Enhanced Styles */
+@media (min-width: 769px) {
+  .container {
+    padding: 0 20px !important;
+  }
+
+  /* Enhanced Desktop Profile Section */
+  .profile-section {
+    margin-bottom: 3rem !important;
+    border-radius: 24px;
+    box-shadow: 
+      0 25px 80px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .profile-section:hover {
+    transform: translateY(-8px);
+    box-shadow: 
+      0 35px 100px rgba(0, 0, 0, 0.12),
+      0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+
+  .profile-header {
+    padding: 3rem;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-header::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    pointer-events: none;
+  }
+
+  .profile-avatar-container {
+    position: relative;
+  }
+
+  .profile-avatar-container::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+    border-radius: 50%;
+    animation: rotate 10s linear infinite;
+  }
+
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .profile-stats-quick {
+    gap: 2rem;
+  }
+
+  .quick-stat {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .quick-stat:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .profile-details-grid {
+    padding: 2rem;
+    gap: 1.5rem;
+  }
+
+  .detail-card {
+    padding: 2rem;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .detail-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+    border-color: rgba(67, 97, 238, 0.1);
+  }
+
+  .detail-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f1f5f9;
+    position: relative;
+  }
+
+  .detail-header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    border-radius: 1px;
+  }
+
+  /* Enhanced Desktop Membership Card */
+  .membership-card {
+    margin-bottom: 3rem !important;
+    border-radius: 24px;
+    padding: 2rem !important;
+    background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .membership-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 
+      0 30px 80px rgba(0, 0, 0, 0.12),
+      0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+
+  .membership-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    margin: -2rem -2rem 2rem -2rem;
+    border-radius: 24px 24px 0 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .membership-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+
+  .progress-ring {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    padding: 15px;
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .membership-details .detail-item {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+  }
+
+  .membership-details .detail-item:hover {
+    background: linear-gradient(145deg, #e2e8f0 0%, #cbd5e0 100%);
+    border-left-color: var(--primary-color);
+    transform: translateX(8px);
+  }
+
+  .membership-actions {
+    gap: 1rem;
+    padding: 1.5rem 0 0 0;
+  }
+
+  .btn-renew,
+  .btn-attendance {
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-renew::before,
+  .btn-attendance::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .btn-renew:hover::before,
+  .btn-attendance:hover::before {
+    left: 100%;
+  }
+
+  .btn-renew:hover,
+  .btn-attendance:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Enhanced Other Cards */
+  .diet-plan,
+  .workout-scheduler,
+  .recent-activity {
+    margin-bottom: 3rem !important;
+    padding: 2rem !important;
+    border-radius: 24px;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .diet-plan:hover,
+  .workout-scheduler:hover,
+  .recent-activity:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    border-color: rgba(67, 97, 238, 0.1);
+  }
+}
+
+/* Ultra-wide screen enhancements */
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1400px !important;
+    padding: 0 30px !important;
+  }
+
+  .profile-header {
+    padding: 4rem;
+  }
+
+  .profile-details-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    padding: 3rem;
+  }
+
+  .detail-card {
+    padding: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #profileImage {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .profile-name {
+    font-size: 1.5rem;
+  }
+  
+  .profile-stats-quick {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .detail-info {
+    width: 100%;
+  }
+}
+
+/* Old profile styles - keeping for backward compatibility */
+.profile {
+  background-color: white;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  height: fit-content;
+}
+
+.profile h2 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.profile p {
+  margin-bottom: 0.8rem;
+  color: #555;
+}
+
+.status {
+  padding: 0.5rem;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.active {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+#profileImage {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid var(--secondary-color);
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s;
+}
+
+#profileImage:hover {
+  transform: scale(1.05);
+}
+
+.profile h2 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.profile p {
+  margin-bottom: 0.8rem;
+  color: #555;
+}
+
+.status {
+  padding: 0.5rem;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.active {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+h3, h4, h5 {
+  margin: 0 0 15px;
+  color: var(--dark);
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+/* Card Styles */
+.membership-card, 
+.stats-container, 
+.diet-plan, 
+.workout-scheduler, 
+.recent-activity {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Membership Card */
+.membership-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  color: var(--light);
+}
+
+.progress-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  text-align: center;
+}
+
+.progress-ring circle {
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.progress-ring span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.membership-details {
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.detail-item i {
+  width: 30px;
+  height: 30px;
+  background: rgba(67, 97, 238, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-right: 12px;
+}
+
+.detail-item .label {
+  display: block;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.detail-item .value {
+  font-weight: 600;
+}
+
+.activity-preferences {
+  margin: 25px 0;
+}
+
+.preference-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.tag {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.tag i {
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.tag.active {
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.btn-renew {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-renew:hover {
+  background: var(--secondary);
+}
+
+.btn-renew i {
+  margin-right: 8px;
+}
+
+/* Stats Container */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 5px 0;
+}
+
+.stat-change {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.stat-change i {
+  margin-right: 3px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--light-gray);
+  border-radius: 4px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: var(--success);
+  border-radius: 4px;
+}
+
+.streak-days {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.day {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--light-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.day.active {
+  background: var(--success);
+  color: white;
+}
+
+.view-options {
+  display: flex;
+  gap: 8px;
+}
+
+.view-options button {
+  padding: 6px 12px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.view-options button.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Diet Plan */
+.meals-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.meal-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.meal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.meal-header i {
+  margin-right: 10px;
+  color: var(--accent);
+}
+
+.meal-header h4 {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.calories {
+  font-size: 12px;
+  background: rgba(72, 149, 239, 0.1);
+  padding: 3px 8px;
+  border-radius: 20px;
+  color: var(--accent);
+}
+
+.meal-items {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.meal-items li {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.macros-summary {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.macro {
+  flex: 1;
+  max-width: 100px;
+}
+
+.macro-progress {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 10px;
+}
+
+.macro-progress svg {
+  width: 100%;
+  height: 100%;
+}
+
+.macro-progress span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 600;
+}
+
+.macro h5 {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.macro p {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.btn-generate {
+  padding: 8px 15px;
+  background: var(--light-gray);
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-generate i {
+  margin-left: 5px;
+}
+
+/* Workout Scheduler */
+.day-selector {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+
+.day-pill {
+  flex: 1;
+  text-align: center;
+  padding: 8px 5px;
+  background: var(--light-gray);
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.day-pill.active {
+  background: var(--primary);
+  color: white;
+}
+
+.workout-form {
+  background: #f9fafc;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-group label i {
+  margin-right: 8px;
+  color: var(--accent);
+}
+
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+.focus-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.focus-pill {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.focus-pill:hover {
+  border-color: var(--accent);
+}
+
+.btn-add {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.scheduled-workouts {
+  margin-top: 20px;
+}
+
+.workout-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.workout-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(72, 149, 239, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  margin-right: 12px;
+}
+
+.workout-details {
+  flex-grow: 1;
+}
+
+.workout-details h5 {
+  margin: 0 0 3px;
+  font-size: 15px;
+}
+
+.workout-details p {
+  font-size: 12px;
+  color: var(--gray);
+  margin: 0;
+}
+
+.workout-tag {
+  display: inline-block;
+  font-size: 11px;
+  background: rgba(72, 149, 239, 0.1);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 5px;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+}
+
+.btn-save-schedule {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+/* Recent Activity */
+.activity-timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.activity-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15px;
+  height: 100%;
+  width: 2px;
+  background: var(--light-gray);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 15px 0;
+  display: flex;
+}
+
+.timeline-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(67, 97, 238, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  position: absolute;
+  left: -30px;
+}
+
+.timeline-content {
+  flex-grow: 1;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-left: 20px;
+}
+
+.timeline-content h5 {
+  margin: 0 0 5px;
+}
+
+.timeline-content p {
+  font-size: 13px;
+  color: var(--gray);
+  margin: 0 0 8px;
+}
+
+.timeline-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.timeline-meta i {
+  margin-right: 3px;
+}
+
+.btn-view-all {
+  width: 100%;
+  padding: 10px;
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+/* Interactive Edit Schedule Button */
+#edit-schedule-btn.btn {
+  background: var(--accent);
+  color: #fff;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.08);
+  transition: background 0.2s, transform 0.2s;
+  width: 100%;
+  max-width: 260px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+#edit-schedule-btn.btn:hover {
+  background: var(--primary);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Workout Scheduler Section */
+.workout-scheduler {
+  padding: 32px 24px 28px 24px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(72, 149, 239, 0.07);
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 600px) {
+  .workout-scheduler {
+    padding: 16px 6px 18px 6px;
+    max-width: 100%;
+  }
+}
+
+/* Suggest Workout and Clear Button Styles */
+.btn-suggest, .btn-clear {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  border: none;
+  margin-right: 10px;
+  margin-bottom: 8px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.06);
+  cursor: pointer;
+}
+
+.btn-suggest {
+  background: var(--success);
+  color: #fff;
+}
+.btn-suggest:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.btn-clear {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-clear:hover {
+  background: #c0392b;
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* Schedule Actions Container */
+.schedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* Add a little gap below the day pills */
+.day-selector {
+  margin-bottom: 18px;
+}
+
+/* Workout List Styling */
+#workout-list, .workout-list {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-left: 0;
+  list-style: none;
+}
+#workout-list li, .workout-list li {
+  background: var(--light-gray);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#workout-list li .tag {
+  margin-left: 8px;
+  font-size: 0.92em;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+#workout-list li .btn-remove {
+  margin-left: 12px;
+  color: var(--danger);
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+#workout-list li .btn-remove:hover {
+  color: #c0392b;
+}
+
+/* Responsive: Make sure everything fits on mobile */
+@media (max-width: 480px) {
+  .workout-scheduler {
+    padding: 8px 2px 10px 2px;
+    border-radius: 8px;
+  }
+  #edit-schedule-btn.btn {
+    font-size: 0.98rem;
+    padding: 0.7rem 0.5rem;
+    max-width: 100%;
+  }
+  .schedule-actions {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #workout-list li, .workout-list li {
+    font-size: 0.97rem;
+    padding: 8px 7px;
+  }
+}
+
+/* Main Content */
+.container {
   max-width: 1200px;
   margin: 2rem auto;
   padding: 0 2rem;
@@ -392,6 +2562,7 @@ p {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  color: var(--light);
 }
 
 .progress-ring {
@@ -2222,787 +4393,556 @@ p {
   font-size: 14px;
 }
 
-.macros-summary {
-  display: flex;
-  justify-content: space-around;
-  text-align: center;
-  margin-top: 20px;
+/* =====================================================
+   ENHANCED RESPONSIVE DESIGN FOR ALL SECTIONS
+   ===================================================== */
+
+/* Enhanced responsive layout for all cards */
+@media (max-width: 1200px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .membership-card,
+  .stats-container,
+  .diet-plan,
+  .workout-scheduler,
+  .recent-activity {
+    margin-bottom: 1.5rem;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .section-header h3 {
+    margin-bottom: 0;
+  }
 }
 
-.macro {
-  flex: 1;
-  max-width: 100px;
+@media (max-width: 768px) {
+  .container {
+    padding: 0 0.5rem;
+    margin: 1rem auto;
+  }
+  
+  /* Membership Card Responsive */
+  .membership-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .membership-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .detail-item {
+    padding: 1rem;
+    flex-direction: row;
+    gap: 1rem;
+  }
+  
+  .membership-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .btn-renew,
+  .btn-attendance {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Stats Container Responsive */
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .view-options {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .view-options button {
+    padding: 0.5rem 1rem;
+  }
+  
+  /* Diet Plan Responsive */
+  .meals-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .meal-card {
+    padding: 1rem;
+  }
+  
+  .macros-summary {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .macro {
+    text-align: center;
+  }
+  
+  .macro-progress {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 0.5rem;
+  }
+  
+  /* Workout Scheduler Responsive */
+  .day-selector {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .day-pill {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .workout-form {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group label {
+    font-size: 0.9rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Recent Activity Responsive */
+  .activity-timeline {
+    padding: 1rem;
+  }
+  
+  .activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .activity-icon {
+    margin-bottom: 0.5rem;
+  }
+  
+  .activity-content {
+    width: 100%;
+  }
 }
 
-.macro-progress {
+@media (max-width: 480px) {
+  html, body {
+    font-size: 14px;
+  }
+  
+  .container {
+    margin: 0.5rem auto;
+  }
+  
+  /* Extra small adjustments */
+  .membership-card,
+  .stats-container,
+  .diet-plan,
+  .workout-scheduler,
+  .recent-activity {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+  
+  .section-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  
+  .detail-item i {
+    margin-bottom: 0.3rem;
+  }
+  
+  .btn-renew,
+  .btn-attendance,
+  .btn-generate,
+  .btn-suggest,
+  .btn-clear,
+  .btn-save-schedule {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+  }
+  
+  /* Day selector for mobile */
+  .day-selector {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.2rem;
+  }
+  
+  .day-pill {
+    padding: 0.4rem 0.2rem;
+    font-size: 0.7rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Meal cards extra compact */
+  .meal-card {
+    padding: 0.8rem;
+  }
+  
+  .meal-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  
+  .meal-header h4 {
+    font-size: 1rem;
+  }
+  
+  .calories {
+    font-size: 0.8rem;
+  }
+  
+  /* Macro circles smaller */
+  .macro-progress {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .macro h5 {
+    font-size: 0.9rem;
+  }
+  
+  .macro p {
+    font-size: 0.8rem;
+  }
+}
+
+/* Loading states responsive */
+@media (max-width: 768px) {
+  .loading-text {
+    width: 80px;
+    height: 0.9em;
+  }
+  
+  .loading-skeleton {
+    height: 35px;
+  }
+}
+
+/* Enhanced hover effects for touch devices */
+@media (hover: none) {
+  .detail-card:hover,
+  .detail-item:hover,
+  .tag:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* Add tap feedback instead */
+  .detail-card:active,
+  .detail-item:active,
+  .tag:active,
+  .btn-primary:active,
+  .btn-secondary:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Print styles */
+@media print {
+  .navbar,
+  .profile-actions,
+  .membership-actions,
+  .section-header button,
+  .btn-renew,
+  .btn-attendance,
+  .btn-generate,
+  .btn-suggest,
+  .btn-clear,
+  .btn-save-schedule {
+    display: none !important;
+  }
+  
+  .container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .profile-section,
+  .membership-card,
+  .stats-container,
+  .diet-plan {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+  
+  .profile-header {
+    background: #f5f5f5 !important;
+    color: #333 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* Force proper layout stacking - Override any conflicting styles */
+.container .profile-section,
+.container .membership-card,
+.container .diet-plan,
+.container .workout-scheduler,
+.container .recent-activity {
+  width: 100% !important;
+  display: block !important;
+  clear: both !important;
+  float: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* CRITICAL FIX: Override the problematic grid layout */
+.container {
+  display: block !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+  width: 95% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 0 15px !important;
+}
+
+/* Hide old profile class if it exists */
+.container .profile {
+  display: none !important;
+}
+
+/* Enhanced Profile Section with Special Effects */
+.profile-section {
+  background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
   position: relative;
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 10px;
+  width: 100% !important;
+  display: block !important;
+  animation: fadeInUp 0.6s ease-out;
 }
 
-.macro-progress svg {
-  width: 100%;
-  height: 100%;
-}
-
-.macro-progress span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-weight: 600;
-}
-
-.macro h5 {
-  margin: 5px 0;
-  font-size: 14px;
-}
-
-.macro p {
-  font-size: 12px;
-  color: var(--gray);
-}
-
-.btn-generate {
-  padding: 8px 15px;
-  background: var(--light-gray);
-  border: none;
-  border-radius: 20px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.btn-generate i {
-  margin-left: 5px;
-}
-
-/* Workout Scheduler */
-.day-selector {
-  display: flex;
-  gap: 5px;
-  margin-bottom: 20px;
-}
-
-.day-pill {
-  flex: 1;
-  text-align: center;
-  padding: 8px 5px;
-  background: var(--light-gray);
-  border-radius: 20px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.day-pill.active {
-  background: var(--primary);
-  color: white;
-}
-
-.workout-form {
-  background: #f9fafc;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.form-group label i {
-  margin-right: 8px;
-  color: var(--accent);
-}
-
-.form-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: white;
-}
-
-.focus-areas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.focus-pill {
-  padding: 6px 12px;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.focus-pill:hover {
-  border-color: var(--accent);
-}
-
-.btn-add {
-  width: 100%;
-  padding: 10px;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.scheduled-workouts {
-  margin-top: 20px;
-}
-
-.workout-item {
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  background: white;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.workout-icon {
-  width: 40px;
-  height: 40px;
-  background: rgba(72, 149, 239, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  margin-right: 12px;
-}
-
-.workout-details {
-  flex-grow: 1;
-}
-
-.workout-details h5 {
-  margin: 0 0 3px;
-  font-size: 15px;
-}
-
-.workout-details p {
-  font-size: 12px;
-  color: var(--gray);
-  margin: 0;
-}
-
-.workout-tag {
-  display: inline-block;
-  font-size: 11px;
-  background: rgba(72, 149, 239, 0.1);
-  color: var(--accent);
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-top: 5px;
-}
-
-.btn-remove {
-  background: none;
-  border: none;
-  color: var(--gray);
-  cursor: pointer;
-}
-
-.btn-save-schedule {
-  width: 100%;
-  padding: 12px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 20px;
-}
-
-/* Recent Activity */
-.activity-timeline {
-  position: relative;
-  padding-left: 30px;
-}
-
-.activity-timeline::before {
+.profile-section::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 15px;
-  height: 100%;
-  width: 2px;
-  background: var(--light-gray);
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  animation: shimmer 2s infinite;
 }
 
-.timeline-item {
-  position: relative;
-  padding: 15px 0;
-  display: flex;
-}
-
-.timeline-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: rgba(67, 97, 238, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  position: absolute;
-  left: -30px;
-}
-
-.timeline-content {
-  flex-grow: 1;
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  margin-left: 20px;
-}
-
-.timeline-content h5 {
-  margin: 0 0 5px;
-}
-
-.timeline-content p {
-  font-size: 13px;
-  color: var(--gray);
-  margin: 0 0 8px;
-}
-
-.timeline-meta {
-  display: flex;
-  gap: 15px;
-  font-size: 12px;
-  color: var(--gray);
-}
-
-.timeline-meta i {
-  margin-right: 3px;
-}
-
-.btn-view-all {
-  width: 100%;
-  padding: 10px;
-  background: white;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-top: 15px;
-}
-
-/* Interactive Edit Schedule Button */
-#edit-schedule-btn.btn {
-  background: var(--accent);
-  color: #fff;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.08);
-  transition: background 0.2s, transform 0.2s;
-  width: 100%;
-  max-width: 260px;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-#edit-schedule-btn.btn:hover {
-  background: var(--primary);
-  transform: translateY(-2px) scale(1.03);
-}
-
-/* Workout Scheduler Section */
-.workout-scheduler {
-  padding: 32px 24px 28px 24px;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(72, 149, 239, 0.07);
-  margin-bottom: 30px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (max-width: 600px) {
-  .workout-scheduler {
-    padding: 16px 6px 18px 6px;
-    max-width: 100%;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Suggest Workout and Clear Button Styles */
-.btn-suggest, .btn-clear {
-  padding: 8px 18px;
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Enhanced Membership Card with Special Effects */
+.membership-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
   border-radius: 20px;
-  font-size: 0.98rem;
-  font-weight: 500;
-  border: none;
-  margin-right: 10px;
-  margin-bottom: 8px;
-  transition: background 0.2s, color 0.2s, transform 0.2s;
-  box-shadow: 0 2px 8px rgba(72, 149, 239, 0.06);
-  cursor: pointer;
-}
-
-.btn-suggest {
-  background: var(--success);
-  color: #fff;
-}
-.btn-suggest:hover {
-  background: var(--accent);
-  color: #fff;
-  transform: translateY(-2px) scale(1.04);
-}
-
-.btn-clear {
-  background: var(--danger);
-  color: #fff;
-}
-.btn-clear:hover {
-  background: #c0392b;
-  color: #fff;
-  transform: translateY(-2px) scale(1.04);
-}
-
-/* Schedule Actions Container */
-.schedule-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 18px;
-  margin-top: 8px;
-  justify-content: flex-end;
-}
-
-/* Add a little gap below the day pills */
-.day-selector {
-  margin-bottom: 18px;
-}
-
-/* Workout List Styling */
-#workout-list, .workout-list {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  padding-left: 0;
-  list-style: none;
-}
-#workout-list li, .workout-list li {
-  background: var(--light-gray);
-  border-radius: 8px;
-  margin-bottom: 8px;
-  padding: 10px 14px;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-#workout-list li .tag {
-  margin-left: 8px;
-  font-size: 0.92em;
-  background: var(--accent);
-  color: #fff;
-  padding: 2px 10px;
-  border-radius: 12px;
-}
-#workout-list li .btn-remove {
-  margin-left: 12px;
-  color: var(--danger);
-  background: none;
-  border: none;
-  font-size: 1.1em;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-#workout-list li .btn-remove:hover {
-  color: #c0392b;
-}
-
-/* Responsive: Make sure everything fits on mobile */
-@media (max-width: 480px) {
-  .workout-scheduler {
-    padding: 8px 2px 10px 2px;
-    border-radius: 8px;
-  }
-  #edit-schedule-btn.btn {
-    font-size: 0.98rem;
-    padding: 0.7rem 0.5rem;
-    max-width: 100%;
-  }
-  .schedule-actions {
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-  #workout-list li, .workout-list li {
-    font-size: 0.97rem;
-    padding: 8px 7px;
-  }
-}
-
-/* Main Content */
-.container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 2rem;
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 2rem;
-}
-
-.profile {
-  background-color: white;
-  border-radius: 10px;
-  padding: 2rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  text-align: center;
-  height: fit-content;
-}
-
-#profileImage {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 5px solid var(--secondary-color);
-  margin-bottom: 1.5rem;
-  transition: transform 0.3s;
-}
-
-#profileImage:hover {
-  transform: scale(1.05);
-}
-
-.profile h2 {
-  margin-bottom: 1rem;
-  color: var(--primary-color);
-}
-
-.profile p {
-  margin-bottom: 0.8rem;
-  color: #555;
-}
-
-.status {
-  padding: 0.5rem;
-  border-radius: 5px;
-  font-weight: bold;
-}
-
-.active {
-  background-color: rgba(46, 204, 113, 0.2);
-  color: #2ecc71;
-}
-
-h3, h4, h5 {
-  margin: 0 0 15px;
-  color: var(--dark);
-}
-
-p {
-  margin: 0 0 10px;
-}
-
-/* Card Styles */
-.membership-card, 
-.stats-container, 
-.diet-plan, 
-.workout-scheduler, 
-.recent-activity {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  margin-bottom: 25px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-/* Membership Card */
-.membership-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.progress-ring {
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  margin-bottom: 2rem;
   position: relative;
-  width: 60px;
-  height: 60px;
-  text-align: center;
-}
-
-.progress-ring circle {
-  transition: stroke-dashoffset 0.35s;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
-}
-
-.progress-ring span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 12px;
-  font-weight: bold;
-  color: var(--primary);
-}
-
-.membership-details {
-  margin-bottom: 20px;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.detail-item i {
-  width: 30px;
-  height: 30px;
-  background: rgba(67, 97, 238, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  margin-right: 12px;
-}
-
-.detail-item .label {
-  display: block;
-  font-size: 12px;
-  color: var(--gray);
-}
-
-.detail-item .value {
-  font-weight: 600;
-}
-
-.activity-preferences {
-  margin: 25px 0;
-}
-
-.preference-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-  align-items: center;
-}
-
-.tag {
-  padding: 6px 12px;
-  background: var(--light-gray);
-  border-radius: 20px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-}
-
-.tag i {
-  margin-right: 5px;
-  font-size: 12px;
-}
-
-.tag.active {
-  background: rgba(67, 97, 238, 0.1);
-  color: var(--primary);
-  font-weight: 500;
-}
-
-.btn-renew {
-  width: 100%;
-  padding: 12px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-renew:hover {
-  background: var(--secondary);
-}
-
-.btn-renew i {
-  margin-right: 8px;
-}
-
-/* Stats Container */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-}
-
-.stat-card {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-}
-
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(67, 97, 238, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  margin-bottom: 15px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 5px 0;
-}
-
-.stat-change {
-  font-size: 12px;
-  color: var(--gray);
-}
-
-.stat-change i {
-  margin-right: 3px;
-}
-
-.progress-bar {
-  height: 8px;
-  background: var(--light-gray);
-  border-radius: 4px;
-  margin: 10px 0;
   overflow: hidden;
+  width: 100% !important;
+  display: block !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.progress {
-  height: 100%;
-  background: var(--success);
-  border-radius: 4px;
+.membership-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 30px 80px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
-.streak-days {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
+.membership-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(67, 97, 238, 0.02) 0%, rgba(72, 149, 239, 0.02) 100%);
+  pointer-events: none;
 }
 
-.day {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--light-gray);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
+/* Mobile Responsive for Profile Completion Features */
+@media (max-width: 768px) {
+  .profile-completion-wrapper {
+    margin-bottom: 1rem;
+  }
+
+  .profile-completion-circle {
+    width: 120px;
+    height: 120px;
+    top: -6px;
+    left: -6px;
+  }
+
+  .profile-completion-percentage {
+    bottom: -10px;
+    right: 0;
+    font-size: 0.6rem;
+    padding: 3px 6px;
+  }
+
+  .profile-completion-banner {
+    margin: 1rem 0;
+    padding: 1rem;
+  }
+
+  .profile-completion-banner h4 {
+    font-size: 1rem;
+  }
+
+  .completion-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .btn-fill {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .incomplete-field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+  }
+
+  .detail-card.incomplete::before {
+    font-size: 0.6rem;
+    padding: 3px 8px;
+    right: 10px;
+    top: -8px;
+  }
+
+  .no-membership-card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .no-membership-card .icon {
+    font-size: 2.5rem;
+  }
+
+  .no-membership-card h3 {
+    font-size: 1.2rem;
+  }
+
+  .btn-join-now {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
 }
 
-.day.active {
-  background: var(--success);
-  color: white;
+/* Small Mobile Devices */
+@media (max-width: 480px) {
+  .profile-completion-circle {
+    width: 100px;
+    height: 100px;
+    top: -4px;
+    left: -4px;
+  }
+
+  #profileImage {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-completion-percentage {
+    font-size: 0.55rem;
+    padding: 2px 5px;
+  }
+
+  .profile-completion-banner {
+    padding: 0.8rem;
+  }
+
+  .completion-actions .btn-fill {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .detail-card.incomplete::before {
+    position: relative;
+    top: 0;
+    right: 0;
+    margin-bottom: 0.5rem;
+    display: block;
+    text-align: center;
+  }
+
+  .no-membership-card {
+    padding: 1rem;
+  }
+
+  .no-membership-card .icon {
+    font-size: 2rem;
+  }
+
+  .btn-join-now {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
-.view-options {
-  display: flex;
-  gap: 8px;
-}
-
-.view-options button {
-  padding: 6px 12px;
-  background: var(--light-gray);
-  border: none;
-  border-radius: 20px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.view-options button.active {
-  background: var(--primary);
-  color: white;
-}
-
-/* Diet Plan */
-.meals-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 25px;
-}
-
-.meal-card {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.meal-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.meal-header i {
-  margin-right: 10px;
-  color: var(--accent);
-}
-
-.meal-header h4 {
-  margin: 0;
-  flex-grow: 1;
-}
-
-.calories {
-  font-size: 12px;
-  background: rgba(72, 149, 239, 0.1);
-  padding: 3px 8px;
-  border-radius: 20px;
-  color: var(--accent);
-}
-
-.meal-items {
-  padding-left: 20px;
-  margin: 0;
-}
-
-.meal-items li {
-  margin-bottom: 6px;
-  font-size: 14px;
-}
+/* Closing braces for media queries and overall structure */

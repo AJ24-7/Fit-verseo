@@ -5,6 +5,156 @@ const path = require('path');
 const sendEmail = require('../utils/sendEmail');
 const Payment = require('../models/Payment');
 
+// Renew membership for an existing member
+exports.renewMembership = async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { planSelected, monthlyPlan, paymentAmount, paymentMode, activityPreference } = req.body;
+    
+    // Get gym ID from authenticated admin
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id));
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    // Find the member
+    const member = await Member.findOne({ _id: memberId, gym: gymId });
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found.' });
+    }
+    
+    // Calculate new validity period
+    let months = 1;
+    if (/3\s*Months?/i.test(monthlyPlan)) months = 3;
+    else if (/6\s*Months?/i.test(monthlyPlan)) months = 6;
+    else if (/12\s*Months?/i.test(monthlyPlan)) months = 12;
+    
+    // Always start renewal from today (renewal date), not from previous expiry or join date
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const newExpiryDate = new Date(today);
+    newExpiryDate.setMonth(newExpiryDate.getMonth() + months);
+    const membershipValidUntil = newExpiryDate.toISOString().split('T')[0];
+    
+    // Update member with new plan details
+    const updatedMember = await Member.findByIdAndUpdate(
+      memberId,
+      {
+        planSelected,
+        monthlyPlan,
+        paymentAmount,
+        paymentMode,
+        activityPreference,
+        membershipValidUntil,
+        // Keep the same membershipId for renewal
+      },
+      { new: true }
+    );
+    
+    // Create payment record for the renewal (include createdBy)
+    const paymentRecord = new Payment({
+      gymId,
+      memberId,
+      memberName: member.memberName,
+      type: 'received',
+      category: 'membership',
+      amount: paymentAmount,
+      description: `Membership Renewal - ${planSelected} ${monthlyPlan}`,
+      paymentMethod: paymentMode.toLowerCase(),
+      status: 'completed',
+      paidDate: new Date(),
+      notes: `Renewed until ${membershipValidUntil}`,
+      createdBy: req.admin && req.admin._id ? req.admin._id : null
+    });
+    await paymentRecord.save();
+    
+    // Get gym details for email
+    const gym = await Gym.findById(gymId);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Membership renewed successfully',
+      member: updatedMember,
+      payment: paymentRecord,
+      newExpiryDate: membershipValidUntil
+    });
+    
+    // Send renewal email (optional - async)
+    if (member.email && gym) {
+      try {
+        await sendRenewalEmail({
+          to: member.email,
+          memberName: member.memberName,
+          membershipId: member.membershipId,
+          plan: planSelected,
+          monthlyPlan,
+          validUntil: membershipValidUntil,
+          gymName: gym.gymName || gym.name || 'Gym',
+          amount: paymentAmount
+        });
+      } catch (emailError) {
+        console.error('Error sending renewal email:', emailError);
+        // Don't fail the renewal if email fails
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error renewing membership:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to renew membership',
+      error: error.message
+    });
+  }
+};
+
+// Helper function to send renewal email
+async function sendRenewalEmail({ to, memberName, membershipId, plan, monthlyPlan, validUntil, gymName, amount }) {
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa; padding: 32px 0;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); padding: 32px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🎉 Membership Renewed!</h1>
+          <p style="color: #e8f5e8; margin: 8px 0 0 0; font-size: 16px;">Welcome back to ${gymName}</p>
+        </div>
+        <div style="padding: 32px;">
+          <p style="font-size: 18px; color: #333; margin: 0 0 24px 0;">Dear ${memberName},</p>
+          <p style="font-size: 16px; color: #555; line-height: 1.6; margin: 0 0 24px 0;">
+            Great news! Your gym membership has been successfully renewed. Thank you for continuing your fitness journey with us.
+          </p>
+          <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin: 24px 0;">
+            <h3 style="color: #333; margin: 0 0 16px 0; font-size: 18px;">📋 Renewal Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Membership ID:</td><td style="padding: 8px 0; color: #333; font-weight: 600;">${membershipId}</td></tr>
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Plan:</td><td style="padding: 8px 0; color: #333; font-weight: 600;">${plan}</td></tr>
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Duration:</td><td style="padding: 8px 0; color: #333; font-weight: 600;">${monthlyPlan}</td></tr>
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Amount Paid:</td><td style="padding: 8px 0; color: #4CAF50; font-weight: 600;">₹${amount}</td></tr>
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Valid Until:</td><td style="padding: 8px 0; color: #333; font-weight: 600;">${new Date(validUntil).toLocaleDateString()}</td></tr>
+            </table>
+          </div>
+          <p style="font-size: 16px; color: #555; line-height: 1.6; margin: 24px 0;">
+            Your renewed membership is now active and ready to use. Continue achieving your fitness goals with us!
+          </p>
+          <div style="text-align: center; margin: 32px 0;">
+            <div style="display: inline-block; background: #4CAF50; color: #ffffff; padding: 12px 24px; border-radius: 6px; font-weight: 600; text-decoration: none;">
+              Welcome Back! 💪
+            </div>
+          </div>
+        </div>
+        <div style="background: #f8f9fa; padding: 24px; text-align: center; border-top: 1px solid #e9ecef;">
+          <p style="color: #6c757d; margin: 0; font-size: 14px;">
+            Thanks for choosing ${gymName}! Let's achieve your fitness goals together.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  await sendEmail({
+    to,
+    subject: `🎉 Membership Renewed Successfully - ${gymName}`,
+    html
+  });
+}
+
 // Add a new member to a gym
 exports.addMember = async (req, res) => {
   try {

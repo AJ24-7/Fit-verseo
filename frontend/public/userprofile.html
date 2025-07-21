@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Member Dashboard | FIT-verse</title>
   <link rel="stylesheet" href="userprofile.css">
+  <link rel="stylesheet" href="attendance-modal.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <script defer src="userprofile.js"></script>
 </head>
@@ -13,7 +14,7 @@
   <!-- Navbar -->
   <header>
     <nav class="navbar">
-      <div class="logo">FIT<span>-verse</span></div>
+      <div class="logo">Gym<span>-Wale</span></div>
 
       <ul class="nav-links">
         <li><a href="/frontend/index.html" class="nav-item">Home</a></li>
@@ -46,18 +47,206 @@
 
   <!-- Main Content -->
   <div class="container">
-    <!-- Profile Info Section -->
-    <div class="profile">
-      <img id="profileImage" src="/uploads/profile-pics/default.png" alt="Profile Picture" />
-      <h2 id="username">John Doe</h2>
-      <p>Email: <span id="useremail">user</span></p>
-      <p>Phone: <span id="userphone">phn no.</span></p>
-      <p class="status active">Membership: Active (Expires: 30-06-2025)</p>
-      <button class="btn" href="/frontend/edit-profile.html" style="background-color: var(--secondary-color); color: white; margin-top: 1rem;">Edit Profile</button>
+    <!-- Enhanced Profile Info Section -->
+    <div class="profile-section">
+      <!-- Profile Header -->
+      <div class="profile-header">
+        <div class="profile-avatar-container">
+          <div class="profile-completion-wrapper">
+            <div class="profile-completion-circle" id="profileCompletionCircle">
+              <svg width="136" height="136">
+                <circle class="completion-bg" cx="68" cy="68" r="64" />
+                <circle class="completion-progress" cx="68" cy="68" r="64" 
+                        stroke-dasharray="0 402" id="completionProgress" />
+              </svg>
+            </div>
+            <div class="profile-completion-percentage" id="completionPercentage">0%</div>
+            <img id="profileImage" src="/uploads/profile-pics/default.png" alt="Profile Picture" />
+            <div class="online-indicator"></div>
+            <div class="loading-overlay" id="profileImageLoader" style="display: none;">
+              <div class="loading-spinner"></div>
+            </div>
+          </div>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name-section">
+            <h1 id="username" class="profile-name">
+              <span class="loading-text">Loading...</span>
+            </h1>
+            <span id="userTitle" class="profile-title">Member</span>
+            <div class="profile-badges">
+              <span class="badge premium" id="membershipBadge">Premium</span>
+              <span class="badge verified" id="verifiedBadge" style="display: none;">
+                <i class="fas fa-check-circle"></i> Verified
+              </span>
+            </div>
+          </div>
+          <div class="profile-stats-quick">
+            <div class="quick-stat">
+              <span class="stat-number" id="memberSince">-</span>
+              <span class="stat-label">Member Since</span>
+            </div>
+            <div class="quick-stat">
+              <span class="stat-number" id="totalWorkouts">-</span>
+              <span class="stat-label">Total Workouts</span>
+            </div>
+            <div class="quick-stat">
+              <span class="stat-number" id="currentStreak">-</span>
+              <span class="stat-label">Day Streak</span>
+            </div>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button class="btn-primary" onclick="window.location.href='/frontend/edit-profile.html'">
+            <i class="fas fa-edit"></i> Edit Profile
+          </button>
+          <button class="btn-secondary" onclick="shareProfile()">
+            <i class="fas fa-share-alt"></i> Share
+          </button>
+        </div>
+      </div>
+
+      <!-- Profile Completion Banner (shown for incomplete profiles) -->
+      <div class="profile-completion-banner" id="profileCompletionBanner" style="display: none;">
+        <h4><i class="fas fa-exclamation-triangle"></i> Complete Your Profile</h4>
+        <p>Your profile is <span id="completionText">0%</span> complete. Fill in missing information to get a better experience!</p>
+        <div class="completion-actions">
+          <a href="/frontend/edit-profile.html" class="btn-fill">
+            <i class="fas fa-user-edit"></i> Complete Profile
+          </a>
+          <button class="btn-fill" onclick="showIncompleteFields()">
+            <i class="fas fa-list"></i> Show Missing Fields
+          </button>
+        </div>
+      </div>
+
+      <!-- Enhanced Profile Details Grid -->
+      <div class="profile-details-grid">
+        <!-- Contact Information -->
+        <div class="detail-card" id="contactInfoCard">
+          <div class="detail-header">
+            <i class="fas fa-address-book"></i>
+            <h3>Contact Information</h3>
+          </div>
+          <div class="detail-content">
+            <div class="detail-item">
+              <i class="fas fa-envelope"></i>
+              <div class="detail-info">
+                <span class="detail-label">Email</span>
+                <span class="detail-value" id="useremail">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="emailIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Email not verified</span>
+                  <button class="btn-fill" onclick="verifyEmail()">Verify</button>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-phone"></i>
+              <div class="detail-info">
+                <span class="detail-label">Phone</span>
+                <span class="detail-value" id="userphone">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="phoneIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Phone number missing</span>
+                  <a href="/frontend/edit-profile.html" class="btn-fill">Add Phone</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-birthday-cake"></i>
+              <div class="detail-info">
+                <span class="detail-label">Date of Birth</span>
+                <span class="detail-value" id="userbirthdate">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="birthdateIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Date of birth missing</span>
+                  <a href="/frontend/edit-profile.html" class="btn-fill">Add DOB</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-calendar-alt"></i>
+              <div class="detail-info">
+                <span class="detail-label">Member Since</span>
+                <span class="detail-value" id="joinDate">
+                  <span class="loading-text">Loading...</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fitness Profile -->
+        <div class="detail-card" id="fitnessProfileCard">
+          <div class="detail-header">
+            <i class="fas fa-dumbbell"></i>
+            <h3>Fitness Profile</h3>
+          </div>
+          <div class="detail-content">
+            <div class="detail-item">
+              <i class="fas fa-ruler-vertical"></i>
+              <div class="detail-info">
+                <span class="detail-label">Height</span>
+                <span class="detail-value" id="userheight">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="heightIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Height not provided</span>
+                  <a href="/frontend/edit-profile.html" class="btn-fill">Add Height</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-weight"></i>
+              <div class="detail-info">
+                <span class="detail-label">Weight</span>
+                <span class="detail-value" id="userweight">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="weightIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Weight not provided</span>
+                  <a href="/frontend/edit-profile.html" class="btn-fill">Add Weight</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-chart-line"></i>
+              <div class="detail-info">
+                <span class="detail-label">Fitness Level</span>
+                <span class="detail-value" id="userfitnessLevel">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="fitnessLevelIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Fitness level not set</span>
+                  <a href="/frontend/edit-profile.html" class="btn-fill">Set Level</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-bullseye"></i>
+              <div class="detail-info">
+                <span class="detail-label">Primary Goal</span>
+                <span class="detail-value" id="userprimaryGoal">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="primaryGoalIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Primary goal not set</span>
+                  <a href="/frontend/edit-profile.html" class="btn-fill">Set Goal</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
    <!-- Active Membership Info with Interactive Elements -->
-<div class="membership-card loading">
+<div class="membership-card loading" id="membershipCard">
   <div class="membership-header">
     <h3><i class="fas fa-id-card"></i> Membership Details</h3>
     <div class="progress-ring" data-progress="0">
@@ -124,79 +313,180 @@
     </div>
   </div>
   
-  <div class="activity-preferences">
-    <h4><i class="fas fa-heartbeat"></i> Activity Preferences</h4>
-    <div class="preference-tags">
-      <span class="tag active"><i class="fas fa-running"></i> Cardio</span>
-      <span class="tag active"><i class="fas fa-dumbbell"></i> Strength</span>
-      <span class="tag"><i class="fas fa-spa"></i> Yoga</span>
-      <span class="tag"><i class="fas fa-fire"></i> crossfit</span>
-      <span class="tag"><i class="fas fa-biking"></i> HIIT</span>
-      <span class="tag"><i class="fas fa-weight-hanging"></i> Pilates</span>
-    </div>
+  <div class="membership-actions">
+    <button class="btn-renew">
+      <i class="fas fa-sync-alt"></i> Renew Membership
+    </button>
+    <button class="btn-attendance" onclick="openAttendanceModal()">
+      <i class="fas fa-calendar-check"></i> View Attendance
+    </button>
   </div>
-  
-  <button class="btn-renew">
-    <i class="fas fa-sync-alt"></i> Renew Membership
-  </button>
 </div>
 
-<!-- Interactive Stats with Goal Tracking -->
-<div class="stats-container">
-  <div class="stats-header">
-    <h3><i class="fas fa-chart-line"></i> Weekly Progress</h3>
-    <div class="view-options">
-      <button class="active">Week</button>
-      <button>Month</button>
-      <button>Year</button>
-    </div>
+<!-- No Membership Card (shown when user has no active membership) -->
+<div class="no-membership-card" id="noMembershipCard" style="display: none;">
+  <div class="icon">
+    <i class="fas fa-times-circle"></i>
   </div>
-  
-  <div class="stats-grid">
-    <div class="stat-card goal-tracker">
-      <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
-      <div class="stat-content">
-        <h4>Goal: 5 workouts/week</h4>
-        <div class="progress-bar">
-          <div class="progress" style="width: 80%"></div>
+  <h3>No Active Membership</h3>
+  <p>You don't have an active gym membership. Join now to start your fitness journey!</p>
+  <a href="/frontend/membership-plans.html" class="btn-join-now">
+    <i class="fas fa-plus-circle"></i> Join Now
+  </a>
+  <div style="margin-top: 1rem;">
+    <a href="/frontend/membership-plans.html" style="color: #f44336; text-decoration: none; font-size: 0.9rem;">
+      <i class="fas fa-info-circle"></i> View Membership Plans
+    </a>
+  </div>
+</div>
+
+<!-- Attendance Modal -->
+<div id="attendanceModal" class="modal" style="display: none;">
+  <div class="modal-content attendance-modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-calendar-check"></i> My Attendance History</h2>
+      <span class="close" onclick="closeAttendanceModal()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <!-- Membership Information Display -->
+      <div id="membershipInfoDisplay" class="membership-info-display" style="display: none;">
+        <h4><i class="fas fa-id-card"></i> Membership Information</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Plan:</span>
+            <span class="info-value" id="membershipPlan">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Duration:</span>
+            <span class="info-value" id="membershipDuration">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Join Date:</span>
+            <span class="info-value" id="membershipJoinDate">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Valid Until:</span>
+            <span class="info-value" id="membershipValidUntil">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Status:</span>
+            <span class="info-value" id="membershipStatus">
+              <span class="membership-status-badge" title="Membership status">
+                <i id="membershipStatusIcon" class="fas fa-check-circle" style="color: #4caf50;"></i>
+                <span id="membershipStatusText">Active</span>
+              </span>
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Gym:</span>
+            <span class="info-value" id="membershipGym">-</span>
+          </div>
         </div>
-        <p>4/5 completed</p>
       </div>
-    </div>
-    
-    <div class="stat-card">
-      <div class="stat-icon"><i class="fas fa-fire"></i></div>
-      <div class="stat-content">
-        <h4>Calories Burned</h4>
-        <p class="stat-value">1,850</p>
-        <p class="stat-change"><i class="fas fa-arrow-up"></i> 12% from last week</p>
+
+      <!-- Streak Section -->
+      <div class="streak-section">
+        <div class="streak-card current-streak">
+          <div class="streak-icon">
+            <i class="fas fa-fire"></i>
+          </div>
+          <div class="streak-content">
+            <h3 id="currentStreakDays">0</h3>
+            <p>Current Streak</p>
+            <small id="streakMessage">Keep it up!</small>
+          </div>
+        </div>
+        <div class="streak-card best-streak">
+          <div class="streak-icon">
+            <i class="fas fa-trophy"></i>
+          </div>
+          <div class="streak-content">
+            <h3 id="bestStreakDays">0</h3>
+            <p>Best Streak</p>
+            <small>Personal Record</small>
+          </div>
+        </div>
+        <div class="streak-card attendance-rate">
+          <div class="streak-icon">
+            <i class="fas fa-percentage"></i>
+          </div>
+          <div class="streak-content">
+            <h3 id="attendanceRate">0%</h3>
+            <p>Attendance Rate</p>
+            <small>This Month</small>
+          </div>
+        </div>
       </div>
-    </div>
-    
-    <div class="stat-card streak">
-      <div class="stat-icon"><i class="fas fa-bolt"></i></div>
-      <div class="stat-content">
-        <h4>Current Streak</h4>
-        <p class="stat-value">8 days</p>
-        <p class="stat-target">Record: 21 days</p>
+
+      <!-- Calendar Navigation -->
+      <div class="calendar-controls">
+        <button class="btn-nav" onclick="previousMonth()">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <h3 id="currentMonthYear">Loading...</h3>
+        <button class="btn-nav" onclick="nextMonth()">
+          <i class="fas fa-chevron-right"></i>
+        </button>
       </div>
-      <div class="streak-days">
-        <span class="day active">M</span>
-        <span class="day active">T</span>
-        <span class="day active">W</span>
-        <span class="day active">T</span>
-        <span class="day active">F</span>
-        <span class="day active">S</span>
-        <span class="day">S</span>
+
+      <!-- Attendance Calendar -->
+      <div class="attendance-calendar">
+        <div class="calendar-header">
+          <div class="day-header">Mon</div>
+          <div class="day-header">Tue</div>
+          <div class="day-header">Wed</div>
+          <div class="day-header">Thu</div>
+          <div class="day-header">Fri</div>
+          <div class="day-header">Sat</div>
+          <div class="day-header">Sun</div>
+        </div>
+        <div class="calendar-body" id="calendarBody">
+          <!-- Calendar days will be dynamically generated -->
+        </div>
       </div>
-    </div>
-    
-    <div class="stat-card">
-      <div class="stat-icon"><i class="fas fa-clock"></i></div>
-      <div class="stat-content">
-        <h4>Avg. Workout Time</h4>
-        <p class="stat-value">52 min</p>
-        <p class="stat-change"><i class="fas fa-arrow-up"></i> 8 min longer</p>
+
+      <!-- Legend -->
+      <div class="calendar-legend">
+        <div class="legend-item">
+          <div class="legend-color present"></div>
+          <span>Present</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color absent"></div>
+          <span>Absent</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color sunday"></div>
+          <span>Sunday (Rest Day)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color future"></div>
+          <span>Future Date</span>
+        </div>
+      </div>
+
+      <!-- Monthly Stats -->
+      <div class="monthly-stats">
+        <div class="stat-item">
+          <div class="stat-number" id="monthlyPresent">0</div>
+          <div class="stat-label">Days Present</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="monthlyAbsent">0</div>
+          <div class="stat-label">Days Absent</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="monthlyWorkouts">0</div>
+          <div class="stat-label">Total Workouts</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="monthlyHours">0</div>
+          <div class="stat-label">Hours Trained</div>
+        </div>
+        <div class="stat-item attendance-rate">
+          <div class="stat-number" id="monthlyAttendanceRate">0%</div>
+          <div class="stat-label">Attendance Rate</div>
+        </div>
       </div>
     </div>
   </div>

@@ -1883,6 +1883,285 @@ document.addEventListener('DOMContentLoaded', function() {
   }
     
 });
+
+// --- Renew Membership Modal Logic ---
+document.addEventListener('DOMContentLoaded', function() {
+  
+  // DOM elements
+  const renewMembershipModal = document.getElementById('renewMembershipModal');
+  const closeRenewMembershipModal = document.getElementById('closeRenewMembershipModal');
+  const cancelRenewMembership = document.getElementById('cancelRenewMembership');
+  const renewMembershipForm = document.getElementById('renewMembershipForm');
+  
+  // Form elements
+  const renewPlanSelected = document.getElementById('renewPlanSelected');
+  const renewMonthlyPlan = document.getElementById('renewMonthlyPlan');
+  const renewPaymentAmount = document.getElementById('renewPaymentAmount');
+  
+  // Cache for membership plans
+  let renewPlansCache = [];
+
+  // Fetch membership plans for renewal modal
+  async function fetchPlansForRenewalModal() {
+    try {
+      const token = await waitForToken('gymAdminToken', 10, 100);
+      if (!token) {
+        console.error('[RenewMembership] No token available');
+        renewPlansCache = [];
+        return;
+      }
+      
+      const response = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Handle both response formats: direct array or {success: true, plans: [...]}
+      if (Array.isArray(data)) {
+        renewPlansCache = data;
+      } else if (data.plans && Array.isArray(data.plans)) {
+        renewPlansCache = data.plans;
+      } else {
+        renewPlansCache = [];
+      }
+      
+    } catch (error) {
+      console.error('[RenewMembership] Error fetching plans:', error);
+      renewPlansCache = [];
+    }
+  }
+
+  // Update payment amount based on plan and duration for renewal
+  function updateRenewalPaymentAmount() {
+    const selectedPlan = renewPlanSelected.value;
+    const selectedDuration = renewMonthlyPlan.value;
+    
+    if (!selectedPlan || !selectedDuration) {
+      renewPaymentAmount.value = '';
+      return;
+    }
+
+    // Extract months from duration
+    const monthsMatch = selectedDuration.match(/(\d+)\s*Months?/i);
+    const months = monthsMatch ? parseInt(monthsMatch[1]) : 1;
+
+    // Find plan in cache
+    const plan = renewPlansCache.find(p => p.name === selectedPlan);
+    
+    if (!plan) {
+      console.warn('[RenewMembership] Plan not found in cache:', selectedPlan);
+      renewPaymentAmount.value = '';
+      return;
+    }
+
+    // Calculate amount
+    const baseAmount = plan.price * months;
+    let finalAmount = baseAmount;
+    
+    // Check if discount applies
+    let discountApplies = false;
+    if (plan.discount > 0 && plan.discountMonths) {
+      if (Array.isArray(plan.discountMonths)) {
+        discountApplies = plan.discountMonths.includes(months);
+      } else {
+        discountApplies = months >= plan.discountMonths;
+      }
+    }
+    
+    if (discountApplies) {
+      finalAmount = Math.round(baseAmount * (1 - plan.discount / 100));
+    }
+
+    // Update UI
+    renewPaymentAmount.value = finalAmount;
+  }
+
+  // Open renewal modal with member data
+  async function openRenewalModal(memberData) {
+    await fetchPlansForRenewalModal();
+    
+    if (renewMembershipModal) {
+      renewMembershipModal.style.display = 'flex';
+    }
+    
+    // Reset form
+    if (renewMembershipForm) renewMembershipForm.reset();
+    
+    // Populate member info
+    document.getElementById('renewMemberName').textContent = memberData.memberName || '';
+    document.getElementById('renewMembershipId').textContent = memberData.membershipId || '';
+    document.getElementById('renewCurrentPlan').textContent = `${memberData.planSelected || ''} - ${memberData.monthlyPlan || ''}`;
+    
+    const expiryDate = memberData.membershipValidUntil ? new Date(memberData.membershipValidUntil).toLocaleDateString() : 'N/A';
+    const today = new Date();
+    const expiry = new Date(memberData.membershipValidUntil);
+    const isExpired = expiry < today;
+    const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+    
+    let expiryText = expiryDate;
+    if (isExpired) {
+      expiryText += ` <span style="color:#e53935;font-weight:600;">(Expired)</span>`;
+    } else if (daysLeft <= 3) {
+      expiryText += ` <span style="color:#ff9800;font-weight:600;">(${daysLeft} day${daysLeft === 1 ? '' : 's'} left)</span>`;
+    }
+    
+    document.getElementById('renewExpiryDate').innerHTML = expiryText;
+    
+    // Set hidden member ID
+    document.getElementById('renewMemberId').value = memberData._id || '';
+    
+    // Pre-fill current values
+    document.getElementById('renewPlanSelected').value = memberData.planSelected || '';
+    document.getElementById('renewMonthlyPlan').value = memberData.monthlyPlan || '';
+    document.getElementById('renewActivityPreference').value = memberData.activityPreference || '';
+    
+    // Populate plan dropdown
+    if (renewPlanSelected && renewPlansCache.length > 0) {
+      renewPlanSelected.innerHTML = '<option value="">Select Plan</option>' + 
+        renewPlansCache.map(plan => `<option value="${plan.name}" ${plan.name === memberData.planSelected ? 'selected' : ''}>${plan.name} - ₹${plan.price}/month</option>`).join('');
+    }
+    
+    // Update payment amount
+    updateRenewalPaymentAmount();
+    
+    // Attach event listeners
+    setTimeout(() => {
+      attachRenewalPaymentListeners();
+    }, 100);
+  }
+
+  // Close renewal modal
+  function closeRenewalModal() {
+    if (renewMembershipModal) renewMembershipModal.style.display = 'none';
+  }
+
+  // Payment calculation listeners for renewal
+  function attachRenewalPaymentListeners() {
+    if (renewPlanSelected) {
+      renewPlanSelected.removeEventListener('change', handleRenewalPlanChange);
+      renewPlanSelected.addEventListener('change', handleRenewalPlanChange);
+    }
+    
+    if (renewMonthlyPlan) {
+      renewMonthlyPlan.removeEventListener('change', handleRenewalMonthChange);
+      renewMonthlyPlan.addEventListener('change', handleRenewalMonthChange);
+    }
+  }
+
+  function handleRenewalPlanChange(event) {
+    updateRenewalPaymentAmount();
+  }
+
+  function handleRenewalMonthChange(event) {
+    updateRenewalPaymentAmount();
+  }
+
+  // Modal close listeners
+  if (closeRenewMembershipModal) {
+    closeRenewMembershipModal.addEventListener('click', closeRenewalModal);
+  }
+  
+  if (cancelRenewMembership) {
+    cancelRenewMembership.addEventListener('click', closeRenewalModal);
+  }
+  
+  if (renewMembershipModal) {
+    renewMembershipModal.addEventListener('mousedown', function(e) {
+      if (e.target === renewMembershipModal) closeRenewalModal();
+    });
+  }
+
+  // Form submission
+  if (renewMembershipForm) {
+    renewMembershipForm.onsubmit = async function(e) {
+      e.preventDefault();
+      
+      const token = await waitForToken('gymAdminToken', 10, 100);
+      if (!token) {
+        showDialog({
+          title: 'Authentication Error',
+          message: 'Please log in again to continue.',
+          confirmText: 'OK',
+          iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+        });
+        return;
+      }
+      
+      const formData = new FormData(renewMembershipForm);
+      const memberId = formData.get('memberId');
+      
+      if (!memberId) {
+        showDialog({
+          title: 'Error',
+          message: 'Member ID is missing. Please try again.',
+          confirmText: 'OK',
+          iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+        });
+        return;
+      }
+      
+      try {
+        const response = await fetch(`http://localhost:5000/api/members/renew/${memberId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            planSelected: formData.get('planSelected'),
+            monthlyPlan: formData.get('monthlyPlan'),
+            paymentAmount: parseInt(formData.get('paymentAmount')),
+            paymentMode: formData.get('paymentMode'),
+            activityPreference: formData.get('activityPreference')
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          showDialog({
+            title: '✅ Membership Renewed Successfully!',
+            message: `Membership has been renewed successfully!<br><br>📋 <b>New Expiry Date:</b> ${new Date(data.newExpiryDate).toLocaleDateString()}<br><br>💰 <b>Amount Paid:</b> ₹${formData.get('paymentAmount')}<br><br>📧 A renewal confirmation email has been sent to the member.`,
+            confirmText: 'Great!',
+            iconHtml: '<i class="fas fa-check-circle" style="color:#4caf50;font-size:2.5em;"></i>',
+            onConfirm: () => {
+              closeRenewalModal();
+              // Refresh the members table
+              if (typeof fetchMembersData === 'function') {
+                fetchMembersData();
+              }
+            }
+          });
+        } else {
+          throw new Error(data.message || 'Failed to renew membership');
+        }
+        
+      } catch (error) {
+        console.error('[RenewMembership] Error:', error);
+        showDialog({
+          title: 'Renewal Failed',
+          message: error.message || 'Failed to renew membership. Please try again.',
+          confirmText: 'OK',
+          iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+        });
+      }
+    };
+  }
+
+  // Make openRenewalModal globally available
+  window.openRenewalModal = openRenewalModal;
+  
+});
+
             let currentGymProfile = {}; // Store fetched profile data
 
             async function fetchAndUpdateAdminProfile() {
@@ -2994,6 +3273,8 @@ function hideAllMainTabs() {
   if (settingsTab) settingsTab.style.display = 'none';
   if (attendanceTab) attendanceTab.style.display = 'none';
   if (paymentTab) paymentTab.style.display = 'none';
+  const supportReviewsTab = document.getElementById('supportReviewsTab');
+  if (supportReviewsTab) supportReviewsTab.style.display = 'none';
 }
 
 if (attendanceMenuLink && attendanceTab) {
@@ -3286,6 +3567,7 @@ function updateMainContentMargins() {
   setTabMargin(settingsTab);
   setTabMargin(attendanceTab);
   setTabMargin(paymentTab);
+  setTabMargin(supportReviewsTab);
 }
 
 // Dynamic sidebar menu highlight
@@ -3311,6 +3593,19 @@ sidebarMenuLinks.forEach(link => {
       link.classList.add('active');
       // Fetch members if needed
       if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
+    } else if (menuText === 'Support & Reviews') {
+      // Show support & reviews, hide others
+      hideAllMainTabs();
+      const supportReviewsTab = document.getElementById('supportReviewsTab');
+      if (supportReviewsTab) supportReviewsTab.style.display = 'block';
+      updateMainContentMargins();
+      // Remove active from all, add to support & reviews
+      sidebarMenuLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      // Initialize support reviews if available
+      if (window.supportReviewsManager && typeof window.supportReviewsManager.switchTab === 'function') {
+        window.supportReviewsManager.switchTab('notifications');
+      }
     } else if (menuText === 'Settings') {
       // Show settings, hide others
       hideAllMainTabs();
@@ -3395,7 +3690,7 @@ function handleMemberSearchAndFilter() {
 function renderMembersTable(members) {
   if (!membersTableBody) return;
   if (!Array.isArray(members) || !members.length) {
-    membersTableBody.innerHTML = '<tr><td colspan="13" style="text-align:center; color:#888;">No members found.</td></tr>';
+    membersTableBody.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#888;">No members found.</td></tr>';
     return;
   }
   membersTableBody.innerHTML = '';
@@ -3410,20 +3705,29 @@ function renderMembersTable(members) {
     const amountPaid = member.paymentAmount !== undefined ? member.paymentAmount : '';
     const address = member.address || member.memberAddress || '';
     const rowId = member._id ? `data-member-id="${member._id}"` : '';
-    // Row color logic
+    
+    // Row color logic and action button logic
     let statusClass = '';
+    let actionButton = '';
     if (validUntilRaw) {
       const validDate = new Date(validUntilRaw);
       validDate.setHours(0,0,0,0);
       const diffDays = Math.ceil((validDate - today) / (1000 * 60 * 60 * 24));
+      
       if (diffDays < 0) {
         statusClass = 'member-row-expired';
-      } else if (diffDays === 0 || diffDays === 1 || diffDays === 3) {
+        actionButton = `<button class="renew-membership-btn" data-member-id="${member._id}" style="background:#e53935;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.85em;font-weight:500;">🔄 Renew</button>`;
+      } else if (diffDays <= 3) {
         statusClass = 'member-row-expiring';
+        actionButton = `<button class="renew-membership-btn" data-member-id="${member._id}" style="background:#ff9800;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.85em;font-weight:500;">🔄 Renew</button>`;
       } else {
         statusClass = 'member-row-active';
+        actionButton = `<span style="color:#4caf50;font-size:0.85em;">✅ Active</span>`;
       }
+    } else {
+      actionButton = `<button class="renew-membership-btn" data-member-id="${member._id}" style="background:#e53935;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.85em;font-weight:500;">🔄 Renew</button>`;
     }
+    
     membersTableBody.innerHTML += `
       <tr ${rowId} class="${statusClass}">
         <td style="text-align:center;"><img src="${imgSrc}" alt="Profile" style="width:48px;height:48px;border-radius:50%;object-fit:cover;"></td>
@@ -3440,6 +3744,7 @@ function renderMembersTable(members) {
          <td>${joinDate}</td>
         <td>${validUntil}</td>
         <td>${amountPaid}</td>
+        <td style="text-align:center;">${actionButton}</td>
       </tr>
     `;
   });
@@ -3543,6 +3848,38 @@ window.openMembersDetailCard = openMembersDetailCard;
 // --- Member Detail Card: Show details for clicked member row ---
 if (membersTableBody) {
   membersTableBody.addEventListener('click', function(e) {
+    // Check if the clicked element is a renew membership button
+    if (e.target.classList.contains('renew-membership-btn')) {
+      e.stopPropagation(); // Prevent row click event
+      
+      const memberId = e.target.getAttribute('data-member-id');
+      if (!memberId) {
+        console.error('Member ID not found on renew button');
+        return;
+      }
+      
+      // Find member data from cache
+      const memberData = allMembersCache.find(m => m._id === memberId);
+      if (!memberData) {
+        showDialog({
+          title: 'Error',
+          message: 'Member data not found. Please refresh the page and try again.',
+          confirmText: 'OK',
+          iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+        });
+        return;
+      }
+      
+      // Open renewal modal with member data
+      if (typeof window.openRenewalModal === 'function') {
+        window.openRenewalModal(memberData);
+      } else {
+        console.error('openRenewalModal function not available');
+      }
+      return;
+    }
+    
+    // Original row click functionality for member details
     let tr = e.target;
     while (tr && tr.tagName !== 'TR') tr = tr.parentElement;
     if (tr) {
@@ -3958,6 +4295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     'Members': 'memberDisplayTab',
     'Attendance': 'attendanceTab',
     'Payments': 'paymentTab',
+    'Support & Reviews': 'supportReviewsTab',
     'Settings': 'settingsTab',
     // Add more mappings as you implement more tabs
   };

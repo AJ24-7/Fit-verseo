@@ -9,6 +9,7 @@ const Notification = require('../models/Notification');
 const GymNotification = require('../models/GymNotification');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminAuth = require('../middleware/adminAuth');
+const gymadminAuth = require('../middleware/gymadminAuth');
 const sendEmail = require('../utils/sendEmail');
 const whatsappService = require('../services/whatsappService');
 
@@ -604,6 +605,212 @@ router.post('/admin/tickets', adminAuth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error creating support ticket',
+      error: error.message
+    });
+  }
+});
+
+// Get support tickets for a specific gym (for gym admin dashboard)
+router.get('/gym/:gymId', gymadminAuth, async (req, res) => {
+  try {
+    const { gymId } = req.params;
+    const { status, priority, category, page = 1, limit = 50 } = req.query;
+
+    // Build filter object
+    const filter = {
+      $or: [
+        { userId: gymId, userType: 'Gym' }, // Tickets created by the gym
+        { 'responses.userId': gymId } // Tickets the gym has responded to
+      ]
+    };
+
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+    if (category) filter.category = category;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const tickets = await Support.find(filter)
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalCount = await Support.countDocuments(filter);
+
+    res.json({
+      success: true,
+      tickets,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / parseInt(limit)),
+        totalItems: totalCount,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching gym support tickets:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching support tickets',
+      error: error.message
+    });
+  }
+});
+
+// Respond to a support ticket (for gym admins)
+router.post('/:ticketId/respond', gymadminAuth, async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { message, closeAfter = false } = req.body;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Response message is required'
+      });
+    }
+
+    const ticket = await Support.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Support ticket not found'
+      });
+    }
+
+    // Add response
+    const response = {
+      message: message.trim(),
+      isAdmin: true,
+      timestamp: new Date(),
+      userId: req.user?.id || 'admin'
+    };
+
+    ticket.responses = ticket.responses || [];
+    ticket.responses.push(response);
+
+    // Update status
+    if (closeAfter) {
+      ticket.status = 'closed';
+      ticket.resolvedAt = new Date();
+    } else if (ticket.status === 'open') {
+      ticket.status = 'in-progress';
+    }
+
+    ticket.lastResponseAt = new Date();
+    
+    await ticket.save();
+
+    // Send notification to the user if they have an email
+    if (ticket.userEmail) {
+      try {
+        await sendEmail(
+          ticket.userEmail,
+          `Response to Your Support Request - ${ticket.ticketId}`,
+          `
+            <h2>Response to Your Support Request</h2>
+            <p><strong>Ticket ID:</strong> ${ticket.ticketId}</p>
+            <p><strong>Subject:</strong> ${ticket.subject}</p>
+            <p><strong>Response:</strong></p>
+            <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #1976d2; margin: 15px 0;">
+              ${message}
+            </div>
+            ${closeAfter ? '<p><strong>Status:</strong> This ticket has been closed.</p>' : ''}
+            <p>Thank you for contacting us!</p>
+          `
+        );
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Response sent successfully',
+      ticket: await Support.findById(ticketId).populate('user', 'name email')
+    });
+
+  } catch (error) {
+    console.error('Error responding to support ticket:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error sending response',
+      error: error.message
+    });
+  }
+});
+
+// Close a support ticket
+router.put('/:ticketId/close', gymadminAuth, async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { reason } = req.body;
+
+    const ticket = await Support.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Support ticket not found'
+      });
+    }
+
+    ticket.status = 'closed';
+    ticket.resolvedAt = new Date();
+    
+    if (reason) {
+      const closeResponse = {
+        message: `Ticket closed. Reason: ${reason}`,
+        isAdmin: true,
+        timestamp: new Date(),
+        userId: req.user?.id || 'admin'
+      };
+      
+      ticket.responses = ticket.responses || [];
+      ticket.responses.push(closeResponse);
+    }
+
+    await ticket.save();
+
+    res.json({
+      success: true,
+      message: 'Ticket closed successfully',
+      ticket: await Support.findById(ticketId).populate('user', 'name email')
+    });
+
+  } catch (error) {
+    console.error('Error closing support ticket:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error closing ticket',
+      error: error.message
+    });
+  }
+});
+
+// Get grievances for a specific gym (placeholder endpoint)
+router.get('/grievances/gym/:gymId', gymadminAuth, async (req, res) => {
+  try {
+    const { gymId } = req.params;
+    
+    // For now, return an empty array since grievances aren't fully implemented
+    // This can be expanded when the grievance system is built
+    const grievances = await Support.find({
+      userId: gymId,
+      category: 'grievance',
+      userType: 'Gym'
+    }).populate('user', 'name email').sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      grievances,
+      message: 'Grievance system will be fully implemented in the next phase'
+    });
+  } catch (error) {
+    console.error('Error fetching grievances:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching grievances',
       error: error.message
     });
   }

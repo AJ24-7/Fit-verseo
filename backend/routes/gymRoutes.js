@@ -133,7 +133,8 @@ function buildGymFilter({ city, pincode, activities }) {
       .filter(a => typeof a === 'string' && a.trim() !== '')
       .map(a => new RegExp(a.trim(), 'i'));
     if (cleanedActivities.length > 0) {
-      filter.activities = { $in: cleanedActivities };
+      // Search in activities.name field since activities are stored as objects
+      filter['activities.name'] = { $in: cleanedActivities };
     }
   }
   return filter;

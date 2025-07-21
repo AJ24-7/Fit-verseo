@@ -28,14 +28,34 @@ const reviewSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    // Admin reply system
+    adminReply: {
+        reply: {
+            type: String,
+            trim: true
+        },
+        repliedAt: {
+            type: Date,
+            default: null
+        },
+        repliedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Gym',
+            default: null
+        }
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
     createdAt: {
         type: Date,
         default: Date.now
     }
 });
 
-// Ensure a user can only review a specific gym once (optional, uncomment if desired)
-// reviewSchema.index({ gym: 1, user: 1 }, { unique: true });
+// Ensure a user can only review a specific gym once
+reviewSchema.index({ gym: 1, user: 1 }, { unique: true });
 
 // Middleware to populate user details (name) when finding reviews
 // This is not strictly necessary here if population is handled in controller, but can be useful.

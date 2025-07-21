@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addMember, getMembers, updateMember, removeMembersByIds, removeExpiredMembers } = require('../controllers/memberController');
+const { addMember, getMembers, updateMember, removeMembersByIds, removeExpiredMembers, renewMembership } = require('../controllers/memberController');
 const gymadminAuth = require('../middleware/gymadminAuth');
 const memberImageUpload = require('../middleware/memberImageUpload');
 const Member = require('../models/Member');
@@ -31,6 +31,9 @@ router.post('/remove-expired', gymadminAuth, async (req, res) => {
 
 // Add a new member (protected route, with image upload)
 router.post('/', gymadminAuth, memberImageUpload.single('profileImage'), addMember);
+
+// Renew membership for existing member
+router.put('/renew/:memberId', gymadminAuth, renewMembership);
 
 // Send membership email (public endpoint for frontend fallback)
 router.post('/send-membership-email', gymadminAuth, async (req, res) => {

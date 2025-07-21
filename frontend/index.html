@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> FIT-verse - Find Your Perfect Gym</title>
+    <title> Gym-Wale - Find Your Perfect Gym</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -15,7 +15,7 @@
     <!-- Navbar -->
     <header>
         <nav class="navbar">
-            <a href="index.html" class="logo">FIT<span>-verse</span></a>
+            <a href="index.html" class="logo">Gym<span>-Wale</span></a>
             <ul class="nav-links">
                 <li><a href="index.html" class="active">Home</a></li>
                 <li><a href="#" class="nav-item">About</a></li>
@@ -64,8 +64,12 @@
         </div>
         <!--gym search container-->
         <div class="gym-search-container">
-            <h2><i class="fas fa-search"></i> Find Your Perfect Gym</h2>
-        
+            <h2 style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                <span><i class="fas fa-search"></i> Find Your Perfect Gym</span>
+                <button id="nearYouBtn" class="near-you-btn" title="Find gyms near your location" style="margin: 0;">
+                    <i class="fas fa-location-crosshairs"></i> Near You
+                </button>
+            </h2>
             <!-- City & Pincode -->
             <div class="filter-group">
                 <label for="city"><i class="fas fa-city"></i> City:</label>
@@ -87,20 +91,50 @@
             <div class="gym-activities">
                 <h3><i class="fas fa-bolt"></i> Available Activities:</h3>
                 <div class="activity-list">
-                    <div class="activity" data-activity="cardio">
-                        <i class="fas fa-heartbeat"></i> Cardio
-                    </div>
-                    <div class="activity" data-activity="strength">
-                        <i class="fas fa-dumbbell"></i> Strength
-                    </div>
-                    <div class="activity" data-activity="crossfit">
-                        <i class="fas fa-running"></i> CrossFit
+                    <div class="activity" data-activity="yoga">
+                        <i class="fas fa-person-praying"></i> Yoga
                     </div>
                     <div class="activity" data-activity="zumba">
                         <i class="fas fa-music"></i> Zumba
                     </div>
-                    <div class="activity" data-activity="yoga">
-                        <i class="fas fa-spa"></i> Yoga
+                    <div class="activity" data-activity="crossfit">
+                        <i class="fas fa-dumbbell"></i> CrossFit
+                    </div>
+                    <div class="activity" data-activity="weight training">
+                        <i class="fas fa-weight-hanging"></i> Weight Training
+                    </div>
+                    <div class="activity" data-activity="cardio">
+                        <i class="fas fa-heartbeat"></i> Cardio
+                    </div>
+                    <div class="activity" data-activity="pilates">
+                        <i class="fas fa-child"></i> Pilates
+                    </div>
+                    <div class="activity" data-activity="hiit">
+                        <i class="fas fa-bolt"></i> HIIT
+                    </div>
+                    <div class="activity" data-activity="aerobics">
+                        <i class="fas fa-running"></i> Aerobics
+                    </div>
+                    <div class="activity" data-activity="martial arts">
+                        <i class="fas fa-hand-fist"></i> Martial Arts
+                    </div>
+                    <div class="activity" data-activity="spin class">
+                        <i class="fas fa-bicycle"></i> Spin Class
+                    </div>
+                    <div class="activity" data-activity="swimming">
+                        <i class="fas fa-person-swimming"></i> Swimming
+                    </div>
+                    <div class="activity" data-activity="boxing">
+                        <i class="fas fa-hand-rock"></i> Boxing
+                    </div>
+                    <div class="activity" data-activity="personal training">
+                        <i class="fas fa-user-tie"></i> Personal Training
+                    </div>
+                    <div class="activity" data-activity="bootcamp">
+                        <i class="fas fa-shoe-prints"></i> Bootcamp
+                    </div>
+                    <div class="activity" data-activity="stretching">
+                        <i class="fas fa-arrows-up-down"></i> Stretching
                     </div>
                 </div>
             </div>

@@ -3552,3 +3552,134 @@ body[data-theme="dark"] .filter-btn {
 
 
 /* === END NOTIFICATION SYSTEM STYLES === */
+
+/* === RENEW MEMBERSHIP STYLES === */
+.renew-membership-btn {
+  background: #e53935 !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 0.85em !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  min-width: 70px !important;
+}
+
+.renew-membership-btn:hover {
+  background: #d32f2f !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(229, 57, 53, 0.3) !important;
+}
+
+.member-row-expired .renew-membership-btn {
+  background: #e53935 !important;
+  animation: renewPulse 2s infinite !important;
+}
+
+.member-row-expiring .renew-membership-btn {
+  background: #ff9800 !important;
+}
+
+.member-row-expiring .renew-membership-btn:hover {
+  background: #f57c00 !important;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3) !important;
+}
+
+@keyframes renewPulse {
+  0% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(229, 57, 53, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0); }
+}
+
+/* Renew membership modal styles */
+
+#renewMembershipModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2vw 1vw;
+  z-index: 10010;
+}
+
+#renewMembershipModal .modal-content {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  animation: modalSlideIn 0.3s ease-out;
+  margin: 0 auto;
+  max-width: 98vw;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  top: 0;
+  left: 0;
+  padding: 2.2rem 1.5rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+@media (max-width: 700px) {
+  #renewMembershipModal .modal-content {
+    padding: 1.2rem 0.5rem 1rem 0.5rem;
+    max-width: 99vw;
+    min-width: 0;
+    width: 100vw;
+    border-radius: 8px;
+  }
+  #renewMemberInfo {
+    font-size: 0.98em;
+    padding: 0.7rem 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #renewMembershipModal .modal-content {
+    padding: 0.5rem 0.1rem 0.5rem 0.1rem;
+    max-width: 100vw;
+    min-width: 0;
+    width: 100vw;
+    border-radius: 0;
+  }
+  #renewMemberInfo {
+    font-size: 0.95em;
+    padding: 0.5rem 0.2rem;
+  }
+}
+
+#renewMemberInfo {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left: 4px solid #1976d2;
+  position: relative;
+}
+
+#renewMemberInfo::before {
+  content: "🔄";
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5em;
+  opacity: 0.3;
+}
+
+/* Row status styles */
+.member-row-expired {
+  background-color: rgba(229, 57, 53, 0.05) !important;
+  border-left: 3px solid #e53935;
+}
+
+.member-row-expiring {
+  background-color: rgba(255, 152, 0, 0.05) !important;
+  border-left: 3px solid #ff9800;
+}
+
+.member-row-active {
+  background-color: rgba(76, 175, 80, 0.05) !important;
+  border-left: 3px solid #4caf50;
+}
+
+/* === END RENEW MEMBERSHIP STYLES === */

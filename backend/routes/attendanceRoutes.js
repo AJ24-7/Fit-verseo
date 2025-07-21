@@ -4,6 +4,380 @@ const Attendance = require('../models/Attendance');
 const Member = require('../models/Member');
 const Trainer = require('../models/trainerModel');
 const gymadminAuth = require('../middleware/gymadminAuth');
+const authMiddleware = require('../middleware/authMiddleware');
+
+// Rush hour analysis endpoint for gym details page
+router.get('/rush-analysis/:gymId', async (req, res) => {
+    try {
+        const { gymId } = req.params;
+        const today = new Date();
+        
+        // For today's rush hour, analyze just today's data for real-time insights
+        const todayStart = new Date(today);
+        todayStart.setHours(0, 0, 0, 0);
+        
+        const todayEnd = new Date(today);
+        todayEnd.setHours(23, 59, 59, 999);
+
+        console.log(`🔍 Fetching today's rush hour data for gym ${gymId} on ${todayStart.toISOString().split('T')[0]}`);
+        console.log(`📅 Date range: ${todayStart.toISOString()} to ${todayEnd.toISOString()}`);
+        console.log(`🏋️ Gym ID type: ${typeof gymId}, value: ${gymId}`);
+
+        // Get today's attendance data with present status
+        const todayAttendance = await Attendance.find({
+            gymId: gymId,
+            date: {
+                $gte: todayStart,
+                $lte: todayEnd
+            },
+            status: 'present'
+        }).select('checkInTime checkOutTime date gymId personId status');
+
+        console.log(`📊 Found ${todayAttendance.length} attendance records for today`);
+        console.log(`🔍 Sample attendance records:`, todayAttendance.slice(0, 3));
+        
+        // Also check all attendance records for debugging
+        const allTodayAttendance = await Attendance.find({
+            date: {
+                $gte: todayStart,
+                $lte: todayEnd
+            }
+        }).select('checkInTime checkOutTime date gymId personId status');
+        
+        console.log(`📈 Total attendance records for today (all gyms): ${allTodayAttendance.length}`);
+        console.log(`🔍 All today's records:`, allTodayAttendance.slice(0, 5));
+
+        // Also get past 7 days for comparison and trends
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        
+        const weeklyAttendance = await Attendance.find({
+            gymId: gymId,
+            date: {
+                $gte: sevenDaysAgo,
+                $lte: today
+            },
+            status: 'present'
+        }).select('checkInTime checkOutTime date');
+
+        console.log(`� Found ${weeklyAttendance.length} attendance records for past 7 days`);
+
+        // Process today's data to calculate hourly attendance
+        const todayHourlyData = {};
+        const weeklyHourlyData = {};
+        
+        // Initialize all hours from 6 AM to 10 PM
+        for (let hour = 6; hour <= 22; hour++) {
+            todayHourlyData[hour] = 0;
+            weeklyHourlyData[hour] = 0;
+        }
+
+        // Process today's attendance
+        todayAttendance.forEach(record => {
+            if (record.checkInTime) {
+                let checkInHour;
+                
+                // Handle different time formats
+                if (record.checkInTime.includes('pm') || record.checkInTime.includes('am')) {
+                    // Format: "12:49:19 pm" or "1:19:25 pm"
+                    const timeStr = record.checkInTime.toLowerCase();
+                    const [time, period] = timeStr.split(' ');
+                    const [hour, minute] = time.split(':');
+                    let hourNum = parseInt(hour);
+                    
+                    // Convert to 24-hour format
+                    if (period === 'pm' && hourNum !== 12) {
+                        hourNum += 12;
+                    } else if (period === 'am' && hourNum === 12) {
+                        hourNum = 0;
+                    }
+                    
+                    checkInHour = hourNum;
+                } else {
+                    // Format: "14:30"
+                    const timeParts = record.checkInTime.split(':');
+                    checkInHour = parseInt(timeParts[0]);
+                }
+                
+                console.log(`⏰ Processing checkInTime: "${record.checkInTime}" -> hour: ${checkInHour}`);
+                
+                if (checkInHour >= 6 && checkInHour <= 22) {
+                    todayHourlyData[checkInHour]++;
+                }
+            }
+        });
+
+        // Process weekly attendance for comparison
+        weeklyAttendance.forEach(record => {
+            if (record.checkInTime) {
+                let checkInHour;
+                
+                // Handle different time formats
+                if (record.checkInTime.includes('pm') || record.checkInTime.includes('am')) {
+                    // Format: "12:49:19 pm" or "1:19:25 pm"
+                    const timeStr = record.checkInTime.toLowerCase();
+                    const [time, period] = timeStr.split(' ');
+                    const [hour, minute] = time.split(':');
+                    let hourNum = parseInt(hour);
+                    
+                    // Convert to 24-hour format
+                    if (period === 'pm' && hourNum !== 12) {
+                        hourNum += 12;
+                    } else if (period === 'am' && hourNum === 12) {
+                        hourNum = 0;
+                    }
+                    
+                    checkInHour = hourNum;
+                } else {
+                    // Format: "14:30"
+                    const timeParts = record.checkInTime.split(':');
+                    checkInHour = parseInt(timeParts[0]);
+                }
+                
+                if (checkInHour >= 6 && checkInHour <= 22) {
+                    weeklyHourlyData[checkInHour]++;
+                }
+            }
+        });
+
+        // Calculate statistics for today
+        const todayCounts = Object.values(todayHourlyData);
+        const todayTotal = todayCounts.reduce((sum, count) => sum + count, 0);
+        const todayMax = Math.max(...todayCounts);
+        const todayAvg = todayTotal / todayCounts.length;
+
+        // Calculate weekly averages for comparison
+        const weeklyCounts = Object.values(weeklyHourlyData);
+        const weeklyTotal = weeklyCounts.reduce((sum, count) => sum + count, 0);
+        const weeklyAvg = weeklyTotal / (7 * weeklyCounts.length); // Average per day
+
+        // Handle case when there's no data
+        if (todayTotal === 0 && weeklyTotal === 0) {
+            console.log('⚠️ No attendance data found for today or this week');
+            return res.json({
+                success: true,
+                data: {
+                    hourlyData: Object.keys(todayHourlyData).reduce((acc, hour) => {
+                        acc[hour] = { count: 0, rushLevel: 'low', percentage: 0 };
+                        return acc;
+                    }, {}),
+                    periodStats: {
+                        morning: { name: 'Morning (6 AM - 12 PM)', averageAttendance: 0, totalAttendance: 0, rushLevel: 'low', peakHour: 6 },
+                        afternoon: { name: 'Afternoon (12 PM - 6 PM)', averageAttendance: 0, totalAttendance: 0, rushLevel: 'low', peakHour: 12 },
+                        evening: { name: 'Evening (6 PM - 11 PM)', averageAttendance: 0, totalAttendance: 0, rushLevel: 'low', peakHour: 18 }
+                    },
+                    peakHour: 6,
+                    leastBusyHour: 6,
+                    totalDays: 1,
+                    averageDailyAttendance: 0,
+                    todayTotal: 0,
+                    statistics: { maxAttendance: 0, avgAttendance: 0, lowThreshold: 0, highThreshold: 0 },
+                    hasData: false,
+                    isToday: true
+                }
+            });
+        }
+
+        // Use today's data primarily, fall back to weekly average for thresholds
+        const baselineAvg = todayTotal > 0 ? todayAvg : weeklyAvg;
+        const baselineMax = todayTotal > 0 ? todayMax : Math.max(...weeklyCounts) / 7;
+
+        // Define dynamic thresholds based on data
+        const lowThreshold = baselineAvg * 0.5;
+        const highThreshold = baselineAvg * 1.5;
+
+        // Process hourly data with rush levels
+        const processedData = {};
+        Object.keys(todayHourlyData).forEach(hour => {
+            const count = todayHourlyData[hour];
+            let rushLevel = 'low';
+            
+            if (count >= highThreshold) {
+                rushLevel = 'high';
+            } else if (count >= lowThreshold) {
+                rushLevel = 'medium';
+            }
+
+            processedData[hour] = {
+                count,
+                rushLevel,
+                percentage: todayMax > 0 ? Math.round((count / todayMax) * 100) : 0
+            };
+        });
+
+        // Calculate period statistics using today's data
+        const periods = {
+            morning: { hours: [6, 7, 8, 9, 10, 11], name: 'Morning (6 AM - 12 PM)' },
+            afternoon: { hours: [12, 13, 14, 15, 16, 17], name: 'Afternoon (12 PM - 6 PM)' },
+            evening: { hours: [18, 19, 20, 21, 22], name: 'Evening (6 PM - 11 PM)' }
+        };
+
+        const periodStats = {};
+        Object.keys(periods).forEach(periodKey => {
+            const period = periods[periodKey];
+            const periodCounts = period.hours.map(hour => todayHourlyData[hour] || 0);
+            const periodTotal = periodCounts.reduce((sum, count) => sum + count, 0);
+            const periodAvg = periodTotal / period.hours.length;
+            
+            let periodRushLevel = 'low';
+            if (periodAvg >= highThreshold) {
+                periodRushLevel = 'high';
+            } else if (periodAvg >= lowThreshold) {
+                periodRushLevel = 'medium';
+            }
+
+            periodStats[periodKey] = {
+                name: period.name,
+                averageAttendance: Math.round(periodAvg),
+                totalAttendance: periodTotal,
+                rushLevel: periodRushLevel,
+                peakHour: period.hours.reduce((peak, hour) => 
+                    (todayHourlyData[hour] || 0) > (todayHourlyData[peak] || 0) ? hour : peak
+                )
+            };
+        });
+
+        // Find overall peak and least busy hours from today's data
+        const peakHour = Object.keys(todayHourlyData).reduce((peak, hour) => 
+            todayHourlyData[hour] > todayHourlyData[peak] ? hour : peak
+        );
+        
+        const leastBusyHour = Object.keys(todayHourlyData).reduce((least, hour) => 
+            todayHourlyData[hour] < todayHourlyData[least] ? hour : least
+        );
+
+        // Get today's date for display
+        const todayDateString = today.toISOString().split('T')[0];
+
+        const analysisResult = {
+            success: true,
+            data: {
+                hourlyData: processedData,
+                periodStats,
+                peakHour: parseInt(peakHour),
+                leastBusyHour: parseInt(leastBusyHour),
+                totalDays: 1, // Today only
+                averageDailyAttendance: todayTotal,
+                todayTotal,
+                todayDate: todayDateString,
+                weeklyComparison: {
+                    todayTotal,
+                    weeklyAverage: Math.round(weeklyTotal / 7),
+                    trend: todayTotal > (weeklyTotal / 7) ? 'higher' : todayTotal < (weeklyTotal / 7) ? 'lower' : 'same'
+                },
+                statistics: {
+                    maxAttendance: todayMax,
+                    avgAttendance: Math.round(todayAvg),
+                    lowThreshold: Math.round(lowThreshold),
+                    highThreshold: Math.round(highThreshold)
+                },
+                hasData: true,
+                isToday: true,
+                lastUpdated: new Date().toISOString()
+            }
+        };
+
+        console.log(`✅ Today's rush hour analysis complete for gym ${gymId} on ${todayDateString}. Peak: ${peakHour}:00, Today total: ${todayTotal}, Weekly avg: ${Math.round(weeklyTotal / 7)}`);
+        res.json(analysisResult);
+
+    } catch (error) {
+        console.error('❌ Error in rush hour analysis:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to analyze rush hours',
+            message: error.message 
+        });
+    }
+});
+
+// Create sample attendance data for testing rush hour analysis
+router.post('/create-sample-data/:gymId', async (req, res) => {
+    try {
+        const { gymId } = req.params;
+        console.log(`🧪 Creating sample attendance data for gym ${gymId}`);
+
+        // Get members for this gym (you may need to adjust this based on your member model)
+        const Member = require('../models/Member');
+        const members = await Member.find().limit(20); // Get some members for testing
+        
+        if (members.length === 0) {
+            return res.status(400).json({ error: 'No members found to create sample data' });
+        }
+
+        const today = new Date();
+        const sampleData = [];
+
+        // Create attendance data for the past 7 days
+        for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+            const currentDate = new Date(today);
+            currentDate.setDate(today.getDate() - dayOffset);
+            
+            // Define rush hour patterns (more realistic attendance)
+            const hourlyPatterns = {
+                6: { base: 2, variance: 1 },   // Early morning - few people
+                7: { base: 5, variance: 2 },   // Morning rush starts
+                8: { base: 8, variance: 3 },   // Peak morning
+                9: { base: 6, variance: 2 },   // Late morning
+                10: { base: 4, variance: 2 },  // Mid morning
+                11: { base: 3, variance: 1 },  // Pre-lunch lull
+                12: { base: 4, variance: 2 },  // Lunch time
+                13: { base: 3, variance: 1 },  // Post lunch
+                14: { base: 2, variance: 1 },  // Afternoon lull
+                15: { base: 3, variance: 1 },  // Mid afternoon
+                16: { base: 4, variance: 2 },  // Late afternoon
+                17: { base: 7, variance: 3 },  // Early evening rush
+                18: { base: 12, variance: 4 }, // Peak evening
+                19: { base: 10, variance: 3 }, // Evening
+                20: { base: 7, variance: 2 },  // Late evening
+                21: { base: 4, variance: 2 },  // Wind down
+                22: { base: 2, variance: 1 }   // Late night
+            };
+
+            // Generate attendance for each hour
+            Object.keys(hourlyPatterns).forEach(hour => {
+                const pattern = hourlyPatterns[hour];
+                const attendanceCount = Math.max(0, Math.round(
+                    pattern.base + (Math.random() - 0.5) * pattern.variance * 2
+                ));
+
+                // Create attendance records for random members
+                for (let i = 0; i < attendanceCount && i < members.length; i++) {
+                    const randomMember = members[Math.floor(Math.random() * members.length)];
+                    const checkInTime = `${hour.padStart(2, '0')}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
+                    const checkOutTime = `${(parseInt(hour) + 1 + Math.floor(Math.random() * 2)).toString().padStart(2, '0')}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
+
+                    sampleData.push({
+                        gymId: gymId,
+                        personId: randomMember._id,
+                        personType: 'Member',
+                        date: currentDate,
+                        status: 'present',
+                        checkInTime: checkInTime,
+                        checkOutTime: checkOutTime
+                    });
+                }
+            });
+        }
+
+        // Insert sample data
+        await Attendance.insertMany(sampleData);
+        
+        console.log(`✅ Created ${sampleData.length} sample attendance records`);
+        res.json({ 
+            success: true, 
+            message: `Created ${sampleData.length} sample attendance records`,
+            recordsCreated: sampleData.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error creating sample data:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to create sample data',
+            message: error.message 
+        });
+    }
+});
 
 // Get attendance for a specific date
 router.get('/:date', gymadminAuth, async (req, res) => {
@@ -396,5 +770,260 @@ router.get('/history/:personId', gymadminAuth, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch attendance history' });
     }
 });
+
+// Get attendance history for logged-in member
+router.get('/member/history', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Get the user's email to find the member record
+        const User = require('../models/User');
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Find the member record by email and populate gym details
+        const member = await Member.findOne({ email: user.email }).populate('gym', 'gymName city state');
+        if (!member) {
+            return res.status(404).json({ error: 'Member profile not found for this email' });
+        }
+
+        // Get the member's gym information for filtering
+        const gymId = member.gym._id;
+        
+        // Calculate date range based on membership period
+        const membershipStartDate = new Date(member.joinDate);
+        const membershipEndDate = member.membershipValidUntil ? new Date(member.membershipValidUntil) : new Date();
+        const today = new Date();
+        
+        // Set effective date range within membership period
+        let effectiveStartDate = membershipStartDate;
+        let effectiveEndDate = new Date(Math.min(today.getTime(), membershipEndDate.getTime()));
+        
+        // If membership hasn't started yet, return empty
+        if (membershipStartDate > today) {
+            return res.json({
+                success: true,
+                attendance: [],
+                stats: { currentStreak: 0, bestStreak: 0, totalPresent: 0, totalAbsent: 0, attendanceRate: 0 },
+                memberInfo: {
+                    name: member.memberName,
+                    joinDate: member.joinDate,
+                    membershipValidUntil: member.membershipValidUntil,
+                    membershipStartDate: membershipStartDate,
+                    membershipEndDate: membershipEndDate,
+                    gym: { name: member.gym.gymName, city: member.gym.city, state: member.gym.state },
+                    planSelected: member.planSelected,
+                    monthlyPlan: member.monthlyPlan,
+                    isActive: membershipEndDate > today,
+                    hasStarted: membershipStartDate <= today
+                }
+            });
+        }
+
+        // Build query to get attendance history within membership period
+        const query = {
+            gymId,
+            personId: member._id,
+            personType: 'Member',
+            date: {
+                $gte: effectiveStartDate,
+                $lte: effectiveEndDate
+            }
+        };
+
+        console.log('🔍 Fetching attendance for member:', {
+            userId,
+            userEmail: user.email,
+            memberId: member._id,
+            memberName: member.memberName,
+            gymId,
+            membershipPeriod: { effectiveStartDate, effectiveEndDate },
+            membershipInfo: {
+                joinDate: member.joinDate,
+                validUntil: member.membershipValidUntil,
+                plan: member.planSelected,
+                duration: member.monthlyPlan
+            }
+        });
+
+        const attendanceHistory = await Attendance.find(query)
+            .sort({ date: -1 })
+            .select('date status checkInTime checkOutTime createdAt')
+            .lean();
+
+        console.log(`📊 Found ${attendanceHistory.length} attendance records within membership period`);
+
+        // Format the response to match frontend expectations
+        const formattedHistory = attendanceHistory.map(record => ({
+            date: record.date,
+            status: record.status,
+            checkIn: record.checkInTime,
+            checkOut: record.checkOutTime,
+            duration: record.checkInTime && record.checkOutTime ? 
+                calculateDuration(record.checkInTime, record.checkOutTime) : 0
+        }));
+
+        // Calculate streaks and stats based on membership period
+        const stats = calculateMemberStats(formattedHistory, effectiveStartDate, effectiveEndDate);
+
+        res.json({
+            success: true,
+            attendance: formattedHistory,
+            stats: stats,
+            memberInfo: {
+                name: member.memberName,
+                joinDate: member.joinDate,
+                membershipValidUntil: member.membershipValidUntil,
+                membershipStartDate: effectiveStartDate,
+                membershipEndDate: membershipEndDate,
+                gym: { name: member.gym.gymName, city: member.gym.city, state: member.gym.state },
+                planSelected: member.planSelected,
+                monthlyPlan: member.monthlyPlan,
+                isActive: membershipEndDate > today,
+                hasStarted: membershipStartDate <= today,
+                totalMembershipDays: calculateWorkingDaysInPeriod(effectiveStartDate, effectiveEndDate)
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching member attendance history:', error);
+        res.status(500).json({ error: 'Failed to fetch attendance history' });
+    }
+});
+
+// Helper function to calculate duration between check-in and check-out
+function calculateDuration(checkIn, checkOut) {
+    if (!checkIn || !checkOut) return 0;
+    
+    try {
+        const checkInTime = new Date(`1970-01-01T${checkIn}:00`);
+        const checkOutTime = new Date(`1970-01-01T${checkOut}:00`);
+        
+        let diffMs = checkOutTime - checkInTime;
+        
+        // Handle case where checkout is next day
+        if (diffMs < 0) {
+            diffMs += 24 * 60 * 60 * 1000;
+        }
+        
+        return Math.round(diffMs / (1000 * 60)); // Return minutes
+    } catch (error) {
+        return 60; // Default 1 hour if calculation fails
+    }
+}
+
+// Helper function to calculate duration between check-in and check-out
+function calculateDuration(checkIn, checkOut) {
+    if (!checkIn || !checkOut) return 0;
+    
+    try {
+        const checkInTime = new Date(`1970-01-01T${checkIn}:00`);
+        const checkOutTime = new Date(`1970-01-01T${checkOut}:00`);
+        
+        let diffMs = checkOutTime - checkInTime;
+        
+        // Handle case where checkout is next day
+        if (diffMs < 0) {
+            diffMs += 24 * 60 * 60 * 1000;
+        }
+        
+        return Math.round(diffMs / (1000 * 60)); // Return minutes
+    } catch (error) {
+        return 60; // Default 1 hour if calculation fails
+    }
+}
+
+// Helper function to calculate member statistics
+function calculateMemberStats(attendanceHistory, membershipStartDate, membershipEndDate) {
+    const now = new Date();
+    
+    // Sort by date ascending for streak calculation
+    const sortedHistory = [...attendanceHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // Calculate streaks (excluding Sundays)
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let tempStreak = 0;
+    
+    // Calculate current streak going backwards from today (within membership period)
+    const today = new Date();
+    let checkDate = new Date(Math.min(today.getTime(), membershipEndDate.getTime()));
+    
+    // Calculate current streak
+    for (let i = 0; i < 60; i++) { // Check last 60 days max
+        const dateStr = checkDate.toISOString().split('T')[0];
+        const dayOfWeek = checkDate.getDay();
+        
+        // Skip Sundays (day 0) and dates before membership started
+        if (dayOfWeek === 0 || checkDate < membershipStartDate) {
+            checkDate.setDate(checkDate.getDate() - 1);
+            continue;
+        }
+        
+        const record = attendanceHistory.find(r => 
+            new Date(r.date).toISOString().split('T')[0] === dateStr
+        );
+        
+        if (record && record.status === 'present') {
+            currentStreak++;
+        } else {
+            // For dates within membership period but no record, consider as absent
+            break;
+        }
+        
+        checkDate.setDate(checkDate.getDate() - 1);
+    }
+    
+    // Calculate best streak
+    tempStreak = 0;
+    for (const record of sortedHistory) {
+        const recordDate = new Date(record.date);
+        const dayOfWeek = recordDate.getDay();
+        
+        // Skip Sundays
+        if (dayOfWeek === 0) continue;
+        
+        if (record.status === 'present') {
+            tempStreak++;
+            bestStreak = Math.max(bestStreak, tempStreak);
+        } else {
+            tempStreak = 0;
+        }
+    }
+    
+    // Calculate overall stats within membership period
+    const presentCount = attendanceHistory.filter(r => r.status === 'present').length;
+    const absentCount = attendanceHistory.filter(r => r.status === 'absent').length;
+    const totalWorkingDays = calculateWorkingDaysInPeriod(membershipStartDate, new Date(Math.min(today.getTime(), membershipEndDate.getTime())));
+    const attendanceRate = totalWorkingDays > 0 ? Math.round((presentCount / totalWorkingDays) * 100) : 0;
+    
+    return {
+        currentStreak,
+        bestStreak,
+        totalPresent: presentCount,
+        totalAbsent: absentCount,
+        totalWorkingDays,
+        attendanceRate,
+        membershipDaysActive: Math.max(0, Math.floor((Math.min(today.getTime(), membershipEndDate.getTime()) - membershipStartDate.getTime()) / (1000 * 60 * 60 * 24)))
+    };
+}
+
+// Helper function to calculate working days (excluding Sundays) in a period
+function calculateWorkingDaysInPeriod(startDate, endDate) {
+    let workingDays = 0;
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+        // Skip Sundays (day 0)
+        if (current.getDay() !== 0) {
+            workingDays++;
+        }
+        current.setDate(current.getDate() + 1);
+    }
+    
+    return workingDays;
+}
 
 module.exports = router;

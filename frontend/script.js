@@ -1,3 +1,36 @@
+// === NEAR YOU BUTTON FUNCTIONALITY ===
+document.addEventListener('DOMContentLoaded', function () {
+  const nearYouBtn = document.getElementById('nearYouBtn');
+  if (nearYouBtn) {
+    nearYouBtn.addEventListener('click', function () {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+      nearYouBtn.disabled = true;
+      nearYouBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          // Store user location globally for searchGyms
+          window.userLocation = { lat, lng };
+          // Optionally, reverse geocode to get city/pincode (not required for backend search)
+          // Trigger searchGyms with location
+          searchGyms();
+          nearYouBtn.innerHTML = '<i class="fas fa-location-crosshairs"></i> Near You';
+          nearYouBtn.disabled = false;
+        },
+        (err) => {
+          alert('Unable to fetch your location. Please allow location access.');
+          nearYouBtn.innerHTML = '<i class="fas fa-location-crosshairs"></i> Near You';
+          nearYouBtn.disabled = false;
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  }
+});
 // === NAVIGATION BAR: Toggle & Active Link Highlight ===
 document.addEventListener('DOMContentLoaded', function () {
   const menuToggle = document.querySelector('.menu-toggle');
@@ -99,7 +132,6 @@ function searchGyms() {
   const activities = Array.from(document.querySelectorAll(".activity.active"))
     .map(div => div.dataset.activity);
 
-  console.log("Search params:", { city, pincode, maxPrice, activities });
 
   // Build query parameters
   const params = new URLSearchParams();
@@ -117,7 +149,6 @@ function searchGyms() {
       return res.json();
     })
     .then(gyms => {
-      console.log("Filtered gyms from backend:", gyms);
       
       // Calculate distances for sorting
       const gymsWithDistance = gyms.map(gym => {
@@ -128,11 +159,21 @@ function searchGyms() {
             })
           : 0;
           
-        // Process activities for display
+        // Process activities for display - handle new object format
         let combinedActivities = [];
         if (gym.activities && Array.isArray(gym.activities)) {
-          combinedActivities.push(...gym.activities);
+          // Activities are now objects with name, icon, description
+          combinedActivities = gym.activities.map(activity => {
+            if (typeof activity === 'object' && activity.name) {
+              return activity.name;
+            } else if (typeof activity === 'string') {
+              return activity;
+            }
+            return null;
+          }).filter(name => name);
         }
+        
+        // Legacy support for old format
         if (gym.otherActivities) {
           if (Array.isArray(gym.otherActivities)) {
             combinedActivities.push(...gym.otherActivities);
@@ -140,6 +181,7 @@ function searchGyms() {
             combinedActivities.push(gym.otherActivities);
           }
         }
+        
         const uniqueGymActivities = [...new Set(combinedActivities.map(a => String(a).toLowerCase()))]
           .filter(a => a && a.trim() !== '');
           
@@ -153,7 +195,6 @@ function searchGyms() {
       // Sort by distance
       const sortedGyms = gymsWithDistance.sort((a, b) => a.distance - b.distance);
       
-      console.log("Processed gyms:", sortedGyms);
       showResults(sortedGyms);
       // Show gym counter with number of unique gyms
       const gymCounter = document.getElementById("gymSearchCounter");
@@ -196,24 +237,27 @@ function renderGymCards() {
       resultsDiv.appendChild(card);
     });
   
-  /**
-   * Helper function to create a gym card element.
-   */
+  
+   /*Helper function to create a gym card element.*/
+   
   function getGymLogoUrl(gym) {
+    // Default placeholder
     let fullLogoPath = 'https://via.placeholder.com/100x100.png?text=No+Logo';
+    console.log('Processing gym logo in search:', gym.logoUrl);
     if (gym.logoUrl) {
-      let logoPath = gym.logoUrl;
-      if (!logoPath.startsWith('http')) {
-        if (!logoPath.startsWith('/')) {
-          logoPath = '/' + logoPath;
+      let url = gym.logoUrl;
+      console.log('Raw logo URL:', url);
+      // Convert relative path to full URL if needed (same as gymadmin.js)
+      if (url && !url.startsWith('http')) {
+        if (url.startsWith('/')) {
+          fullLogoPath = `http://localhost:5000${url}`;
+        } else {
+          fullLogoPath = `http://localhost:5000/${url}`;
         }
-        if (!logoPath.startsWith('/uploads/')) {
-          logoPath = '/uploads' + (logoPath.startsWith('/') ? logoPath : '/' + logoPath);
-        }
-        fullLogoPath = `${BASE_URL}${logoPath}?${new Date().getTime()}`;
       } else {
-        fullLogoPath = `${logoPath}?${new Date().getTime()}`;
+        fullLogoPath = url;
       }
+      console.log('Final search logo URL:', fullLogoPath);
     }
     return fullLogoPath;
   }
@@ -237,19 +281,70 @@ function renderGymCards() {
 
     const fullLogoPath = getGymLogoUrl(gym);
 
+    // Get the minimum price from membership plans array
+    let minPrice = "N/A";
+    if (gym.membershipPlans && Array.isArray(gym.membershipPlans) && gym.membershipPlans.length > 0) {
+      const prices = gym.membershipPlans
+        .map(plan => plan.price)
+        .filter(price => price && !isNaN(price));
+      if (prices.length > 0) {
+        minPrice = Math.min(...prices);
+      }
+    }
+
+    // Add rating container (will be filled asynchronously)
+    const ratingContainer = document.createElement('div');
+    ratingContainer.className = 'gym-card-rating';
+    ratingContainer.innerHTML = `<span class="rating-value">...</span> <span class="rating-stars"></span>`;
+    ratingContainer.style.position = 'absolute';
+    ratingContainer.style.top = '12px';
+    ratingContainer.style.right = '12px';
+    ratingContainer.style.background = 'rgba(255,255,255,0.95)';
+    ratingContainer.style.borderRadius = '8px';
+    ratingContainer.style.padding = '4px 10px';
+    ratingContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+    ratingContainer.style.display = 'flex';
+    ratingContainer.style.alignItems = 'center';
+    ratingContainer.style.gap = '6px';
+    ratingContainer.style.zIndex = '2';
+
+    // Fetch rating from backend
+    fetch(`${BASE_URL}/api/reviews/gym/${gym._id}/average`)
+      .then(res => res.json())
+      .then(data => {
+        let avg = 0, count = 0;
+        if (data.success) {
+          avg = data.averageRating || 0;
+          count = data.totalReviews || 0;
+        }
+        ratingContainer.querySelector('.rating-value').textContent = avg.toFixed(1);
+        ratingContainer.querySelector('.rating-stars').innerHTML = generateStars(Math.round(avg));
+        ratingContainer.title = `${avg.toFixed(1)} / 5 from ${count} review${count !== 1 ? 's' : ''}`;
+      })
+      .catch(() => {
+        ratingContainer.querySelector('.rating-value').textContent = '0.0';
+        ratingContainer.querySelector('.rating-stars').innerHTML = generateStars(0);
+        ratingContainer.title = 'No reviews yet';
+      });
+
+    // Card HTML
     card.innerHTML = `
-      <img src="${fullLogoPath}" alt="${gym.gymName} Logo" class="gym-card-logo">
+      <img src="${fullLogoPath}" alt="${gym.gymName} Logo" class="gym-card-logo" loading="eager" decoding="sync" onerror="this.src='https://via.placeholder.com/100x100.png?text=No+Logo'">
       <div class="gym-card-details">
         <h3>${gym.gymName}</h3>
         <p>City: ${gym.location?.city || "N/A"} | Pincode: ${gym.location?.pincode || "N/A"}</p>
         <p>Distance: ${gym.distance ? gym.distance.toFixed(2) : "N/A"} km</p>
-        <p>Price: ₹${gym.membershipPlans?.basic?.price || "N/A"}</p>
+        <p>Starting from: ₹${minPrice !== "N/A" ? minPrice : "N/A"}</p>
         ${activitiesHTML}
         <a href="gymdetails.html?gymId=${gym._id}">
           <button class="view-full-btn">View Full Profile</button>
         </a>
       </div>
     `;
+
+    // Add rating container to card
+    card.style.position = 'relative';
+    card.appendChild(ratingContainer);
 
     return card;
   }
@@ -270,20 +365,23 @@ function renderGymCards() {
 // Helper function to get Font Awesome icon classes for activities
 function getActivityIcon(activityName) {
   const name = String(activityName).toLowerCase(); // Ensure activityName is a string
-  if (name.includes('yoga')) return 'fas fa-spa';
-  if (name.includes('zumba')) return 'fas fa-users';
+  if (name.includes('yoga')) return 'fas fa-person-praying';
+  if (name.includes('zumba')) return 'fas fa-music';
   if (name.includes('cardio')) return 'fas fa-heartbeat';
-  if (name.includes('weight') || name.includes('strength') || name.includes('lifting')) return 'fas fa-dumbbell';
-  if (name.includes('crossfit')) return 'fas fa-fire';
-  if (name.includes('spinning') || name.includes('cycle')) return 'fas fa-biking';
-  if (name.includes('pilates')) return 'fas fa-om';
-  if (name.includes('boxing')) return 'fas fa-fist-raised'; // May require Font Awesome Pro
-  if (name.includes('kickboxing')) return 'fas fa-user-ninja'; // Placeholder
-  if (name.includes('swimming') || name.includes('swim')) return 'fas fa-swimmer';
-  if (name.includes('dance')) return 'fas fa-music'; // Placeholder
+  if (name.includes('weight') || name.includes('strength') || name.includes('lifting')) return 'fas fa-weight-hanging';
+  if (name.includes('crossfit')) return 'fas fa-dumbbell';
+  if (name.includes('pilates')) return 'fas fa-child';
+  if (name.includes('hiit')) return 'fas fa-bolt';
   if (name.includes('aerobics')) return 'fas fa-running';
-  if (name.includes('martial arts')) return 'fas fa-user-shield'; // Placeholder
-  return 'fas fa-star'; // Default icon
+  if (name.includes('martial arts')) return 'fas fa-hand-fist';
+  if (name.includes('spin') || name.includes('cycle') || name.includes('spinning')) return 'fas fa-bicycle';
+  if (name.includes('swimming') || name.includes('swim')) return 'fas fa-person-swimming';
+  if (name.includes('boxing')) return 'fas fa-hand-rock';
+  if (name.includes('personal training')) return 'fas fa-user-tie';
+  if (name.includes('bootcamp') || name.includes('boot camp')) return 'fas fa-shoe-prints';
+  if (name.includes('stretching') || name.includes('stretch')) return 'fas fa-arrows-up-down';
+  if (name.includes('dance')) return 'fas fa-music';
+  return 'fas fa-dumbbell'; // Default icon
 }
 
 // === SLIDER ===
@@ -418,3 +516,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// Helper for stars
+function generateStars(rating) {
+  let stars = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= rating) {
+      stars += '<i class="fas fa-star" style="color:#ffd700;font-size:1em;"></i>';
+    } else {
+      stars += '<i class="far fa-star" style="color:#ddd;font-size:1em;"></i>';
+    }
+  }
+  return stars;
+}
