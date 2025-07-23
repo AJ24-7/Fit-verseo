@@ -17,7 +17,12 @@ router.put('/membership-plans', gymadminAuth, membershipPlanController.updateMem
 // 🔧 Multer Storage Setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/gymPhotos/');
+    // Use different folders based on file field name
+    if (file.fieldname === 'logo') {
+      cb(null, 'uploads/gym-logos/');
+    } else {
+      cb(null, 'uploads/gymPhotos/');
+    }
   },
   filename: (req, file, cb) => {
     const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -244,4 +249,8 @@ router.get('/:id', async (req, res) => {
 });
 
 router.put('/activities', gymadminAuth, gymController.updateActivities);
+
+// Migration endpoint to convert old string equipment to new object format
+router.post('/migrate-equipment', gymController.migrateEquipment);
+
 module.exports = router;

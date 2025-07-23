@@ -39,6 +39,14 @@
   border-left-color: #ef4444;
 }
 
+.payment-stat-card.pending {
+  border-left-color: #f59e0b;
+}
+
+.payment-stat-card.due {
+  border-left-color: #dc2626;
+}
+
 .payment-stat-card.profit {
   border-left-color: #3b82f6;
 }
@@ -77,6 +85,14 @@
   background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
+.payment-stat-icon.pending {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.payment-stat-icon.due {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
 .payment-stat-icon.profit {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
@@ -102,6 +118,10 @@
 
 .payment-stat-change.negative {
   color: #ef4444;
+}
+
+.payment-stat-change.neutral {
+  color: #f59e0b;
 }
 
 .payment-stat-change i {
@@ -437,167 +457,6 @@
   text-align: right;
 }
 
-/* Add Payment Modal */
-.add-payment-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 10000;
-  align-items: center;
-  justify-content: center;
-}
-
-.add-payment-modal.active {
-  display: flex;
-}
-
-.add-payment-modal-content {
-  background: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-.add-payment-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.add-payment-modal-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.modal-close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #6b7280;
-  padding: 4px;
-}
-
-.add-payment-modal-body {
-  padding: 24px;
-}
-
-.payment-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.payment-form-group {
-  margin-bottom: 16px;
-}
-
-.payment-form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.payment-form-label {
-  display: block;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 6px;
-}
-
-.payment-form-input,
-.payment-form-select,
-.payment-form-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  transition: border-color 0.2s ease;
-}
-
-.payment-form-input:focus,
-.payment-form-select:focus,
-.payment-form-textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.payment-form-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.payment-form-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.payment-form-checkbox input {
-  width: auto;
-}
-
-.recurring-details {
-  display: none;
-  margin-top: 16px;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.recurring-details.active {
-  display: block;
-}
-
-.add-payment-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 24px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.payment-form-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.payment-form-btn.primary {
-  background: var(--primary);
-  color: white;
-}
-
-.payment-form-btn.primary:hover {
-  background: var(--primary-dark);
-}
-
-.payment-form-btn.secondary {
-  background: #e5e7eb;
-  color: #374151;
-}
-
-.payment-form-btn.secondary:hover {
-  background: #d1d5db;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .payment-content-grid {
@@ -690,4 +549,417 @@
 .payment-empty-state p {
   font-size: 0.9rem;
   margin-bottom: 24px;
+}
+
+/* Enhanced Payment Category Grid */
+.payment-category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.payment-category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-height: 70px;
+  justify-content: center;
+}
+
+.payment-category-item:hover {
+  background: #f0f9ff;
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.payment-category-item.selected {
+  background: #1976d2;
+  color: white;
+  border-color: #1565c0;
+  box-shadow: 0 2px 12px rgba(25, 118, 210, 0.3);
+}
+
+.payment-category-item.selected .category-icon {
+  transform: scale(1.05);
+}
+
+.category-icon {
+  font-size: 1.25rem;
+  margin-bottom: 4px;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1976d2;
+}
+
+.category-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.1;
+  word-wrap: break-word;
+  max-width: 100%;
+  color: #374151;
+}
+
+.payment-category-item.selected .category-label {
+  color: white;
+  font-weight: 600;
+}
+
+/* Responsive adjustments for category grid */
+@media (max-width: 768px) {
+  .payment-category-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 10px;
+    max-height: 180px;
+  }
+  
+  .payment-category-item {
+    padding: 10px 6px;
+    min-height: 60px;
+  }
+  
+  .category-icon {
+    font-size: 1.1rem;
+    margin-bottom: 3px;
+  }
+  
+  .category-label {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-height: 160px;
+  }
+  
+  .payment-category-item {
+    min-height: 55px;
+  }
+}
+
+/* Add Payment Modal */
+.add-payment-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 30000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.add-payment-modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.add-payment-modal-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideIn 0.3s ease;
+}
+
+.add-payment-modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.add-payment-modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.modal-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.add-payment-modal-body {
+  padding: 24px;
+}
+
+.payment-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.payment-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.payment-form-label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.payment-form-input,
+.payment-form-select,
+.payment-form-textarea {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.payment-form-input:focus,
+.payment-form-select:focus,
+.payment-form-textarea:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.payment-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.payment-form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.payment-form-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.recurring-details {
+  display: none;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.recurring-details.active {
+  display: block;
+}
+
+.add-payment-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #f9fafb;
+  border-radius: 0 0 12px 12px;
+}
+
+.payment-form-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.payment-form-btn.primary {
+  background: #1976d2;
+  color: white;
+}
+
+.payment-form-btn.primary:hover {
+  background: #1565c0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.payment-form-btn.secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.payment-form-btn.secondary:hover {
+  background: #4b5563;
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments for modal */
+@media (max-width: 768px) {
+  .add-payment-modal-content {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .payment-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .add-payment-modal-header {
+    padding: 20px 20px 12px;
+  }
+  
+  .add-payment-modal-title {
+    font-size: 1.3rem;
+  }
+  
+  .add-payment-modal-body {
+    padding: 20px;
+  }
+}
+.payment-reminder-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.payment-reminder-badge.due-soon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.payment-reminder-badge.overdue {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.payment-reminder-badge.upcoming {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.payment-reminder-badge.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/* Payment Notification Styles */
+.payment-notification {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 12px;
+}
+
+.payment-notification.overdue {
+  border-left-color: #ef4444;
+}
+
+.payment-notification.upcoming {
+  border-left-color: #3b82f6;
+}
+
+.payment-notification-icon {
+  font-size: 1.5rem;
+  color: #f59e0b;
+}
+
+.payment-notification.overdue .payment-notification-icon {
+  color: #ef4444;
+}
+
+.payment-notification.upcoming .payment-notification-icon {
+  color: #3b82f6;
+}
+
+.payment-notification-content {
+  flex: 1;
+}
+
+.payment-notification-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #374151;
+}
+
+.payment-notification-details {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.payment-notification-amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1f2937;
 }

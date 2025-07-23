@@ -12,7 +12,7 @@ const memberSchema = new mongoose.Schema({
   gender: { type: String, enum: ['Male', 'Female', 'Other'], required: true },
   phone: { type: String, required: true },
   email: { type: String, required: true },
-  paymentMode: { type: String, enum: ['Cash', 'Card', 'UPI', 'Online'], required: true },
+  paymentMode: { type: String, enum: ['Cash', 'Card', 'UPI', 'Online', 'pending'], required: true },
   paymentAmount: { type: Number, required: true },
   planSelected: { type: String, enum: ['Basic', 'Standard', 'Premium'], required: true },
   monthlyPlan: { type: String, enum: ['1 Month', '3 Months', '6 Months', '12 Months'], required: true },
@@ -21,7 +21,19 @@ const memberSchema = new mongoose.Schema({
   joinDate: { type: Date, default: Date.now },
   profileImage: { type: String },
   membershipId: { type: String },
-  membershipValidUntil: { type: String }
+  membershipValidUntil: { type: String },
+  paymentStatus: { 
+    type: String, 
+    enum: ['paid', 'pending', 'overdue'], 
+    default: 'paid' 
+  },
+  pendingPaymentAmount: { type: Number, default: 0 },
+  lastPaymentDate: { type: Date },
+  nextPaymentDue: { type: Date },
+  allowanceGrantedDate: { type: Date, default: null },
+  allowanceExpiryDate: { type: Date, default: null },
+  planStartDate: { type: Date, default: null },
+  plannedValidityDate: { type: Date, default: null }
 });
 
 module.exports = mongoose.model('Member', memberSchema);

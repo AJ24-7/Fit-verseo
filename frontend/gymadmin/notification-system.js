@@ -24,6 +24,7 @@ class NotificationSystem {
     // Check for expiring memberships and gym admin notifications immediately after initialization
     setTimeout(() => {
       this.checkMembershipExpiry();
+      this.checkPendingPayments();
       this.checkForGymAdminNotifications();
     }, 2000);
     
@@ -167,7 +168,7 @@ class NotificationSystem {
         min-width: 18px;
         text-align: center;
         border: 2px solid white;
-        z-index: 10;
+        z-index: 1210;
       }
 
       .notification-dropdown {
@@ -180,9 +181,10 @@ class NotificationSystem {
         border: 1px solid #e5e7eb;
         border-radius: 12px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        z-index: 1000;
+        z-index: 1205;
         display: none;
         overflow: hidden;
+        max-height: calc(100vh - 120px);
       }
 
       .notification-dropdown.show {
@@ -404,10 +406,12 @@ class NotificationSystem {
 
       .notification-toasts {
         position: fixed;
-        top: 20px;
+        top: 80px;
         right: 20px;
-        z-index: 1001;
+        z-index: 1210;
         pointer-events: none;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
       }
 
       .notification-toast {
@@ -421,6 +425,8 @@ class NotificationSystem {
         animation: slideInRight 0.3s ease;
         pointer-events: auto;
         position: relative;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
 
       .notification-toast.grievance {
@@ -490,32 +496,102 @@ class NotificationSystem {
         margin-bottom: 5px;
         color: #1f2937;
         padding-right: 25px;
+        line-height: 1.3;
       }
 
       .toast-message {
         color: #6b7280;
         font-size: 13px;
         line-height: 1.4;
+        word-break: break-word;
       }
 
       @media (max-width: 768px) {
         .notification-dropdown {
-          width: 350px;
+          width: 320px;
           right: -50px;
+          max-height: 500px;
+        }
+        
+        .notification-toasts {
+          top: 70px;
+          right: 10px;
+          left: 10px;
+          width: auto;
         }
         
         .notification-toast {
-          right: 10px;
-          max-width: 300px;
+          max-width: none;
+          width: 100%;
+          margin-left: 0;
+          margin-right: 0;
         }
         
         .notification-filters {
           flex-wrap: wrap;
+          padding: 8px 12px;
         }
         
         .notification-filter-btn {
           font-size: 11px;
           padding: 5px 10px;
+          margin: 2px;
+        }
+        
+        .notification-header h4 {
+          font-size: 14px;
+        }
+        
+        .mark-all-read {
+          font-size: 11px;
+          padding: 5px 10px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .notification-dropdown {
+          width: 300px;
+          right: -60px;
+          max-height: 400px;
+        }
+        
+        .notification-toasts {
+          top: 65px;
+          right: 5px;
+          left: 5px;
+        }
+        
+        .notification-toast {
+          padding: 12px 15px;
+          font-size: 13px;
+        }
+        
+        .toast-title {
+          font-size: 13px;
+        }
+        
+        .toast-message {
+          font-size: 12px;
+        }
+      }
+
+      @media (min-width: 1200px) {
+        .notification-toasts {
+          right: 30px;
+        }
+        
+        .notification-toast {
+          max-width: 380px;
+        }
+      }
+
+      @media (min-width: 1600px) {
+        .notification-toasts {
+          right: 50px;
+        }
+        
+        .notification-toast {
+          max-width: 400px;
         }
       }
     `;
@@ -613,6 +689,18 @@ class NotificationSystem {
       });
     });
 
+    // Listen for Mark as Paid buttons in notifications
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('mark-paid-btn') && e.target.dataset.source === 'notification') {
+        e.preventDefault();
+        e.stopPropagation();
+        const memberId = e.target.dataset.memberId;
+        if (memberId && window.sevenDayAllowanceManager) {
+          window.sevenDayAllowanceManager.showMarkAsPaidModal(memberId, 'notification');
+        }
+      }
+    });
+
     // Listen for settings changes
     this.bindSettingsListeners();
   }
@@ -657,6 +745,7 @@ class NotificationSystem {
     this.pollingInterval = setInterval(() => {
       this.checkForNewNotifications();
       this.checkMembershipExpiry();
+      this.checkPendingPayments();
     }, 7200000); // Check every 2 hours (2 * 60 * 60 * 1000 ms)
   }
 
@@ -860,6 +949,7 @@ class NotificationSystem {
       read: false,
       priority: days === 1 ? 'high' : days === 3 ? 'medium' : 'normal',
       members: members.map(member => ({
+        _id: member._id, // Keep the original _id for mark as paid functionality
         name: member.memberName || member.name || 'Unknown',
         membershipId: member.membershipId || member._id,
         membershipValidUntil: member.membershipValidUntil,
@@ -876,6 +966,128 @@ class NotificationSystem {
     // Debug: Confirm notification was added
     setTimeout(() => {
     }, 500);
+  }
+
+  // Check for members with pending payments
+  async checkPendingPayments() {
+    if (!this.settings.paymentNotif) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('gymAdminToken');
+      if (!token) {
+        return;
+      }
+
+      // Fetch members with pending payments
+      const response = await fetch('http://localhost:5000/api/members', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('❌ Failed to fetch members for payment check:', response.status);
+        return;
+      }
+
+      const members = await response.json();
+      if (!Array.isArray(members)) {
+        console.error('❌ Invalid members data received');
+        return;
+      }
+
+      // Filter members with pending payments or overdue status
+      const pendingPaymentMembers = members.filter(member => {
+        return (
+          member.paymentStatus === 'pending' || 
+          member.paymentStatus === 'overdue' ||
+          (member.pendingPaymentAmount && member.pendingPaymentAmount > 0)
+        );
+      });
+
+      if (pendingPaymentMembers.length > 0) {
+        this.createPendingPaymentNotification(pendingPaymentMembers);
+      }
+
+    } catch (error) {
+      console.error('❌ Error checking pending payments:', error);
+    }
+  }
+
+  // Create pending payment notification
+  createPendingPaymentNotification(members) {
+    console.log('[PendingPayments] Creating pending payment notification:', { members });
+
+    // Create unique ID to prevent duplicates
+    const memberIds = members.map(m => m._id || m.membershipId).join(',');
+    const notificationId = `pending-payments-${Date.now()}-${memberIds.slice(0, 20)}`;
+
+    // Check if similar notification already exists (within last 4 hours)
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+    const existingNotification = this.notifications.find(n => 
+      n.type === 'pending-payments' && 
+      n.timestamp > fourHoursAgo &&
+      n.members && n.members.length === members.length
+    );
+
+    if (existingNotification) {
+      console.log('[PendingPayments] Skipping duplicate pending payment notification:', existingNotification);
+      return;
+    }
+
+    // Separate overdue and pending members
+    const overdueMembers = members.filter(m => m.paymentStatus === 'overdue');
+    const pendingMembers = members.filter(m => m.paymentStatus === 'pending' || (m.pendingPaymentAmount && m.pendingPaymentAmount > 0 && m.paymentStatus !== 'overdue'));
+
+    let title = '';
+    let message = '';
+    let priority = 'normal';
+    let color = '#ffa726';
+
+    if (overdueMembers.length > 0 && pendingMembers.length > 0) {
+      title = `Payment Issues: ${overdueMembers.length} Overdue, ${pendingMembers.length} Pending`;
+      message = `${overdueMembers.length} member${overdueMembers.length > 1 ? 's have' : ' has'} overdue payments and ${pendingMembers.length} member${pendingMembers.length > 1 ? 's have' : ' has'} pending payments`;
+      priority = 'high';
+      color = '#ff6b35';
+    } else if (overdueMembers.length > 0) {
+      title = `Overdue Payments: ${overdueMembers.length} Member${overdueMembers.length > 1 ? 's' : ''}`;
+      message = `${overdueMembers.length} member${overdueMembers.length > 1 ? 's have' : ' has'} overdue payments requiring immediate attention`;
+      priority = 'high';
+      color = '#d63031';
+    } else {
+      title = `Pending Payments: ${pendingMembers.length} Member${pendingMembers.length > 1 ? 's' : ''}`;
+      message = `${pendingMembers.length} member${pendingMembers.length > 1 ? 's have' : ' has'} pending payments`;
+      priority = 'medium';
+      color = '#ffa726';
+    }
+
+    const notification = {
+      id: notificationId,
+      type: 'pending-payments',
+      title: title,
+      message: message,
+      timestamp: new Date(),
+      read: false,
+      priority: priority,
+      members: members.map(member => ({
+        _id: member._id, // Keep the original _id for mark as paid functionality
+        name: member.memberName || member.name || 'Unknown',
+        membershipId: member.membershipId || member._id,
+        paymentStatus: member.paymentStatus || 'pending',
+        pendingAmount: member.pendingPaymentAmount || 0,
+        nextPaymentDue: member.nextPaymentDue,
+        email: member.email,
+        phone: member.phone,
+        planSelected: member.planSelected
+      })),
+      icon: 'fa-credit-card',
+      color: color
+    };
+
+    this.addNotification(notification, { silent: false });
   }
 
   // Add a new notification
@@ -906,6 +1118,35 @@ class NotificationSystem {
     }
 
     this.updateNotificationDropdown();
+  }
+
+  // Generic method for showing notifications (compatible with payment.js)
+  showNotification(title, message, urgency = 'medium', type = 'info') {
+    const urgencyColorMap = {
+      'low': '#3b82f6',     // Blue
+      'medium': '#f59e0b',  // Orange
+      'high': '#ef4444'     // Red
+    };
+
+    const typeIconMap = {
+      'info': 'fa-info-circle',
+      'warning': 'fa-exclamation-triangle',
+      'error': 'fa-times-circle',
+      'success': 'fa-check-circle'
+    };
+
+    const notification = {
+      id: `notification-${Date.now()}`,
+      type: type === 'warning' ? 'payment' : type,
+      title: title,
+      message: message,
+      timestamp: new Date(),
+      read: false,
+      icon: typeIconMap[type] || 'fa-bell',
+      color: urgencyColorMap[urgency] || '#3b82f6'
+    };
+
+    this.addNotification(notification);
   }
 
   // Check if notification should be shown based on settings
@@ -1030,22 +1271,27 @@ class NotificationSystem {
       return;
     }
 
-    list.innerHTML = recentNotifications.map(notif => `
-      <div class="notification-item ${notif.read ? 'read' : 'unread'} ${this.getNotificationClass(notif.type)}" data-id="${notif.id}">
-        <div class="notification-icon-wrapper">
-          <i class="fas ${notif.icon || 'fa-bell'}" style="color: ${notif.color || '#1976d2'}"></i>
-        </div>
-        <div class="notification-content">
-          <div class="notification-title">${notif.title}</div>
-          <div class="notification-message">${this.truncateMessage(notif.message, 60)}</div>
-          <div class="notification-meta">
-            <span class="notification-time">${this.formatTime(notif.timestamp)}</span>
-            <span class="notification-priority priority-${notif.priority || 'normal'}">${notif.priority || 'normal'}</span>
+    // Show newest notifications at the top
+    list.innerHTML = recentNotifications
+      .slice() // copy array
+      .reverse() // reverse so newest is first
+      .map(notif => `
+        <div class="notification-item ${notif.read ? 'read' : 'unread'} ${this.getNotificationClass(notif.type)}" data-id="${notif.id}">
+          <div class="notification-icon-wrapper">
+            <i class="fas ${notif.icon || 'fa-bell'}" style="color: ${notif.color || '#1976d2'}"></i>
           </div>
+          <div class="notification-content">
+            <div class="notification-title">${notif.title}</div>
+            <div class="notification-message">${this.truncateMessage(notif.message, 60)}</div>
+            <div class="notification-meta">
+              <span class="notification-time">${this.formatTime(notif.timestamp)}</span>
+              <span class="notification-priority priority-${notif.priority || 'normal'}">${notif.priority || 'normal'}</span>
+            </div>
+          </div>
+          ${!notif.read ? '<div class="unread-indicator"></div>' : ''}
         </div>
-        ${!notif.read ? '<div class="unread-indicator"></div>' : ''}
-      </div>
-    `).join('');
+      `)
+      .join('');
 
     // Add click listeners to notification items
     list.querySelectorAll('.notification-item').forEach(item => {
@@ -1089,9 +1335,9 @@ class NotificationSystem {
       this.updateNotificationBadge();
       this.updateNotificationDropdown();
       
-      // Persist to backend
+      // Only persist to backend if it's a valid database notification
       const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-      if (token) {
+      if (token && this.isValidDatabaseNotification(notification)) {
         // Check if it's a gym admin notification
         if (notification.gymNotificationId) {
           // Mark gym admin notification as read
@@ -1114,6 +1360,23 @@ class NotificationSystem {
         }
       }
     }
+  }
+
+  // Check if notification is a valid database notification
+  isValidDatabaseNotification(notification) {
+    const id = notification._id || notification.id;
+    if (!id) return false;
+    
+    // Check if it's a MongoDB ObjectId (24 character hex string)
+    const objectIdRegex = /^[a-f\d]{24}$/i;
+    
+    // Client-generated notifications have custom IDs that don't match ObjectId format
+    // These include pending-payments, membership-expiry notifications created by the frontend
+    if (typeof id === 'string' && !objectIdRegex.test(id)) {
+      return false;
+    }
+    
+    return true;
   }
 
   // Mark all notifications as read
@@ -1231,16 +1494,60 @@ class NotificationSystem {
         content += `<p>${notification.message}</p>`;
       }
       if (notification.members && notification.members.length > 0) {
-        content += `<div class="expiring-members">
+        content += `<div class="member-details">
           <ul style="text-align: left; margin-top: 10px;">
-            ${notification.members.map(member => 
-              `<li style="margin-bottom: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
-                <strong>${member.name}</strong> (${member.planSelected || 'Unknown Plan'})
-                <br><small>ID: ${member.membershipId || 'N/A'} | Expires: ${member.membershipValidUntil ? new Date(member.membershipValidUntil).toLocaleDateString() : 'N/A'}</small>
-                ${member.email ? `<br><small><i class='fas fa-envelope' style='color:#1976d2;'></i> ${member.email}</small>` : ''}
-                ${member.phone ? `<br><small><i class='fas fa-phone' style='color:#43a047;'></i> ${member.phone}</small>` : ''}
-              </li>`
-            ).join('')}
+            ${notification.members.map(member => {
+              let memberInfo = `<li style="margin-bottom: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+                <strong>${member.name}</strong>`;
+              
+              // Add payment status badge for pending payment notifications
+              if (notification.type === 'pending-payments' && member.paymentStatus) {
+                const statusColor = member.paymentStatus === 'overdue' ? '#d63031' : '#ffa726';
+                const statusIcon = member.paymentStatus === 'overdue' ? '⚠️' : '💳';
+                memberInfo += ` <span style="background:${statusColor};color:white;padding:2px 6px;border-radius:8px;font-size:0.8em;">${statusIcon} ${member.paymentStatus.toUpperCase()}</span>`;
+                
+                // Add Mark as Paid button for pending/overdue members
+                if (member.paymentStatus === 'pending' || member.paymentStatus === 'overdue') {
+                  const memberId = member._id || member.membershipId;
+                  if (memberId) {
+                    memberInfo += ` <button class="mark-paid-btn" data-member-id="${memberId}" data-source="notification" style="background:#28a745;color:white;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;margin-left:5px;">✅ Mark Paid</button>`;
+                  }
+                }
+              }
+              
+              memberInfo += `<br><small>ID: ${member.membershipId || 'N/A'}`;
+              
+              // Show plan and expiry for membership notifications
+              if (notification.type === 'membership-expiry') {
+                memberInfo += ` | Plan: ${member.planSelected || 'Unknown Plan'} | Expires: ${member.membershipValidUntil ? new Date(member.membershipValidUntil).toLocaleDateString() : 'N/A'}`;
+              }
+              
+              // Show payment details for payment notifications
+              if (notification.type === 'pending-payments') {
+                if (member.pendingAmount && member.pendingAmount > 0) {
+                  memberInfo += ` | Pending: ₹${member.pendingAmount}`;
+                }
+                if (member.nextPaymentDue) {
+                  memberInfo += ` | Due: ${new Date(member.nextPaymentDue).toLocaleDateString()}`;
+                }
+                if (member.planSelected) {
+                  memberInfo += ` | Plan: ${member.planSelected}`;
+                }
+              }
+              
+              memberInfo += `</small>`;
+              
+              // Add contact info
+              if (member.email) {
+                memberInfo += `<br><small><i class='fas fa-envelope' style='color:#1976d2;'></i> ${member.email}</small>`;
+              }
+              if (member.phone) {
+                memberInfo += `<br><small><i class='fas fa-phone' style='color:#43a047;'></i> ${member.phone}</small>`;
+              }
+              
+              memberInfo += `</li>`;
+              return memberInfo;
+            }).join('')}
           </ul>
         </div>`;
       }
@@ -1249,7 +1556,12 @@ class NotificationSystem {
         message: content,
         confirmText: 'OK',
         iconHtml: `<i class="fas ${notification.icon || 'fa-bell'}" style="color: ${notification.color || '#1976d2'}; font-size: 2rem;"></i>`,
-        onConfirm: null
+        onConfirm: () => {
+          // Mark notification as read when OK is clicked
+          if (this.isValidDatabaseNotification(notification.id || notification._id)) {
+            this.markNotificationRead(notification.id || notification._id);
+          }
+        }
       });
     }
   }
@@ -1414,6 +1726,72 @@ class NotificationSystem {
     window.testMembershipExpiry = () => this.testMembershipExpiry();
     window.testGymAdminNotifications = () => this.testGymAdminNotifications();
     window.testUnifiedNotificationSystem = () => this.testUnifiedNotificationSystem();
+    window.testNotificationPositioning = () => this.testNotificationPositioning();
+  }
+
+  // Test notification positioning and z-index fix
+  testNotificationPositioning() {
+    console.log('🧪 Testing notification positioning...');
+    
+    // Create test membership expiry notification
+    const testMembers = [
+      {
+        name: 'John Doe',
+        membershipId: 'M001',
+        membershipValidUntil: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+        planSelected: 'Gold Plan',
+        email: 'john@example.com',
+        phone: '+1234567890'
+      },
+      {
+        name: 'Jane Smith',
+        membershipId: 'M002', 
+        membershipValidUntil: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+        planSelected: 'Silver Plan',
+        email: 'jane@example.com',
+        phone: '+1234567891'
+      }
+    ];
+    
+    this.createMembershipExpiryNotification(testMembers, 1);
+    
+    // Create test payment notification
+    const testPaymentMembers = [
+      {
+        name: 'Bob Wilson',
+        membershipId: 'M003',
+        paymentStatus: 'overdue',
+        pendingAmount: 2500,
+        email: 'bob@example.com',
+        phone: '+1234567892',
+        planSelected: 'Platinum Plan'
+      }
+    ];
+    
+    this.createPendingPaymentNotification(testPaymentMembers);
+    
+    // Create test admin reply notification
+    const adminReplyNotification = {
+      id: `admin-reply-test-${Date.now()}`,
+      type: 'admin-reply',
+      title: 'Admin Reply to Your Query',
+      message: 'Your membership renewal request has been processed successfully.',
+      timestamp: new Date(),
+      read: false,
+      priority: 'normal',
+      icon: 'fa-reply',
+      color: '#7c3aed'
+    };
+    
+    this.addNotification(adminReplyNotification);
+    
+    console.log('✅ Test notifications created! Check if:');
+    console.log('   - Notifications appear above navbar (not behind it)');
+    console.log('   - Notifications are properly positioned on mobile');
+    console.log('   - Dropdown has correct z-index');
+    console.log('   - Toast notifications slide in from right');
+    
+    return 'Test notifications created successfully!';
   }
 
   // Utility functions
@@ -1479,6 +1857,102 @@ class NotificationSystem {
     };
 
     this.addNotification(notification);
+  }
+
+  notifyPaymentDue(paymentData, daysUntilDue) {
+    if (!this.settings.paymentNotif) return;
+
+    let urgency = 'low';
+    let color = '#3b82f6';
+    let title = 'Payment Reminder';
+    let icon = 'fa-clock';
+
+    if (daysUntilDue < 0) {
+      urgency = 'high';
+      color = '#ef4444';
+      title = 'Payment Overdue';
+      icon = 'fa-exclamation-triangle';
+    } else if (daysUntilDue <= 1) {
+      urgency = 'high';
+      color = '#f59e0b';
+      title = 'Payment Due Soon';
+      icon = 'fa-bell';
+    } else if (daysUntilDue <= 3) {
+      urgency = 'medium';
+      color = '#f59e0b';
+    }
+
+    const notification = {
+      id: `payment-due-${paymentData._id || Date.now()}`,
+      type: 'payment-reminder',
+      title: title,
+      message: this.getPaymentDueMessage(paymentData, daysUntilDue),
+      timestamp: new Date(),
+      read: false,
+      icon: icon,
+      color: color,
+      urgency: urgency,
+      paymentId: paymentData._id
+    };
+
+    this.addNotification(notification);
+  }
+
+  notifyMemberPaymentPending(memberData) {
+    if (!this.settings.paymentNotif) return;
+
+    const notification = {
+      id: `member-payment-pending-${memberData._id || Date.now()}`,
+      type: 'member-payment-pending',
+      title: 'Member Payment Pending',
+      message: `${memberData.memberName} has a pending payment of ₹${memberData.pendingPaymentAmount}`,
+      timestamp: new Date(),
+      read: false,
+      icon: 'fa-user-clock',
+      color: '#f59e0b',
+      urgency: 'medium',
+      memberId: memberData._id
+    };
+
+    this.addNotification(notification);
+  }
+
+  notifyMemberPaymentOverdue(memberData, daysOverdue) {
+    if (!this.settings.paymentNotif) return;
+
+    const notification = {
+      id: `member-payment-overdue-${memberData._id || Date.now()}`,
+      type: 'member-payment-overdue',
+      title: 'Member Payment Overdue',
+      message: `${memberData.memberName} payment is ${daysOverdue} days overdue (₹${memberData.pendingPaymentAmount})`,
+      timestamp: new Date(),
+      read: false,
+      icon: 'fa-user-times',
+      color: '#ef4444',
+      urgency: 'high',
+      memberId: memberData._id
+    };
+
+    this.addNotification(notification);
+  }
+
+  getPaymentDueMessage(paymentData, daysUntilDue) {
+    const amount = paymentData.amount ? `₹${this.formatCurrency(paymentData.amount)}` : '';
+    const description = paymentData.description || 'Payment';
+    
+    if (daysUntilDue < 0) {
+      return `${description} is ${Math.abs(daysUntilDue)} day${Math.abs(daysUntilDue) !== 1 ? 's' : ''} overdue (${amount})`;
+    } else if (daysUntilDue === 0) {
+      return `${description} is due today (${amount})`;
+    } else if (daysUntilDue === 1) {
+      return `${description} is due tomorrow (${amount})`;
+    } else {
+      return `${description} is due in ${daysUntilDue} days (${amount})`;
+    }
+  }
+
+  formatCurrency(amount) {
+    return new Intl.NumberFormat('en-IN').format(amount);
   }
 
   notifyTrainerApproval(trainerData, status) {

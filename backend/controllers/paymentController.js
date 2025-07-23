@@ -1,4 +1,5 @@
 const Payment = require('../models/Payment');
+const Member = require('../models/Member');
 const mongoose = require('mongoose');
 
 // Get payment statistics
@@ -42,6 +43,8 @@ const getPaymentStats = async (req, res) => {
 
     const received = stats.find(s => s._id === 'received')?.total || 0;
     const paid = stats.find(s => s._id === 'paid')?.total || 0;
+    const due = stats.find(s => s._id === 'due')?.total || 0;
+    const pending = stats.find(s => s._id === 'pending')?.total || 0;
     const profit = received - paid;
 
     // Get previous period for growth calculation
@@ -75,10 +78,14 @@ const getPaymentStats = async (req, res) => {
 
     const prevReceived = prevStats.find(s => s._id === 'received')?.total || 0;
     const prevPaid = prevStats.find(s => s._id === 'paid')?.total || 0;
+    const prevDue = prevStats.find(s => s._id === 'due')?.total || 0;
+    const prevPending = prevStats.find(s => s._id === 'pending')?.total || 0;
     const prevProfit = prevReceived - prevPaid;
 
     const receivedGrowth = prevReceived > 0 ? ((received - prevReceived) / prevReceived) * 100 : 0;
     const paidGrowth = prevPaid > 0 ? ((paid - prevPaid) / prevPaid) * 100 : 0;
+    const dueGrowth = prevDue > 0 ? ((due - prevDue) / prevDue) * 100 : 0;
+    const pendingGrowth = prevPending > 0 ? ((pending - prevPending) / prevPending) * 100 : 0;
     const profitGrowth = prevProfit > 0 ? ((profit - prevProfit) / prevProfit) * 100 : 0;
 
     res.json({
@@ -86,9 +93,13 @@ const getPaymentStats = async (req, res) => {
       data: {
         received,
         paid,
+        due,
+        pending,
         profit,
         receivedGrowth,
         paidGrowth,
+        dueGrowth,
+        pendingGrowth,
         profitGrowth
       }
     });
@@ -227,19 +238,40 @@ const getRecurringPayments = async (req, res) => {
     const gymId = req.admin.id;
     const { status = 'all' } = req.query;
 
-    let matchCondition = { $or: [
-      { gymId: new mongoose.Types.ObjectId(gymId) },
-      { gymId: gymId }
-    ], type: 'paid' };
+    let matchCondition = { 
+      $or: [
+        { gymId: new mongoose.Types.ObjectId(gymId) },
+        { gymId: gymId }
+      ]
+    };
+    
+    // Only include payments that are actually recurring OR have future due dates
+    // Exclude one-time "received" payments even if they have due dates
+    matchCondition.$and = [
+      {
+        $or: [
+          { isRecurring: true },
+          { 
+            $and: [
+              { dueDate: { $exists: true, $ne: null } },
+              { type: { $in: ['due', 'pending', 'paid'] } } // Exclude 'received' type payments
+            ]
+          }
+        ]
+      }
+    ];
     
     if (status === 'pending') {
       matchCondition.status = 'pending';
     } else if (status === 'overdue') {
       matchCondition.dueDate = { $lt: new Date() };
       matchCondition.status = 'pending';
+    } else if (status === 'completed') {
+      matchCondition.status = 'completed';
     }
 
     const payments = await Payment.find(matchCondition)
+      .populate('memberId', 'name email phone')
       .sort({ dueDate: 1 })
       .limit(50);
 
@@ -271,6 +303,18 @@ const addPayment = async (req, res) => {
       notes
     } = req.body;
 
+    // Set status based on payment type
+    let status;
+    if (type === 'received') {
+      status = 'completed'; // Received payments are already completed
+    } else if (type === 'paid') {
+      status = 'completed'; // Paid payments are completed
+    } else if (type === 'due' || type === 'pending') {
+      status = 'pending'; // Due and pending payments are not yet completed
+    } else {
+      status = 'pending'; // Default to pending for safety
+    }
+
     const payment = new Payment({
       gymId,
       type,
@@ -278,16 +322,57 @@ const addPayment = async (req, res) => {
       amount,
       description,
       memberName,
-      memberId,
+      memberId: memberId && memberId.trim() !== '' ? memberId : undefined, // Only set if not empty
       paymentMethod,
+      status, // Set the calculated status
       isRecurring,
       recurringDetails,
       dueDate,
       notes,
-      createdBy: req.user._id
+      createdBy: req.admin.id
     });
 
     await payment.save();
+
+    // Update member payment status if this is a membership payment
+    if (category === 'membership' && memberId) {
+      try {
+        const updateData = {};
+        
+        if (type === 'received') {
+          updateData.paymentStatus = 'paid';
+          updateData.lastPaymentDate = new Date();
+          updateData.pendingPaymentAmount = 0;
+        } else if (type === 'pending' || type === 'due') {
+          updateData.paymentStatus = 'pending';
+          updateData.pendingPaymentAmount = amount;
+          if (dueDate) {
+            updateData.nextPaymentDue = new Date(dueDate);
+          }
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          const updatedMember = await Member.findOneAndUpdate(
+            { _id: memberId, gym: gymId },
+            updateData,
+            { new: true }
+          );
+          
+          // Add notification info to response if member payment is pending
+          if (updatedMember && (type === 'pending' || type === 'due')) {
+            payment.memberNotification = {
+              memberName: updatedMember.memberName,
+              memberId: updatedMember._id,
+              pendingAmount: amount,
+              dueDate: dueDate
+            };
+          }
+        }
+      } catch (memberUpdateError) {
+        console.error('Error updating member payment status:', memberUpdateError);
+        // Don't fail the payment creation if member update fails
+      }
+    }
 
     res.json({
       success: true,
@@ -332,7 +417,7 @@ const updatePayment = async (req, res) => {
 const markPaymentAsPaid = async (req, res) => {
   try {
     const { id } = req.params;
-    const gymId = req.gym._id;
+    const gymId = req.admin.id;
 
     const payment = await Payment.findOneAndUpdate(
       { _id: id, gymId },
@@ -364,7 +449,7 @@ const markPaymentAsPaid = async (req, res) => {
           nextDueDate: calculateNextDueDate(payment.recurringDetails.nextDueDate, payment.recurringDetails.frequency)
         },
         notes: payment.notes,
-        createdBy: req.user._id
+        createdBy: req.admin.id
       });
 
       await nextPayment.save();
@@ -385,7 +470,7 @@ const markPaymentAsPaid = async (req, res) => {
 const deletePayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const gymId = req.gym._id;
+    const gymId = req.admin.id;
 
     const payment = await Payment.findOneAndDelete({ _id: id, gymId });
 
@@ -422,11 +507,49 @@ const calculateNextDueDate = (currentDate, frequency) => {
   return nextDate;
 };
 
+// Get payment reminders (due within 7 days or overdue)
+const getPaymentReminders = async (req, res) => {
+  try {
+    const gymId = req.admin.id;
+    const now = new Date();
+    const oneWeekFromNow = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+
+    const reminders = await Payment.find({
+      $or: [
+        { gymId: new mongoose.Types.ObjectId(gymId) },
+        { gymId: gymId }
+      ],
+      type: 'paid',
+      status: 'pending',
+      dueDate: {
+        $lte: oneWeekFromNow // Due within the next 7 days or already overdue
+      }
+    })
+    .sort({ dueDate: 1 })
+    .select('description amount dueDate category status notes');
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment reminders retrieved successfully',
+      data: reminders,
+      count: reminders.length
+    });
+  } catch (error) {
+    console.error('Error fetching payment reminders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch payment reminders',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getPaymentStats,
   getPaymentChartData,
   getRecentPayments,
   getRecurringPayments,
+  getPaymentReminders,
   addPayment,
   updatePayment,
   markPaymentAsPaid,

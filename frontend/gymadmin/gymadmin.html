@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="attendance.css">
     <link rel="stylesheet" href="membertab.css">
     <link rel="stylesheet" href="payment.css">
+    <link rel="stylesheet" href="equipment.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="gymadmin.js"></script>
     <script defer src="notification-modal.js"></script>
@@ -18,6 +19,7 @@
     <script defer src="attendance.js"></script>
     <script defer src="attendance-stats.js"></script>
     <script defer src="payment.js"></script>
+    <script defer src="equipment.js"></script>
 </head>
 <body>
 <!-- Hamburger Menu for Mobile (move outside sidebar, just after <body>) -->
@@ -148,35 +150,43 @@
                 <!-- Stats Cards -->
                 <div class="stats-cards">
                     <div class="stat-card new-users" id="membersStatCard" style="cursor:pointer;">
-                        <div class="stat-icon" style="font-size:2rem;color:#2563eb;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
-                            <i class="fas fa-users"></i>
+                        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; margin-bottom:8px;">
+                            <div class="stat-icon-dashboard" style="font-size:2rem;color:#2563eb;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-title" style="text-align:left;">Members</div>
                         </div>
-                        <div class="stat-title">Members</div>
                         <div class="stat-value"></div>
                         <div class="stat-change"></div>
                     </div>
 
                     <div class="stat-card payments">
-                        <div class="stat-icon" style="font-size:2rem;color:#43a047;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
-                            <i class="fas fa-credit-card"></i>
+                        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; margin-bottom:8px;">
+                            <div class="stat-icon-dashboard" style="font-size:2rem;color:#43a047;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <div class="stat-title" style="text-align:left;">Total Payments</div>
                         </div>
-                        <div class="stat-title">Total Payments</div>
                         <div class="stat-value"></div>
                         <div class="stat-change"></div>
                     </div>
                     <div class="stat-card attendance" id="attendanceStatCard" style="cursor:pointer;">
-                        <div class="stat-icon" style="font-size:2rem;color:#ffa726;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
-                            <i class="fas fa-calendar-check"></i>
+                        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; margin-bottom:8px;">
+                            <div class="stat-icon-dashboard" style="font-size:2rem;color:#ffa726;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-title" style="text-align:left;">Overall Attendance</div>
                         </div>
-                        <div class="stat-title">Overall Attendance</div>
                         <div class="stat-value" id="overallAttendanceValue">Loading...</div>
                         <div class="stat-change" id="overallAttendanceChange">Calculating...</div>
                     </div>
                     <div class="stat-card trainers">
-                        <div class="stat-icon" style="font-size:2rem;color:#7c3aed;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
-                            <i class="fas fa-user-tie"></i>
+                        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; margin-bottom:8px;">
+                            <div class="stat-icon-dashboard" style="font-size:2rem;color:#7c3aed;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div class="stat-title" style="text-align:left;">Active Trainers</div>
                         </div>
-                        <div class="stat-title">Active Trainers</div>
                         <div class="stat-value"></div>
                         <div class="stat-change"></div>
                     </div>
@@ -580,6 +590,34 @@
                             <div class="payment-stat-title">Amount Paid</div>
                             <div class="payment-stat-icon paid">
                                 <i class="fas fa-arrow-down"></i>
+                            </div>
+                        </div>
+                        <div class="payment-stat-value">₹0</div>
+                        <div class="payment-stat-change negative">
+                            <i class="fas fa-arrow-up"></i>
+                            0.0%
+                        </div>
+                    </div>
+
+                    <div class="payment-stat-card pending">
+                        <div class="payment-stat-header">
+                            <div class="payment-stat-title">Pending Payments</div>
+                            <div class="payment-stat-icon pending">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="payment-stat-value">₹0</div>
+                        <div class="payment-stat-change neutral">
+                            <i class="fas fa-arrow-up"></i>
+                            0.0%
+                        </div>
+                    </div>
+
+                    <div class="payment-stat-card due">
+                        <div class="payment-stat-header">
+                            <div class="payment-stat-title">Due Payments</div>
+                            <div class="payment-stat-icon due">
+                                <i class="fas fa-calendar-times"></i>
                             </div>
                         </div>
                         <div class="payment-stat-value">₹0</div>
@@ -1176,10 +1214,15 @@
        <div class="form-group">
         <label for="paymentAmount">Payment Amount</label>
         <input type="number" id="paymentAmount" name="paymentAmount" min="0" required>
+        <div id="discountInfo" style="margin-top: 8px; padding: 8px; border-radius: 4px; font-size: 0.9em; display: none;">
+          <i class="fas fa-tag"></i> <span id="discountText">No discount applied</span>
+        </div>
       </div>
       <div class="form-group">
         <label for="activityPreference">Activity Preference</label>
-        <input type="text" id="activityPreference" name="activityPreference" placeholder="e.g. Yoga, Cardio, Zumba" required>
+        <select id="activityPreference" name="activityPreference" required>
+          <option value="">Select Activity</option>
+        </select>
       </div>
       <button type="submit" class="btn btn-primary">Add Member</button>
       <div id="addMemberSuccessMsg" style="display:none;"></div>
@@ -1232,6 +1275,9 @@
         <label for="renewPaymentAmount">Payment Amount</label>
         <input type="number" id="renewPaymentAmount" name="paymentAmount" min="0" required readonly style="background:#f5f5f5;">
         <small style="color:#666;font-size:0.85em;">Amount calculated automatically based on plan and duration</small>
+        <div id="renewDiscountInfo" style="margin-top: 8px; padding: 8px; border-radius: 4px; font-size: 0.9em; display: none;">
+          <i class="fas fa-tag"></i> <span id="renewDiscountText">No discount applied</span>
+        </div>
       </div>
       
       <div class="form-group">
@@ -1685,6 +1731,259 @@
       <button id="submitReviewReply" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
         <i class="fas fa-paper-plane"></i> Send Reply
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Equipment Tab -->
+<div id="equipmentTab" style="display:none; padding: 24px;">
+  <div class="page-header" style="margin-bottom: 30px;">
+    <h1 class="page-title">
+      <i class="fas fa-dumbbell"></i> Equipment Management
+    </h1>
+    <div class="equipment-header-actions">
+      <button id="addEquipmentBtn" class="add-equipment-btn">
+        <i class="fas fa-plus"></i> Add Equipment
+      </button>
+      <button id="bulkImportBtn" class="bulk-import-btn">
+        <i class="fas fa-upload"></i> Bulk Import
+      </button>
+    </div>
+  </div>
+
+  <!-- Equipment Statistics -->
+  <div class="equipment-stats-grid">
+    <div class="equipment-stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-dumbbell"></i>
+      </div>
+      <div class="stat-content">
+        <h3 id="totalEquipmentCount">0</h3>
+        <p>Total Equipment</p>
+      </div>
+    </div>
+    <div class="equipment-stat-card">
+      <div class="stat-icon available">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-content">
+        <h3 id="availableEquipmentCount">0</h3>
+        <p>Available</p>
+      </div>
+    </div>
+    <div class="equipment-stat-card">
+      <div class="stat-icon maintenance">
+        <i class="fas fa-tools"></i>
+      </div>
+      <div class="stat-content">
+        <h3 id="maintenanceEquipmentCount">0</h3>
+        <p>Under Maintenance</p>
+      </div>
+    </div>
+    <div class="equipment-stat-card">
+      <div class="stat-icon out-of-order">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="stat-content">
+        <h3 id="outOfOrderEquipmentCount">0</h3>
+        <p>Out of Order</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Equipment Filters and Search -->
+  <div class="equipment-controls">
+    <div class="equipment-search">
+      <input type="text" id="equipmentSearchInput" placeholder="Search equipment by name, category, or brand...">
+      <i class="fas fa-search"></i>
+    </div>
+    <div class="equipment-filters">
+      <select id="equipmentCategoryFilter">
+        <option value="">All Categories</option>
+        <option value="cardio">Cardio</option>
+        <option value="strength">Strength Training</option>
+        <option value="functional">Functional Training</option>
+        <option value="flexibility">Flexibility & Recovery</option>
+        <option value="accessories">Accessories</option>
+        <option value="other">Other</option>
+      </select>
+      <select id="equipmentStatusFilter">
+        <option value="">All Status</option>
+        <option value="available">Available</option>
+        <option value="maintenance">Under Maintenance</option>
+        <option value="out-of-order">Out of Order</option>
+      </select>
+      <select id="equipmentSortBy">
+        <option value="name">Sort by Name</option>
+        <option value="category">Sort by Category</option>
+        <option value="quantity">Sort by Quantity</option>
+        <option value="status">Sort by Status</option>
+        <option value="date">Sort by Date Added</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Equipment Grid -->
+  <div class="equipment-grid" id="equipmentGrid">
+    <div class="equipment-loading">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading equipment...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Equipment Detail Modal -->
+<div id="equipmentDetailModal" class="modal" style="display: none;">
+  <div class="modal-content equipment-detail-modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-dumbbell"></i> Equipment Details</h3>
+      <button class="modal-close" id="closeEquipmentDetailModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="equipmentDetailContent">
+        <!-- Dynamic content will be loaded here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Equipment Modal -->
+<div id="equipmentModal" class="modal" style="display: none;">
+  <div class="modal-content equipment-form-modal">
+    <div class="modal-header">
+      <h3 id="equipmentModalTitle"><i class="fas fa-plus"></i> Add Equipment</h3>
+      <button class="modal-close" id="closeEquipmentModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="equipmentForm" enctype="multipart/form-data">
+        <input type="hidden" id="equipmentId" name="equipmentId">
+        
+        <!-- Equipment Photos -->
+        <div class="form-group">
+          <label class="form-label">Equipment Photos</label>
+          <div class="equipment-photo-upload">
+            <div class="photo-upload-area" id="equipmentPhotoUpload">
+              <div class="upload-placeholder">
+                <i class="fas fa-camera"></i>
+                <p>Click to upload photos or drag & drop</p>
+                <small>Supports multiple images (JPG, PNG, WebP)</small>
+              </div>
+              <input type="file" id="equipmentPhotos" name="photos" accept="image/*" multiple style="display: none;">
+            </div>
+            <div class="photo-preview-grid" id="equipmentPhotoPreview">
+              <!-- Photo previews will be shown here -->
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="equipmentName">Equipment Name *</label>
+            <input type="text" id="equipmentName" name="name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="equipmentBrand">Brand</label>
+            <input type="text" id="equipmentBrand" name="brand">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="equipmentCategory">Category *</label>
+            <select id="equipmentCategory" name="category" required>
+              <option value="">Select Category</option>
+              <option value="cardio">Cardio</option>
+              <option value="strength">Strength Training</option>
+              <option value="functional">Functional Training</option>
+              <option value="flexibility">Flexibility & Recovery</option>
+              <option value="accessories">Accessories</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="equipmentModel">Model</label>
+            <input type="text" id="equipmentModel" name="model">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="equipmentQuantity">Quantity *</label>
+            <input type="number" id="equipmentQuantity" name="quantity" min="1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="equipmentStatus">Status</label>
+            <select id="equipmentStatus" name="status">
+              <option value="available">Available</option>
+              <option value="maintenance">Under Maintenance</option>
+              <option value="out-of-order">Out of Order</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="equipmentPurchaseDate">Purchase Date</label>
+            <input type="date" id="equipmentPurchaseDate" name="purchaseDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="equipmentPrice">Purchase Price (₹)</label>
+            <input type="number" id="equipmentPrice" name="price" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="equipmentWarranty">Warranty Period (months)</label>
+            <input type="number" id="equipmentWarranty" name="warranty" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="equipmentLocation">Location in Gym</label>
+            <input type="text" id="equipmentLocation" name="location" placeholder="e.g., Ground Floor, Zone A">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="equipmentDescription">Description</label>
+          <textarea id="equipmentDescription" name="description" rows="3" placeholder="Optional description about the equipment, usage instructions, or special notes..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="equipmentSpecs">Technical Specifications</label>
+          <textarea id="equipmentSpecs" name="specifications" rows="2" placeholder="Weight, dimensions, power requirements, etc. (optional)"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancelEquipmentBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveEquipmentBtn">
+            <i class="fas fa-save"></i> Save Equipment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Equipment Photo Gallery Modal -->
+<div id="equipmentPhotoGalleryModal" class="modal" style="display: none;">
+  <div class="modal-content photo-gallery-modal">
+    <div class="modal-header">
+      <h3 id="photoGalleryTitle">Equipment Photos</h3>
+      <button class="modal-close" id="closePhotoGalleryModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="photo-gallery-container">
+        <div class="main-photo">
+          <img id="mainPhotoDisplay" src="" alt="Equipment photo">
+          <div class="photo-navigation">
+            <button id="prevPhoto"><i class="fas fa-chevron-left"></i></button>
+            <button id="nextPhoto"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+        <div class="photo-thumbnails" id="photoThumbnails">
+          <!-- Thumbnails will be loaded here -->
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2220,11 +2519,7 @@
 </div>
 
  
-  <!-- Notification integration with enhanced form handler compatibility -->
-  <script src="notification-integration.js"></script>
-  <!-- Notification Configuration -->
-  <script src="notification-config.js"></script>
-
+ 
   <!-- Add Payment Modal -->
   <div class="add-payment-modal" id="addPaymentModal">
     <div class="add-payment-modal-content">
@@ -2243,27 +2538,78 @@
                 <option value="">Select Type</option>
                 <option value="received">Amount Received</option>
                 <option value="paid">Amount Paid</option>
-              </select>
-            </div>
-
-            <div class="payment-form-group">
-              <label class="payment-form-label" for="paymentCategory">Category</label>
-              <select class="payment-form-select" id="paymentCategory" name="category" required>
-                <option value="">Select Category</option>
-                <option value="membership">Membership</option>
-                <option value="personal_training">Personal Training</option>
-                <option value="rent">Rent</option>
-                <option value="bills">Bills</option>
-                <option value="staff_payment">Staff Payment</option>
-                <option value="equipment_maintenance">Equipment Maintenance</option>
-                <option value="accessories">New Accessories</option>
-                <option value="miscellaneous">Miscellaneous</option>
+                <option value="due">Payment Due</option>
+                <option value="pending">Payment Pending</option>
               </select>
             </div>
 
             <div class="payment-form-group">
               <label class="payment-form-label" for="paymentAmount">Amount (₹)</label>
               <input type="number" class="payment-form-input" id="paymentAmount" name="amount" min="0" step="0.01" required>
+            </div>
+
+            <div class="payment-form-group full-width">
+              <label class="payment-form-label" for="paymentCategory">Category</label>
+              <div class="payment-category-grid fa-theme-grid" id="paymentCategoryGrid">
+                <div class="payment-category-item" data-category="rent">
+                  <div class="category-icon"><i class="fas fa-building"></i></div>
+                  <span class="category-label">Rent</span>
+                </div>
+                <div class="payment-category-item" data-category="utilities">
+                  <div class="category-icon"><i class="fas fa-bolt"></i></div>
+                  <span class="category-label">Utilities</span>
+                </div>
+                <div class="payment-category-item" data-category="staff_salary">
+                  <div class="category-icon"><i class="fas fa-users"></i></div>
+                  <span class="category-label">Staff Salary</span>
+                </div>
+                <div class="payment-category-item" data-category="equipment_purchase">
+                  <div class="category-icon"><i class="fas fa-dumbbell"></i></div>
+                  <span class="category-label">Equipment Purchase</span>
+                </div>
+                <div class="payment-category-item" data-category="equipment_maintenance">
+                  <div class="category-icon"><i class="fas fa-tools"></i></div>
+                  <span class="category-label">Equipment Maintenance</span>
+                </div>
+                <div class="payment-category-item" data-category="supplies">
+                  <div class="category-icon"><i class="fas fa-box"></i></div>
+                  <span class="category-label">Supplies</span>
+                </div>
+                <div class="payment-category-item" data-category="marketing">
+                  <div class="category-icon"><i class="fas fa-bullhorn"></i></div>
+                  <span class="category-label">Marketing</span>
+                </div>
+                <div class="payment-category-item" data-category="insurance">
+                  <div class="category-icon"><i class="fas fa-shield-alt"></i></div>
+                  <span class="category-label">Insurance</span>
+                </div>
+                <div class="payment-category-item" data-category="taxes">
+                  <div class="category-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                  <span class="category-label">Taxes</span>
+                </div>
+                <div class="payment-category-item" data-category="vendor_payment">
+                  <div class="category-icon"><i class="fas fa-handshake"></i></div>
+                  <span class="category-label">Vendor Payment</span>
+                </div>
+                <div class="payment-category-item" data-category="license_fees">
+                  <div class="category-icon"><i class="fas fa-scroll"></i></div>
+                  <span class="category-label">License Fees</span>
+                </div>
+                <div class="payment-category-item" data-category="miscellaneous">
+                  <div class="category-icon"><i class="fas fa-ellipsis-h"></i></div>
+                  <span class="category-label">Miscellaneous</span>
+                </div>
+                <div class="payment-category-item" data-category="membership">
+                  <div class="category-icon"><i class="fas fa-id-card"></i></div>
+                  <span class="category-label">Membership</span>
+                </div>
+                <div class="payment-category-item" data-category="personal_training">
+                  <div class="category-icon"><i class="fas fa-user-tie"></i></div>
+                  <span class="category-label">Personal Training</span>
+                </div>
+              </div>
+              <input type="hidden" id="paymentCategory" name="category" required>
+              <div class="category-error" id="categoryError" style="display: none; color: #ef4444; font-size: 0.875rem; margin-top: 4px;">Please select a payment category</div>
             </div>
 
             <div class="payment-form-group">
@@ -2277,6 +2623,11 @@
               </select>
             </div>
 
+            <div class="payment-form-group">
+              <label class="payment-form-label" for="paymentDueDate">Due Date</label>
+              <input type="date" class="payment-form-input" id="paymentDueDate" name="dueDate">
+            </div>
+
             <div class="payment-form-group full-width">
               <label class="payment-form-label" for="paymentDescription">Description</label>
               <input type="text" class="payment-form-input" id="paymentDescription" name="description" placeholder="Enter payment description" required>
@@ -2284,15 +2635,14 @@
 
             <div class="payment-form-group">
               <label class="payment-form-label" for="memberName">Member Name (if applicable)</label>
-              <input type="text" class="payment-form-input" id="memberName" name="memberName" placeholder="Enter member name">
+              <input type="text" class="payment-form-input" id="memberName" name="memberName" placeholder="Enter member name" style="display: block;">
+              <select class="payment-form-input" id="memberSelect" name="memberId" style="display: none;">
+                <option value="">Select Member</option>
+              </select>
+              <input type="hidden" id="selectedMemberId" name="memberId">
             </div>
 
             <div class="payment-form-group">
-              <label class="payment-form-label" for="paymentDueDate">Due Date</label>
-              <input type="date" class="payment-form-input" id="paymentDueDate" name="dueDate">
-            </div>
-
-            <div class="payment-form-group full-width">
               <div class="payment-form-checkbox">
                 <input type="checkbox" id="isRecurring" name="isRecurring">
                 <label for="isRecurring">This is a recurring payment</label>
@@ -2330,7 +2680,138 @@
       </div>
     </div>
   </div>
+
+  <!-- 7-Day Allowance Modal -->
+  <div class="modal" id="sevenDayAllowanceModal" style="display:none;">
+    <div class="modal-content" style="max-width:600px;">
+      <span class="modal-close" id="closeSevenDayAllowanceModal">&times;</span>
+      <h2 style="text-align:center;color:#ff9800;margin-bottom:1.5rem;">⏰ Grant 7-Day Allowance</h2>
+      
+      <!-- Member Info Display -->
+      <div id="allowanceMemberInfo" style="background:#fff3cd;padding:1rem;border-radius:8px;margin-bottom:1.5rem;border-left:4px solid #ff9800;">
+        <h4 style="margin:0 0 0.5rem 0;color:#856404;">Member Details</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.9rem;">
+          <div><strong>Name:</strong> <span id="allowanceMemberName"></span></div>
+          <div><strong>ID:</strong> <span id="allowanceMembershipId"></span></div>
+          <div><strong>Current Plan:</strong> <span id="allowanceCurrentPlan"></span></div>
+          <div><strong>Expires:</strong> <span id="allowanceExpiryDate"></span></div>
+        </div>
+      </div>
+
+      <!-- Warning Notice -->
+      <div style="background:#fff3cd;border:1px solid #ffeaa7;border-radius:8px;padding:1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;color:#856404;">
+          <i class="fas fa-exclamation-triangle" style="font-size:1.2rem;margin-right:8px;"></i>
+          <strong>7-Day Allowance Notice</strong>
+        </div>
+        <p style="margin:0.5rem 0 0 0;font-size:0.9rem;color:#856404;">
+          The member will be allowed gym access for 7 days while their payment remains pending. After 7 days, access will be restricted until payment is completed.
+        </p>
+      </div>
+
+      <form id="sevenDayAllowanceForm">
+        <input type="hidden" id="allowanceMemberId" name="memberId">
+        
+        <div class="form-group">
+          <label for="allowancePlanSelected">New Plan</label>
+          <select id="allowancePlanSelected" name="planSelected" required>
+            <option value="">Select Plan</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="allowanceMonthlyPlan">Duration</label>
+          <select id="allowanceMonthlyPlan" name="monthlyPlan" required>
+            <option value="">Select Duration</option>
+            <option value="1 Month">1 Month</option>
+            <option value="3 Months">3 Months</option>
+            <option value="6 Months">6 Months</option>
+            <option value="12 Months">12 Months</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="allowancePaymentAmount">Payment Amount</label>
+          <input type="number" id="allowancePaymentAmount" name="paymentAmount" min="0" required readonly style="background:#f5f5f5;">
+          <small style="color:#666;font-size:0.85em;">Amount calculated automatically based on plan and duration</small>
+          <div id="allowanceDiscountInfo" style="margin-top: 8px; padding: 8px; border-radius: 4px; font-size: 0.9em; display: none;">
+            <i class="fas fa-tag"></i> <span id="allowanceDiscountText">No discount applied</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="allowanceActivityPreference">Activity Preference</label>
+          <input type="text" id="allowanceActivityPreference" name="activityPreference" placeholder="e.g. Yoga, Cardio, Zumba" required>
+        </div>
+        
+        <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;">
+          <button type="button" id="cancelSevenDayAllowance" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn" style="background:#ff9800;color:white;border:none;">⏰ Grant 7-Day Allowance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mark as Paid Modal -->
+  <div class="modal" id="markAsPaidModal" style="display:none;">
+    <div class="modal-content" style="max-width:500px;">
+      <span class="modal-close" id="closeMarkAsPaidModal">&times;</span>
+      <h2 style="text-align:center;color:#28a745;margin-bottom:1.5rem;">✅ Mark Payment as Paid</h2>
+      
+      <!-- Member Info Display -->
+      <div id="paidMemberInfo" style="background:#d4edda;padding:1rem;border-radius:8px;margin-bottom:1.5rem;border-left:4px solid #28a745;">
+        <h4 style="margin:0 0 0.5rem 0;color:#155724;">Member Details</h4>
+        <div style="font-size:0.9rem;">
+          <div><strong>Name:</strong> <span id="paidMemberName"></span></div>
+          <div><strong>ID:</strong> <span id="paidMembershipId"></span></div>
+          <div><strong>Pending Amount:</strong> ₹<span id="paidPendingAmount"></span></div>
+        </div>
+      </div>
+
+      <form id="markAsPaidForm">
+        <input type="hidden" id="paidMemberId" name="memberId">
+        <input type="hidden" id="paidSource" name="source">
+        
+        <div class="form-group">
+          <label for="paidAmount">Amount Received</label>
+          <input type="number" id="paidAmount" name="amountReceived" min="0" step="0.01" required placeholder="Enter amount received">
+        </div>
+        
+        <div class="form-group">
+          <label for="paidMethod">Payment Method</label>
+          <select id="paidMethod" name="paymentMethod" required>
+            <option value="">Select Payment Method</option>
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="UPI">UPI</option>
+            <option value="Online">Online Transfer</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="paidDate">Payment Date</label>
+          <input type="date" id="paidDate" name="paymentDate" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="paidNotes">Notes (Optional)</label>
+          <textarea id="paidNotes" name="notes" rows="3" placeholder="Any additional notes about this payment..."></textarea>
+        </div>
+        
+        <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;">
+          <button type="button" id="cancelMarkAsPaid" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-success">✅ Mark as Paid</button>
+        </div>
+      </form>
+    </div>
+  </div>
  
-</body>
+   <!-- 7-Day Allowance System -->
+   <script src="seven-day-allowance.js"></script>
+   <!-- Notification integration with enhanced form handler compatibility -->
+   <script src="notification-integration.js"></script>
+   <!-- Notification Configuration -->
+   <script src="notification-config.js"></script></body>
 </html>
        

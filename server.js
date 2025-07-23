@@ -25,6 +25,7 @@ const gymNotificationRoutes = require('./backend/routes/gymNotificationRoutes');
 const supportRoutes = require('./backend/routes/supportRoutes');
 const attendanceRoutes = require('./backend/routes/attendanceRoutes');
 const paymentRoutes = require('./backend/routes/paymentRoutes');
+const equipmentRoutes = require('./backend/routes/equipmentRoutes');
 const NotificationScheduler = require('./backend/services/notificationScheduler');  
 
 console.log("[DEBUG] server.js: trainerRoutes type is:", typeof trainerRoutes);
@@ -42,6 +43,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads/gymImages', express.static(path.join(__dirname, 'uploads/gymImages')));
 app.use('/uploads/gymPhotos', express.static(path.join(__dirname, 'uploads/gymPhotos')));
+app.use('/uploads/gym-logos', express.static(path.join(__dirname, 'uploads/gym-logos')));
+app.use('/uploads/equipment', express.static(path.join(__dirname, 'uploads/equipment')));
 
 
 const allowedOrigins = [
@@ -88,6 +91,16 @@ app.use('/api/payments', (req, res, next) => {
   console.log(`💳 Payment route accessed: ${req.method} ${req.url}`);
   next();
 }, paymentRoutes);
+app.use('/api/gym', (req, res, next) => {
+  console.log(`🏋️ Equipment route accessed: ${req.method} ${req.url}`);
+  next();
+}, equipmentRoutes);
+
+// Mount equipment routes under /api/equipment as well for direct access
+app.use('/api/equipment', (req, res, next) => {
+  console.log(`🏋️ Direct Equipment route accessed: ${req.method} ${req.url}`);
+  next();
+}, equipmentRoutes);
 
 // ✅ Connect MongoDB and Start Server
 const startServer = async () => {

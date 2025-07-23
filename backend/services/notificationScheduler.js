@@ -41,6 +41,9 @@ class NotificationScheduler {
       // Check for memberships expiring in 1 day
       await this.createExpiryNotifications(1);
 
+      // Check for expired payment allowances
+      await this.checkExpiredPaymentAllowances();
+
       console.log('✅ Membership expiry check completed');
     } catch (error) {
       console.error('❌ Error checking membership expiry:', error);
@@ -150,6 +153,60 @@ class NotificationScheduler {
 
     } catch (error) {
       console.error(`❌ Error creating expiry notifications for ${days} day(s):`, error);
+    }
+  }
+
+  async checkExpiredPaymentAllowances() {
+    try {
+      console.log('🔍 Checking for expired payment allowances...');
+      const today = new Date();
+      
+      // Find members with expired payment allowances (allowanceExpiryDate < today)
+      const expiredAllowanceMembers = await Member.find({
+        paymentStatus: 'pending',
+        allowanceExpiryDate: { $lt: today }
+      }).populate('gym');
+
+      let updatedCount = 0;
+      
+      for (const member of expiredAllowanceMembers) {
+        // Update payment status to overdue
+        member.paymentStatus = 'overdue';
+        await member.save();
+        
+        console.log(`⚠️ Updated member ${member.memberName} (${member.membershipId}) to overdue status`);
+        
+        // Create notification for gym admin
+        if (member.gym) {
+          const notification = new Notification({
+            gymId: member.gym._id,
+            title: 'Payment Allowance Expired',
+            message: `Payment allowance has expired for ${member.memberName} (${member.membershipId}). Member status changed to overdue.`,
+            type: 'payment',
+            priority: 'high',
+            relatedData: {
+              memberId: member._id,
+              memberName: member.memberName,
+              membershipId: member.membershipId,
+              pendingAmount: member.pendingPaymentAmount,
+              allowanceExpiredDate: today
+            }
+          });
+          
+          await notification.save();
+        }
+        
+        updatedCount++;
+      }
+      
+      if (updatedCount > 0) {
+        console.log(`✅ Updated ${updatedCount} member(s) from pending to overdue status`);
+      } else {
+        console.log('✅ No expired payment allowances found');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error checking expired payment allowances:', error);
     }
   }
 

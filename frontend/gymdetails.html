@@ -149,6 +149,35 @@
                         <!-- Photos will be dynamically loaded -->
                     </div>
                 </div>
+                
+                <!-- Equipment Gallery Section -->
+                <div class="equipment-gallery-section">
+                    <h2><i class="fas fa-dumbbell"></i> Equipment Gallery</h2>
+                    <div class="equipment-filter-tabs">
+                        <button class="filter-btn active" data-category="all">
+                            <i class="fas fa-th"></i> All Equipment
+                        </button>
+                        <button class="filter-btn" data-category="cardio">
+                            <i class="fas fa-heartbeat"></i> Cardio
+                        </button>
+                        <button class="filter-btn" data-category="strength">
+                            <i class="fas fa-dumbbell"></i> Strength
+                        </button>
+                        <button class="filter-btn" data-category="functional">
+                            <i class="fas fa-running"></i> Functional
+                        </button>
+                        <button class="filter-btn" data-category="other">
+                            <i class="fas fa-plus"></i> Other
+                        </button>
+                    </div>
+                    <div class="equipment-gallery-grid" id="equipment-gallery-grid">
+                        <!-- Equipment will be dynamically loaded -->
+                        <div class="equipment-loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading equipment...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Membership Tab -->
@@ -172,6 +201,11 @@
                         <h3><i class="fas fa-dumbbell"></i> Equipment Available</h3>
                         <div class="equipment-list" id="equipment-list">
                             <!-- Equipment will be dynamically loaded -->
+                        </div>
+                        <div class="equipment-gallery-link">
+                            <button class="btn-primary" onclick="switchTab('photos')">
+                                <i class="fas fa-images"></i> View Full Equipment Gallery
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -494,6 +528,71 @@
             <div class="photo-navigation">
                 <button id="prev-photo" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
                 <button id="next-photo" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Equipment Detail Modal -->
+    <div id="equipment-detail-modal" class="modal equipment-modal">
+        <div class="modal-content equipment-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-dumbbell"></i> Equipment Details</h3>
+                <span class="close" id="close-equipment-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="equipment-detail-content">
+                    <div class="equipment-image-section">
+                        <div class="equipment-main-image">
+                            <img id="equipment-modal-image" src="" alt="Equipment Image">
+                        </div>
+                        <div class="equipment-image-thumbnails" id="equipment-thumbnails">
+                            <!-- Thumbnails will be populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="equipment-info-section">
+                        <div class="equipment-basic-info">
+                            <h2 id="equipment-modal-name">Equipment Name</h2>
+                            <div class="equipment-meta">
+                                <span class="equipment-brand" id="equipment-modal-brand">Brand</span>
+                                <span class="equipment-model" id="equipment-modal-model">Model</span>
+                            </div>
+                            <div class="equipment-category-badge" id="equipment-modal-category">
+                                <i class="fas fa-tag"></i>
+                                <span>Category</span>
+                            </div>
+                        </div>
+                        
+                        <div class="equipment-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-boxes"></i>
+                                <span class="stat-label">Quantity</span>
+                                <span class="stat-value" id="equipment-modal-quantity">1</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-circle"></i>
+                                <span class="stat-label">Status</span>
+                                <span class="stat-value status-badge" id="equipment-modal-status">Available</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span class="stat-label">Location</span>
+                                <span class="stat-value" id="equipment-modal-location">Main Floor</span>
+                            </div>
+                        </div>
+
+                        <div class="equipment-description">
+                            <h4><i class="fas fa-info-circle"></i> Description</h4>
+                            <p id="equipment-modal-description">Equipment description will be shown here...</p>
+                        </div>
+
+                        <div class="equipment-specifications" id="equipment-specifications-section">
+                            <h4><i class="fas fa-cogs"></i> Specifications</h4>
+                            <div id="equipment-modal-specifications">
+                                <!-- Specifications will be populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

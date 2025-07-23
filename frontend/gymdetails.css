@@ -829,6 +829,458 @@
     margin-bottom: 1rem;
 }
 
+/* Equipment Gallery Section */
+.equipment-gallery-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid #f0f0f0;
+}
+
+.equipment-gallery-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.8rem;
+    color: var(--dark-color);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+}
+
+.equipment-filter-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.filter-btn {
+    background: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.filter-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+}
+
+.equipment-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.equipment-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.equipment-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.equipment-card.hidden {
+    display: none;
+}
+
+.equipment-image-container {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.equipment-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.equipment-card:hover .equipment-image-container img {
+    transform: scale(1.05);
+}
+
+.equipment-quantity-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(74, 144, 226, 0.9);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.equipment-status-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.equipment-status-badge.available {
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+}
+
+.equipment-status-badge.maintenance {
+    background: rgba(255, 152, 0, 0.9);
+    color: white;
+}
+
+.equipment-status-badge.out-of-order {
+    background: rgba(244, 67, 54, 0.9);
+    color: white;
+}
+
+.equipment-info {
+    padding: 1.5rem;
+}
+
+.equipment-header {
+    margin-bottom: 1rem;
+}
+
+.equipment-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.equipment-brand-model {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+}
+
+.equipment-category-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.equipment-description {
+    color: #666;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-clamp: 3;
+    overflow: hidden;
+}
+
+.equipment-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--primary-color);
+}
+
+.equipment-loading i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.no-equipment-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+.no-equipment-message i {
+    font-size: 3rem;
+    color: #ccc;
+    margin-bottom: 1rem;
+}
+
+/* Equipment Detail Modal */
+.equipment-modal .modal-content {
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.equipment-modal-content {
+    border-radius: 20px;
+}
+
+.equipment-detail-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 1rem 0;
+}
+
+.equipment-image-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.equipment-main-image {
+    width: 100%;
+    height: 300px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.equipment-main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.equipment-image-thumbnails {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+}
+
+.equipment-thumbnail {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+}
+
+.equipment-thumbnail:hover,
+.equipment-thumbnail.active {
+    opacity: 1;
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.equipment-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.equipment-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.equipment-basic-info h2 {
+    font-size: 1.8rem;
+    color: var(--dark-color);
+    margin-bottom: 0.5rem;
+}
+
+.equipment-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.equipment-brand,
+.equipment-model {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.equipment-brand::after {
+    content: "•";
+    margin: 0 0.5rem;
+    color: #ccc;
+}
+
+.equipment-category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.equipment-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.stat-item i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark-color);
+}
+
+.status-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-badge.available {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.status-badge.maintenance {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.status-badge.out-of-order {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.equipment-description,
+.equipment-specifications {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 15px;
+}
+
+.equipment-description h4,
+.equipment-specifications h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+}
+
+.equipment-description p {
+    color: #666;
+    line-height: 1.6;
+}
+
+.equipment-specifications ul {
+    list-style: none;
+    padding: 0;
+}
+
+.equipment-specifications li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.equipment-specifications li:last-child {
+    border-bottom: none;
+}
+
+.spec-label {
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.spec-value {
+    color: #666;
+}
+
+/* Equipment Gallery Link in Activities Tab */
+.equipment-gallery-link {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #f0f0f0;
+}
+
+.equipment-gallery-link .btn-primary {
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    border-radius: 25px;
+    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.3);
+    transition: all 0.3s ease;
+}
+
+.equipment-gallery-link .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(74, 144, 226, 0.4);
+}
+
 /* Membership Section */
 .membership-grid {
     display: grid;
@@ -1008,12 +1460,36 @@
     gap: 0.8rem;
     color: var(--dark-color);
     font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.equipment-item:hover {
+    background: rgba(42, 157, 143, 0.15);
+    transform: translateY(-2px);
 }
 
 .equipment-item i {
     color: var(--primary-color);
     font-size: 1.2rem;
     width: 20px;
+    flex-shrink: 0;
+}
+
+.equipment-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.equipment-name {
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.equipment-details {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 400;
 }
 
 /* Location Section */
@@ -1873,6 +2349,88 @@
     transform: translateY(-3px);
 }
 
+/* Equipment Gallery Responsive Styles */
+@media (max-width: 768px) {
+    .equipment-filter-tabs {
+        justify-content: flex-start;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .equipment-filter-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .filter-btn {
+        flex-shrink: 0;
+        padding: 0.6rem 1.2rem;
+        font-size: 0.85rem;
+    }
+    
+    .equipment-gallery-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+    
+    .equipment-detail-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .equipment-main-image {
+        height: 250px;
+    }
+    
+    .equipment-stats {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+    
+    .stat-item {
+        padding: 0.8rem;
+    }
+    
+    .equipment-modal .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .equipment-gallery-section h2 {
+        font-size: 1.5rem;
+    }
+    
+    .equipment-gallery-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .equipment-card {
+        margin: 0 0.5rem;
+    }
+    
+    .equipment-name {
+        font-size: 1.1rem;
+    }
+    
+    .equipment-info {
+        padding: 1rem;
+    }
+    
+    .equipment-detail-content {
+        padding: 0.5rem 0;
+    }
+    
+    .equipment-main-image {
+        height: 200px;
+    }
+    
+    .equipment-stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 968px) {
     .gym-hero-content {
@@ -1902,11 +2460,13 @@
 @media (max-width: 768px) {
     .gym-details-main {
         padding: 1rem 0.5rem;
+        margin-top: 1rem; /* Add top margin to prevent collapsing with navbar */
     }
     
     .gym-hero {
         padding: 1.5rem;
         border-radius: 15px;
+        margin-bottom: 1.5rem;
     }
     
     .gym-logo {
@@ -1954,8 +2514,13 @@
 }
 
 @media (max-width: 480px) {
+    .gym-details-main {
+        margin-top: 1.5rem; /* Extra margin for smaller screens */
+    }
+    
     .gym-hero {
         padding: 1rem;
+        margin-bottom: 1rem;
     }
     
     .gym-info-text h1 {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addMember, getMembers, updateMember, removeMembersByIds, removeExpiredMembers, renewMembership } = require('../controllers/memberController');
+const { addMember, getMembers, updateMember, removeMembersByIds, removeExpiredMembers, renewMembership, updateMemberPaymentStatus, getMembersWithPendingPayments, getExpiringMembers, grantSevenDayAllowance, markPaymentAsPaid } = require('../controllers/memberController');
 const gymadminAuth = require('../middleware/gymadminAuth');
 const memberImageUpload = require('../middleware/memberImageUpload');
 const Member = require('../models/Member');
@@ -205,6 +205,35 @@ router.get('/membership-by-email/:email', async (req, res) => {
   } catch (error) {
     console.error('Error fetching membership:', error);
     res.status(500).json({ message: 'Server error while fetching membership details' });
+  }
+});
+
+// Update member payment status
+router.patch('/:memberId/payment-status', gymadminAuth, updateMemberPaymentStatus);
+
+// Get members with pending payments
+router.get('/pending-payments', gymadminAuth, getMembersWithPendingPayments);
+
+// Get members whose membership is expiring within 3 days or already expired
+router.get('/expiring', gymadminAuth, getExpiringMembers);
+
+// Grant 7-day allowance for a member
+router.post('/seven-day-allowance', gymadminAuth, grantSevenDayAllowance);
+
+// Mark payment as paid and activate membership
+router.post('/mark-payment-paid', gymadminAuth, markPaymentAsPaid);
+
+// Get a single member by ID
+router.get('/:id', gymadminAuth, async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id);
+    if (!member) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+    res.json(member);
+  } catch (error) {
+    console.error('Error fetching member:', error);
+    res.status(500).json({ error: 'Failed to fetch member' });
   }
 });
 

@@ -5,6 +5,7 @@ const {
   getPaymentChartData,
   getRecentPayments,
   getRecurringPayments,
+  getPaymentReminders,
   addPayment,
   updatePayment,
   markPaymentAsPaid,
@@ -20,6 +21,7 @@ router.get('/stats', gymAdminAuth, getPaymentStats);
 router.get('/chart-data', gymAdminAuth, getPaymentChartData);
 router.get('/recent', gymAdminAuth, getRecentPayments);
 router.get('/recurring', gymAdminAuth, getRecurringPayments);
+router.get('/reminders', gymAdminAuth, getPaymentReminders);
 router.post('/', gymAdminAuth, addPayment);
 router.put('/:id', gymAdminAuth, updatePayment);
 router.patch('/:id/mark-paid', gymAdminAuth, markPaymentAsPaid);

@@ -134,6 +134,7 @@ function populateGymDetails(gym) {
     // Populate tabs
     console.log('Populating tabs...');
     populatePhotos(gym.gymPhotos || []);
+    populateEquipmentGallery(gym.equipment || []);
     populateMembershipPlans(gym.membershipPlans || []);
     populateActivities(gym.activities || []);
     populateEquipment(gym.equipment || []);
@@ -189,10 +190,283 @@ function populatePhotos(photos) {
                     <span class="photo-category">${category}</span>
                     <h3>${title || 'Untitled'}</h3>
                     <p>${description || 'No description'}</p>
+            </div>
+        `;
+    }).join('');
+}
+
+// Global equipment variables
+let allEquipment = [];
+let currentEquipmentFilter = 'all';
+
+// Populate equipment gallery
+function populateEquipmentGallery(equipment) {
+    console.log('Populating equipment gallery with:', equipment);
+    allEquipment = equipment || [];
+    
+    const equipmentGrid = document.getElementById('equipment-gallery-grid');
+    
+    if (!equipmentGrid) {
+        console.error('Equipment gallery grid not found');
+        return;
+    }
+    
+    console.log('Equipment grid found, initializing filters...');
+    
+    // Initialize filter event listeners
+    initializeEquipmentFilters();
+    
+    // Display equipment
+    displayFilteredEquipment('all');
+    
+    console.log('Equipment gallery populated successfully');
+}
+
+// Initialize equipment filter buttons
+function initializeEquipmentFilters() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get category and filter equipment
+            const category = this.getAttribute('data-category');
+            currentEquipmentFilter = category;
+            displayFilteredEquipment(category);
+        });
+    });
+}
+
+// Display filtered equipment
+function displayFilteredEquipment(category) {
+    const equipmentGrid = document.getElementById('equipment-gallery-grid');
+    
+    console.log('Displaying filtered equipment for category:', category);
+    console.log('All equipment data:', allEquipment);
+    
+    if (allEquipment.length === 0) {
+        console.log('No equipment found, showing no equipment message');
+        equipmentGrid.innerHTML = `
+            <div class="no-equipment-message">
+                <i class="fas fa-dumbbell"></i>
+                <h3>No Equipment Available</h3>
+                <p>This gym hasn't added any equipment information yet.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Filter equipment based on category
+    let filteredEquipment = allEquipment;
+    if (category !== 'all') {
+        filteredEquipment = allEquipment.filter(equipment => 
+            equipment.category && equipment.category.toLowerCase() === category.toLowerCase()
+        );
+        console.log('Filtered equipment for category', category, ':', filteredEquipment);
+    }
+    
+    if (filteredEquipment.length === 0) {
+        console.log('No equipment found for category:', category);
+        equipmentGrid.innerHTML = `
+            <div class="no-equipment-message">
+                <i class="fas fa-search"></i>
+                <h3>No Equipment Found</h3>
+                <p>No equipment found in the "${category}" category.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    console.log('Generating equipment cards for', filteredEquipment.length, 'items');
+    
+    // Generate equipment cards
+    equipmentGrid.innerHTML = filteredEquipment.map((equipment, index) => {
+        const mainPhoto = equipment.photos && equipment.photos.length > 0 ? equipment.photos[0] : '';
+        let imageUrl = 'https://via.placeholder.com/300x200.png?text=No+Image';
+        
+        if (mainPhoto) {
+            if (mainPhoto.startsWith('http')) {
+                imageUrl = mainPhoto;
+            } else {
+                imageUrl = mainPhoto.startsWith('/') ? 
+                    `http://localhost:5000${mainPhoto}` : 
+                    `http://localhost:5000/${mainPhoto}`;
+            }
+        }
+        
+        const categoryIcon = getCategoryIcon(equipment.category);
+        const statusClass = (equipment.status || 'available').toLowerCase().replace('-', '-');
+        const statusText = equipment.status || 'available';
+        
+        return `
+            <div class="equipment-card" onclick="openEquipmentModal('${equipment.id || equipment._id}')">
+                <div class="equipment-image-container">
+                    <img src="${imageUrl}" alt="${equipment.name}" 
+                         onerror="this.src='https://via.placeholder.com/300x200.png?text=No+Image'">
+                    <span class="equipment-quantity-badge">
+                        <i class="fas fa-boxes"></i> ${equipment.quantity || 1}
+                    </span>
+                    <span class="equipment-status-badge ${statusClass}">
+                        ${statusText}
+                    </span>
+                </div>
+                <div class="equipment-info">
+                    <div class="equipment-header">
+                        <h3 class="equipment-name">${equipment.name || 'Unnamed Equipment'}</h3>
+                        <div class="equipment-brand-model">
+                            ${equipment.brand ? `${equipment.brand}` : ''}
+                            ${equipment.brand && equipment.model ? ' • ' : ''}
+                            ${equipment.model ? `${equipment.model}` : ''}
+                        </div>
+                        <div class="equipment-category-tag">
+                            <i class="${categoryIcon}"></i>
+                            ${equipment.category || 'other'}
+                        </div>
+                    </div>
+                    <p class="equipment-description">
+                        ${equipment.description || 'No description available for this equipment.'}
+                    </p>
                 </div>
             </div>
         `;
     }).join('');
+    
+    console.log('Equipment cards generated successfully');
+}
+
+// Get category icon
+function getCategoryIcon(category) {
+    const iconMap = {
+        'cardio': 'fas fa-heartbeat',
+        'strength': 'fas fa-dumbbell',
+        'functional': 'fas fa-running',
+        'other': 'fas fa-cogs'
+    };
+    return iconMap[category?.toLowerCase()] || 'fas fa-cogs';
+}
+
+// Open equipment detail modal
+function openEquipmentModal(equipmentId) {
+    const equipment = allEquipment.find(eq => (eq.id || eq._id) === equipmentId);
+    
+    if (!equipment) {
+        console.error('Equipment not found:', equipmentId);
+        return;
+    }
+    
+    console.log('Opening equipment modal for:', equipment);
+    
+    // Populate modal content
+    document.getElementById('equipment-modal-name').textContent = equipment.name || 'Unnamed Equipment';
+    document.getElementById('equipment-modal-brand').textContent = equipment.brand || 'Unknown Brand';
+    document.getElementById('equipment-modal-model').textContent = equipment.model || 'Unknown Model';
+    document.getElementById('equipment-modal-quantity').textContent = equipment.quantity || 1;
+    document.getElementById('equipment-modal-location').textContent = equipment.location || 'Not specified';
+    document.getElementById('equipment-modal-description').textContent = 
+        equipment.description || 'No description available for this equipment.';
+    
+    // Set category
+    const categoryElement = document.getElementById('equipment-modal-category');
+    const categoryIcon = getCategoryIcon(equipment.category);
+    categoryElement.innerHTML = `<i class="${categoryIcon}"></i><span>${equipment.category || 'other'}</span>`;
+    
+    // Set status
+    const statusElement = document.getElementById('equipment-modal-status');
+    const statusClass = (equipment.status || 'available').toLowerCase().replace('-', '-');
+    statusElement.textContent = equipment.status || 'available';
+    statusElement.className = `stat-value status-badge ${statusClass}`;
+    
+    // Handle main image and thumbnails
+    const mainImageElement = document.getElementById('equipment-modal-image');
+    const thumbnailsContainer = document.getElementById('equipment-thumbnails');
+    
+    if (equipment.photos && equipment.photos.length > 0) {
+        // Set main image
+        let mainImageUrl = equipment.photos[0];
+        if (!mainImageUrl.startsWith('http')) {
+            mainImageUrl = mainImageUrl.startsWith('/') ? 
+                `http://localhost:5000${mainImageUrl}` : 
+                `http://localhost:5000/${mainImageUrl}`;
+        }
+        mainImageElement.src = mainImageUrl;
+        
+        // Generate thumbnails if multiple photos
+        if (equipment.photos.length > 1) {
+            thumbnailsContainer.innerHTML = equipment.photos.map((photo, index) => {
+                let photoUrl = photo;
+                if (!photoUrl.startsWith('http')) {
+                    photoUrl = photoUrl.startsWith('/') ? 
+                        `http://localhost:5000${photoUrl}` : 
+                        `http://localhost:5000/${photoUrl}`;
+                }
+                
+                return `
+                    <div class="equipment-thumbnail ${index === 0 ? 'active' : ''}" 
+                         onclick="changeEquipmentImage('${photoUrl}', this)">
+                        <img src="${photoUrl}" alt="Equipment Photo ${index + 1}"
+                             onerror="this.src='https://via.placeholder.com/60x60.png?text=No+Image'">
+                    </div>
+                `;
+            }).join('');
+        } else {
+            thumbnailsContainer.innerHTML = '';
+        }
+    } else {
+        mainImageElement.src = 'https://via.placeholder.com/400x300.png?text=No+Image';
+        thumbnailsContainer.innerHTML = '';
+    }
+    
+    // Handle specifications
+    const specificationsElement = document.getElementById('equipment-modal-specifications');
+    const specificationsSection = document.getElementById('equipment-specifications-section');
+    
+    if (equipment.specifications && equipment.specifications.trim()) {
+        specificationsSection.style.display = 'block';
+        try {
+            // Try to parse as JSON first
+            const specs = JSON.parse(equipment.specifications);
+            if (typeof specs === 'object') {
+                specificationsElement.innerHTML = `
+                    <ul>
+                        ${Object.entries(specs).map(([key, value]) => 
+                            `<li><span class="spec-label">${key}:</span> <span class="spec-value">${value}</span></li>`
+                        ).join('')}
+                    </ul>
+                `;
+            } else {
+                specificationsElement.innerHTML = `<p>${specs}</p>`;
+            }
+        } catch (e) {
+            // If not JSON, treat as plain text
+            specificationsElement.innerHTML = `<p>${equipment.specifications}</p>`;
+        }
+    } else {
+        specificationsSection.style.display = 'none';
+    }
+    
+    // Show modal
+    document.getElementById('equipment-detail-modal').style.display = 'block';
+}
+
+// Change equipment image in modal
+function changeEquipmentImage(imageUrl, thumbnailElement) {
+    document.getElementById('equipment-modal-image').src = imageUrl;
+    
+    // Update active thumbnail
+    document.querySelectorAll('.equipment-thumbnail').forEach(thumb => {
+        thumb.classList.remove('active');
+    });
+    thumbnailElement.classList.add('active');
+}
+
+// Close equipment modal
+function closeEquipmentModal() {
+    document.getElementById('equipment-detail-modal').style.display = 'none';
 }
 
 // Populate membership plans tab
@@ -337,17 +611,41 @@ function populateActivities(activities) {
 function populateEquipment(equipment) {
     const equipmentList = document.getElementById('equipment-list');
     
-    if (equipment.length === 0) {
+    if (!equipment || equipment.length === 0) {
         equipmentList.innerHTML = '<p class="no-content">No equipment listed.</p>';
         return;
     }
     
-    equipmentList.innerHTML = equipment.map(item => `
-        <div class="equipment-item">
-            <i class="fas fa-dumbbell"></i>
-            <span>${item}</span>
-        </div>
-    `).join('');
+    // Handle both array of strings (old format) and array of objects (new format)
+    equipmentList.innerHTML = equipment.map(item => {
+        let equipmentName = '';
+        let equipmentInfo = '';
+        
+        if (typeof item === 'string') {
+            // Old format: simple string
+            equipmentName = item;
+        } else if (typeof item === 'object' && item !== null) {
+            // New format: equipment object
+            equipmentName = item.name || 'Unknown Equipment';
+            const brand = item.brand ? ` - ${item.brand}` : '';
+            const quantity = item.quantity > 1 ? ` (${item.quantity}x)` : '';
+            equipmentInfo = `${brand}${quantity}`;
+        } else {
+            equipmentName = 'Unknown Equipment';
+        }
+        
+        const categoryIcon = getCategoryIcon(item.category);
+        
+        return `
+            <div class="equipment-item">
+                <i class="${categoryIcon}"></i>
+                <div class="equipment-item-info">
+                    <span class="equipment-name">${equipmentName}</span>
+                    ${equipmentInfo ? `<span class="equipment-details">${equipmentInfo}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // Populate location tab
@@ -759,6 +1057,14 @@ function setupModalEventListeners() {
     document.getElementById('error-ok-btn').addEventListener('click', () => {
         closeModal('error-modal');
     });
+    
+    // Equipment modal close button
+    const equipmentModalClose = document.getElementById('close-equipment-modal');
+    if (equipmentModalClose) {
+        equipmentModalClose.addEventListener('click', () => {
+            closeModal('equipment-detail-modal');
+        });
+    }
 }
 
 // Tab switching
@@ -1234,11 +1540,33 @@ function displayReviews(reviews) {
             const replyDate = new Date(review.adminReply.repliedAt).toLocaleDateString('en-US', {
                 year: 'numeric', month: 'long', day: 'numeric'
             });
+            
+            // Get gym logo and name from current gym data
+            let gymLogo = '/frontend/gymadmin/admin.png'; // Default fallback
+            let gymName = 'Gym Admin'; // Default fallback
+            
+            if (currentGym) {
+                // Handle different possible logo URL formats
+                if (currentGym.logoUrl) {
+                    if (currentGym.logoUrl.startsWith('http')) {
+                        gymLogo = currentGym.logoUrl;
+                    } else {
+                        gymLogo = currentGym.logoUrl.startsWith('/') ? 
+                            `${BASE_URL}${currentGym.logoUrl}` : 
+                            `${BASE_URL}/${currentGym.logoUrl}`;
+                    }
+                }
+                
+                // Get gym name
+                gymName = currentGym.gymName || currentGym.name || 'Gym Admin';
+            }
+            
             adminReplyHTML = `
                 <div class="admin-reply" style="border-left: 3px solid #1976d2; padding-left: 16px; background: white; padding: 12px 16px; border-radius: 4px; margin-top: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <img src="/frontend/gymadmin/admin.png" alt="Gym Admin Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #1976d2;" />
-                        <strong style="color: #1976d2; font-size: 13px;">${window.gymAdminName || 'Gym Admin'}</strong>
+                        <img src="${gymLogo}" alt="Gym Admin Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #1976d2;" 
+                             onerror="this.src='/frontend/gymadmin/admin.png';" />
+                        <strong style="color: #1976d2; font-size: 13px;">${gymName}</strong>
                         <span style="font-size: 12px; color: #999;">${replyDate}</span>
                     </div>
                     <div class="admin-reply-text" style="margin: 0; color: #444; font-size: 13px; line-height: 1.4;">${review.adminReply.reply}</div>

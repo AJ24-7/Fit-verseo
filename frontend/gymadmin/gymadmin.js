@@ -1185,8 +1185,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 iconHtml: '<i class="fas fa-check-circle" style="color:#38b000;"></i>',
                 onConfirm: function () {
                   if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
-                  // Do NOT update total payments after member removal; keep the value unchanged
-                  // If you have a function that recalculates total payments, do NOT call it here
+                  // Update member stats after removal
+                  if (typeof updateMembersStatsCard === 'function') updateMembersStatsCard();
+                  // Refresh payment stats to show accurate data from payment records
+                  if (typeof updatePaymentsStatsCard === 'function') updatePaymentsStatsCard();
                 }
               });
             } catch (err) {
@@ -1339,8 +1341,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 onConfirm: function () {
                   modal.remove();
                   if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
-                  // Do NOT update total payments after member removal; keep the value unchanged
-                  // If you have a function that recalculates total payments, do NOT call it here
+                  // Update member stats after removal
+                  if (typeof updateMembersStatsCard === 'function') updateMembersStatsCard();
+                  // Refresh payment stats to show accurate data from payment records
+                  if (typeof updatePaymentsStatsCard === 'function') updatePaymentsStatsCard();
                 }
               });
             } catch (err) {
@@ -1380,6 +1384,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Cache for membership plans
   let plansCache = [];
+  
+  // Cache for gym activities
+  let activitiesCache = [];
 
   // Fetch membership plans from backend
   async function fetchPlansForModal() {
@@ -1463,6 +1470,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Fetch gym activities from backend
+  async function fetchActivitiesForModal() {
+    try {
+      const token = await waitForToken('gymAdminToken', 10, 100);
+      
+      if (!token) {
+        console.warn('[AddMember] No authentication token found for activities fetch');
+        activitiesCache = [];
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Extract activities from gym profile
+      if (data && Array.isArray(data.activities)) {
+        activitiesCache = data.activities;
+      } else {
+        console.warn('[AddMember] No activities found in gym profile');
+        activitiesCache = [];
+      }
+    } catch (error) {
+      console.error('[AddMember] Error fetching activities:', error);
+      activitiesCache = [];
+    }
+  }
+
   // Update payment amount based on plan and duration
   function updatePaymentAmountAndDiscount() {
     
@@ -1470,8 +1515,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentPlanSelected = document.getElementById('planSelected');
     const currentMonthlyPlan = document.getElementById('monthlyPlan');
     const currentPaymentAmount = document.getElementById('paymentAmount');
+    const discountInfo = document.getElementById('discountInfo');
+    const discountText = document.getElementById('discountText');
     
-   
 
     const selectedPlan = currentPlanSelected.value;
     const selectedDuration = currentMonthlyPlan.value;
@@ -1479,6 +1525,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!selectedPlan || !selectedDuration) {
       currentPaymentAmount.value = '';
+      if (discountInfo) discountInfo.style.display = 'none';
       return;
     }
 
@@ -1492,6 +1539,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!plan) {
       console.warn('[AddMember] Plan not found in cache:', selectedPlan);
       currentPaymentAmount.value = '';
+      if (discountInfo) discountInfo.style.display = 'none';
       return;
     }
 
@@ -1500,6 +1548,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calculate amount
     const baseAmount = plan.price * months;
     let finalAmount = baseAmount;
+    let discountAmount = 0;
+    let discountPercentage = 0;
     
     // Check if discount applies - handle both array and numeric discountMonths
     let discountApplies = false;
@@ -1512,17 +1562,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (discountApplies) {
-      finalAmount = Math.round(baseAmount * (1 - plan.discount / 100));
-    } else {
+      discountPercentage = plan.discount;
+      discountAmount = Math.round(baseAmount * (plan.discount / 100));
+      finalAmount = baseAmount - discountAmount;
     }
 
     // Update UI
     currentPaymentAmount.value = finalAmount;
+    
+    // Update discount information
+    if (discountInfo && discountText) {
+      if (discountApplies && discountAmount > 0) {
+        discountText.innerHTML = `${discountPercentage}% discount applied - You save ₹${discountAmount}`;
+        discountInfo.style.display = 'block';
+        discountInfo.style.backgroundColor = '#d4edda';
+        discountInfo.style.color = '#155724';
+        discountInfo.style.border = '1px solid #c3e6cb';
+      } else {
+        discountText.innerHTML = 'No discount applied';
+        discountInfo.style.display = 'block';
+        discountInfo.style.backgroundColor = '#f8f9fa';
+        discountInfo.style.color = '#6c757d';
+        discountInfo.style.border = '1px solid #dee2e6';
+      }
+    }
   }
 
   // Open modal
   async function openAddMemberModal() {
     await fetchPlansForModal();
+    await fetchActivitiesForModal();
     
     if (addMemberModal) {
       addMemberModal.style.display = 'flex';
@@ -1534,6 +1603,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (memberImageTag) memberImageTag.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik00OCA2NEM1Ni44MzY2IDY0IDY0IDU2LjgzNjYgNjQgNDhDNjQgMzkuMTYzNCA1Ni44MzY2IDMyIDQ4IDMyQzM5LjE2MzQgMzIgMzIgMzkuMTYzNCAzMiA0OEMzMiA1Ni44MzY2IDM5LjE2MzQgNjQgNDggNjRaIiBmaWxsPSIjQ0NDQ0NDIi8+CjxwYXRoIGQ9Ik0yNCA3Nkg3MlY4MEgyNFY3NloiIGZpbGw9IiNDQ0NDQ0MiLz4KPHRleHQgeD0iNDgiIHk9Ijg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTk5OTkiPlBob3RvPC90ZXh0Pgo8L3N2Zz4K';
     if (addMemberSuccessMsg) addMemberSuccessMsg.style.display = 'none';
     
+    // Hide discount info initially
+    const discountInfo = document.getElementById('discountInfo');
+    if (discountInfo) discountInfo.style.display = 'none';
+    
     // Populate plan dropdown
     if (planSelected && plansCache.length > 0) {
       planSelected.innerHTML = '<option value="">Select Plan</option>' + 
@@ -1543,6 +1616,33 @@ document.addEventListener('DOMContentLoaded', function() {
         planSelected: !!planSelected,
         plansCache: plansCache.length,
         planSelectedElement: planSelected
+      });
+    }
+    
+    // Populate activity dropdown
+    const activityPreference = document.getElementById('activityPreference');
+    if (activityPreference && activitiesCache.length > 0) {
+      activityPreference.innerHTML = '<option value="">Select Activity</option>' + 
+        activitiesCache.map(activity => {
+          const activityName = typeof activity === 'string' ? activity : activity.name;
+          const activityIcon = typeof activity === 'object' && activity.icon ? `<i class="${activity.icon}"></i> ` : '';
+          return `<option value="${activityName}">${activityName}</option>`;
+        }).join('');
+    } else if (activityPreference) {
+      // Fallback to default options if no activities found
+      activityPreference.innerHTML = `
+        <option value="">Select Activity</option>
+        <option value="Cardio">Cardio</option>
+        <option value="Weight Training">Weight Training</option>
+        <option value="Yoga">Yoga</option>
+        <option value="Zumba">Zumba</option>
+        <option value="CrossFit">CrossFit</option>
+        <option value="Pilates">Pilates</option>
+        <option value="General Fitness">General Fitness</option>
+      `;
+      console.warn('[AddMember] Activity dropdown populated with fallback options:', {
+        activityPreference: !!activityPreference,
+        activitiesCache: activitiesCache.length
       });
     }
     
@@ -1711,6 +1811,58 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle successful response
         if (res.ok && (data.success || data.message === 'Member added successfully')) {
+          // Record membership payment automatically
+          if (window.paymentManager) {
+            try {
+              const memberData = {
+                _id: data.member?._id || data.memberId,
+                memberName: memberName,
+                paymentAmount: formData.get('paymentAmount'),
+                planSelected: plan,
+                monthlyPlan: monthlyPlan,
+                paymentMode: formData.get('paymentMode'),
+                membershipValidUntil: validDate
+              };
+              await window.paymentManager.recordMembershipPayment(memberData);
+              console.log('✅ Membership payment recorded successfully');
+              
+              // Trigger payment notification
+              if (window.notificationSystem) {
+                window.notificationSystem.notifyPaymentReceived({
+                  amount: formData.get('paymentAmount'),
+                  memberName: memberName,
+                  plan: `${plan} (${monthlyPlan})`
+                });
+              }
+            } catch (paymentError) {
+              console.error('❌ Failed to record membership payment:', paymentError);
+              // Don't block member creation for payment recording errors
+            }
+          }
+          
+          // Trigger new member notification
+          if (window.notificationSystem) {
+            window.notificationSystem.notifyNewMember({
+              name: memberName,
+              planSelected: plan,
+              monthlyPlan: monthlyPlan
+            });
+          } else {
+            console.warn('Notification system not available yet, trying to initialize...');
+            // Try to initialize notification system if not available
+            setTimeout(() => {
+              if (window.notificationSystem) {
+                window.notificationSystem.notifyNewMember({
+                  name: memberName,
+                  planSelected: plan,
+                  monthlyPlan: monthlyPlan
+                });
+              } else {
+                console.error('Notification system still not available after retry');
+              }
+            }, 1000);
+          }
+          
           sendMembershipEmail({ token, memberEmail, memberName, membershipId, plan, monthlyPlan, validDate, gymName });
           showAddMemberSuccess(membershipId, addMemberForm, memberImageTag, closeAddMemberModalFunc, memberName);
         } 
@@ -1734,6 +1886,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 const forceData = await forceRes.json();
                 
                 if (forceRes.ok && (forceData.success || forceData.message === 'Member added successfully')) {
+                  // Record membership payment automatically for forced add
+                  if (window.paymentManager) {
+                    try {
+                      const memberData = {
+                        _id: forceData.member?._id || forceData.memberId,
+                        memberName: memberName,
+                        paymentAmount: formData.get('paymentAmount'),
+                        planSelected: plan,
+                        monthlyPlan: monthlyPlan,
+                        paymentMode: formData.get('paymentMode'),
+                        membershipValidUntil: validDate
+                      };
+                      await window.paymentManager.recordMembershipPayment(memberData);
+                      console.log('✅ Membership payment recorded successfully (forced add)');
+                      
+                      // Trigger payment notification for forced add
+                      if (window.notificationSystem) {
+                        window.notificationSystem.notifyPaymentReceived({
+                          amount: formData.get('paymentAmount'),
+                          memberName: memberName,
+                          plan: `${plan} (${monthlyPlan})`
+                        });
+                      }
+                    } catch (paymentError) {
+                      console.error('❌ Failed to record membership payment (forced add):', paymentError);
+                      // Don't block member creation for payment recording errors
+                    }
+                  }
+                  
+                  // Trigger new member notification for forced add
+                  if (window.notificationSystem) {
+                    window.notificationSystem.notifyNewMember({
+                      name: memberName,
+                      planSelected: plan,
+                      monthlyPlan: monthlyPlan
+                    });
+                  } else {
+                    console.warn('Notification system not available yet, trying to initialize...');
+                    // Try to initialize notification system if not available
+                    setTimeout(() => {
+                      if (window.notificationSystem) {
+                        window.notificationSystem.notifyNewMember({
+                          name: memberName,
+                          planSelected: plan,
+                          monthlyPlan: monthlyPlan
+                        });
+                      } else {
+                        console.error('Notification system still not available after retry');
+                      }
+                    }, 1000);
+                  }
+                  
                   sendMembershipEmail({ token, memberEmail, memberName, membershipId, plan, monthlyPlan, validDate, gymName });
                   showAddMemberSuccess(membershipId, addMemberForm, memberImageTag, closeAddMemberModalFunc, memberName);
                 } else {
@@ -1870,7 +2074,20 @@ document.addEventListener('DOMContentLoaded', function() {
         message: `Member <b>${memberName || 'Unknown'}</b> has been added successfully!<br><br>📋 <b>Membership ID:</b> ${membershipId}<br><br>📧 A welcome email with membership details has been sent to the member.`,
         confirmText: 'Got it!',
         iconHtml: '<i class="fas fa-user-check" style="color:#4caf50;font-size:2.5em;"></i>',
-        onConfirm: closeModalFunc
+        onConfirm: () => {
+          closeModalFunc();
+          // Refresh payment data if payment manager is available
+          if (window.paymentManager) {
+            window.paymentManager.refreshPaymentData();
+          }
+          // Refresh member stats and payment stats
+          if (typeof updateMembersStatsCard === 'function') {
+            updateMembersStatsCard();
+          }
+          if (typeof updatePaymentsStatsCard === 'function') {
+            updatePaymentsStatsCard();
+          }
+        }
       });
       
       // Clean up form and image
@@ -1944,9 +2161,12 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateRenewalPaymentAmount() {
     const selectedPlan = renewPlanSelected.value;
     const selectedDuration = renewMonthlyPlan.value;
+    const renewDiscountInfo = document.getElementById('renewDiscountInfo');
+    const renewDiscountText = document.getElementById('renewDiscountText');
     
     if (!selectedPlan || !selectedDuration) {
       renewPaymentAmount.value = '';
+      if (renewDiscountInfo) renewDiscountInfo.style.display = 'none';
       return;
     }
 
@@ -1960,12 +2180,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!plan) {
       console.warn('[RenewMembership] Plan not found in cache:', selectedPlan);
       renewPaymentAmount.value = '';
+      if (renewDiscountInfo) renewDiscountInfo.style.display = 'none';
       return;
     }
 
     // Calculate amount
     const baseAmount = plan.price * months;
     let finalAmount = baseAmount;
+    let discountAmount = 0;
+    let discountPercentage = 0;
     
     // Check if discount applies
     let discountApplies = false;
@@ -1978,11 +2201,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (discountApplies) {
-      finalAmount = Math.round(baseAmount * (1 - plan.discount / 100));
+      discountPercentage = plan.discount;
+      discountAmount = Math.round(baseAmount * (plan.discount / 100));
+      finalAmount = baseAmount - discountAmount;
     }
 
     // Update UI
     renewPaymentAmount.value = finalAmount;
+    
+    // Update discount information
+    if (renewDiscountInfo && renewDiscountText) {
+      if (discountApplies && discountAmount > 0) {
+        renewDiscountText.innerHTML = `${discountPercentage}% discount applied - You save ₹${discountAmount}`;
+        renewDiscountInfo.style.display = 'block';
+        renewDiscountInfo.style.backgroundColor = '#d4edda';
+        renewDiscountInfo.style.color = '#155724';
+        renewDiscountInfo.style.border = '1px solid #c3e6cb';
+      } else {
+        renewDiscountText.innerHTML = 'No discount applied';
+        renewDiscountInfo.style.display = 'block';
+        renewDiscountInfo.style.backgroundColor = '#f8f9fa';
+        renewDiscountInfo.style.color = '#6c757d';
+        renewDiscountInfo.style.border = '1px solid #dee2e6';
+      }
+    }
   }
 
   // Open renewal modal with member data
@@ -1995,6 +2237,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Reset form
     if (renewMembershipForm) renewMembershipForm.reset();
+    
+    // Hide discount info initially
+    const renewDiscountInfo = document.getElementById('renewDiscountInfo');
+    if (renewDiscountInfo) renewDiscountInfo.style.display = 'none';
     
     // Populate member info
     document.getElementById('renewMemberName').textContent = memberData.memberName || '';
@@ -2110,34 +2356,105 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       try {
+        const paymentMode = formData.get('paymentMode');
+        const is7DayAllowance = paymentMode === '7-day-allowance';
+        
+        // Prepare renewal data
+        const renewalData = {
+          planSelected: formData.get('planSelected'),
+          monthlyPlan: formData.get('monthlyPlan'),
+          paymentAmount: parseInt(formData.get('paymentAmount')),
+          paymentMode: is7DayAllowance ? 'pending' : paymentMode,
+          activityPreference: formData.get('activityPreference'),
+          paymentStatus: is7DayAllowance ? 'pending' : 'paid',
+          pendingPaymentAmount: is7DayAllowance ? parseInt(formData.get('paymentAmount')) : 0,
+          allowanceExpiryDate: is7DayAllowance ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
+        };
+        
         const response = await fetch(`http://localhost:5000/api/members/renew/${memberId}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            planSelected: formData.get('planSelected'),
-            monthlyPlan: formData.get('monthlyPlan'),
-            paymentAmount: parseInt(formData.get('paymentAmount')),
-            paymentMode: formData.get('paymentMode'),
-            activityPreference: formData.get('activityPreference')
-          })
+          body: JSON.stringify(renewalData)
         });
         
         const data = await response.json();
         
         if (response.ok && data.success) {
+          // Record renewal payment automatically (only if not 7-day allowance)
+          if (window.paymentManager && !is7DayAllowance) {
+            try {
+              const memberData = {
+                _id: memberId,
+                memberName: document.getElementById('renewMemberName')?.textContent || 'Unknown Member'
+              };
+              const renewalPaymentData = {
+                paymentAmount: formData.get('paymentAmount'),
+                planSelected: formData.get('planSelected'),
+                monthlyPlan: formData.get('monthlyPlan'),
+                paymentMode: formData.get('paymentMode'),
+                membershipValidUntil: data.newExpiryDate
+              };
+              await window.paymentManager.recordRenewalPayment(memberData, renewalPaymentData);
+              console.log('✅ Renewal payment recorded successfully');
+              
+              // Trigger payment notification for renewal
+              if (window.notificationSystem) {
+                window.notificationSystem.notifyPaymentReceived({
+                  amount: formData.get('paymentAmount'),
+                  memberName: memberData.memberName,
+                  plan: `${renewalPaymentData.planSelected} (${renewalPaymentData.monthlyPlan}) - Renewal`
+                });
+              }
+            } catch (paymentError) {
+              console.error('❌ Failed to record renewal payment:', paymentError);
+              // Don't block renewal for payment recording errors
+            }
+          }
+          
+          // Show different success messages based on payment mode
+          let successTitle, successMessage, iconHtml;
+          
+          if (is7DayAllowance) {
+            successTitle = '🕐 7-Day Allowance Granted';
+            successMessage = `Membership has been renewed with 7-day payment allowance!<br><br>📋 <b>New Expiry Date:</b> ${new Date(data.newExpiryDate).toLocaleDateString()}<br><br>💰 <b>Pending Amount:</b> ₹${formData.get('paymentAmount')}<br><br>⏰ <b>Payment Due:</b> Within 7 days<br><br>⚠️ The member is now marked as "Payment Pending" and has 7 days to complete payment.`;
+            iconHtml = '<i class="fas fa-clock" style="color:#ffc107;font-size:2.5em;"></i>';
+            
+            // Trigger payment pending notification
+            if (window.notificationSystem) {
+              window.notificationSystem.showNotification(
+                'Payment Allowance Granted',
+                `${document.getElementById('renewMemberName')?.textContent || 'Member'} has been granted 7-day payment allowance for ₹${formData.get('paymentAmount')}`,
+                'medium',
+                'warning'
+              );
+            }
+          } else {
+            successTitle = '✅ Membership Renewed Successfully!';
+            successMessage = `Membership has been renewed successfully!<br><br>📋 <b>New Expiry Date:</b> ${new Date(data.newExpiryDate).toLocaleDateString()}<br><br>💰 <b>Amount Paid:</b> ₹${formData.get('paymentAmount')}<br><br>📧 A renewal confirmation email has been sent to the member.`;
+            iconHtml = '<i class="fas fa-check-circle" style="color:#4caf50;font-size:2.5em;"></i>';
+          }
+          
           showDialog({
-            title: '✅ Membership Renewed Successfully!',
-            message: `Membership has been renewed successfully!<br><br>📋 <b>New Expiry Date:</b> ${new Date(data.newExpiryDate).toLocaleDateString()}<br><br>💰 <b>Amount Paid:</b> ₹${formData.get('paymentAmount')}<br><br>📧 A renewal confirmation email has been sent to the member.`,
+            title: successTitle,
+            message: successMessage,
             confirmText: 'Great!',
-            iconHtml: '<i class="fas fa-check-circle" style="color:#4caf50;font-size:2.5em;"></i>',
+            iconHtml: iconHtml,
             onConfirm: () => {
               closeRenewalModal();
               // Refresh the members table
               if (typeof fetchMembersData === 'function') {
                 fetchMembersData();
+              }
+              // Refresh payment data if payment manager is available
+              if (window.paymentManager) {
+                window.paymentManager.refreshPaymentData();
+              }
+              // Refresh payment stats
+              if (typeof updatePaymentsStatsCard === 'function') {
+                updatePaymentsStatsCard();
               }
             }
           });
@@ -2337,13 +2654,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            if (!logoUrl) logoUrl = `http://localhost:5000/uploads/images/default-logo.png`;
+            if (!logoUrl) logoUrl = `http://localhost:5000/uploads/gym-logos/default-logo.png`;
             
             
-            // Auto-fix logo path if it's using wrong directory
-            if (logoUrl && logoUrl.includes('/uploads/gymImages/')) {
+            // Auto-fix logo path if it's using wrong directory - standardize to gym-logos
+            if (logoUrl && (logoUrl.includes('/uploads/gymImages/') || logoUrl.includes('/uploads/gymPhotos/') || logoUrl.includes('/uploads/images/'))) {
                 const filename = logoUrl.split('/').pop();
-                const altUrl = `http://localhost:5000/uploads/gymPhotos/${filename}`;
+                const altUrl = `http://localhost:5000/uploads/gym-logos/${filename}`;
                 logoUrl = altUrl;
             }
             
@@ -2351,7 +2668,7 @@ document.addEventListener('DOMContentLoaded', function() {
             adminAvatarElement.src = logoUrl;
             adminAvatarElement.onerror = function() {
                 this.onerror = null; // Prevent infinite loop
-                this.src = 'http://localhost:5000/uploads/images/default-logo.png';
+                this.src = 'http://localhost:5000/uploads/gym-logos/default-logo.png';
             };
            
         }
@@ -2414,9 +2731,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const gymInfoEquipment = document.getElementById('gymInfoEquipment');
         if (gymInfoEquipment) {
             if (Array.isArray(profile.equipment) && profile.equipment.length > 0) {
-                gymInfoEquipment.innerHTML = profile.equipment.map(eq => 
-                    `<span class="gym-info-equipment-item">${eq}</span>`
-                ).join('');
+                gymInfoEquipment.innerHTML = profile.equipment.map(eq => {
+                    // Handle both old string format and new object format
+                    const equipmentName = typeof eq === 'string' ? eq : (eq.name || 'Unknown Equipment');
+                    return `<span class="gym-info-equipment-item">${equipmentName}</span>`;
+                }).join('');
             } else {
                 gymInfoEquipment.innerHTML = '<span style="color:#888;">No equipment listed</span>';
             }
@@ -2835,10 +3154,10 @@ function clearUploadPhotoMsgAndCloseModal() {
                 }
             }
             
-            // Auto-fix logo path if it's using wrong directory
-            if (logoUrl && logoUrl.includes('/uploads/gymImages/')) {
+            // Auto-fix logo path if it's using wrong directory - standardize to gym-logos
+            if (logoUrl && (logoUrl.includes('/uploads/gymImages/') || logoUrl.includes('/uploads/gymPhotos/') || logoUrl.includes('/uploads/images/'))) {
                 const filename = logoUrl.split('/').pop();
-                const altUrl = `http://localhost:5000/uploads/gymPhotos/${filename}`;
+                const altUrl = `http://localhost:5000/uploads/gym-logos/${filename}`;
                 logoUrl = altUrl;
             }
             
@@ -2849,7 +3168,7 @@ function clearUploadPhotoMsgAndCloseModal() {
                 // Add error handling for logo preview
                 logoPreviewImage.onerror = function() {
                     this.onerror = null; // Prevent infinite loop
-                    this.src = 'http://localhost:5000/uploads/images/default-logo.png';
+                    this.src = 'http://localhost:5000/uploads/gym-logos/default-logo.png';
                 };
             } else {
                 logoPreviewImage.src = '#';
@@ -2925,9 +3244,27 @@ function clearUploadPhotoMsgAndCloseModal() {
         }
 
         const addEquipmentBtn = document.getElementById('uploadEquipmentBtn');
-        const addEquipmentModal = document.getElementById('addEquipmentModal');
-        if (addEquipmentBtn && addEquipmentModal) {
-            addEquipmentBtn.addEventListener('click', () => addEquipmentModal.style.display = 'flex');
+        if (addEquipmentBtn) {
+            addEquipmentBtn.addEventListener('click', () => {
+                // Find and click the equipment menu link
+                const equipmentMenuLink = document.querySelector('.menu-link .menu-text');
+                const equipmentLinks = Array.from(document.querySelectorAll('.menu-link .menu-text')).filter(el => el.textContent.trim() === 'Equipment');
+                
+                if (equipmentLinks.length > 0) {
+                    // Click the parent menu-link
+                    const equipmentMenuParent = equipmentLinks[0].closest('.menu-link');
+                    if (equipmentMenuParent) {
+                        equipmentMenuParent.click();
+                    }
+                }
+                
+                // Wait for tab to load, then open add equipment modal
+                setTimeout(() => {
+                    if (window.equipmentManager) {
+                        window.equipmentManager.openAddEquipmentModal();
+                    }
+                }, 100);
+            });
         }
 
         // File input change for logo preview in Edit Profile Modal
@@ -3259,11 +3596,15 @@ const dashboardMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySe
 const settingsMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-cog'));
 const attendanceMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-calendar-check'));
 const paymentsMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-credit-card'));
+const equipmentMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-dumbbell'));
+const supportMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-headset'));
 const memberDisplayTab = document.getElementById('memberDisplayTab');
 const trainerTab = document.getElementById('trainerTab');
 const settingsTab = document.getElementById('settingsTab');
 const attendanceTab = document.getElementById('attendanceTab');
 const paymentTab = document.getElementById('paymentTab');
+const equipmentTab = document.getElementById('equipmentTab');
+const supportReviewsTab = document.getElementById('supportReviewsTab');
 const dashboardContent = document.querySelector('.content');
 
 function hideAllMainTabs() {
@@ -3273,7 +3614,7 @@ function hideAllMainTabs() {
   if (settingsTab) settingsTab.style.display = 'none';
   if (attendanceTab) attendanceTab.style.display = 'none';
   if (paymentTab) paymentTab.style.display = 'none';
-  const supportReviewsTab = document.getElementById('supportReviewsTab');
+  if (equipmentTab) equipmentTab.style.display = 'none';
   if (supportReviewsTab) supportReviewsTab.style.display = 'none';
 }
 
@@ -3305,6 +3646,32 @@ if (paymentsMenuLink && paymentTab) {
     }
     sidebarMenuLinks.forEach(link => link.classList.remove('active'));
     paymentsMenuLink.classList.add('active');
+  });
+}
+
+if (equipmentMenuLink && equipmentTab) {
+  equipmentMenuLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    hideAllMainTabs();
+    equipmentTab.style.display = 'block';
+    updateMainContentMargins();
+    // Initialize equipment manager if it exists
+    if (typeof window.equipmentManager !== 'undefined') {
+      window.equipmentManager.loadEquipmentData();
+    }
+    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
+    equipmentMenuLink.classList.add('active');
+  });
+}
+
+if (supportMenuLink && supportReviewsTab) {
+  supportMenuLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    hideAllMainTabs();
+    supportReviewsTab.style.display = 'block';
+    updateMainContentMargins();
+    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
+    supportMenuLink.classList.add('active');
   });
 }
 
@@ -3421,62 +3788,74 @@ async function updatePaymentsStatsCard() {
   const paymentsStatValue = document.querySelector('.stat-card.payments .stat-value');
   const paymentsStatChange = document.querySelector('.stat-card.payments .stat-change');
   const paymentsStatTitle = document.querySelector('.stat-card.payments .stat-title');
-  if (paymentsStatTitle) paymentsStatTitle.innerHTML = 'Total Payments';
+  if (paymentsStatTitle) paymentsStatTitle.innerHTML = 'Total Revenue';
   if (!paymentsStatValue || !paymentsStatChange) return;
   try {
     const token = localStorage.getItem('gymAdminToken');
-    const res = await fetch('http://localhost:5000/api/members', {
+    
+    // Fetch actual payment records from the payment system
+    const res = await fetch('http://localhost:5000/api/payments/stats', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Failed to fetch members');
-    const members = await res.json();
-    // Sum all payments
-    let totalPayments = 0;
-    let paymentsThisMonth = 0;
-    let paymentsLastMonth = 0;
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
-    (Array.isArray(members) ? members : []).forEach(m => {
-      if (typeof m.paymentAmount === 'number') {
-        totalPayments += m.paymentAmount;
-        // Check payment date (use joinDate as fallback)
-        let payDate = null;
-        if (m.paymentDate) {
-          payDate = new Date(m.paymentDate);
-        } else if (m.joinDate) {
-          payDate = new Date(m.joinDate);
-        }
-        if (payDate) {
-          if (payDate.getMonth() === thisMonth && payDate.getFullYear() === thisYear) {
-            paymentsThisMonth += m.paymentAmount;
-          } else if (payDate.getMonth() === lastMonth && payDate.getFullYear() === lastMonthYear) {
-            paymentsLastMonth += m.paymentAmount;
-          }
-        }
-      }
-    });
-    // Format as rupees
-    paymentsStatValue.innerHTML = `<i class="fas fa-indian-rupee-sign"></i> ${totalPayments.toLocaleString('en-IN')}`;
-    // Calculate monthly growth
-    let monthGrowth = 0;
-    if (paymentsLastMonth > 0) monthGrowth = ((paymentsThisMonth - paymentsLastMonth) / paymentsLastMonth) * 100;
-    else if (paymentsThisMonth > 0) monthGrowth = 100;
-    // Show as positive/negative
-    const growthIcon = monthGrowth >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-    const growthClass = monthGrowth >= 0 ? 'positive' : 'negative';
-    paymentsStatChange.innerHTML = `<i class="fas ${growthIcon}"></i> ${Math.abs(monthGrowth).toFixed(1)}% from last month`;
-    paymentsStatChange.classList.remove('positive', 'negative');
-    paymentsStatChange.classList.add(growthClass);
-    paymentsStatChange.title = `This month: ₹${paymentsThisMonth.toLocaleString('en-IN')} | Last month: ₹${paymentsLastMonth.toLocaleString('en-IN')}`;
+    
+    if (!res.ok) throw new Error('Failed to fetch payment stats');
+    const paymentData = await res.json();
+    
+    if (paymentData.success && paymentData.data) {
+      const stats = paymentData.data;
+      
+      // Use the received amount from payment system (this includes all membership payments)
+      const totalRevenue = stats.received || 0;
+      const revenueGrowth = stats.receivedGrowth || 0;
+      
+      // Format as rupees
+      paymentsStatValue.innerHTML = `<i class="fas fa-indian-rupee-sign"></i> ${totalRevenue.toLocaleString('en-IN')}`;
+      
+      // Show growth percentage
+      const growthIcon = revenueGrowth >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+      const growthClass = revenueGrowth >= 0 ? 'positive' : 'negative';
+      paymentsStatChange.innerHTML = `<i class="fas ${growthIcon}"></i> ${Math.abs(revenueGrowth).toFixed(1)}% from last month`;
+      paymentsStatChange.classList.remove('positive', 'negative');
+      paymentsStatChange.classList.add(growthClass);
+      paymentsStatChange.title = `Total Revenue: ₹${totalRevenue.toLocaleString('en-IN')} | Monthly Growth: ${revenueGrowth.toFixed(1)}%`;
+    } else {
+      throw new Error('Invalid payment stats response');
+    }
   } catch (err) {
     console.error('Error updating payments stats card:', err);
-    paymentsStatValue.innerHTML = '<i class="fas fa-indian-rupee-sign"></i> --';
-    paymentsStatChange.innerHTML = '<i class="fas fa-minus"></i> N/A';
-    paymentsStatChange.classList.remove('positive', 'negative');
-    paymentsStatChange.title = '';
+    
+    // Fallback: try to get stats from members as backup
+    try {
+      const token = localStorage.getItem('gymAdminToken');
+      const membersRes = await fetch('http://localhost:5000/api/members', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (membersRes.ok) {
+        const members = await membersRes.json();
+        let totalFromMembers = 0;
+        
+        // Calculate total from current members only as fallback
+        (Array.isArray(members) ? members : []).forEach(m => {
+          if (typeof m.paymentAmount === 'number') {
+            totalFromMembers += m.paymentAmount;
+          }
+        });
+        
+        paymentsStatValue.innerHTML = `<i class="fas fa-indian-rupee-sign"></i> ${totalFromMembers.toLocaleString('en-IN')}`;
+        paymentsStatChange.innerHTML = '<i class="fas fa-info-circle"></i> Active members only';
+        paymentsStatChange.classList.remove('positive', 'negative');
+        paymentsStatChange.title = 'Showing payments from current active members only. Payment system temporarily unavailable.';
+      } else {
+        throw new Error('Both payment stats and members API failed');
+      }
+    } catch (fallbackErr) {
+      console.error('Fallback also failed:', fallbackErr);
+      paymentsStatValue.innerHTML = '<i class="fas fa-indian-rupee-sign"></i> --';
+      paymentsStatChange.innerHTML = '<i class="fas fa-minus"></i> N/A';
+      paymentsStatChange.classList.remove('positive', 'negative');
+      paymentsStatChange.title = 'Unable to load payment statistics';
+    }
   }
 }
 
@@ -3567,6 +3946,7 @@ function updateMainContentMargins() {
   setTabMargin(settingsTab);
   setTabMargin(attendanceTab);
   setTabMargin(paymentTab);
+  setTabMargin(equipmentTab);
   setTabMargin(supportReviewsTab);
 }
 
@@ -3706,32 +4086,68 @@ function renderMembersTable(members) {
     const address = member.address || member.memberAddress || '';
     const rowId = member._id ? `data-member-id="${member._id}"` : '';
     
+    // Payment status badge (removed paid badge, keeping only pending and overdue)
+    let paymentStatusBadge = '';
+    const paymentStatus = member.paymentStatus || '';
+    const pendingAmount = member.pendingPaymentAmount;
+    
+    if (paymentStatus === 'pending' || (pendingAmount && pendingAmount > 0)) {
+      paymentStatusBadge = `<span class="payment-status-badge pending" style="background:#ff6b6b;color:white;padding:2px 8px;border-radius:12px;font-size:0.75em;margin-left:5px;">💳 Payment Pending</span>`;
+    } else if (paymentStatus === 'overdue') {
+      paymentStatusBadge = `<span class="payment-status-badge overdue" style="background:#d63031;color:white;padding:2px 8px;border-radius:12px;font-size:0.75em;margin-left:5px;">⚠️ Overdue</span>`;
+    }
+    // Removed paid badge as requested
+
     // Row color logic and action button logic
     let statusClass = '';
     let actionButton = '';
-    if (validUntilRaw) {
+    
+    // Check if member has payment pending status (takes priority over expiry status)
+    if (paymentStatus === 'pending' || (pendingAmount && pendingAmount > 0)) {
+      statusClass = 'member-row-payment-pending'; // Yellow effect for payment pending
+      actionButton = `
+        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+          <button class="mark-paid-btn" data-member-id="${member._id}" data-source="members-table" style="background:#28a745;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;font-weight:500;" title="Mark payment as received">✅ Mark Paid</button>
+        </div>
+      `;
+    } else if (validUntilRaw) {
       const validDate = new Date(validUntilRaw);
       validDate.setHours(0,0,0,0);
       const diffDays = Math.ceil((validDate - today) / (1000 * 60 * 60 * 24));
       
       if (diffDays < 0) {
         statusClass = 'member-row-expired';
-        actionButton = `<button class="renew-membership-btn" data-member-id="${member._id}" style="background:#e53935;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.85em;font-weight:500;">🔄 Renew</button>`;
+        actionButton = `
+          <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+            <button class="renew-membership-btn" data-member-id="${member._id}" style="background:#1976d2;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;font-weight:500;" title="Regular renewal with immediate payment">🔄 Renew</button>
+            <button class="seven-day-allowance-btn" data-member-id="${member._id}" style="background:#ff9800;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;font-weight:500;" title="Grant 7-day allowance with pending payment">⏰ 7-Day</button>
+          </div>
+        `;
       } else if (diffDays <= 3) {
         statusClass = 'member-row-expiring';
-        actionButton = `<button class="renew-membership-btn" data-member-id="${member._id}" style="background:#ff9800;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.85em;font-weight:500;">🔄 Renew</button>`;
+        actionButton = `
+          <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+            <button class="renew-membership-btn" data-member-id="${member._id}" style="background:#1976d2;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;font-weight:500;" title="Regular renewal with immediate payment">🔄 Renew</button>
+            <button class="seven-day-allowance-btn" data-member-id="${member._id}" style="background:#ff9800;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;font-weight:500;" title="Grant 7-day allowance with pending payment">⏰ 7-Day</button>
+          </div>
+        `;
       } else {
         statusClass = 'member-row-active';
         actionButton = `<span style="color:#4caf50;font-size:0.85em;">✅ Active</span>`;
       }
     } else {
-      actionButton = `<button class="renew-membership-btn" data-member-id="${member._id}" style="background:#e53935;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.85em;font-weight:500;">🔄 Renew</button>`;
+      actionButton = `
+        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+          <button class="renew-membership-btn" data-member-id="${member._id}" style="background:#1976d2;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;font-weight:500;" title="Regular renewal with immediate payment">🔄 Renew</button>
+          <button class="seven-day-allowance-btn" data-member-id="${member._id}" style="background:#ff9800;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;font-weight:500;" title="Grant 7-day allowance with pending payment">⏰ 7-Day</button>
+        </div>
+      `;
     }
     
     membersTableBody.innerHTML += `
       <tr ${rowId} class="${statusClass}">
         <td style="text-align:center;"><img src="${imgSrc}" alt="Profile" style="width:48px;height:48px;border-radius:50%;object-fit:cover;"></td>
-        <td>${member.memberName || ''}</td>
+        <td>${member.memberName || ''}${paymentStatusBadge}</td>
          <td>${membershipId}</td>
         <td>${member.age || ''}</td>
         <td>${member.gender || ''}</td>
@@ -4293,8 +4709,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const tabMap = {
     'Dashboard': 'dashboardTab',
     'Members': 'memberDisplayTab',
+    'Trainers': 'trainerTab',
     'Attendance': 'attendanceTab',
     'Payments': 'paymentTab',
+    'Equipment': 'equipmentTab',
     'Support & Reviews': 'supportReviewsTab',
     'Settings': 'settingsTab',
     // Add more mappings as you implement more tabs
@@ -4353,6 +4771,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.paymentManager !== 'undefined') {
           window.paymentManager.loadPaymentData();
         }
+      } else if (tabName === 'Equipment') {
+        hideAllMainTabs();
+        const equipmentTab = document.getElementById('equipmentTab');
+        if (equipmentTab) equipmentTab.style.display = 'block';
+        updateMainContentMargins();
+        // Initialize equipment manager if it exists
+        if (typeof window.equipmentManager !== 'undefined') {
+          window.equipmentManager.loadEquipmentData();
+        }
+      } else if (tabName === 'Support & Reviews') {
+        hideAllMainTabs();
+        const supportReviewsTab = document.getElementById('supportReviewsTab');
+        if (supportReviewsTab) supportReviewsTab.style.display = 'block';
+        updateMainContentMargins();
       } else if (tabName === 'Settings') {
         hideAllMainTabs();
         const settingsTab = document.getElementById('settingsTab');

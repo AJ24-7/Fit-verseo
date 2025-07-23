@@ -421,6 +421,39 @@ router.post('/', gymadminAuth, async (req, res) => {
         if (personType === 'Member') {
             person = await Member.findById(personId);
             console.log(`🔍 Member lookup result:`, person ? `Found ${person.memberName}` : 'Not found');
+            
+            // Check membership validity and allowance period
+            if (person) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Check if membership has expired
+                let membershipValid = true;
+                if (person.membershipValidUntil) {
+                    const validUntil = new Date(person.membershipValidUntil);
+                    validUntil.setHours(0, 0, 0, 0);
+                    membershipValid = validUntil >= today;
+                }
+                
+                // If membership expired, check if they have payment allowance
+                if (!membershipValid) {
+                    const hasPaymentAllowance = person.paymentStatus === 'pending' && 
+                                              person.allowanceExpiryDate && 
+                                              new Date(person.allowanceExpiryDate) >= today;
+                    
+                    if (!hasPaymentAllowance) {
+                        return res.status(403).json({ 
+                            error: 'Member access denied',
+                            message: 'Membership has expired and no payment allowance is active. Please renew membership to continue gym access.',
+                            membershipExpired: true,
+                            validUntil: person.membershipValidUntil,
+                            paymentStatus: person.paymentStatus
+                        });
+                    } else {
+                        console.log(`⚠️ Member ${person.memberName} accessing gym under 7-day payment allowance`);
+                    }
+                }
+            }
         } else if (personType === 'Trainer') {
             person = await Trainer.findById(personId);
             console.log(`🔍 Trainer lookup result:`, person ? `Found ${person.firstName} ${person.lastName}` : 'Not found');

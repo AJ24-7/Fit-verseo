@@ -39,15 +39,15 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
     
-    if (!logoUrl) logoUrl = `${BASE_URL}/uploads/images/default-logo.png`;
+    if (!logoUrl) logoUrl = `${BASE_URL}/uploads/gym-logos/default-logo.png`;
     
     console.log('[DEBUG] Final processed logoUrl:', logoUrl);
     
-    // Auto-fix logo path if it's using wrong directory
-    if (logoUrl && logoUrl.includes('/uploads/gymImages/')) {
+    // Auto-fix logo path if it's using wrong directory - standardize to gym-logos
+    if (logoUrl && (logoUrl.includes('/uploads/gymImages/') || logoUrl.includes('/uploads/gymPhotos/') || logoUrl.includes('/uploads/images/'))) {
       const filename = logoUrl.split('/').pop();
-      const altUrl = `${BASE_URL}/uploads/gymPhotos/${filename}`;
-      console.log('[DEBUG] Auto-correcting logo path from gymImages to gymPhotos:', altUrl);
+      const altUrl = `${BASE_URL}/uploads/gym-logos/${filename}`;
+      console.log('[DEBUG] Auto-correcting logo path to gym-logos:', altUrl);
       logoUrl = altUrl;
     }
     
@@ -77,13 +77,13 @@ document.addEventListener('DOMContentLoaded', function () {
               photoUrl = `${BASE_URL}/uploads/gymImages/${photoUrl}`;
             }
           }
-          if (!photoUrl) photoUrl = `${BASE_URL}/uploads/images/default-logo.png`;
+          if (!photoUrl) photoUrl = `${BASE_URL}/uploads/gym-logos/default-logo.png`;
           
           console.log('[DEBUG] Final photo URL:', photoUrl);
           
           return `
           <div class="gym-detail-photo">
-            <img class="gym-detail-photo-img" src="${photoUrl}" alt="${photo.title || ''}" onerror="this.onerror=null; this.src='${BASE_URL}/uploads/images/default-logo.png'; console.log('[ERROR] Failed to load photo:', '${photoUrl}');" onload="console.log('[SUCCESS] Photo loaded:', '${photoUrl}');">
+            <img class="gym-detail-photo-img" src="${photoUrl}" alt="${photo.title || ''}" onerror="this.onerror=null; this.src='${BASE_URL}/uploads/gym-logos/default-logo.png'; console.log('[ERROR] Failed to load photo:', '${photoUrl}');" onload="console.log('[SUCCESS] Photo loaded:', '${photoUrl}');">
             <div class="gym-detail-photo-title">${photo.title || ''}</div>
             <div class="gym-detail-photo-category">${photo.category || ''}</div>
             <div class="gym-detail-photo-desc">${photo.description || ''}</div>
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <img class="gym-detail-logo" 
              src="${logoUrl}" 
              alt="Gym Logo"
-             onerror="this.onerror=null; this.src='${BASE_URL}/uploads/images/default-logo.png'; console.log('[ERROR] Failed to load logo:', '${logoUrl}'); console.log('[ERROR] Using default logo fallback');"
+             onerror="this.onerror=null; this.src='${BASE_URL}/uploads/gym-logos/default-logo.png'; console.log('[ERROR] Failed to load logo:', '${logoUrl}'); console.log('[ERROR] Using default logo fallback');"
              onload="console.log('[SUCCESS] Logo loaded successfully:', '${logoUrl}');"
              style="max-width: 96px; max-height: 96px; object-fit: cover; border-radius: 8px;">
         <div class="gym-detail-title">${gym.gymName || ''}</div>

@@ -9,8 +9,31 @@ class SupportReviewsManager {
         this.memberQueries = [];
         this.grievances = [];
         this.currentGymId = null;
+        this.gymProfile = null; // Store gym profile data
         this.BASE_URL = 'http://localhost:5000';
         this.init();
+    }
+
+    async fetchGymProfile() {
+        try {
+            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
+            if (!token) return;
+
+            const response = await fetch(`${this.BASE_URL}/api/gyms/profile/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.gymProfile = data;
+                console.log('✅ Gym profile fetched:', this.gymProfile);
+            }
+        } catch (error) {
+            console.error('Error fetching gym profile:', error);
+        }
     }
 
     init() {
@@ -347,6 +370,9 @@ class SupportReviewsManager {
         }
 
         try {
+            // First, fetch gym profile data
+            await this.fetchGymProfile();
+            
             const response = await fetch(`${this.BASE_URL}/api/reviews/gym/${this.currentGymId}`);
             if (response.ok) {
                 const data = await response.json();
@@ -375,9 +401,28 @@ class SupportReviewsManager {
             return;
         }
 
-        // Fetch gym logo and name from gym profile if available
-        const gymLogo = window.gymProfile?.logoUrl || '/frontend/gymadmin/admin.png';
-        const gymName = window.gymProfile?.name || window.gymAdminName || 'Gym Admin';
+        // Get gym logo and name from fetched profile data
+        let gymLogo = '/frontend/gymadmin/admin.png'; // Default fallback
+        let gymName = 'Gym Admin'; // Default fallback
+        
+        if (this.gymProfile) {
+            // Handle different possible logo URL formats
+            if (this.gymProfile.logoUrl) {
+                if (this.gymProfile.logoUrl.startsWith('http')) {
+                    gymLogo = this.gymProfile.logoUrl;
+                } else {
+                    gymLogo = this.gymProfile.logoUrl.startsWith('/') ? 
+                        `${this.BASE_URL}${this.gymProfile.logoUrl}` : 
+                        `${this.BASE_URL}/${this.gymProfile.logoUrl}`;
+                }
+            }
+            
+            // Get gym name
+            gymName = this.gymProfile.gymName || this.gymProfile.name || 'Gym Admin';
+        }
+        
+        console.log('Using gym logo:', gymLogo);
+        console.log('Using gym name:', gymName);
         const reviewsHtml = this.reviews.map(review => {
             const hasReply = review.adminReply && review.adminReply.reply && review.adminReply.reply !== 'undefined' && review.adminReply.reply !== null && review.adminReply.reply.trim() !== '';
             return `
@@ -408,7 +453,8 @@ class SupportReviewsManager {
                 ${hasReply ? `
                     <div style="border-left: 3px solid #1976d2; padding-left: 16px; background: white; padding: 12px 16px; border-radius: 4px;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                            <img src="${gymLogo}" alt="Gym Admin Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #1976d2;" />
+                            <img src="${gymLogo}" alt="Gym Admin Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #1976d2;" 
+                                 onerror="this.src='/frontend/gymadmin/admin.png';" />
                             <strong style="color: #1976d2; font-size: 13px;">${gymName}</strong>
                             <span style="font-size: 12px; color: #999;">${this.formatDate(review.adminReply.repliedAt)}</span>
                         </div>

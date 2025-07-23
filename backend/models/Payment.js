@@ -8,12 +8,12 @@ const paymentSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['received', 'paid'],
+    enum: ['received', 'paid', 'due', 'pending'],
     required: true
   },
   category: {
     type: String,
-    enum: ['membership', 'personal_training', 'rent', 'bills', 'staff_payment', 'equipment_maintenance', 'accessories', 'miscellaneous'],
+    enum: ['membership', 'personal_training', 'rent', 'utilities', 'staff_salary', 'equipment_purchase', 'equipment_maintenance', 'supplies', 'marketing', 'insurance', 'taxes', 'vendor_payment', 'license_fees', 'miscellaneous'],
     required: true
   },
   amount: {

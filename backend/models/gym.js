@@ -27,7 +27,24 @@ passwordResetOTPExpiry: { type: Date },
   }],
   logoUrl: { type: String },
 
-  equipment: { type: [String], required: true },
+  equipment: [{
+    id: { type: String, default: () => new Date().getTime().toString() },
+    name: { type: String, required: false }, // Made optional for backward compatibility
+    brand: { type: String },
+    category: { type: String, enum: ['cardio', 'strength', 'functional', 'flexibility', 'accessories', 'other'], default: 'other' },
+    model: { type: String },
+    quantity: { type: Number, default: 1 },
+    status: { type: String, enum: ['available', 'maintenance', 'out-of-order'], default: 'available' },
+    purchaseDate: { type: Date },
+    price: { type: Number },
+    warranty: { type: Number }, // warranty period in months
+    location: { type: String }, // location within gym
+    description: { type: String },
+    specifications: { type: String },
+    photos: [{ type: String }], // Array of photo URLs
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+  }],
   activities: [{
     name: { type: String, required: true },
     icon: { type: String, default: 'fa-dumbbell' }, // FontAwesome icon class
@@ -72,6 +89,52 @@ passwordResetOTPExpiry: { type: Date },
 // Automatically update `updatedAt` on save
 gymSchema.pre('save', function (next) {
   this.updatedAt = new Date();
+  
+  // Convert old string equipment format to new object format
+  if (this.equipment && this.equipment.length > 0) {
+    this.equipment = this.equipment.map(item => {
+      // If item is a string, convert to object
+      if (typeof item === 'string') {
+        return {
+          id: new Date().getTime().toString() + Math.random().toString(36).substr(2, 9),
+          name: item,
+          category: 'other',
+          quantity: 1,
+          status: 'available',
+          photos: [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+      // If item is already an object but missing required fields, add them
+      if (typeof item === 'object' && item !== null) {
+        if (!item.name && typeof item === 'string') {
+          item.name = item.toString();
+        }
+        if (!item.id) {
+          item.id = new Date().getTime().toString() + Math.random().toString(36).substr(2, 9);
+        }
+        if (!item.category) {
+          item.category = 'other';
+        }
+        if (!item.quantity) {
+          item.quantity = 1;
+        }
+        if (!item.status) {
+          item.status = 'available';
+        }
+        if (!item.photos) {
+          item.photos = [];
+        }
+        if (!item.createdAt) {
+          item.createdAt = new Date();
+        }
+        item.updatedAt = new Date();
+      }
+      return item;
+    });
+  }
+  
   next();
 });
 

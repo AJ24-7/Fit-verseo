@@ -9,11 +9,35 @@ const Payment = require('../models/Payment');
 exports.renewMembership = async (req, res) => {
   try {
     const { memberId } = req.params;
-    const { planSelected, monthlyPlan, paymentAmount, paymentMode, activityPreference } = req.body;
+    const { planSelected, monthlyPlan, paymentAmount, paymentMode, activityPreference, paymentStatus, pendingPaymentAmount } = req.body;
     
     // Get gym ID from authenticated admin
     const gymId = (req.admin && (req.admin.gymId || req.admin.id));
     if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    // Debug admin structure
+    console.log('🔍 Admin object:', req.admin);
+    console.log('🔍 Admin ID field options:', {
+      _id: req.admin?._id,
+      id: req.admin?.id,
+      gymId: req.admin?.gymId,
+      adminId: req.admin?.adminId
+    });
+    
+    // Determine the correct admin ID to use for createdBy
+    let adminId = null;
+    if (req.admin) {
+      adminId = req.admin._id || req.admin.id || req.admin.adminId || req.admin.gymId;
+    }
+    
+    // If no admin ID found, create a temporary ObjectId using mongoose
+    if (!adminId) {
+      const mongoose = require('mongoose');
+      console.warn('⚠️ No admin ID found, creating temporary ObjectId for createdBy field');
+      adminId = new mongoose.Types.ObjectId();
+    }
+    
+    console.log('✅ Using admin ID for createdBy:', adminId);
     
     // Find the member
     const member = await Member.findOne({ _id: memberId, gym: gymId });
@@ -34,37 +58,76 @@ exports.renewMembership = async (req, res) => {
     newExpiryDate.setMonth(newExpiryDate.getMonth() + months);
     const membershipValidUntil = newExpiryDate.toISOString().split('T')[0];
     
+    // Check if this is a 7-day allowance renewal
+    const is7DayAllowance = paymentMode === 'pending' || paymentStatus === 'pending';
+    
+    // Prepare member update data
+    const memberUpdateData = {
+      planSelected,
+      monthlyPlan,
+      paymentAmount,
+      paymentMode: is7DayAllowance ? 'pending' : paymentMode, // Store actual payment mode for allowance
+      activityPreference,
+      membershipValidUntil,
+    };
+    
+    // Add payment status fields for 7-day allowance
+    if (is7DayAllowance) {
+      memberUpdateData.paymentStatus = 'pending';
+      memberUpdateData.pendingPaymentAmount = pendingPaymentAmount || paymentAmount;
+      memberUpdateData.allowanceGrantedDate = new Date();
+      memberUpdateData.allowanceExpiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+    } else {
+      // Clear any previous payment pending status for regular payments
+      memberUpdateData.paymentStatus = 'paid';
+      memberUpdateData.pendingPaymentAmount = 0;
+      memberUpdateData.allowanceGrantedDate = null;
+      memberUpdateData.allowanceExpiryDate = null;
+    }
+    
     // Update member with new plan details
     const updatedMember = await Member.findByIdAndUpdate(
       memberId,
-      {
-        planSelected,
-        monthlyPlan,
-        paymentAmount,
-        paymentMode,
-        activityPreference,
-        membershipValidUntil,
-        // Keep the same membershipId for renewal
-      },
+      memberUpdateData,
       { new: true }
     );
     
-    // Create payment record for the renewal (include createdBy)
-    const paymentRecord = new Payment({
-      gymId,
-      memberId,
-      memberName: member.memberName,
-      type: 'received',
-      category: 'membership',
-      amount: paymentAmount,
-      description: `Membership Renewal - ${planSelected} ${monthlyPlan}`,
-      paymentMethod: paymentMode.toLowerCase(),
-      status: 'completed',
-      paidDate: new Date(),
-      notes: `Renewed until ${membershipValidUntil}`,
-      createdBy: req.admin && req.admin._id ? req.admin._id : null
-    });
-    await paymentRecord.save();
+    // Create payment record only for regular payments (not 7-day allowance)
+    let paymentRecord = null;
+    if (!is7DayAllowance) {
+      paymentRecord = new Payment({
+        gymId,
+        memberId,
+        memberName: member.memberName,
+        type: 'received',
+        category: 'membership',
+        amount: paymentAmount,
+        description: `Membership Renewal - ${planSelected} ${monthlyPlan}`,
+        paymentMethod: paymentMode.toLowerCase(),
+        status: 'completed',
+        paidDate: new Date(),
+        notes: `Renewed until ${membershipValidUntil}`,
+        createdBy: adminId
+      });
+      await paymentRecord.save();
+    } else {
+      // For 7-day allowance, create a pending payment record
+      paymentRecord = new Payment({
+        gymId,
+        memberId,
+        memberName: member.memberName,
+        type: 'due',
+        category: 'membership',
+        amount: paymentAmount,
+        description: `Membership Renewal - ${planSelected} ${monthlyPlan} (7-Day Allowance)`,
+        paymentMethod: 'cash', // Default payment method for pending payments
+        status: 'pending',
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        notes: `Renewed until ${membershipValidUntil} - Payment due within 7 days`,
+        createdBy: adminId
+      });
+      await paymentRecord.save();
+    }
     
     // Get gym details for email
     const gym = await Gym.findById(gymId);
@@ -440,5 +503,323 @@ exports.removeExpiredMembers = async (req, res) => {
   } catch (err) {
     console.error('Error removing expired members:', err);
     res.status(500).json({ message: 'Server error while removing expired members.' });
+  }
+};
+
+// Update member payment status
+exports.updateMemberPaymentStatus = async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { paymentStatus, pendingPaymentAmount, nextPaymentDue } = req.body;
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id));
+    
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    const updateData = { paymentStatus };
+    if (pendingPaymentAmount !== undefined) updateData.pendingPaymentAmount = pendingPaymentAmount;
+    if (nextPaymentDue) updateData.nextPaymentDue = nextPaymentDue;
+    if (paymentStatus === 'paid') {
+      updateData.lastPaymentDate = new Date();
+      updateData.pendingPaymentAmount = 0;
+    }
+    
+    const member = await Member.findOneAndUpdate(
+      { _id: memberId, gym: gymId },
+      updateData,
+      { new: true }
+    );
+    
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found.' });
+    }
+    
+    res.status(200).json({ 
+      message: 'Member payment status updated successfully', 
+      member 
+    });
+  } catch (err) {
+    console.error('Error updating member payment status:', err);
+    res.status(500).json({ message: 'Server error while updating payment status.' });
+  }
+};
+
+// Get members with pending payments
+exports.getMembersWithPendingPayments = async (req, res) => {
+  try {
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id));
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    const members = await Member.find({ 
+      gym: gymId,
+      paymentStatus: { $in: ['pending', 'overdue'] }
+    });
+    
+    res.status(200).json(members);
+  } catch (err) {
+    console.error('Error fetching members with pending payments:', err);
+    res.status(500).json({ message: 'Server error while fetching members.' });
+  }
+};
+
+// Get members whose membership is expiring within 3 days or already expired
+exports.getExpiringMembers = async (req, res) => {
+  try {
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id));
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Calculate 3 days from today
+    const threeDaysFromNow = new Date(today);
+    threeDaysFromNow.setDate(today.getDate() + 3);
+    
+    const members = await Member.find({ gym: gymId });
+    
+    // Filter members whose membership is expiring within 3 days or expired
+    const expiringMembers = members.filter(member => {
+      if (!member.membershipValidUntil) return false;
+      
+      const expiryDate = new Date(member.membershipValidUntil);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      // Include if expired or expiring within 3 days
+      return expiryDate <= threeDaysFromNow;
+    });
+    
+    // Add days remaining for each member
+    const membersWithDays = expiringMembers.map(member => {
+      const expiryDate = new Date(member.membershipValidUntil);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = expiryDate - today;
+      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return {
+        ...member.toObject(),
+        daysRemaining,
+        isExpired: daysRemaining < 0,
+        isExpiringSoon: daysRemaining >= 0 && daysRemaining <= 3
+      };
+    });
+    
+    res.status(200).json(membersWithDays);
+  } catch (err) {
+    console.error('Error fetching expiring members:', err);
+    res.status(500).json({ message: 'Server error while fetching expiring members.' });
+  }
+};
+
+// Grant 7-day allowance for a member
+exports.grantSevenDayAllowance = async (req, res) => {
+  try {
+    const { memberId, planSelected, monthlyPlan, paymentAmount, activityPreference } = req.body;
+    
+    // Get gym ID from authenticated admin
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id));
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    // Determine the correct admin ID to use for createdBy
+    let adminId = null;
+    if (req.admin) {
+      adminId = req.admin._id || req.admin.id || req.admin.adminId || req.admin.gymId;
+    }
+    
+    // If no admin ID found, create a temporary ObjectId
+    if (!adminId) {
+      const mongoose = require('mongoose');
+      console.warn('⚠️ No admin ID found, creating temporary ObjectId for createdBy field');
+      adminId = new mongoose.Types.ObjectId();
+    }
+    
+    // Find the member
+    const member = await Member.findOne({ _id: memberId, gym: gymId });
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found.' });
+    }
+    
+    // Calculate new validity period based on selected plan
+    let months = 1;
+    if (/3\s*Months?/i.test(monthlyPlan)) months = 3;
+    else if (/6\s*Months?/i.test(monthlyPlan)) months = 6;
+    else if (/12\s*Months?/i.test(monthlyPlan)) months = 12;
+    
+    const currentDate = new Date();
+    const newValidityDate = new Date(currentDate);
+    newValidityDate.setMonth(newValidityDate.getMonth() + months);
+    
+    // Update member with 7-day allowance
+    const memberUpdateData = {
+      planSelected,
+      monthlyPlan,
+      activityPreference,
+      paymentStatus: 'pending',
+      pendingPaymentAmount: paymentAmount,
+      allowanceGrantedDate: currentDate,
+      allowanceExpiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      planStartDate: currentDate, // Store when allowance was granted
+      plannedValidityDate: newValidityDate, // Store planned validity date after payment
+    };
+    
+    const updatedMember = await Member.findByIdAndUpdate(memberId, memberUpdateData, { new: true });
+    
+    // Create payment record for the 7-day allowance
+    const paymentData = {
+      gym: gymId,
+      member: memberId,
+      amount: paymentAmount,
+      paymentMethod: 'pending',
+      paymentMode: 'pending',
+      description: `7-Day Allowance - ${planSelected} (${monthlyPlan})`,
+      category: 'membership-renewal',
+      type: 'allowance',
+      status: 'pending',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      createdBy: adminId
+    };
+    
+    await Payment.create(paymentData);
+    
+    console.log('✅ 7-day allowance granted successfully:', {
+      member: updatedMember.memberName,
+      plan: planSelected,
+      amount: paymentAmount,
+      allowanceExpiry: memberUpdateData.allowanceExpiryDate
+    });
+    
+    res.status(200).json({
+      message: '7-day allowance granted successfully',
+      member: updatedMember
+    });
+    
+  } catch (error) {
+    console.error('❌ Error granting 7-day allowance:', error);
+    res.status(500).json({ 
+      message: 'Error granting 7-day allowance', 
+      error: error.message 
+    });
+  }
+};
+
+// Mark payment as paid and activate membership
+exports.markPaymentAsPaid = async (req, res) => {
+  try {
+    const { memberId, amountReceived, paymentMethod, paymentDate, notes, source } = req.body;
+    
+    // Get gym ID from authenticated admin
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id));
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    // Determine the correct admin ID to use for createdBy
+    let adminId = null;
+    if (req.admin) {
+      adminId = req.admin._id || req.admin.id || req.admin.adminId || req.admin.gymId;
+    }
+    
+    // If no admin ID found, create a temporary ObjectId
+    if (!adminId) {
+      const mongoose = require('mongoose');
+      console.warn('⚠️ No admin ID found, creating temporary ObjectId for createdBy field');
+      adminId = new mongoose.Types.ObjectId();
+    }
+    
+    // Find the member
+    const member = await Member.findOne({ _id: memberId, gym: gymId });
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found.' });
+    }
+    
+    // Check if member has pending payments
+    if (member.paymentStatus !== 'pending' || !member.pendingPaymentAmount) {
+      return res.status(400).json({ message: 'No pending payment found for this member.' });
+    }
+    
+    // Calculate the new membership validity date
+    // Start from allowance granted date (when the plan was supposed to start)
+    const startDate = member.planStartDate || member.allowanceGrantedDate || new Date();
+    const newValidityDate = member.plannedValidityDate || new Date(startDate);
+    
+    // If planned validity date wasn't set, calculate it now
+    if (!member.plannedValidityDate) {
+      let months = 1;
+      if (/3\s*Months?/i.test(member.monthlyPlan)) months = 3;
+      else if (/6\s*Months?/i.test(member.monthlyPlan)) months = 6;
+      else if (/12\s*Months?/i.test(member.monthlyPlan)) months = 12;
+      
+      newValidityDate.setMonth(newValidityDate.getMonth() + months);
+    }
+    
+    // Update member status
+    const memberUpdateData = {
+      paymentStatus: 'paid',
+      pendingPaymentAmount: 0,
+      allowanceGrantedDate: null,
+      allowanceExpiryDate: null,
+      planStartDate: null,
+      plannedValidityDate: null,
+      membershipValidUntil: newValidityDate,
+      paymentAmount: amountReceived,
+      lastPaymentDate: new Date(paymentDate)
+    };
+    
+    const updatedMember = await Member.findByIdAndUpdate(memberId, memberUpdateData, { new: true });
+    
+    // Update pending payment record to completed
+    await Payment.findOneAndUpdate(
+      { 
+        gym: gymId, 
+        member: memberId, 
+        status: 'pending',
+        type: 'allowance'
+      },
+      { 
+        status: 'completed',
+        paymentMethod,
+        paymentMode: paymentMethod,
+        actualAmount: amountReceived,
+        paymentDate: new Date(paymentDate),
+        notes: notes || `Payment received via ${source || 'admin panel'}`,
+        completedBy: adminId,
+        completedAt: new Date()
+      }
+    );
+    
+    // Create a new payment record for the completed payment
+    const completedPaymentData = {
+      gym: gymId,
+      member: memberId,
+      amount: amountReceived,
+      paymentMethod,
+      paymentMode: paymentMethod,
+      description: `Membership Payment - ${member.planSelected} (${member.monthlyPlan})`,
+      category: 'membership-payment',
+      type: 'completed',
+      status: 'completed',
+      paymentDate: new Date(paymentDate),
+      notes: notes || `Payment received via ${source || 'admin panel'}`,
+      createdBy: adminId
+    };
+    
+    await Payment.create(completedPaymentData);
+    
+    console.log('✅ Payment marked as paid successfully:', {
+      member: updatedMember.memberName,
+      amount: amountReceived,
+      method: paymentMethod,
+      newValidity: newValidityDate
+    });
+    
+    res.status(200).json({
+      message: 'Payment marked as paid successfully',
+      member: updatedMember,
+      newValidityDate
+    });
+    
+  } catch (error) {
+    console.error('❌ Error marking payment as paid:', error);
+    res.status(500).json({ 
+      message: 'Error marking payment as paid', 
+      error: error.message 
+    });
   }
 };

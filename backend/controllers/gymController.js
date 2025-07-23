@@ -178,7 +178,7 @@ exports.getAdminProfile = async (req, res) => {
         }
         const logoUrl = admin.logoUrl ? 
             (admin.logoUrl.startsWith('http') ? admin.logoUrl : 
-                (admin.logoUrl.startsWith('uploads/') ? `/${admin.logoUrl}` : `/uploads/gymPhotos/${admin.logoUrl}`)) : 
+                (admin.logoUrl.startsWith('uploads/') ? `/${admin.logoUrl}` : `/uploads/gym-logos/${admin.logoUrl}`)) : 
             null;
         const profileResponse = {
             gymName: admin.gymName || 'Gym Admin',
@@ -325,7 +325,7 @@ exports.registerGym = async (req, res) => {
     // Handle gym logo upload (single file, field name: 'logo')
     let logoUrl = '';
     if (req.files && req.files.logo && req.files.logo.length > 0) {
-      logoUrl = `/uploads/gymPhotos/${req.files.logo[0].filename}`;
+      logoUrl = `/uploads/gym-logos/${req.files.logo[0].filename}`;
     } else {
       logoUrl = '';
     }
@@ -610,7 +610,7 @@ function updateLocation(gym, { address, city, state, pincode, landmark }) {
 // Helper: Handle logo upload
 function handleLogoUpload(gym, file, gymLogo) {
   if (file?.filename) {
-    gym.logoUrl = `uploads/gymPhotos/${file.filename}`;
+    gym.logoUrl = `uploads/gym-logos/${file.filename}`;
   } else if (gymLogo === null) {
     gym.logoUrl = undefined;
   }
@@ -986,5 +986,118 @@ exports.updateMembershipPlans = async (req, res) => {
   } catch (error) {
     console.error('Error updating membership plans:', error);
     res.status(500).json({ message: 'Server error while updating membership plans' });
+  }
+};
+
+// Migration endpoint to convert old string equipment to new object format
+exports.migrateEquipment = async (req, res) => {
+  try {
+    console.log('🔄 Starting equipment migration...');
+    
+    // Find all gyms
+    const gyms = await Gym.find({});
+    console.log(`📊 Found ${gyms.length} gyms to migrate`);
+    
+    let migratedCount = 0;
+    
+    for (const gym of gyms) {
+      let needsUpdate = false;
+      
+      if (gym.equipment && gym.equipment.length > 0) {
+        // Check if any equipment items are strings or missing required fields
+        const updatedEquipment = gym.equipment.map(item => {
+          // If item is a string, convert to object
+          if (typeof item === 'string') {
+            needsUpdate = true;
+            console.log(`  🔧 Converting string equipment: "${item}" for gym: ${gym.gymName}`);
+            return {
+              id: new Date().getTime().toString() + Math.random().toString(36).substr(2, 9),
+              name: item,
+              category: 'other',
+              quantity: 1,
+              status: 'available',
+              photos: [],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+          }
+          
+          // If item is an object but missing required fields
+          if (typeof item === 'object' && item !== null) {
+            let itemUpdated = false;
+            const updatedItem = { ...item };
+            
+            if (!updatedItem.name) {
+              console.log(`  ⚠️  Missing name for equipment in gym: ${gym.gymName}`);
+              updatedItem.name = 'Unknown Equipment';
+              itemUpdated = true;
+            }
+            
+            if (!updatedItem.id) {
+              updatedItem.id = new Date().getTime().toString() + Math.random().toString(36).substr(2, 9);
+              itemUpdated = true;
+            }
+            
+            if (!updatedItem.category) {
+              updatedItem.category = 'other';
+              itemUpdated = true;
+            }
+            
+            if (!updatedItem.quantity) {
+              updatedItem.quantity = 1;
+              itemUpdated = true;
+            }
+            
+            if (!updatedItem.status) {
+              updatedItem.status = 'available';
+              itemUpdated = true;
+            }
+            
+            if (!updatedItem.photos) {
+              updatedItem.photos = [];
+              itemUpdated = true;
+            }
+            
+            if (!updatedItem.createdAt) {
+              updatedItem.createdAt = new Date();
+              itemUpdated = true;
+            }
+            
+            updatedItem.updatedAt = new Date();
+            
+            if (itemUpdated) {
+              needsUpdate = true;
+              console.log(`  🔧 Updated equipment fields for: "${updatedItem.name}" in gym: ${gym.gymName}`);
+            }
+            
+            return updatedItem;
+          }
+          
+          return item;
+        });
+        
+        if (needsUpdate) {
+          gym.equipment = updatedEquipment;
+          await gym.save();
+          migratedCount++;
+          console.log(`✅ Migrated gym: ${gym.gymName}`);
+        }
+      }
+    }
+    
+    console.log(`🎉 Migration completed! Updated ${migratedCount} gyms.`);
+    res.status(200).json({ 
+      success: true, 
+      message: `Migration completed! Updated ${migratedCount} gyms.`,
+      migratedCount
+    });
+    
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Migration failed', 
+      error: error.message 
+    });
   }
 };

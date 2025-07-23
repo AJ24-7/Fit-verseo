@@ -782,9 +782,101 @@ function initFormSubmissionModule() {
       
       console.log('✅ Form validation passed');
 
-      // Prepare form data
-      const formData = prepareFormData();
-      console.log('📝 Form data prepared');
+      // Collect equipment names only for registration
+      const equipmentNameInputs = Array.from(document.querySelectorAll('.equipment-name-input'));
+      const equipmentNames = equipmentNameInputs.map(input => input.value.trim()).filter(Boolean);
+
+      // Prepare registration payload
+      const payload = {
+        gymName: form.gymName.value.trim(),
+        email: form.email.value.trim(),
+        phone: form.phone.value.trim(),
+        password: form.password.value,
+        currentMembers: form.currentMembers.value.trim(),
+        logo: document.getElementById('gymLogo')?.files?.[0],
+        address: form.address.value.trim(),
+        city: form.city.value.trim(),
+        state: form.state.value.trim(),
+        pincode: form.pincode.value.trim(),
+        landmark: form.landmark.value.trim(),
+        description: form.description.value.trim(),
+        equipment: equipmentNames, // Only names as strings
+        activities: [], // To be filled in later
+        membershipPlans: [], // To be filled in later
+        gymImages: [], // To be filled in later
+        contactPerson: form.contactPerson.value.trim(),
+        supportEmail: form.supportEmail.value.trim(),
+        supportPhone: form.supportPhone.value.trim(),
+        openingTime: form.openingTime.value,
+        closingTime: form.closingTime.value
+      };
+
+      // Activities
+      const activitiesGrid = document.getElementById('activitiesInteractiveGrid');
+      if (activitiesGrid) {
+        const selectedActivities = activitiesGrid.querySelectorAll('.activity-card.selected');
+        selectedActivities.forEach(card => {
+          const activityName = card.querySelector('.activity-name').textContent;
+          // Find the activity object from allPossibleActivities
+          const allPossibleActivities = [
+            { name: 'Yoga', icon: 'fa-person-praying', description: 'Improve flexibility, balance, and mindfulness.' },
+            { name: 'Zumba', icon: 'fa-music', description: 'Fun dance-based cardio workout.' },
+            { name: 'CrossFit', icon: 'fa-dumbbell', description: 'High-intensity functional training.' },
+            { name: 'Weight Training', icon: 'fa-weight-hanging', description: 'Strength and muscle building.' },
+            { name: 'Cardio', icon: 'fa-heartbeat', description: 'Endurance and heart health.' },
+            { name: 'Pilates', icon: 'fa-child', description: 'Core strength and flexibility.' },
+            { name: 'HIIT', icon: 'fa-bolt', description: 'High-Intensity Interval Training.' },
+            { name: 'Aerobics', icon: 'fa-running', description: 'Rhythmic aerobic exercise.' },
+            { name: 'Martial Arts', icon: 'fa-hand-fist', description: 'Self-defense and discipline.' },
+            { name: 'Spin Class', icon: 'fa-bicycle', description: 'Indoor cycling workout.' },
+            { name: 'Swimming', icon: 'fa-person-swimming', description: 'Full-body low-impact exercise.' },
+            { name: 'Boxing', icon: 'fa-hand-rock', description: 'Cardio and strength with boxing.' },
+            { name: 'Personal Training', icon: 'fa-user-tie', description: '1-on-1 customized fitness.' },
+            { name: 'Bootcamp', icon: 'fa-shoe-prints', description: 'Group-based intense training.' },
+            { name: 'Stretching', icon: 'fa-arrows-up-down', description: 'Mobility and injury prevention.' }
+          ];
+          const activityObj = allPossibleActivities.find(a => a.name === activityName);
+          if (activityObj) {
+            payload.activities.push(activityObj);
+          } else {
+            // fallback: just send the name
+            payload.activities.push({ name: activityName, icon: '', description: '' });
+          }
+        });
+      }
+
+      // Membership Plans (unchanged)
+      const membershipPlansGrid = document.getElementById('membershipPlansGrid');
+      if (membershipPlansGrid) {
+        const planCards = membershipPlansGrid.querySelectorAll('.plan-editor-card');
+        planCards.forEach((card, idx) => {
+          payload.membershipPlans.push({
+            name: card.querySelector('input[name="planName[]"]').value,
+            icon: card.querySelector('input[name="planIcon[]"]').value,
+            color: card.querySelector('input[name="planColor[]"]').value,
+            price: card.querySelector('input[name="planPrice[]"]').value,
+            discount: card.querySelector('input[name="planDiscount[]"]').value,
+            discountMonths: card.querySelector('input[name="planDiscountMonths[]"]').value,
+            benefits: card.querySelector('textarea[name="planBenefits[]"]').value,
+            note: card.querySelector('input[name="planNote[]"]').value
+          });
+        });
+      }
+
+      // Gym Photos
+      const photoCards = gymPhotoCardsContainer.querySelectorAll('.gym-photo-card');
+      photoCards.forEach((card, i) => {
+        const fileInput = card.querySelector('input[type="file"]');
+        const titleInput = card.querySelector('input[name="photoTitle[]"]');
+        const categoryInput = card.querySelector('select[name="photoCategory[]"]');
+        const descInput = card.querySelector('textarea[name="photoDescription[]"]');
+        if (fileInput?.files?.[0]) {
+          payload.gymImages.push(fileInput.files[0]);
+        }
+        if (titleInput) payload.gymImagesMeta.push({ title: titleInput.value.trim() });
+        if (descInput) payload.gymImagesMeta[i].description = descInput.value.trim();
+        if (categoryInput) payload.gymImagesMeta[i].category = categoryInput.value;
+      });
 
       // Show loading state
       if (btnText) btnText.textContent = 'Submitting...';
@@ -796,7 +888,10 @@ function initFormSubmissionModule() {
       console.log('🌐 Sending request to server...');
       const response = await fetch('http://localhost:5000/api/gyms/register', {
         method: 'POST',
-        body: formData
+        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
       console.log('📡 Server response received:', response.status, response.statusText);

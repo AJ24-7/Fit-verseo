@@ -3224,6 +3224,84 @@ body[data-theme="dark"] #notificationBell .notification-badge {
   color: #222;
   border: 2px solid #23273a;
 }
+
+/* Payment Status Badges */
+.payment-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  font-weight: 600;
+  margin-left: 5px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.payment-status-badge.pending {
+  background: #ff6b6b;
+  color: white;
+}
+
+.payment-status-badge.overdue {
+  background: #d63031;
+  color: white;
+  animation: pulse-red 2s infinite;
+}
+
+.payment-status-badge.paid {
+  background: #00b894;
+  color: white;
+}
+
+@keyframes pulse-red {
+  0% { 
+    background: #d63031;
+    transform: scale(1);
+  }
+  50% { 
+    background: #e74c3c;
+    transform: scale(1.05);
+  }
+  100% { 
+    background: #d63031;
+    transform: scale(1);
+  }
+}
+
+/* Member row status styling */
+.member-row-expired {
+  background-color: rgba(211, 47, 47, 0.1) !important;
+  border-left: 4px solid #d32f2f;
+}
+
+.member-row-expiring {
+  background-color: rgba(255, 152, 0, 0.1) !important;
+  border-left: 4px solid #ff9800;
+}
+
+.member-row-active {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+  border-left: 4px solid #4caf50;
+}
+
+.member-row-payment-pending {
+  background-color: rgba(255, 193, 7, 0.15) !important;
+  border-left: 4px solid #ffc107;
+  animation: payment-pending-pulse 2s infinite;
+}
+
+@keyframes payment-pending-pulse {
+  0% {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+  }
+  50% {
+    background-color: rgba(255, 193, 7, 0.25) !important;
+  }
+  100% {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+  }
+}
+
 /* Notification Modal */
 .notification-modal-content {
   max-width: 700px;
