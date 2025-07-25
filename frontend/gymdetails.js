@@ -1372,6 +1372,46 @@ document.addEventListener('keydown', function(e) {
 let currentGymId = null;
 let userToken = null;
 
+// === USER PROFILE IMAGE FETCH FOR NAVBAR ===
+document.addEventListener("DOMContentLoaded", () => {
+    const token = localStorage.getItem("token");
+    const userNav = document.getElementById("user-profile-nav");
+    const loginNav = document.getElementById("login-signup-nav");
+
+    // Default states
+    if (userNav) userNav.style.display = "none";
+    if (loginNav) loginNav.style.display = "none";
+
+    if (!token) {
+        if (loginNav) loginNav.style.display = "block";
+        return;
+    }
+
+    // Try to fetch user profile if token exists
+    fetch(`${BASE_URL}/api/users/profile`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': "application/json",
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(async (res) => {
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Server responded with ${res.status}: ${errText}`);
+        }
+        return res.json();
+    })
+    .then(user => {
+        updateProfileIconImage(user);
+        if (userNav) userNav.style.display = "block";
+        if (loginNav) loginNav.style.display = "none";
+    })
+    .catch(error => {
+        console.error("Error fetching user:", error.message);
+        if (loginNav) loginNav.style.display = "block";
+    });
+});
 // Check if user is logged in and get user info
 async function checkUserLogin() {
     userToken = localStorage.getItem('authToken') || localStorage.getItem('token');

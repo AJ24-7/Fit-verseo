@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Distance Calculation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .location-status {
+            background-color: #f0f8ff;
+            border: 1px solid #0066cc;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .location-enabled {
+            background-color: #f0fff0;
+            border-color: #00aa00;
+        }
+        .location-disabled {
+            background-color: #fff5f5;
+            border-color: #cc0000;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .gym-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #fafafa;
+        }
+        .distance-highlight {
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Enhanced Gym Search with Accurate Distance Calculation</h1>
+    
+    <div id="locationStatus" class="location-status location-disabled">
+        <h3>📍 Location Status: Not Available</h3>
+        <p>Click "Get My Location" to enable accurate distance calculations.</p>
+    </div>
+
+    <div>
+        <button id="getLocationBtn" class="btn">🌍 Get My Location</button>
+        <button id="testSearchBtn" class="btn">🔍 Test Search</button>
+        <button id="clearResults" class="btn">🗑️ Clear Results</button>
+    </div>
+
+    <div id="currentLocation" style="margin: 10px 0; font-weight: bold;"></div>
+
+    <div id="results" class="results"></div>
+
+    <script>
+        let userLocation = { lat: 28.357353, lng: 77.295289 }; // Default Delhi location
+        let hasRealLocation = false;
+
+        // Update location status display
+        function updateLocationStatus() {
+            const statusDiv = document.getElementById('locationStatus');
+            const currentLocationDiv = document.getElementById('currentLocation');
+            
+            if (hasRealLocation) {
+                statusDiv.className = 'location-status location-enabled';
+                statusDiv.innerHTML = `
+                    <h3>✅ Location Status: Enabled</h3>
+                    <p>Accurate distance calculations are available.</p>
+                `;
+                currentLocationDiv.innerHTML = `Current Location: ${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`;
+            } else {
+                statusDiv.className = 'location-status location-disabled';
+                statusDiv.innerHTML = `
+                    <h3>📍 Location Status: Using Default Location</h3>
+                    <p>Distances shown are approximate. Click "Get My Location" for accurate distances.</p>
+                `;
+                currentLocationDiv.innerHTML = `Default Location (Delhi): ${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`;
+            }
+        }
+
+        // Haversine formula for calculating distance
+        function getDistance(loc1, loc2) {
+            if (!loc1 || !loc2 || 
+                typeof loc1.lat !== 'number' || typeof loc1.lng !== 'number' ||
+                typeof loc2.lat !== 'number' || typeof loc2.lng !== 'number') {
+                return null;
+            }
+
+            const R = 6371;
+            const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
+            const dLng = (loc2.lng - loc1.lng) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(loc1.lat * Math.PI / 180) * Math.cos(loc2.lat * Math.PI / 180) *
+                Math.sin(dLng / 2) ** 2;
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // Format distance display
+        function formatDistance(distance) {
+            if (distance === null || distance === undefined) {
+                return "Distance not available";
+            }
+            
+            if (distance < 1) {
+                return `${(distance * 1000).toFixed(0)} m`;
+            } else if (distance < 10) {
+                return `${distance.toFixed(2)} km`;
+            } else {
+                return `${distance.toFixed(1)} km`;
+            }
+        }
+
+        // Sample gym data with coordinates
+        const sampleGyms = [
+            {
+                gymName: "FitLife Gym",
+                location: { 
+                    city: "Delhi", 
+                    pincode: "110001",
+                    lat: 28.6139, 
+                    lng: 77.2090 
+                }
+            },
+            {
+                gymName: "PowerZone Fitness",
+                location: { 
+                    city: "Delhi", 
+                    pincode: "110016",
+                    lat: 28.5494, 
+                    lng: 77.2500 
+                }
+            },
+            {
+                gymName: "Elite Gym Center",
+                location: { 
+                    city: "Gurgaon", 
+                    pincode: "122001",
+                    lat: 28.4595, 
+                    lng: 77.0266 
+                }
+            },
+            {
+                gymName: "Metro Fitness Club",
+                location: { 
+                    city: "Noida", 
+                    pincode: "201301",
+                    lat: 28.5355, 
+                    lng: 77.3910 
+                }
+            }
+        ];
+
+        // Get user location
+        document.getElementById('getLocationBtn').addEventListener('click', function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '🔄 Getting Location...';
+
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                btn.disabled = false;
+                btn.textContent = '🌍 Get My Location';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    hasRealLocation = true;
+                    updateLocationStatus();
+                    btn.textContent = '✅ Location Obtained';
+                    btn.disabled = false;
+                    
+                    // Auto-run test search
+                    setTimeout(() => {
+                        document.getElementById('testSearchBtn').click();
+                    }, 1000);
+                },
+                (error) => {
+                    alert('Unable to get your location: ' + error.message);
+                    btn.textContent = '🌍 Get My Location';
+                    btn.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        });
+
+        // Test search functionality
+        document.getElementById('testSearchBtn').addEventListener('click', function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h3>🔍 Search Results</h3><p>Calculating distances...</p>';
+
+            // Calculate distances for sample gyms
+            const gymsWithDistance = sampleGyms.map(gym => {
+                const distance = getDistance(userLocation, gym.location);
+                return { ...gym, distance };
+            });
+
+            // Sort by distance
+            const sortedGyms = gymsWithDistance.sort((a, b) => {
+                if (a.distance === null && b.distance === null) return 0;
+                if (a.distance === null) return 1;
+                if (b.distance === null) return -1;
+                return a.distance - b.distance;
+            });
+
+            // Display results
+            let html = '<h3>🏋️ Nearby Gyms</h3>';
+            if (!hasRealLocation) {
+                html += '<p style="color: #666; font-style: italic;">⚠️ Distances shown are from default location (Delhi). Use "Get My Location" for accurate distances.</p>';
+            }
+
+            sortedGyms.forEach((gym, index) => {
+                html += `
+                    <div class="gym-card">
+                        <h4>${gym.gymName}</h4>
+                        <p><strong>Location:</strong> ${gym.location.city}, ${gym.location.pincode}</p>
+                        <p><strong>Coordinates:</strong> ${gym.location.lat.toFixed(4)}, ${gym.location.lng.toFixed(4)}</p>
+                        <p class="distance-highlight"><strong>Distance:</strong> ${formatDistance(gym.distance)}</p>
+                        <p><strong>Rank:</strong> #${index + 1} closest</p>
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+        });
+
+        // Clear results
+        document.getElementById('clearResults').addEventListener('click', function() {
+            document.getElementById('results').innerHTML = '';
+        });
+
+        // Initialize
+        updateLocationStatus();
+    </script>
+</body>
+</html>

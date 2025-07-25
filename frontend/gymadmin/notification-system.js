@@ -8,6 +8,11 @@ class NotificationSystem {
     this.unreadCount = 0;
     this.websocket = null;
     this.pollingInterval = null;
+    
+    // Enhanced notification tracking system
+    this.notificationSignatures = new Map(); // Track notification signatures
+    this.suppressionCache = new Map(); // Cache for suppressed notifications
+    
     this.initializeSystem();
   }
 
@@ -17,6 +22,9 @@ class NotificationSystem {
     this.bindEventListeners();
     this.startPolling();
     this.loadExistingNotifications();
+    
+    // Load suppression cache for enhanced notification management
+    this.loadSuppressionCache();
     
     // Setup debug functions
     this.setupDebugFunctions();
@@ -1107,17 +1115,147 @@ class NotificationSystem {
     notification.timestamp = new Date(notification.timestamp);
     this.notifications.unshift(notification);
 
+    // Check if notification was recently read (within 2 hours)
+    const readTimestamps = this.getNotificationReadTimestamps();
+    const notifKey = notification.id || notification._id;
+    let suppressPopup = false;
+    if (notifKey && readTimestamps[notifKey]) {
+      const lastRead = new Date(readTimestamps[notifKey]);
+      const now = new Date();
+      if (now - lastRead < 2 * 60 * 60 * 1000) { // 2 hours in milliseconds
+        suppressPopup = true;
+      }
+    }
+
     if (!notification.read) {
       this.unreadCount++;
       this.updateNotificationBadge();
-      // Only show toast if not silent (i.e., not loading from backend)
-      if (!silent && this.shouldShowNotification(notification.type)) {
+      // Only show toast if not silent (i.e., not loading from backend) and not suppressed
+      if (!silent && this.shouldShowNotification(notification.type) && !suppressPopup) {
         this.showToastNotification(notification);
         this.playNotificationSound();
       }
     }
 
     this.updateNotificationDropdown();
+  }
+
+  // Helper to get notification read timestamps from localStorage
+  getNotificationReadTimestamps() {
+    try {
+      return JSON.parse(localStorage.getItem('notificationReadTimestamps') || '{}');
+    } catch (e) {
+      return {};
+    }
+  }
+
+  // Helper to set notification read timestamps in localStorage
+  setNotificationReadTimestamp(id) {
+    if (!id) return;
+    const timestamps = this.getNotificationReadTimestamps();
+    timestamps[id] = new Date().toISOString();
+    // Clean up old timestamps (older than 7 days to prevent localStorage bloat)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    Object.keys(timestamps).forEach(key => {
+      if (new Date(timestamps[key]) < sevenDaysAgo) {
+        delete timestamps[key];
+      }
+    });
+    localStorage.setItem('notificationReadTimestamps', JSON.stringify(timestamps));
+  }
+
+  // Enhanced notification signature system for popup suppression
+  generateNotificationSignature(title, message, type = '') {
+    const content = (title + message + type).toLowerCase().replace(/\s+/g, ' ').trim();
+    const signature = btoa(content).substring(0, 16); // Base64 encoded, truncated
+    return signature;
+  }
+
+  isNotificationSuppressed(signature) {
+    const suppressionData = this.suppressionCache.get(signature);
+    if (!suppressionData) return false;
+    
+    const now = Date.now();
+    const timeDiff = now - suppressionData.timestamp;
+    const suppressionDuration = 2 * 60 * 60 * 1000; // 2 hours
+    
+    return timeDiff < suppressionDuration;
+  }
+
+  suppressNotification(signature) {
+    this.suppressionCache.set(signature, {
+      timestamp: Date.now(),
+      count: (this.suppressionCache.get(signature)?.count || 0) + 1
+    });
+    
+    // Persist to localStorage
+    this.saveSuppressionCache();
+  }
+
+  loadSuppressionCache() {
+    try {
+      const cached = localStorage.getItem('notification_suppression_cache');
+      if (cached) {
+        const data = JSON.parse(cached);
+        this.suppressionCache = new Map(Object.entries(data));
+      }
+    } catch (error) {
+      console.warn('Failed to load suppression cache:', error);
+      this.suppressionCache = new Map();
+    }
+  }
+
+  saveSuppressionCache() {
+    try {
+      const cacheData = Object.fromEntries(this.suppressionCache);
+      localStorage.setItem('notification_suppression_cache', JSON.stringify(cacheData));
+    } catch (error) {
+      console.warn('Failed to save suppression cache:', error);
+    }
+  }
+
+  // Enhanced unified notification wrapper - use this for all new notifications
+  addNotificationUnified(title, message, type = 'info', actionButton = null, priority = 'normal') {
+    // Generate unique signature for this notification
+    const signature = this.generateNotificationSignature(title, message, type);
+    
+    // Check if this notification is suppressed
+    if (this.isNotificationSuppressed(signature)) {
+      console.log(`Notification suppressed (signature: ${signature}):`, title);
+      return { suppressed: true, signature };
+    }
+
+    // Create notification object
+    const notification = {
+      id: Date.now() + Math.random(),
+      title,
+      message,
+      type,
+      timestamp: new Date().toISOString(),
+      read: false,
+      signature,
+      priority,
+      actionButton
+    };
+
+    // Add to notifications array
+    this.notifications.unshift(notification);
+    this.unreadCount++;
+    this.updateNotificationBadge();
+    this.updateNotificationDropdown();
+
+    // Show popup/toast only if enabled and not suppressed
+    if (this.shouldShowNotification(type)) {
+      this.showToastNotification(notification);
+      this.playNotificationSound();
+    }
+
+    // Trigger callbacks
+    if (typeof this.onNewNotification === 'function') {
+      this.onNewNotification(notification);
+    }
+
+    return { success: true, notification, signature };
   }
 
   // Generic method for showing notifications (compatible with payment.js)
@@ -1334,6 +1472,18 @@ class NotificationSystem {
       this.unreadCount = Math.max(0, this.unreadCount - 1);
       this.updateNotificationBadge();
       this.updateNotificationDropdown();
+
+      // Persist read timestamp in localStorage for 2-hour suppression
+      this.setNotificationReadTimestamp(notification.id || notification._id);
+      
+      // Enhanced: Add signature-based suppression for unified notification management
+      if (notification.signature) {
+        this.suppressNotification(notification.signature);
+      } else if (notification.title && notification.message) {
+        // Generate signature for existing notifications without one
+        const signature = this.generateNotificationSignature(notification.title, notification.message, notification.type);
+        this.suppressNotification(signature);
+      }
       
       // Only persist to backend if it's a valid database notification
       const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
@@ -1384,6 +1534,17 @@ class NotificationSystem {
     this.notifications.forEach(notif => {
       if (!notif.read) {
         notif.read = true;
+        // Persist read timestamp for each notification
+        this.setNotificationReadTimestamp(notif.id || notif._id);
+        
+        // Enhanced: Add signature-based suppression for unified notification management
+        if (notif.signature) {
+          this.suppressNotification(notif.signature);
+        } else if (notif.title && notif.message) {
+          // Generate signature for existing notifications without one
+          const signature = this.generateNotificationSignature(notif.title, notif.message, notif.type);
+          this.suppressNotification(signature);
+        }
       }
     });
     this.unreadCount = 0;
@@ -1505,14 +1666,6 @@ class NotificationSystem {
                 const statusColor = member.paymentStatus === 'overdue' ? '#d63031' : '#ffa726';
                 const statusIcon = member.paymentStatus === 'overdue' ? '⚠️' : '💳';
                 memberInfo += ` <span style="background:${statusColor};color:white;padding:2px 6px;border-radius:8px;font-size:0.8em;">${statusIcon} ${member.paymentStatus.toUpperCase()}</span>`;
-                
-                // Add Mark as Paid button for pending/overdue members
-                if (member.paymentStatus === 'pending' || member.paymentStatus === 'overdue') {
-                  const memberId = member._id || member.membershipId;
-                  if (memberId) {
-                    memberInfo += ` <button class="mark-paid-btn" data-member-id="${memberId}" data-source="notification" style="background:#28a745;color:white;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:0.75em;margin-left:5px;">✅ Mark Paid</button>`;
-                  }
-                }
               }
               
               memberInfo += `<br><small>ID: ${member.membershipId || 'N/A'}`;
@@ -1551,10 +1704,45 @@ class NotificationSystem {
           </ul>
         </div>`;
       }
+      // Create custom footer based on notification type
+      let customFooter = '';
+      if ((notification.type === 'pending-payments' || notification.type === 'membership-expiry') && notification.members && notification.members.length > 0) {
+        const hasPendingMembers = notification.members.some(member => 
+          member.paymentStatus === 'pending' || member.paymentStatus === 'overdue' || notification.type === 'membership-expiry'
+        );
+        
+        if (hasPendingMembers) {
+          if (notification.members.length === 1) {
+            // Single member - one Mark Paid button
+            const member = notification.members[0];
+            const memberId = member._id || member.membershipId;
+            customFooter = `
+              <div style="display:flex;gap:12px;justify-content:center;">
+                <button class="mark-paid-btn-dialog" data-member-id="${memberId}" data-source="notification" style="background:#28a745;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;display:flex;align-items:center;gap:6px;">
+                  <i class="fas fa-check-circle"></i> Mark Paid
+                </button>
+                <button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">OK</button>
+              </div>`;
+          } else {
+            // Multiple members - Mark All Paid button
+            customFooter = `
+              <div style="display:flex;gap:12px;justify-content:center;">
+                <button class="mark-all-paid-btn-dialog" data-notification-members='${JSON.stringify(notification.members.map(m => ({ id: m._id || m.membershipId, name: m.name })))}' data-source="notification" style="background:#28a745;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;display:flex;align-items:center;gap:6px;">
+                  <i class="fas fa-check-circle"></i> Mark All Paid
+                </button>
+                <button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">OK</button>
+              </div>`;
+          }
+        } else {
+          // No pending members, just OK button
+          customFooter = `<button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">OK</button>`;
+        }
+      }
+
       showDialog({
         title: notification.title,
         message: content,
-        confirmText: 'OK',
+        customFooter: customFooter,
         iconHtml: `<i class="fas ${notification.icon || 'fa-bell'}" style="color: ${notification.color || '#1976d2'}; font-size: 2rem;"></i>`,
         onConfirm: () => {
           // Mark notification as read when OK is clicked
@@ -1563,6 +1751,73 @@ class NotificationSystem {
           }
         }
       });
+
+      // Add event listeners for Mark Paid buttons after dialog is created
+      setTimeout(() => {
+        // Single member Mark Paid button
+        const markPaidBtn = document.querySelector('.mark-paid-btn-dialog');
+        if (markPaidBtn) {
+          markPaidBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const memberId = e.target.closest('.mark-paid-btn-dialog').dataset.memberId;
+            const dialog = document.getElementById('customDialogBox');
+            if (dialog) {
+              dialog.remove();
+              document.body.style.overflow = '';
+            }
+            
+            if (memberId && window.sevenDayAllowanceManager) {
+              // Get member details to pass pending amount
+              const member = notification.members.find(m => (m._id || m.membershipId) === memberId);
+              if (member && member.pendingAmount) {
+                // Pre-fill the amount in the mark as paid modal
+                window.sevenDayAllowanceManager.showMarkAsPaidModal(memberId, 'notification', member.pendingAmount);
+              } else {
+                window.sevenDayAllowanceManager.showMarkAsPaidModal(memberId, 'notification');
+              }
+            }
+          });
+        }
+
+        // Mark All Paid button
+        const markAllPaidBtn = document.querySelector('.mark-all-paid-btn-dialog');
+        if (markAllPaidBtn) {
+          markAllPaidBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const dialog = document.getElementById('customDialogBox');
+            if (dialog) {
+              dialog.remove();
+              document.body.style.overflow = '';
+            }
+            
+            // Show confirmation for marking all as paid
+            showDialog({
+              title: 'Mark All Members as Paid',
+              message: `Are you sure you want to mark all ${notification.members.length} members as paid? This will process payments for:\n\n${notification.members.map(m => `• ${m.name} (${m.membershipId || 'N/A'})`).join('\n')}`,
+              confirmText: 'Mark All Paid',
+              cancelText: 'Cancel',
+              iconHtml: '<i class="fas fa-credit-card" style="color: #28a745; font-size: 2rem;"></i>',
+              onConfirm: () => {
+                // Process all members
+                if (window.sevenDayAllowanceManager && notification.members) {
+                  notification.members.forEach((member, index) => {
+                    const memberId = member._id || member.membershipId;
+                    if (memberId) {
+                      setTimeout(() => {
+                        if (member.pendingAmount) {
+                          window.sevenDayAllowanceManager.showMarkAsPaidModal(memberId, 'notification', member.pendingAmount);
+                        } else {
+                          window.sevenDayAllowanceManager.showMarkAsPaidModal(memberId, 'notification');
+                        }
+                      }, index * 500); // Stagger the calls to avoid overwhelming
+                    }
+                  });
+                }
+              }
+            });
+          });
+        }
+      }, 100);
     }
   }
 
@@ -1976,10 +2231,105 @@ class NotificationSystem {
   destroy() {
     this.stopPolling();
   }
+
+  // Enhanced Universal Notification Wrapper Methods for External JS Files
+  
+  // Universal notification method with enhanced suppression
+  static notify(title, message, type = 'info', options = {}) {
+    return new Promise((resolve) => {
+      const waitForSystem = () => {
+        if (window.notificationSystem && window.notificationSystem.addNotificationUnified) {
+          const result = window.notificationSystem.addNotificationUnified(
+            title, 
+            message, 
+            type, 
+            options.actionButton, 
+            options.priority || 'normal'
+          );
+          resolve(result);
+        } else {
+          setTimeout(waitForSystem, 100);
+        }
+      };
+      waitForSystem();
+    });
+  }
+
+  // Specific notification methods for common use cases
+  static notifyPayment(memberName, amount, type = 'success') {
+    const title = type === 'success' ? 'Payment Received' : 'Payment Issue';
+    const message = type === 'success' 
+      ? `Payment of ₹${amount} received from ${memberName}`
+      : `Payment issue for ${memberName}: ₹${amount}`;
+    return this.notify(title, message, type);
+  }
+
+  static notifyMemberAction(action, memberName, details = '') {
+    const actionMap = {
+      'added': { title: 'New Member Added', type: 'success' },
+      'renewed': { title: 'Membership Renewed', type: 'info' },
+      'expired': { title: 'Membership Expired', type: 'warning' },
+      'updated': { title: 'Member Updated', type: 'info' }
+    };
+    
+    const config = actionMap[action] || { title: 'Member Action', type: 'info' };
+    const message = `${memberName} ${details ? '- ' + details : ''}`;
+    return this.notify(config.title, message, config.type);
+  }
+
+  static notifyEquipment(action, equipmentName, details = '') {
+    const title = action === 'added' ? 'Equipment Added' : 'Equipment Updated';
+    const message = `${equipmentName} ${details ? '- ' + details : ''}`;
+    return this.notify(title, message, 'info');
+  }
+
+  static notifySystem(title, message, type = 'info') {
+    return this.notify(title, message, type, { priority: 'high' });
+  }
+
+  // Compatibility method for existing code
+  static showNotification(title, message, urgency = 'medium', type = 'info') {
+    const typeMap = {
+      'low': 'info',
+      'medium': 'warning',
+      'high': 'error'
+    };
+    return this.notify(title, message, typeMap[urgency] || type);
+  }
 }
 
 // Global notification system instance
 window.notificationSystem = null;
+
+// Enhanced Global Notification Wrapper for Universal Access
+window.NotificationManager = {
+  // Universal notification method
+  notify: (title, message, type = 'info', options = {}) => 
+    NotificationSystem.notify(title, message, type, options),
+  
+  // Specific notification methods
+  notifyPayment: (memberName, amount, type = 'success') => 
+    NotificationSystem.notifyPayment(memberName, amount, type),
+  
+  notifyMember: (action, memberName, details = '') => 
+    NotificationSystem.notifyMemberAction(action, memberName, details),
+  
+  notifyEquipment: (action, equipmentName, details = '') => 
+    NotificationSystem.notifyEquipment(action, equipmentName, details),
+  
+  notifySystem: (title, message, type = 'info') => 
+    NotificationSystem.notifySystem(title, message, type),
+  
+  // Backward compatibility
+  showNotification: (title, message, urgency = 'medium', type = 'info') => 
+    NotificationSystem.showNotification(title, message, urgency, type),
+  
+  // Direct access to instance methods for advanced usage
+  getInstance: () => window.notificationSystem,
+  
+  // Check if system is ready
+  isReady: () => !!(window.notificationSystem && window.notificationSystem.addNotificationUnified)
+};
 
 // Initialize notification system when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {

@@ -14,7 +14,9 @@ passwordResetOTPExpiry: { type: Date },
     city: { type: String, required: true },
     state: { type: String, required: true },
     pincode: { type: String, required: true },
-    landmark: { type: String }
+    landmark: { type: String },
+    lat: { type: Number }, // Latitude coordinate
+    lng: { type: Number }  // Longitude coordinate
   },
 
   description: { type: String, required: true },

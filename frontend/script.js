@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', function () {
           const lng = position.coords.longitude;
           // Store user location globally for searchGyms
           window.userLocation = { lat, lng };
+          // Update the global userLocation variable as well
+          userLocation = { lat, lng };
+          console.log('User location obtained:', userLocation);
           // Optionally, reverse geocode to get city/pincode (not required for backend search)
           // Trigger searchGyms with location
           searchGyms();
@@ -22,7 +25,8 @@ document.addEventListener('DOMContentLoaded', function () {
           nearYouBtn.disabled = false;
         },
         (err) => {
-          alert('Unable to fetch your location. Please allow location access.');
+          console.warn('Geolocation error:', err);
+          alert('Unable to fetch your location. Please allow location access or search manually by city/pincode.');
           nearYouBtn.innerHTML = '<i class="fas fa-location-crosshairs"></i> Near You';
           nearYouBtn.disabled = false;
         },
@@ -103,10 +107,19 @@ document.addEventListener("DOMContentLoaded", function () {
 // === DYNAMIC BASE URL FOR API (works on mobile and desktop) ===
 const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
 //gym search logic //
-const userLocation = { lat: 28.357353, lng: 77.295289 };
+// Default location (Delhi) - will be overridden when user allows geolocation
+let userLocation = { lat: 28.357353, lng: 77.295289 };
 
+// Haversine formula for calculating distance between two points on Earth
 function getDistance(loc1, loc2) {
-  const R = 6371;
+  // Validate input coordinates
+  if (!loc1 || !loc2 || 
+      typeof loc1.lat !== 'number' || typeof loc1.lng !== 'number' ||
+      typeof loc2.lat !== 'number' || typeof loc2.lng !== 'number') {
+    return null; // Return null for invalid coordinates
+  }
+
+  const R = 6371; // Earth's radius in kilometers
   const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
   const dLng = (loc2.lng - loc1.lng) * Math.PI / 180;
   const a = Math.sin(dLat / 2) ** 2 +
@@ -115,6 +128,37 @@ function getDistance(loc1, loc2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
+// Geocode an address to get lat/lng coordinates
+async function geocodeAddress(address, city, state, pincode) {
+  try {
+    // Build full address string
+    const fullAddress = [address, city, state, pincode].filter(Boolean).join(', ');
+    
+    // Use a geocoding service (you can replace this with your preferred service)
+    // This example uses OpenStreetMap Nominatim (free but rate-limited)
+    const encodedAddress = encodeURIComponent(fullAddress);
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`);
+    
+    if (!response.ok) {
+      throw new Error('Geocoding service error');
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon)
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn('Geocoding failed for address:', address, error);
+    return null;
+  }
+}
 function searchGyms() {
   // Show loading state
   const resultsDiv = document.getElementById("results");
@@ -122,6 +166,17 @@ function searchGyms() {
   // Hide gym counter until results arrive
   const gymCounter = document.getElementById("gymSearchCounter");
   if (gymCounter) gymCounter.style.display = "none";
+  
+  // Check if we have user location for distance calculation
+  const hasUserLocation = userLocation && userLocation.lat && userLocation.lng;
+  if (!hasUserLocation) {
+    console.log('Using default location for distance calculation');
+  } else {
+    console.log('Using actual user location:', userLocation);
+  }
+  
+  // Log location status for debugging
+  logLocationStatus();
   
   // Get search parameters from the form
   const city = document.getElementById("city").value.trim();
@@ -148,17 +203,39 @@ function searchGyms() {
       }
       return res.json();
     })
-    .then(gyms => {
+    .then(async gyms => {
+      console.log('Received gyms from backend:', gyms.length);
       
-      // Calculate distances for sorting
-      const gymsWithDistance = gyms.map(gym => {
-        const distance = gym.location?.lat && gym.location?.lng && typeof userLocation !== "undefined"
-          ? getDistance(userLocation, {
-              lat: parseFloat(gym.location.lat),
-              lng: parseFloat(gym.location.lng),
-            })
-          : 0;
+      // Calculate distances for sorting with improved logic
+      const gymsWithDistance = await Promise.all(gyms.map(async gym => {
+        let distance = null;
+        let gymCoords = null;
+        
+        // Try to get coordinates from gym data
+        if (gym.location?.lat && gym.location?.lng) {
+          gymCoords = {
+            lat: parseFloat(gym.location.lat),
+            lng: parseFloat(gym.location.lng)
+          };
+        } else if (gym.location?.address || gym.location?.city) {
+          // Attempt to geocode the address
+          console.log('Geocoding address for gym:', gym.gymName);
+          gymCoords = await geocodeAddress(
+            gym.location.address,
+            gym.location.city,
+            gym.location.state,
+            gym.location.pincode
+          );
           
+          // Add a small delay to respect rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Calculate distance if we have both user location and gym coordinates
+        if (gymCoords && userLocation) {
+          distance = getDistance(userLocation, gymCoords);
+        }
+        
         // Process activities for display - handle new object format
         let combinedActivities = [];
         if (gym.activities && Array.isArray(gym.activities)) {
@@ -188,18 +265,35 @@ function searchGyms() {
         return {
           ...gym,
           distance,
+          gymCoords, // Store coordinates for future use
           processedActivities: uniqueGymActivities
         };
+      }));
+      
+      // Sort by distance (nulls/undefined distances go to the end)
+      const sortedGyms = gymsWithDistance.sort((a, b) => {
+        if (a.distance === null && b.distance === null) return 0;
+        if (a.distance === null) return 1;
+        if (b.distance === null) return -1;
+        return a.distance - b.distance;
       });
       
-      // Sort by distance
-      const sortedGyms = gymsWithDistance.sort((a, b) => a.distance - b.distance);
+      console.log('Gyms with calculated distances:', sortedGyms.map(g => ({ 
+        name: g.gymName, 
+        distance: g.distance 
+      })));
       
       showResults(sortedGyms);
       // Show gym counter with number of unique gyms
       const gymCounter = document.getElementById("gymSearchCounter");
       if (gymCounter) {
-        gymCounter.textContent = `${sortedGyms.length} gym${sortedGyms.length !== 1 ? 's' : ''} found`;
+        let counterText = `${sortedGyms.length} gym${sortedGyms.length !== 1 ? 's' : ''} found`;
+        
+        if (!hasRealUserLocation()) {
+          counterText += ' (distances are approximate - click "Near You" for accurate distances)';
+        }
+        
+        gymCounter.textContent = counterText;
         gymCounter.style.display = "inline-block";
       }
     })
@@ -333,7 +427,7 @@ function renderGymCards() {
       <div class="gym-card-details">
         <h3>${gym.gymName}</h3>
         <p>City: ${gym.location?.city || "N/A"} | Pincode: ${gym.location?.pincode || "N/A"}</p>
-        <p>Distance: ${gym.distance ? gym.distance.toFixed(2) : "N/A"} km</p>
+        <p>Distance: ${formatDistance(gym.distance)}</p>
         <p>Starting from: ₹${minPrice !== "N/A" ? minPrice : "N/A"}</p>
         ${activitiesHTML}
         <a href="gymdetails.html?gymId=${gym._id}">
@@ -528,4 +622,61 @@ function generateStars(rating) {
     }
   }
   return stars;
+}
+
+// Helper function to format distance display
+function formatDistance(distance) {
+  if (distance === null || distance === undefined) {
+    return "Distance not available";
+  }
+  
+  if (distance < 1) {
+    return `${(distance * 1000).toFixed(0)} m`;
+  } else if (distance < 10) {
+    return `${distance.toFixed(2)} km`;
+  } else {
+    return `${distance.toFixed(1)} km`;
+  }
+}
+
+// Function to get user's current location if not already obtained
+function requestUserLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by this browser.'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        userLocation = newLocation;
+        window.userLocation = newLocation;
+        console.log('User location obtained:', userLocation);
+        resolve(newLocation);
+      },
+      (error) => {
+        console.warn('Geolocation error:', error);
+        reject(error);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+}
+
+// Function to check if user has enabled real location
+function hasRealUserLocation() {
+  return userLocation.lat !== 28.357353 || userLocation.lng !== 77.295289;
+}
+
+// Function to display location status in console (for debugging)
+function logLocationStatus() {
+  console.log('=== Location Status ===');
+  console.log('Current userLocation:', userLocation);
+  console.log('Has real location:', hasRealUserLocation());
+  console.log('Default Delhi location:', { lat: 28.357353, lng: 77.295289 });
+  console.log('=====================');
 }

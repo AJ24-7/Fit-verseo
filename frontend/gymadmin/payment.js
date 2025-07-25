@@ -1,30 +1,356 @@
 // Payment Tab JavaScript
 class PaymentManager {
+  // Bind click event for received amount stat card
+  bindReceivedAmountStatCard() {
+    const statCard = document.getElementById('receivedAmountStatCard');
+    if (!statCard) return;
+    statCard.addEventListener('click', () => {
+      this.showReceivedPaymentsModal();
+    });
+    // Close modal handler
+    const closeBtn = document.getElementById('closeReceivedPaymentsModal');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        document.getElementById('receivedPaymentsModal').style.display = 'none';
+      });
+    }
+  }
+
+  // Show modal with received payment details by category
+  async showReceivedPaymentsModal() {
+    const modal = document.getElementById('receivedPaymentsModal');
+    const container = document.getElementById('receivedPaymentsDetailsContainer');
+    if (!modal || !container) return;
+    container.innerHTML = '<div style="color:#888;text-align:center;padding:24px 0;">Loading received payments...</div>';
+
+    // Fetch received payments (last 100 for breakdown)
+    let receivedPayments = [];
+    try {
+      const response = await fetch('http://localhost:5000/api/payments/recent?limit=100', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        let allRecent = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+        receivedPayments = allRecent.filter(p => p.type === 'received');
+      }
+    } catch (e) {
+      receivedPayments = [];
+    }
+
+    if (!receivedPayments.length) {
+      container.innerHTML = `<div style='color:#888;text-align:center;padding:24px 0;'>No received payments found.</div>`;
+      modal.style.display = 'flex';
+      return;
+    }
+
+    // Group by category and store payments for each
+    const categoryMap = {};
+    receivedPayments.forEach(p => {
+      const cat = (p.category || 'Other').toLowerCase();
+      if (!categoryMap[cat]) categoryMap[cat] = { total: 0, count: 0, label: this.getCategoryDisplayName(cat), payments: [] };
+      categoryMap[cat].total += p.amount || 0;
+      categoryMap[cat].count += 1;
+      categoryMap[cat].payments.push(p);
+    });
+
+    // Sort categories by total amount desc
+    const sortedCats = Object.entries(categoryMap).sort((a, b) => b[1].total - a[1].total);
+
+    let html = '';
+    sortedCats.forEach(([cat, info]) => {
+      html += `<div style='margin-bottom:18px;'>
+        <div style='font-size:1.08em;font-weight:600;color:#22c55e;margin-bottom:4px;'>${info.label}
+          <span style='font-size:0.95em;color:#64748b;font-weight:400;margin-left:8px;'>(₹${this.formatAmount(info.total)}, ${info.count} payment${info.count > 1 ? 's' : ''})</span>
+        </div>
+        <ul style='margin:0 0 0 10px;padding:0;list-style:disc;'>`;
+      info.payments.forEach(payment => {
+        html += `<li style='margin-bottom:4px;font-size:0.97em;'>
+          <b>${payment.description || 'No Description'}</b> - ₹${this.formatAmount(payment.amount)}
+          <span style='color:#888;font-size:0.92em;'>(${payment.paymentMethod ? payment.paymentMethod.toUpperCase() : 'N/A'})</span>
+          ${payment.memberName ? `<span style='color:#2563eb;font-size:0.92em;margin-left:6px;'>${payment.memberName}</span>` : ''}
+          <span style='color:#b91c1c;font-size:0.92em;margin-left:6px;'>${payment.createdAt ? this.formatDate(payment.createdAt) : ''}</span>
+        </li>`;
+      });
+      html += `</ul></div>`;
+    });
+    if (!html) {
+      html = `<div style='color:#888;text-align:center;padding:24px 0;'>No received payments found.</div>`;
+    }
+    container.innerHTML = html;
+    modal.style.display = 'flex';
+  }
+  // Unified loader for all pending payments (member + manual)
+  async loadAllPendingPayments() {
+    const container = document.getElementById('pendingPaymentsList');
+    if (!container) return;
+    container.innerHTML = '<div style="color:#888;text-align:center;padding:24px 0;">Loading pending payments...</div>';
+
+    // Fetch both manual (regular) and member pending payments
+    let manualPending = [];
+    let memberPending = [];
+    // Always fetch latest manual (add payment) pending payments from backend
+    try {
+      // First try to get all recent payments and filter for pending ones
+      const response = await fetch('http://localhost:5000/api/payments/recent?limit=100', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        let allRecent = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+        // Only include manual pending payments (not recurring monthly payments)
+        // Filter for type 'pending' and exclude recurring payments
+        manualPending = allRecent.filter(p => 
+          p.type === 'pending' && 
+          !p.isRecurring // Exclude recurring payments (they belong in recurring section)
+        );
+        // Store for modal and stat card use
+        this.recentRegularPendingPayments = manualPending;
+        console.log('Manual pending payments loaded:', manualPending.length, 'payments (excluding recurring)');
+      } else {
+        console.error('Failed to fetch manual pending payments:', response.status);
+        manualPending = [];
+        this.recentRegularPendingPayments = [];
+      }
+    } catch (e) { 
+      console.error('Error fetching manual pending payments:', e);
+      manualPending = []; 
+    }
+
+    try {
+      // Fetch member pending payments (API call)
+      const response = await fetch('http://localhost:5000/api/members', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const members = await response.json();
+        memberPending = Array.isArray(members) ? members.filter(member =>
+          member.paymentStatus === 'pending' ||
+          member.paymentStatus === 'overdue' ||
+          (member.pendingPaymentAmount && member.pendingPaymentAmount > 0)
+        ) : [];
+      }
+    } catch (e) { memberPending = []; }
+
+
+    // Update stat card with the latest values from both sources
+    // Calculate total amounts
+    let totalManual = 0;
+    let totalMember = 0;
+    if (Array.isArray(manualPending)) {
+      totalManual = manualPending.reduce((sum, p) => sum + (p.amount || 0), 0);
+    }
+    if (Array.isArray(memberPending)) {
+      totalMember = memberPending.reduce((sum, m) => sum + (this.calculateMemberPendingAmount(m) || 0), 0);
+    }
+    this.regularPendingAmount = totalManual;
+    this.memberPendingAmount = totalMember;
+    // Store for modal use
+    this.recentMemberPendingPayments = memberPending;
+    this.updateCombinedPendingStatCard();
+
+    // If both are empty, show empty state
+    if ((!manualPending || manualPending.length === 0) && (!memberPending || memberPending.length === 0)) {
+      container.innerHTML = `
+        <div class="payment-empty-state">
+          <i class="fas fa-user-clock"></i>
+          <h3>No Pending Payments</h3>
+          <p>All payments are up to date</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Render unified list, sorted by due date (earliest first)
+    // Map both types to a common structure for sorting
+    const unified = [
+      ...manualPending.map(p => ({
+        type: 'manual',
+        dueDate: p.dueDate ? new Date(p.dueDate) : null,
+        amount: p.amount,
+        description: p.description,
+        category: p.category,
+        status: 'pending',
+        paymentMethod: p.paymentMethod || '',
+        id: p._id,
+        notes: p.notes || '',
+      })),
+      ...memberPending.map(m => ({
+        type: 'member',
+        dueDate: m.membershipValidUntil ? new Date(m.membershipValidUntil) : null,
+        amount: this.calculateMemberPendingAmount(m),
+        description: `${m.memberName || 'No Name'} - Membership Renewal`,
+        category: m.planSelected || 'Membership',
+        status: m.paymentStatus || 'pending',
+        memberName: m.memberName,
+        memberId: m._id,
+        plan: m.planSelected,
+        monthlyPlan: m.monthlyPlan,
+        daysRemaining: m.daysRemaining,
+        membershipId: m.membershipId,
+        profileImage: m.profileImage,
+      }))
+    ];
+
+    // Sort by due date (earliest first, nulls last)
+    unified.sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return a.dueDate - b.dueDate;
+    });
+
+    // Render each item with proper style
+    container.innerHTML = unified.map(item => {
+      if (item.type === 'manual') {
+        // Manual (created) pending payment
+        return `
+          <div class="pending-payment-item manual" style="display:flex;align-items:center;gap:16px;padding:14px 12px;margin-bottom:12px;background:#fffbe7;border-radius:10px;box-shadow:0 1px 4px #fbbf2433;">
+            <div style="flex:0 0 38px;width:38px;height:38px;background:#fbbf24;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:1.05em;color:#b45309;">${item.description || 'No Description'}</div>
+              <div style="font-size:0.93em;color:#a67c00;">${item.category || 'N/A'}</div>
+              <div style="font-size:0.88em;color:#b91c1c;">Due: ${item.dueDate ? item.dueDate.toLocaleDateString() : 'N/A'}</div>
+              ${item.notes ? `<div style='font-size:0.88em;color:#888;'>${item.notes}</div>` : ''}
+            </div>
+            <div style="flex:0 0 90px;text-align:right;">
+              <span style="color:#f59e42;font-weight:700;font-size:1.08em;">₹${this.formatAmount(item.amount)}</span>
+              <div style="font-size:0.82em;color:#fbbf24;font-weight:500;">Pending</div>
+              <button class="payment-action-btn mark-paid" data-action="mark-manual-paid" data-payment-id="${item.id}" title="Mark as Paid"
+                style="background:#22c55e;color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:0.85em;margin-top:4px;cursor:pointer;width:100%;"><i class="fas fa-check"></i> Mark Paid</button>
+            </div>
+          </div>
+        `;
+      } else {
+        // Member pending payment
+        const isOverdue = item.daysRemaining < 0;
+        const badge = isOverdue
+          ? `<span style='background:#ffd6d6;color:#b91c1c;padding:2px 10px;border-radius:12px;font-size:0.85em;margin-left:8px;display:inline-flex;align-items:center;'><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i> Overdue${item.daysRemaining !== undefined ? ` ${Math.abs(item.daysRemaining)} days` : ''}</span>`
+          : `<span style='background:#ffe066;color:#a67c00;padding:2px 10px;border-radius:12px;font-size:0.85em;margin-left:8px;display:inline-flex;align-items:center;'><i class="fas fa-clock" style="margin-right:4px;"></i> Expires in ${item.daysRemaining} days</span>`;
+        const profileImg = item.profileImage && item.profileImage !== ''
+          ? item.profileImage.startsWith('http') ? item.profileImage : `${item.profileImage}`
+          : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(item.memberName || 'Member') + '&background=0D8ABC&color=fff&size=64';
+        return `
+          <div class="pending-payment-item member" style="display:flex;align-items:center;gap:16px;padding:14px 12px;margin-bottom:12px;background:#e0f2fe;border-radius:10px;box-shadow:0 1px 4px #3b82f633;">
+            <div style="flex:0 0 38px;width:38px;height:38px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;overflow:hidden;">
+              <img src="${profileImg}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.memberName || 'Member')}&background=0D8ABC&color=fff&size=64';">
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:1.05em;color:#1e293b;">${item.description}</div>
+              <div style="font-size:0.93em;color:#2563eb;">${item.category || 'Membership'}</div>
+              <div style="font-size:0.88em;color:#b91c1c;">Due: ${item.dueDate ? item.dueDate.toLocaleDateString() : 'N/A'}</div>
+              <div style="margin-top:2px;">${badge}</div>
+              <div style="font-size:0.82em;color:#64748b;">ID: ${item.membershipId || 'N/A'} | Plan: ${item.plan || 'N/A'} (${item.monthlyPlan || 'N/A'})</div>
+            </div>
+            <div style="flex:0 0 90px;text-align:right;">
+              <span style="color:#3b82f6;font-weight:700;font-size:1.08em;">₹${this.formatAmount(item.amount)}</span>
+              <div style="font-size:0.82em;color:#3b82f6;font-weight:500;">Pending</div>
+              <button class="payment-action-btn mark-paid" data-action="mark-member-paid" data-member-id="${item.memberId}" title="Mark as Paid"
+                style="background:#22c55e;color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:0.85em;margin-top:4px;cursor:pointer;width:100%;"><i class="fas fa-check"></i> Mark Paid</button>
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+  }
+  // Bind click event for pending payments stat card
+  bindPendingPaymentsStatCard() {
+    const statCard = document.getElementById('pendingPaymentsStatCard');
+    if (!statCard) return;
+    statCard.addEventListener('click', () => {
+      this.showPendingPaymentsModal();
+    });
+    // Close modal handler
+    const closeBtn = document.getElementById('closePendingPaymentsModal');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        document.getElementById('pendingPaymentsModal').style.display = 'none';
+      });
+    }
+  }
+
+  // Show modal with pending payment details
+  showPendingPaymentsModal() {
+    const modal = document.getElementById('pendingPaymentsModal');
+    const container = document.getElementById('pendingPaymentsDetailsContainer');
+    if (!modal || !container) return;
+    let html = '';
+    // Regular pending payments
+    if (this.regularPendingAmount && this.regularPendingAmount > 0 && Array.isArray(this.recentRegularPendingPayments) && this.recentRegularPendingPayments.length > 0) {
+      html += `<h4 style='margin-bottom:8px;color:#f59e42;'><i class='fas fa-credit-card'></i> Regular Pending Payments</h4>`;
+      html += '<ul style="margin-bottom:18px;">';
+      this.recentRegularPendingPayments.forEach(payment => {
+        html += `<li style='margin-bottom:6px;'>
+          <b>${payment.description || 'No Description'}</b> - ₹${this.formatAmount(payment.amount)}
+          <span style='color:#888;font-size:0.92em;'>(${payment.category || 'N/A'})</span>
+          <span style='color:#b91c1c;font-size:0.92em;'>Due: ${payment.dueDate ? this.formatDate(payment.dueDate) : 'N/A'}</span>
+        </li>`;
+      });
+      html += '</ul>';
+    }
+    // Member pending payments
+    if (this.memberPendingAmount && this.memberPendingAmount > 0 && Array.isArray(this.recentMemberPendingPayments) && this.recentMemberPendingPayments.length > 0) {
+      html += `<h4 style='margin-bottom:8px;color:#3b82f6;'><i class='fas fa-users'></i> Member Pending Payments</h4>`;
+      html += '<ul>';
+      this.recentMemberPendingPayments.forEach(member => {
+        html += `<li style='margin-bottom:6px;'>
+          <b>${member.memberName || 'No Name'}</b> - ₹${this.formatAmount(this.calculateMemberPendingAmount(member))}
+          <span style='color:#888;font-size:0.92em;'>(${member.planSelected || 'N/A'})</span>
+          <span style='color:#b91c1c;font-size:0.92em;'>Due: ${member.membershipValidUntil ? this.formatDate(member.membershipValidUntil) : 'N/A'}</span>
+        </li>`;
+      });
+      html += '</ul>';
+    }
+    if (!html) {
+      html = `<div style='color:#888;text-align:center;padding:24px 0;'>No pending payments found.</div>`;
+    }
+    container.innerHTML = html;
+    modal.style.display = 'flex';
+  }
   constructor() {
     this.paymentChart = null;
     this.currentFilter = 'all';
+    this.regularPendingAmount = 0; // Store regular pending payments
+    this.memberPendingAmount = 0;  // Store member pending payments
+    this.recentRegularPendingPayments = [];
+    this.recentMemberPendingPayments = [];
     this.init();
+    this.bindReceivedAmountStatCard();
+    // Remove the setTimeout since loadPaymentData() already calls loadAllPendingPayments()
+    // setTimeout(() => this.loadAllPendingPayments(), 1500);
   }
 
   init() {
     this.setupEventListeners();
     this.loadPaymentData();
+    this.bindPendingPaymentsStatCard();
   }
 
-  // Helper function to safely use notification system
-  async waitForNotificationSystem(maxWait = 5000) {
+  // Enhanced helper function to use unified notification system
+  async waitForNotificationManager(maxWait = 5000) {
     return new Promise((resolve) => {
       const checkInterval = 100;
       let waited = 0;
       
       const check = () => {
-        if (window.notificationSystem && typeof window.notificationSystem.showNotification === 'function') {
-          resolve(window.notificationSystem);
+        if (window.NotificationManager && window.NotificationManager.isReady()) {
+          resolve(window.NotificationManager);
         } else if (waited < maxWait) {
           waited += checkInterval;
           setTimeout(check, checkInterval);
         } else {
-          console.warn('Notification system not available after waiting');
+          console.warn('Enhanced notification system not available after waiting');
           resolve(null);
         }
       };
@@ -92,7 +418,21 @@ class PaymentManager {
       if (e.target.classList.contains('payment-action-btn')) {
         const action = e.target.dataset.action;
         const paymentId = e.target.dataset.paymentId;
-        this.handlePaymentAction(action, paymentId);
+        const memberId = e.target.dataset.memberId;
+        
+        // Handle member-specific actions
+        if (action === 'mark-member-paid') {
+          this.handleMemberPaymentAction('mark-paid', memberId);
+        } else if (action === 'remind-member') {
+          this.handleMemberPaymentAction('remind', memberId);
+        } else if (action === 'grant-allowance') {
+          this.handleMemberPaymentAction('grant-allowance', memberId);
+        } else if (action === 'mark-manual-paid') {
+          this.handleManualPaymentAction('mark-paid', paymentId);
+        } else {
+          // Handle regular payment actions
+          this.handlePaymentAction(action, paymentId);
+        }
       }
     });
 
@@ -119,6 +459,8 @@ class PaymentManager {
         this.loadRecurringPayments(),
         this.loadPaymentChart()
       ]);
+      // Load unified pending payments after stats are loaded (this handles both member and manual pending)
+      await this.loadAllPendingPayments();
     } catch (error) {
       console.error('Error loading payment data:', error);
       this.showError('Failed to load payment data');
@@ -127,18 +469,23 @@ class PaymentManager {
 
   async loadPaymentStats() {
     try {
+      console.log('Loading payment stats...');
       const response = await fetch('http://localhost:5000/api/payments/stats', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch payment stats');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch payment stats: ${response.status} ${response.statusText}`);
+      }
 
       const data = await response.json();
+      console.log('Payment stats loaded:', data.data);
       this.updatePaymentStats(data.data);
     } catch (error) {
       console.error('Error loading payment stats:', error);
+      this.showError('Failed to load payment statistics');
     }
   }
 
@@ -181,10 +528,18 @@ class PaymentManager {
       }
     }
 
-    // Update pending amount (new stat card)
+    // Only update regularPendingAmount for use in unified stat card logic
+    this.regularPendingAmount = stats.pending || 0;
+    // Store recent regular pending payments for modal (if available)
+    if (Array.isArray(stats.pendingPayments)) {
+      this.recentRegularPendingPayments = stats.pendingPayments;
+    }
+    // Do NOT update the unified pending stat card here - it will be updated by loadAllPendingPayments()
+    // this.updateCombinedPendingStatCard(); // Removed to prevent conflicts
+    
+    // Update pending growth badge (but not the value itself)
     const pendingCard = document.querySelector('.payment-stat-card.pending');
     if (pendingCard) {
-      pendingCard.querySelector('.payment-stat-value').textContent = `₹${this.formatAmount(stats.pending || 0)}`;
       const pendingChange = pendingCard.querySelector('.payment-stat-change');
       if (pendingChange && stats.pendingGrowth !== undefined) {
         pendingChange.className = `payment-stat-change ${stats.pendingGrowth >= 0 ? 'negative' : 'positive'}`;
@@ -310,27 +665,50 @@ class PaymentManager {
       return;
     }
 
-    container.innerHTML = payments.map(payment => `
-      <div class="recent-payment-item">
-        <div class="recent-payment-icon ${payment.type}">
-          <i class="fas fa-${payment.type === 'received' ? 'plus' : 'minus'}"></i>
-        </div>
-        <div class="recent-payment-info">
-          <div class="recent-payment-title">${payment.description}</div>
-          <div class="recent-payment-details">
-            <span>${payment.category.replace('_', ' ').toUpperCase()}</span>
-            <span>${payment.paymentMethod.toUpperCase()}</span>
-            ${payment.memberName ? `<span>${payment.memberName}</span>` : ''}
+    container.innerHTML = payments.map(payment => {
+      // Determine icon, color, and amount sign based on payment type
+      let icon = 'plus', iconColor = '', amountClass = '', amountPrefix = '', iconHtml = '';
+      if (payment.type === 'received') {
+        icon = 'plus';
+        iconColor = '#22c55e';
+        amountClass = 'positive';
+        amountPrefix = '+';
+        iconHtml = `<i class="fas fa-plus"></i>`;
+      } else if (payment.type === 'paid' || payment.type === 'due') {
+        icon = 'minus';
+        iconColor = '#ef4444';
+        amountClass = 'negative';
+        amountPrefix = '-';
+        iconHtml = `<i class="fas fa-minus"></i>`;
+      } else if (payment.type === 'pending') {
+        icon = 'clock';
+        iconColor = '#fbbf24';
+        amountClass = 'pending';
+        amountPrefix = '';
+        iconHtml = `<i class="fas fa-clock"></i>`;
+      }
+      return `
+        <div class="recent-payment-item">
+          <div class="recent-payment-icon ${payment.type}" style="${payment.type === 'pending' ? 'background:#fbbf24;color:#fff;' : ''}">
+            ${iconHtml}
+          </div>
+          <div class="recent-payment-info">
+            <div class="recent-payment-title">${payment.description}</div>
+            <div class="recent-payment-details">
+              <span>${payment.category.replace('_', ' ').toUpperCase()}</span>
+              <span>${payment.paymentMethod.toUpperCase()}</span>
+              ${payment.memberName ? `<span>${payment.memberName}</span>` : ''}
+            </div>
+          </div>
+          <div class="recent-payment-amount ${amountClass}" style="${payment.type === 'pending' ? 'color:#fbbf24;font-weight:600;' : ''}">
+            ${amountPrefix}₹${this.formatAmount(payment.amount)}
+          </div>
+          <div class="recent-payment-time">
+            ${this.formatTime(payment.createdAt)}
           </div>
         </div>
-        <div class="recent-payment-amount ${payment.type === 'received' ? 'positive' : 'negative'}">
-          ${payment.type === 'received' ? '+' : '-'}₹${this.formatAmount(payment.amount)}
-        </div>
-        <div class="recent-payment-time">
-          ${this.formatTime(payment.createdAt)}
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   async loadRecurringPayments() {
@@ -344,7 +722,13 @@ class PaymentManager {
       if (!response.ok) throw new Error('Failed to fetch recurring payments');
 
       const data = await response.json();
-      this.renderRecurringPayments(data.data);
+      // Include recurring payments but exclude manual pending payments created via "Add Payment" modal
+      // Only show true recurring obligations (rent, salaries, etc.) not one-time pending payments
+      const filtered = Array.isArray(data.data) ? data.data.filter(p => 
+        p.isRecurring === true || // Include all truly recurring payments
+        (p.type !== 'pending') // Exclude manual pending payments from "Add Payment" modal
+      ) : [];
+      this.renderRecurringPayments(filtered);
     } catch (error) {
       console.error('Error loading recurring payments:', error);
     }
@@ -413,6 +797,501 @@ class PaymentManager {
         </div>
       `;
     }).join('');
+  }
+
+  // Legacy method - now replaced by loadAllPendingPayments()
+  // This method is kept for compatibility but redirects to the unified loader
+  async loadMemberPendingPayments() {
+    console.log('loadMemberPendingPayments called - redirecting to unified loader');
+    // Just call the unified loader instead of doing separate member loading
+    await this.loadAllPendingPayments();
+  }
+
+  renderMemberPendingPayments(members) {
+    const container = document.getElementById('pendingPaymentsList');
+    if (!container) {
+      console.warn('Pending payments container not found');
+      return;
+    }
+
+    console.log('Members with pending payments:', members);
+
+    if (members.length === 0) {
+      container.innerHTML = `
+        <div class="payment-empty-state">
+          <i class="fas fa-user-clock"></i>
+          <h3>No Pending Member Payments</h3>
+          <p>All member payments are up to date</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Sort members: overdue first, then by days remaining if available
+    members.sort((a, b) => {
+      const aDays = a.daysRemaining !== undefined ? a.daysRemaining : 9999;
+      const bDays = b.daysRemaining !== undefined ? b.daysRemaining : 9999;
+      if (aDays < 0 && bDays >= 0) return -1;
+      if (aDays >= 0 && bDays < 0) return 1;
+      if (aDays < 0 && bDays < 0) return aDays - bDays;
+      return aDays - bDays;
+    });
+
+    // Store for modal
+    this.recentMemberPendingPayments = members;
+
+    // Optimized card layout for perfect space usage
+    container.innerHTML = members.map(member => {
+      const isOverdue = member.daysRemaining < 0;
+      const pendingAmount = this.calculateMemberPendingAmount(member);
+      const profileImg = member.profileImage && member.profileImage !== ''
+        ? member.profileImage.startsWith('http') ? member.profileImage : `${member.profileImage}`
+        : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(member.memberName || 'Member') + '&background=0D8ABC&color=fff&size=64';
+
+      let statusBadge = '';
+      if (isOverdue) {
+        statusBadge = `<span class="member-payment-badge overdue"><i class="fas fa-exclamation-triangle"></i> Overdue${member.daysRemaining !== undefined ? ` ${Math.abs(member.daysRemaining)} days` : ''}</span>`;
+      } else if (member.daysRemaining === 0) {
+        statusBadge = `<span class="member-payment-badge critical"><i class="fas fa-clock"></i> Expires TODAY</span>`;
+      } else if (member.daysRemaining === 1) {
+        statusBadge = `<span class="member-payment-badge urgent"><i class="fas fa-clock"></i> Expires TOMORROW</span>`;
+      } else if (member.daysRemaining > 1) {
+        statusBadge = `<span class="member-payment-badge pending"><i class="fas fa-clock"></i> Expires in ${member.daysRemaining} days</span>`;
+      } else {
+        statusBadge = `<span class="member-payment-badge pending"><i class="fas fa-clock"></i> Pending</span>`;
+      }
+
+      const dueDate = member.membershipValidUntil ? new Date(member.membershipValidUntil).toLocaleDateString() : 'N/A';
+
+      return `
+        <div class="member-payment-item compact-card ${isOverdue ? 'overdue' : member.daysRemaining <= 1 ? 'critical' : 'pending'}" data-member-id="${member._id}"
+          style="display:flex;align-items:center;gap:0;padding:0 0 0 0;margin-bottom:12px;background:#fff;border-radius:12px;box-shadow:0 2px 8px #0001;transition:box-shadow .2s;cursor:pointer;min-height:68px;overflow:hidden;">
+          <div class="member-payment-avatar"
+            style="flex:0 0 44px;width:44px;height:44px;margin:0 14px 0 10px;border-radius:50%;overflow:hidden;box-shadow:0 1px 4px #0002;background:#f3f4f6;display:flex;align-items:center;justify-content:center;">
+            <img src="${profileImg}" alt="Profile" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(member.memberName || 'Member')}&background=0D8ABC&color=fff&size=64';">
+          </div>
+          <div class="member-payment-info"
+            style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0;justify-content:center;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="member-payment-name" style="font-weight:600;font-size:1.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">${member.memberName}</span>
+              <span style="font-size:0.85em;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;">${member.planSelected || 'N/A'}</span>
+              <span style="font-size:0.85em;color:#bdbdbd;">|</span>
+              <span style="font-size:0.85em;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px;">${member.monthlyPlan || 'N/A'}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+              <span style="font-size:0.82em;color:#6b7280;"><i class="fas fa-calendar-alt"></i> ${dueDate}</span>
+              <span style="font-size:0.82em;color:#6b7280;"><i class="fas fa-id-card"></i> ${member.membershipId || 'N/A'}</span>
+            </div>
+            <div style="margin-top:2px;">${statusBadge}</div>
+          </div>
+          <div class="member-payment-amount"
+            style="flex:0 0 70px;text-align:right;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;">
+            <div class="amount-value" style="font-weight:700;font-size:1.08em;line-height:1.1;">₹${this.formatAmount(pendingAmount)}</div>
+            <div class="amount-label" style="font-size:0.82em;color:#ef4444;font-weight:500;">Pending</div>
+          </div>
+          <div class="member-payment-actions"
+            style="flex:0 0 82px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;justify-content:center;padding-right:10px;">
+            <button class="payment-action-btn mark-paid mark-paid-btn" data-action="mark-member-paid" data-member-id="${member._id}" data-source="payment-tab" title="Mark as Paid"
+              style="background:#22c55e;color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:0.93em;display:flex;align-items:center;gap:4px;transition:background .2s;cursor:pointer;min-width:60px;"><i class="fas fa-check"></i> Paid</button>
+            <button class="payment-action-btn remind" data-action="remind-member" data-member-id="${member._id}" title="Send Reminder"
+              style="background:#fbbf24;color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:0.93em;display:flex;align-items:center;gap:4px;transition:background .2s;cursor:pointer;min-width:60px;"><i class="fas fa-bell"></i> Remind</button>
+            <button class="payment-action-btn allowance seven-day-allowance-btn" data-action="grant-allowance" data-member-id="${member._id}" title="Grant 7-Day Allowance"
+              style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:0.93em;display:flex;align-items:center;gap:4px;transition:background .2s;cursor:pointer;min-width:60px;"><i class="fas fa-calendar-plus"></i> 7-Day</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Do NOT update member pending stats here - this is handled by loadAllPendingPayments()
+    // this.updateMemberPendingStats(members); // Commented out to prevent stat card conflicts
+  }
+
+  calculateMemberPendingAmount(member) {
+    // First, try to get amount from specific payment amount fields
+    if (member.paymentAmount && member.paymentAmount > 0) {
+      return member.paymentAmount;
+    }
+    
+    if (member.pendingPaymentAmount && member.pendingPaymentAmount > 0) {
+      return member.pendingPaymentAmount;
+    }
+    
+    // Try to get from renewal amount fields
+    if (member.renewalAmount && member.renewalAmount > 0) {
+      return member.renewalAmount;
+    }
+    
+    // Fallback calculation based on plan and duration
+    const plan = (member.planSelected || '').toLowerCase();
+    const duration = (member.monthlyPlan || '').toLowerCase();
+    
+    // More detailed plan-based calculation
+    let baseAmount = 1200; // Default amount
+    
+    if (plan.includes('premium') || plan.includes('vip')) {
+      if (duration.includes('12') || duration.includes('year')) {
+        baseAmount = 18000; // 12 months premium
+      } else if (duration.includes('6')) {
+        baseAmount = 9000; // 6 months premium
+      } else if (duration.includes('3')) {
+        baseAmount = 4500; // 3 months premium
+      } else {
+        baseAmount = 1500; // 1 month premium
+      }
+    } else if (plan.includes('basic') || plan.includes('standard')) {
+      if (duration.includes('12') || duration.includes('year')) {
+        baseAmount = 12000; // 12 months basic
+      } else if (duration.includes('6')) {
+        baseAmount = 6000; // 6 months basic
+      } else if (duration.includes('3')) {
+        baseAmount = 3000; // 3 months basic
+      } else {
+        baseAmount = 1000; // 1 month basic
+      }
+    } else if (plan.includes('student') || plan.includes('discount')) {
+      if (duration.includes('12') || duration.includes('year')) {
+        baseAmount = 9600; // 12 months student
+      } else if (duration.includes('6')) {
+        baseAmount = 4800; // 6 months student
+      } else if (duration.includes('3')) {
+        baseAmount = 2400; // 3 months student
+      } else {
+        baseAmount = 800; // 1 month student
+      }
+    } else {
+      // Default amounts for unrecognized plans
+      if (duration.includes('12') || duration.includes('year')) {
+        baseAmount = 14400; // 12 months default
+      } else if (duration.includes('6')) {
+        baseAmount = 7200; // 6 months default
+      } else if (duration.includes('3')) {
+        baseAmount = 3600; // 3 months default
+      } else {
+        baseAmount = 1200; // 1 month default
+      }
+    }
+    
+    return baseAmount;
+  }
+
+  updateMemberPendingStats(members) {
+    // Calculate total pending amount from members
+    let totalPendingFromMembers = 0;
+    
+    members.forEach(member => {
+      const pendingAmount = this.calculateMemberPendingAmount(member);
+      totalPendingFromMembers += pendingAmount;
+    });
+
+    // Update the pending stat card to include member pending payments
+    this.updatePendingStatWithMembers(totalPendingFromMembers, members.length);
+  }
+
+  updatePendingStatWithMembers(memberPendingAmount, memberCount) {
+    // Store member pending payments but do NOT update stat card here
+    // The stat card should only be updated by updateCombinedPendingStatCard() called from loadAllPendingPayments()
+    this.memberPendingAmount = memberPendingAmount;
+    console.log(`updatePendingStatWithMembers called with ${memberPendingAmount}, but NOT updating stat card to prevent conflicts`);
+    // this.updateCombinedPendingStatCard(); // Disabled to prevent conflicts
+    // Optionally, show the member count somewhere if needed (not required for just the amount)
+  }
+
+  updateCombinedPendingStatCard() {
+    // Show the sum of regular and member pending payments
+    const totalPending = (this.regularPendingAmount || 0) + (this.memberPendingAmount || 0);
+    console.log(`Updating combined pending stat card: regular=${this.regularPendingAmount}, member=${this.memberPendingAmount}, total=${totalPending}`);
+    const pendingCard = document.querySelector('.payment-stat-card.pending');
+    if (pendingCard) {
+      const valueDiv = pendingCard.querySelector('.payment-stat-value');
+      if (valueDiv) {
+        valueDiv.textContent = `₹${this.formatAmount(totalPending)}`;
+      }
+    }
+  }
+
+  // Handle manual payment actions (mark as paid, etc.)
+  async handleManualPaymentAction(action, paymentId) {
+    if (action === 'mark-paid') {
+      try {
+        // Show loading state
+        const button = document.querySelector(`[data-payment-id="${paymentId}"]`);
+        if (button) {
+          button.disabled = true;
+          button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        }
+
+        // Mark payment as paid in backend
+        const response = await fetch(`http://localhost:5000/api/payments/${paymentId}/mark-paid`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to mark payment as paid');
+        }
+
+        const result = await response.json();
+        
+        // Show success message
+        if (window.NotificationManager) {
+          window.NotificationManager.showSuccess('Payment marked as paid successfully!');
+        } else {
+          alert('Payment marked as paid successfully!');
+        }
+
+        // Refresh payment data to update stats and lists
+        await this.forceRefreshStats();
+        
+      } catch (error) {
+        console.error('Error marking manual payment as paid:', error);
+        if (window.NotificationManager) {
+          window.NotificationManager.showError('Failed to mark payment as paid: ' + error.message);
+        } else {
+          alert('Failed to mark payment as paid: ' + error.message);
+        }
+        
+        // Reset button state
+        const button = document.querySelector(`[data-payment-id="${paymentId}"]`);
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = '<i class="fas fa-check"></i> Mark Paid';
+        }
+      }
+    }
+  }
+
+  // Enhanced member payment action handler with membership renewal
+  async handleMemberPaymentAction(action, memberId) {
+    if (action === 'mark-paid') {
+      try {
+        // Show loading state
+        const button = document.querySelector(`[data-member-id="${memberId}"]`);
+        if (button) {
+          button.disabled = true;
+          button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        }
+
+        // Get member details first
+        const memberResponse = await fetch(`http://localhost:5000/api/members/${memberId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+          }
+        });
+
+        if (!memberResponse.ok) {
+          throw new Error('Failed to fetch member details');
+        }
+
+        const member = await memberResponse.json();
+        
+        // Calculate new membership dates
+        const today = new Date();
+        const currentValidUntil = member.membershipValidUntil ? new Date(member.membershipValidUntil) : today;
+        
+        // If membership is expired, start from today + 7 days allowance, otherwise extend from current date
+        const startDate = currentValidUntil < today ? 
+          new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000)) : // 7 days from today
+          new Date(currentValidUntil.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 days from current expiry
+
+        // Calculate end date based on plan duration
+        let endDate = new Date(startDate);
+        const duration = (member.monthlyPlan || '').toLowerCase();
+        
+        if (duration.includes('12') || duration.includes('year')) {
+          endDate.setFullYear(endDate.getFullYear() + 1);
+        } else if (duration.includes('6')) {
+          endDate.setMonth(endDate.getMonth() + 6);
+        } else if (duration.includes('3')) {
+          endDate.setMonth(endDate.getMonth() + 3);
+        } else {
+          endDate.setMonth(endDate.getMonth() + 1); // Default 1 month
+        }
+
+        // Update member payment status and renewal dates
+        const updateResponse = await fetch(`http://localhost:5000/api/members/${memberId}/renew-membership`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            paymentStatus: 'paid',
+            membershipValidUntil: endDate.toISOString(),
+            membershipStartDate: startDate.toISOString(),
+            pendingPaymentAmount: 0,
+            paymentAmount: this.calculateMemberPendingAmount(member),
+            lastPaymentDate: new Date().toISOString()
+          })
+        });
+
+        if (!updateResponse.ok) {
+          throw new Error('Failed to update member payment status');
+        }
+
+        // Send email notification to member
+        try {
+          await fetch('http://localhost:5000/api/members/send-renewal-email', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              memberId: memberId,
+              memberEmail: member.email,
+              memberName: member.memberName,
+              planSelected: member.planSelected,
+              monthlyPlan: member.monthlyPlan,
+              amount: this.calculateMemberPendingAmount(member),
+              validUntil: endDate.toISOString(),
+              startDate: startDate.toISOString()
+            })
+          });
+        } catch (emailError) {
+          console.warn('Email notification failed:', emailError);
+          // Don't fail the whole operation if email fails
+        }
+
+        // Show success message
+        if (window.NotificationManager) {
+          window.NotificationManager.showSuccess(
+            `Membership renewed successfully! New expiry: ${endDate.toLocaleDateString()}`
+          );
+        } else {
+          alert(`Membership renewed successfully! New expiry: ${endDate.toLocaleDateString()}`);
+        }
+
+        // Refresh payment data to update stats and lists
+        await this.forceRefreshStats();
+        
+      } catch (error) {
+        console.error('Error marking member payment as paid:', error);
+        if (window.NotificationManager) {
+          window.NotificationManager.showError('Failed to process payment: ' + error.message);
+        } else {
+          alert('Failed to process payment: ' + error.message);
+        }
+        
+        // Reset button state
+        const button = document.querySelector(`[data-member-id="${memberId}"]`);
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = '<i class="fas fa-check"></i> Mark Paid';
+        }
+      }
+    } else if (action === 'remind') {
+      // Handle remind action (existing functionality)
+      console.log('Remind member:', memberId);
+    } else if (action === 'grant-allowance') {
+      // Handle grant allowance action (existing functionality)
+      console.log('Grant allowance to member:', memberId);
+    }
+  }
+
+  addMemberPendingPaymentsToList(members) {
+    if (!members || members.length === 0) return;
+
+    const container = document.getElementById('recurringPaymentsList');
+    if (!container) return;
+
+    // Filter for members with expired or expiring memberships (pending payments)
+    const membersWithPending = members.filter(member => {
+      // Consider all expiring/expired members as having pending payments
+      return member.daysRemaining <= 7; // Show members expiring within 7 days or already expired
+    });
+
+    if (membersWithPending.length === 0) return;
+
+    // Helper function to calculate pending payment amount
+    const calculatePendingAmount = (member) => {
+      // Try to get amount from existing paymentAmount field
+      if (member.paymentAmount && member.paymentAmount > 0) {
+        return member.paymentAmount;
+      }
+      
+      // Try to get from pendingPaymentAmount field
+      if (member.pendingPaymentAmount && member.pendingPaymentAmount > 0) {
+        return member.pendingPaymentAmount;
+      }
+      
+      // Fallback: estimate based on plan
+      const plan = member.planSelected || '';
+      const duration = member.monthlyPlan || '';
+      
+      // Basic estimation (you can adjust these values)
+      if (plan.toLowerCase().includes('premium')) {
+        return duration.includes('3') ? 4500 : 1500; // 3 months or 1 month
+      } else if (plan.toLowerCase().includes('basic')) {
+        return duration.includes('3') ? 3000 : 1000;
+      } else {
+        return duration.includes('3') ? 3600 : 1200; // Default amounts
+      }
+    };
+
+    // Create pending payment items for these members
+    const memberPaymentItems = membersWithPending.map(member => {
+      const isOverdue = member.daysRemaining < 0;
+      const isPending = !isOverdue;
+      const pendingAmount = calculatePendingAmount(member);
+      
+      let statusBadge = '';
+      if (isOverdue) {
+        statusBadge = `<span class="recurring-badge overdue" style="background:#ffd6d6;color:#b71c1c;padding:2px 10px;border-radius:12px;font-size:0.85em;margin-left:8px;display:inline-flex;align-items:center;"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i> Overdue ${Math.abs(member.daysRemaining)} days</span>`;
+      } else {
+        statusBadge = `<span class="recurring-badge pending" style="background:#ffe066;color:#a67c00;padding:2px 10px;border-radius:12px;font-size:0.85em;margin-left:8px;display:inline-flex;align-items:center;"><i class="fas fa-clock" style="margin-right:4px;"></i> Expires in ${member.daysRemaining} days</span>`;
+      }
+
+      const dueDate = member.membershipValidUntil ? new Date(member.membershipValidUntil).toLocaleDateString() : 'N/A';
+      
+      return `
+        <div class="recurring-payment-item member-pending ${isOverdue ? 'overdue' : 'pending'}" data-member-id="${member._id}">
+          <div class="payment-item-info">
+            <div class="payment-item-title">
+              <i class="fas fa-user" style="margin-right:6px;color:#3b82f6;"></i>
+              ${member.memberName} - Membership Renewal
+              ${statusBadge}
+            </div>
+            <div class="payment-item-details">
+              <span>Membership</span>
+              <span>Due: ${dueDate}</span>
+              <span>Plan: ${member.planSelected || 'N/A'} (${member.monthlyPlan || 'N/A'})</span>
+              <span class="status-pending">PENDING FROM MEMBER</span>
+            </div>
+          </div>
+          <div class="payment-item-amount">₹${this.formatAmount(pendingAmount)}</div>
+          <div class="payment-item-actions">
+            <button class="payment-action-btn mark-paid mark-paid-btn" data-action="mark-member-paid" data-member-id="${member._id}">
+              <i class="fas fa-check"></i> Mark Paid
+            </button>
+            <button class="payment-action-btn edit" data-action="remind-member" data-member-id="${member._id}">
+              <i class="fas fa-bell"></i> Remind
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Add member pending payments to the existing content
+    if (memberPaymentItems) {
+      const existingContent = container.innerHTML;
+      
+      // Check if we already have an empty state message
+      if (existingContent.includes('payment-empty-state')) {
+        container.innerHTML = memberPaymentItems;
+      } else {
+        // Add a separator and then the member payments
+        const separator = `
+          <div class="payment-section-separator" style="margin:20px 0;padding:10px;background:#f8f9fa;border-radius:8px;text-align:center;font-weight:600;color:#6b7280;">
+            <i class="fas fa-users" style="margin-right:8px;"></i>
+            Member Pending Payments
+          </div>
+        `;
+        container.innerHTML = existingContent + separator + memberPaymentItems;
+      }
+    }
   }
 
   showAddPaymentModal() {
@@ -492,6 +1371,13 @@ class PaymentManager {
   toggleMemberNameField(category) {
     const memberNameGroup = document.querySelector('#memberName')?.closest('.payment-form-group');
     const memberNameInput = document.getElementById('memberName');
+    // Change label to 'Person Name' if present
+    if (memberNameGroup) {
+      const label = memberNameGroup.querySelector('label');
+      if (label && label.textContent.trim().toLowerCase().includes('member name')) {
+        label.textContent = label.textContent.replace(/member name/i, 'Person Name');
+      }
+    }
     const memberSelect = document.getElementById('memberSelect');
     const selectedMemberIdInput = document.getElementById('selectedMemberId');
     
@@ -713,11 +1599,22 @@ class PaymentManager {
     const recurringGroup = document.querySelector('#isRecurring')?.closest('.payment-form-group');
     
     if (dueDateGroup && dueDateInput && recurringGroup) {
-      if (paymentType === 'paid' || paymentType === 'due' || paymentType === 'pending') {
-        // Show due date and recurring options for payments we need to make, are due, or pending
+      if (paymentType === 'paid' || paymentType === 'due') {
+        // Show due date and recurring options for payments we need to make or are due
         dueDateGroup.style.display = 'flex';
         recurringGroup.style.display = 'flex';
         dueDateInput.required = true;
+      } else if (paymentType === 'pending') {
+        // Show due date, but hide recurring for pending payments
+        dueDateGroup.style.display = 'flex';
+        recurringGroup.style.display = 'none';
+        dueDateInput.required = true;
+        // Also hide recurring details if shown
+        const recurringCheckbox = document.getElementById('isRecurring');
+        if (recurringCheckbox) {
+          recurringCheckbox.checked = false;
+          this.toggleRecurringDetails(false);
+        }
       } else {
         // Hide due date and recurring options for received payments
         dueDateGroup.style.display = 'none';
@@ -797,25 +1694,25 @@ class PaymentManager {
       
       // Handle notifications based on payment type and recurring status
       try {
-        const notificationSystem = await this.waitForNotificationSystem(2000);
-        if (notificationSystem) {
+        const notificationManager = await this.waitForNotificationManager(2000);
+        if (notificationManager) {
           if (paymentData.type === 'received') {
-            // Payment received notification (green)
-            notificationSystem.notifyPaymentReceived({
-              amount: paymentData.amount,
-              memberName: paymentData.memberName || 'Manual Entry',
-              plan: paymentData.description || this.getCategoryDisplayName(formData.get('category'))
-            });
+            // Payment received notification (green) - using enhanced notification system
+            await notificationManager.notifyPayment(
+              paymentData.memberName || 'Manual Entry',
+              paymentData.amount,
+              'success'
+            );
           } else if ((paymentData.type === 'paid' || paymentData.type === 'due') && paymentData.dueDate) {
-            // Payment due notification (yellow/warning) - use showNotification with warning type
+            // Payment due notification (yellow/warning) - using enhanced notification system
             const dueDate = new Date(paymentData.dueDate).toLocaleDateString();
             const message = `Payment due: ${paymentData.description || this.getCategoryDisplayName(formData.get('category'))} - ₹${this.formatAmount(paymentData.amount)} due on ${dueDate}${paymentData.isRecurring ? ' (Recurring)' : ''}`;
-            notificationSystem.showNotification('Payment Due', message, 'medium', 'warning');
+            await notificationManager.notify('Payment Due', message, 'warning');
           } else if (paymentData.type === 'pending' && paymentData.dueDate) {
-            // Payment pending notification (orange/info) - use showNotification with info type
+            // Payment pending notification (orange/info) - using enhanced notification system
             const dueDate = new Date(paymentData.dueDate).toLocaleDateString();
             const message = `Payment pending: ${paymentData.description || this.getCategoryDisplayName(formData.get('category'))} - ₹${this.formatAmount(paymentData.amount)} pending for ${dueDate}${paymentData.isRecurring ? ' (Recurring)' : ''}`;
-            notificationSystem.showNotification('Payment Pending', message, 'medium', 'info');
+            await notificationManager.notify('Payment Pending', message, 'info');
             
             // If this is a membership payment for a specific member, add member payment notification
             if (paymentData.category === 'membership' && paymentData.memberId) {
@@ -832,11 +1729,13 @@ class PaymentManager {
                   membershipValidUntil: selectedOption.dataset.membershipValidUntil
                 };
                 
-                // Send detailed notification
+                // Send detailed notification using enhanced system
                 if (memberData.isExpired) {
-                  notificationSystem.notifyMemberPaymentOverdue(memberData, Math.abs(memberData.daysRemaining));
+                  await notificationManager.notifyMember('expired', memberData.memberName, 
+                    `Overdue by ${Math.abs(memberData.daysRemaining)} days`);
                 } else {
-                  notificationSystem.notifyMemberPaymentPending(memberData);
+                  await notificationManager.notifyMember('renewed', memberData.memberName, 
+                    `Payment pending - expires in ${memberData.daysRemaining} days`);
                 }
                 
                 // Also show immediate alert about member status
@@ -844,12 +1743,12 @@ class PaymentManager {
                   ? `⚠️ Member ${memberData.memberName}'s membership EXPIRED ${Math.abs(memberData.daysRemaining)} days ago` 
                   : `⏰ Member ${memberData.memberName}'s membership expires in ${memberData.daysRemaining} days`;
                 
-                notificationSystem.showNotification('Membership Status Alert', statusMessage, 'high', 'warning');
+                await notificationManager.notify('Membership Status Alert', statusMessage, 'warning');
               }
             }
           }
         } else {
-          console.warn('Notification system not available');
+          console.warn('Enhanced notification system not available');
         }
       } catch (notificationError) {
         console.warn('Error showing notification:', notificationError);
@@ -910,6 +1809,68 @@ class PaymentManager {
     }
   }
 
+  async handleMemberPaymentAction(action, memberId) {
+    try {
+      console.log(`Handling member payment action: ${action} for member: ${memberId}`);
+      
+      switch (action) {
+        case 'mark-paid':
+          // Use the seven-day allowance system to show mark as paid modal
+          if (window.sevenDayAllowanceManager && typeof window.sevenDayAllowanceManager.showMarkAsPaidModal === 'function') {
+            console.log('Opening mark as paid modal via seven-day allowance system');
+            window.sevenDayAllowanceManager.showMarkAsPaidModal(memberId, 'payment-tab');
+          } else {
+            console.error('Seven-day allowance system not available');
+            this.showError('Payment system not available. Please try again.');
+          }
+          break;
+          
+        case 'remind-member':
+          // Send reminder for payment
+          console.log('Sending payment reminder for member:', memberId);
+          try {
+            const reminderResponse = await fetch('http://localhost:5000/api/notifications/send-payment-reminder', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+              },
+              body: JSON.stringify({ memberId })
+            });
+            
+            if (!reminderResponse.ok) {
+              throw new Error(`Failed to send reminder: ${reminderResponse.status}`);
+            }
+            
+            this.showSuccess('Payment reminder sent successfully');
+          } catch (reminderError) {
+            console.error('Error sending reminder:', reminderError);
+            this.showError('Failed to send payment reminder');
+          }
+          break;
+
+        case 'grant-allowance':
+          // Use the seven-day allowance system to grant allowance
+          if (window.sevenDayAllowanceManager && typeof window.sevenDayAllowanceManager.openAllowanceModal === 'function') {
+            console.log('Opening allowance modal via seven-day allowance system');
+            window.sevenDayAllowanceManager.openAllowanceModal(memberId);
+          } else {
+            console.error('Seven-day allowance system not available');
+            this.showError('Seven-day allowance system not available. Please try again.');
+          }
+          break;
+          
+        default:
+          console.error('Unknown member payment action:', action);
+          this.showError('Unknown action');
+          return;
+      }
+    } catch (error) {
+      console.error(`Error ${action} member payment:`, error);
+      this.showError(`Failed to ${action.replace('-', ' ')} member payment`);
+    }
+  }
+
   handleFilterChange(filter) {
     this.currentFilter = filter;
     
@@ -925,6 +1886,151 @@ class PaymentManager {
 
   async updateChart() {
     await this.loadPaymentChart();
+  }
+
+  async refreshPaymentData() {
+    // Refresh all payment-related data and statistics
+    try {
+      console.log('Refreshing all payment data...');
+      await Promise.all([
+        this.loadPaymentStats(),
+        this.loadRecentPayments(),
+        this.loadRecurringPayments(),
+        this.loadPaymentChart()
+      ]);
+      // Load unified pending payments after all other data is refreshed
+      await this.loadAllPendingPayments();
+      console.log('Payment data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing payment data:', error);
+      this.showError('Failed to refresh payment data');
+    }
+  }
+
+  async forceRefreshStats() {
+    // Force refresh of payment statistics with cache busting
+    try {
+      console.log('Force refreshing payment statistics...');
+      const timestamp = Date.now();
+      const response = await fetch(`http://localhost:5000/api/payments/stats?t=${timestamp}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch payment stats: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Force refreshed payment stats:', data.data);
+      this.updatePaymentStats(data.data);
+      
+      // After refreshing stats, also refresh the unified pending payments to ensure correct combined total
+      await this.loadAllPendingPayments();
+    } catch (error) {
+      console.error('Error force refreshing payment stats:', error);
+      this.showError('Failed to refresh payment statistics');
+    }
+  }
+
+  clearMemberPendingPayments() {
+    // Clear the unified pending payments section
+    const container = document.getElementById('pendingPaymentsList');
+    if (container) {
+      container.innerHTML = '';
+    }
+    
+    // Reset member pending amounts
+    this.memberPendingAmount = 0;
+    this.recentMemberPendingPayments = [];
+    this.updateCombinedPendingStatCard();
+    
+    // Remove existing member pending payments from recurring payments list (legacy cleanup)
+    const recurringContainer = document.getElementById('recurringPaymentsList');
+    if (recurringContainer) {
+      const memberPayments = recurringContainer.querySelectorAll('.member-pending');
+      memberPayments.forEach(item => item.remove());
+      
+      const separators = recurringContainer.querySelectorAll('.payment-section-separator');
+      separators.forEach(separator => separator.remove());
+    }
+  }
+
+  removeMemberPendingPayment(memberId) {
+    // Remove specific member pending payment after it's been paid
+    const container = document.getElementById('pendingPaymentsList');
+    if (container) {
+      const memberPayment = container.querySelector(`[data-member-id="${memberId}"]`);
+      if (memberPayment) {
+        memberPayment.remove();
+        console.log(`Removed member pending payment for member ID: ${memberId}`);
+      }
+    }
+    
+    // Also check recurring payments list for legacy items
+    const recurringContainer = document.getElementById('recurringPaymentsList');
+    if (recurringContainer) {
+      const memberPayment = recurringContainer.querySelector(`[data-member-id="${memberId}"]`);
+      if (memberPayment) {
+        memberPayment.remove();
+        
+        // If no more member payments, remove the separator too
+        const remainingMemberPayments = container.querySelectorAll('.member-pending');
+        if (remainingMemberPayments.length === 0) {
+          const separators = container.querySelectorAll('.payment-section-separator');
+          separators.forEach(separator => separator.remove());
+        }
+      }
+    }
+    
+    // Refresh the unified pending payments to update stats and display
+    this.loadAllPendingPayments();
+  }
+
+  updateMemberPendingPaymentStatus(memberId, action) {
+    // This function is called from the seven-day allowance system
+    // to update the member pending payments UI and stats
+    console.log(`Updating member pending payment status: ${memberId} - ${action}`);
+    
+    if (action === 'payment_completed') {
+      // Remove the member from pending payments
+      this.removeMemberPendingPayment(memberId);
+      
+      // Update stats by refreshing pending stats
+      this.forceRefreshStats();
+      
+      console.log(`Payment completed for member: ${memberId}`);
+    } else if (action === 'allowance_granted') {
+      // For allowance granted, update the display to show allowance status
+      const memberContainer = document.getElementById('pendingPaymentsList');
+      if (memberContainer) {
+        const memberItem = memberContainer.querySelector(`[data-member-id="${memberId}"]`);
+        if (memberItem) {
+          const statusBadge = memberItem.querySelector('.member-payment-badge');
+          if (statusBadge) {
+            statusBadge.className = 'member-payment-badge allowance';
+            statusBadge.innerHTML = '<i class="fas fa-calendar-check"></i> 7-Day Allowance Granted';
+          }
+          
+          // Update the actions to show that allowance has been granted
+          const actionsContainer = memberItem.querySelector('.member-payment-actions');
+          if (actionsContainer) {
+            actionsContainer.innerHTML = `
+              <button class="payment-action-btn mark-paid mark-paid-btn" data-action="mark-member-paid" data-member-id="${memberId}" data-source="payment-tab" title="Mark as Paid">
+                <i class="fas fa-check"></i>
+              </button>
+              <span class="allowance-granted-text" style="color: #059669; font-size: 0.8rem; font-weight: 600;">
+                <i class="fas fa-calendar-check"></i> Allowance Granted
+              </span>
+            `;
+          }
+        }
+      }
+      
+      console.log(`Allowance granted for member: ${memberId}`);
+    }
   }
 
   populateYearSelect() {
@@ -1104,13 +2210,13 @@ class PaymentManager {
         this.loadPaymentData();
       }
 
-      // Trigger notification for automatic membership payment recording
-      if (window.notificationSystem && memberData.memberName) {
-        window.notificationSystem.notifyPaymentReceived({
-          amount: memberData.paymentAmount,
-          memberName: memberData.memberName,
-          plan: `${memberData.planSelected} (${memberData.monthlyPlan})`
-        });
+      // Trigger notification for automatic membership payment recording using enhanced system
+      if (window.NotificationManager && memberData.memberName) {
+        await window.NotificationManager.notifyPayment(
+          memberData.memberName,
+          memberData.paymentAmount,
+          'success'
+        );
       }
 
       return result;
@@ -1204,6 +2310,51 @@ class PaymentManager {
       this.processPaymentReminders(data.data);
     } catch (error) {
       console.error('Error checking payment reminders:', error);
+    }
+
+    // Also check for monthly recurring payments and notify 7, 3, 1 days before due date
+    this.checkMonthlyRecurringPaymentNotifications();
+  }
+
+  async checkMonthlyRecurringPaymentNotifications() {
+    try {
+      const response = await fetch('http://localhost:5000/api/payments/recurring?status=pending', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch recurring payments');
+      const data = await response.json();
+      const payments = data.data || [];
+      const today = new Date();
+      for (const payment of payments) {
+        if (!payment.dueDate || !payment.recurringDetails || !payment.recurringDetails.frequency) continue;
+        // Only for monthly recurring payments
+        if (payment.recurringDetails.frequency.toLowerCase() !== 'monthly') continue;
+        const dueDate = new Date(payment.dueDate);
+        // Calculate days until due
+        const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        if ([7, 3, 1].includes(daysUntilDue)) {
+          // Use unified notification system if available
+          const notificationManager = await this.waitForNotificationManager(2000);
+          if (notificationManager) {
+            await notificationManager.notifyPayment(
+              payment.description || 'Recurring Payment',
+              payment.amount,
+              'warning',
+              `Monthly recurring payment due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}: ${payment.description || ''}`
+            );
+          } else if (window.notificationSystem) {
+            // Fallback to legacy notification system
+            window.notificationSystem.show(
+              `Monthly recurring payment due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}: ${payment.description || ''} (₹${this.formatAmount(payment.amount)})`,
+              'warning'
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Error checking monthly recurring payment reminders:', error);
     }
   }
 
@@ -1517,6 +2668,7 @@ class PaymentManager {
       };
     });
   }
+
 }
 
 // Initialize payment manager when DOM is loaded

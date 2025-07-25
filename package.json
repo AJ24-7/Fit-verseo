@@ -4,7 +4,10 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test-connection": "node backend/scripts/testConnection.js",
+    "update-coordinates": "node backend/scripts/updateGymCoordinates.js",
+    "show-gym-data": "node backend/scripts/showGymData.js"
   },
   "keywords": [],
   "author": "",

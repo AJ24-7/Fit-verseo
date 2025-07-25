@@ -9,6 +9,37 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken'); // Added jsonwebtoken
 const nodemailer = require('nodemailer');
 
+// Geocoding function to get lat/lng from address
+const geocodeAddress = async (address, city, state, pincode) => {
+  try {
+    const fullAddress = [address, city, state, pincode].filter(Boolean).join(', ');
+    const encodedAddress = encodeURIComponent(fullAddress);
+    
+    console.log(`Geocoding address: ${fullAddress}`);
+    
+    // Using Nominatim (free geocoding service)
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=in`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon)
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn('Geocoding failed:', error);
+    return null;
+  }
+};
+
 // Generate a random 6-digit OTP
 const generateOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -457,6 +488,24 @@ exports.registerGym = async (req, res) => {
       ];
     }
 
+    // Try to geocode the address to get lat/lng coordinates
+    let coordinates = null;
+    try {
+      coordinates = await geocodeAddress(
+        req.body.address,
+        req.body.city,
+        req.body.state,
+        req.body.pincode
+      );
+      if (coordinates) {
+        console.log(`✅ Geocoded ${req.body.gymName}: ${coordinates.lat}, ${coordinates.lng}`);
+      } else {
+        console.log(`⚠️ Could not geocode address for ${req.body.gymName}`);
+      }
+    } catch (geocodeError) {
+      console.error('Geocoding error during registration:', geocodeError);
+    }
+
     const newGym = new Gym({
       gymName: req.body.gymName,
       admin: req.admin ? req.admin.id : null,
@@ -468,7 +517,9 @@ exports.registerGym = async (req, res) => {
         city: req.body.city,
         state: req.body.state,
         pincode: req.body.pincode,
-        landmark: req.body.landmark
+        landmark: req.body.landmark,
+        lat: coordinates?.lat || null,
+        lng: coordinates?.lng || null
       },
       description: req.body.description,
       gymPhotos,

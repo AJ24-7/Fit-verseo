@@ -640,11 +640,26 @@ class EquipmentManager {
                 }
                 this.showSuccessMessage('Equipment updated successfully');
                 
+                // Enhanced notification for equipment update
+                const equipmentName = result.equipment?.name || result.name;
+                if (window.NotificationManager) {
+                    window.NotificationManager.notifyEquipment('updated', equipmentName, 'Successfully updated');
+                }
+                
                 // Show payment notification if price was provided
                 const equipmentPrice = result.equipment?.price || result.price;
                 if (equipmentPrice && equipmentPrice > 0) {
                     setTimeout(() => {
                         this.showPaymentNotification('Equipment price updated - payment record has been updated', equipmentPrice);
+                        
+                        // Enhanced payment notification for equipment price update
+                        if (window.NotificationManager) {
+                            window.NotificationManager.notify(
+                                'Equipment Price Update',
+                                `Price updated to ₹${equipmentPrice} for ${equipmentName}`,
+                                'info'
+                            );
+                        }
                     }, 1500);
                 }
             } else {
@@ -652,11 +667,26 @@ class EquipmentManager {
                 this.equipmentData.push(result.equipment || result);
                 this.showSuccessMessage('Equipment added successfully');
                 
+                // Enhanced notification for equipment addition
+                const equipmentName = result.equipment?.name || result.name;
+                if (window.NotificationManager) {
+                    window.NotificationManager.notifyEquipment('added', equipmentName, 'Successfully added to inventory');
+                }
+                
                 // Show payment notification if price was provided
                 const equipmentPrice = result.equipment?.price || result.price;
                 if (equipmentPrice && equipmentPrice > 0) {
                     setTimeout(() => {
                         this.showPaymentNotification('Equipment purchase recorded - payment entry has been created', equipmentPrice);
+                        
+                        // Enhanced payment notification for equipment purchase
+                        if (window.NotificationManager) {
+                            window.NotificationManager.notify(
+                                'Equipment Purchase',
+                                `Payment of ₹${equipmentPrice} recorded for ${equipmentName}`,
+                                'success'
+                            );
+                        }
                     }, 1500);
                 }
             }
@@ -665,9 +695,9 @@ class EquipmentManager {
             this.updateStatistics();
             this.closeEquipmentModal();
             
-            // Refresh notifications to show new equipment notification
-            if (window.notificationSystem) {
-                window.notificationSystem.loadExistingNotifications();
+            // Enhanced notification refresh using unified system
+            if (window.NotificationManager && window.NotificationManager.getInstance()) {
+                window.NotificationManager.getInstance().loadExistingNotifications();
             }
         } catch (error) {
             console.error('Error saving equipment:', error);

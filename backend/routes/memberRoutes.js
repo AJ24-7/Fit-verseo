@@ -223,6 +223,145 @@ router.post('/seven-day-allowance', gymadminAuth, grantSevenDayAllowance);
 // Mark payment as paid and activate membership
 router.post('/mark-payment-paid', gymadminAuth, markPaymentAsPaid);
 
+// Renew membership with payment confirmation
+router.patch('/:memberId/renew-membership', gymadminAuth, async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { 
+      paymentStatus, 
+      membershipValidUntil, 
+      membershipStartDate, 
+      pendingPaymentAmount, 
+      paymentAmount,
+      lastPaymentDate 
+    } = req.body;
+
+    const Member = require('../models/Member');
+    
+    const updatedMember = await Member.findByIdAndUpdate(
+      memberId,
+      {
+        paymentStatus: paymentStatus || 'paid',
+        membershipValidUntil: new Date(membershipValidUntil),
+        membershipStartDate: new Date(membershipStartDate),
+        pendingPaymentAmount: pendingPaymentAmount || 0,
+        paymentAmount: paymentAmount,
+        lastPaymentDate: new Date(lastPaymentDate)
+      },
+      { new: true }
+    );
+
+    if (!updatedMember) {
+      return res.status(404).json({ success: false, message: 'Member not found' });
+    }
+
+    res.json({ success: true, member: updatedMember });
+  } catch (error) {
+    console.error('Error renewing membership:', error);
+    res.status(500).json({ success: false, message: 'Failed to renew membership', error: error.message });
+  }
+});
+
+// Send renewal email notification
+router.post('/send-renewal-email', gymadminAuth, async (req, res) => {
+  try {
+    const { 
+      memberId, 
+      memberEmail, 
+      memberName, 
+      planSelected, 
+      monthlyPlan, 
+      amount, 
+      validUntil, 
+      startDate 
+    } = req.body;
+
+    const sendEmail = require('../utils/sendEmail');
+    
+    const validUntilDate = new Date(validUntil).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const startDateFormatted = new Date(startDate).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const emailTemplate = `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;">
+          <h1 style="margin: 0; font-size: 28px;">🎉 Payment Received!</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your membership has been successfully renewed</p>
+        </div>
+        
+        <div style="padding: 30px; background: #f8f9fa;">
+          <h2 style="color: #2c3e50; margin-bottom: 20px;">Hi ${memberName}!</h2>
+          
+          <p style="font-size: 16px; margin-bottom: 20px;">
+            Great news! We have successfully received your payment and your gym membership has been renewed.
+          </p>
+
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #22c55e; margin: 20px 0;">
+            <h3 style="color: #22c55e; margin-top: 0;">Membership Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #555;">Plan:</td>
+                <td style="padding: 8px 0;">${planSelected} (${monthlyPlan})</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #555;">Amount Paid:</td>
+                <td style="padding: 8px 0; color: #22c55e; font-weight: bold;">₹${amount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #555;">Start Date:</td>
+                <td style="padding: 8px 0;">${startDateFormatted}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #555;">Valid Until:</td>
+                <td style="padding: 8px 0; color: #e74c3c; font-weight: bold;">${validUntilDate}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background: #e8f5e8; padding: 15px; border-radius: 6px; margin: 20px 0;">
+            <p style="margin: 0; color: #2d5a2d;">
+              <strong>✅ Your membership is now active!</strong> You can access all gym facilities and services included in your plan.
+            </p>
+          </div>
+
+          <p style="font-size: 16px; margin: 20px 0;">
+            Thank you for choosing us for your fitness journey. We're here to support you in achieving your health and wellness goals!
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #666; font-style: italic;">
+              Questions? Contact us anytime - we're here to help! 💪
+            </p>
+          </div>
+        </div>
+        
+        <div style="background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px;">
+          <p style="margin: 0;">This is an automated email. Please do not reply to this message.</p>
+        </div>
+      </div>
+    `;
+
+    await sendEmail(
+      memberEmail, 
+      '🎉 Payment Received - Membership Renewed Successfully!', 
+      emailTemplate
+    );
+
+    res.json({ success: true, message: 'Renewal email sent successfully' });
+  } catch (error) {
+    console.error('Error sending renewal email:', error);
+    res.status(500).json({ success: false, message: 'Failed to send renewal email', error: error.message });
+  }
+});
+
 // Get a single member by ID
 router.get('/:id', gymadminAuth, async (req, res) => {
   try {

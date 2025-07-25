@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="attendance.css">
     <link rel="stylesheet" href="membertab.css">
     <link rel="stylesheet" href="payment.css">
+    <link rel="stylesheet" href="member-payments.css">
     <link rel="stylesheet" href="equipment.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="gymadmin.js"></script>
@@ -571,7 +572,8 @@
 
                 <!-- Payment Statistics Cards -->
                 <div class="payment-stats-grid">
-                    <div class="payment-stat-card received">
+
+                    <div class="payment-stat-card received" id="receivedAmountStatCard" style="cursor:pointer;">
                         <div class="payment-stat-header">
                             <div class="payment-stat-title">Amount Received</div>
                             <div class="payment-stat-icon received">
@@ -583,6 +585,17 @@
                             <i class="fas fa-arrow-up"></i>
                             0.0%
                         </div>
+                    </div>
+
+                    <!-- Received Payments Details Modal -->
+                    <div class="modal" id="receivedPaymentsModal" style="display:none;z-index:10010;align-items:flex-start;">
+                      <div class="modal-content" style="max-width:520px;margin-top:48px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                          <h3 style="margin:0;color:#22c55e;font-weight:600;"><i class="fas fa-wallet"></i> Amount Received Breakdown</h3>
+                          <button class="modal-close" id="closeReceivedPaymentsModal" style="font-size:1.5rem;">&times;</button>
+                        </div>
+                        <div id="receivedPaymentsDetailsContainer" style="min-height:120px;"></div>
+                      </div>
                     </div>
 
                     <div class="payment-stat-card paid">
@@ -599,7 +612,7 @@
                         </div>
                     </div>
 
-                    <div class="payment-stat-card pending">
+                    <div class="payment-stat-card pending" id="pendingPaymentsStatCard" style="cursor:pointer;">
                         <div class="payment-stat-header">
                             <div class="payment-stat-title">Pending Payments</div>
                             <div class="payment-stat-icon pending">
@@ -607,10 +620,17 @@
                             </div>
                         </div>
                         <div class="payment-stat-value">₹0</div>
-                        <div class="payment-stat-change neutral">
-                            <i class="fas fa-arrow-up"></i>
-                            0.0%
+                    </div>
+
+                    <!-- Pending Payments Details Modal -->
+                    <div class="modal" id="pendingPaymentsModal" style="display:none;z-index:10010;align-items:flex-start;">
+                      <div class="modal-content" style="max-width:700px;margin-top:48px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                          <h3 style="margin:0;display:flex;align-items:center;gap:10px;"><i class="fas fa-clock" style="color:#ffbe0b;"></i> Pending Payment Details</h3>
+                          <button class="modal-close" id="closePendingPaymentsModal" style="font-size:1.5rem;">&times;</button>
                         </div>
+                        <div id="pendingPaymentsDetailsContainer" style="margin-top:18px;min-height:120px;max-height:420px;overflow-y:auto;"></div>
+                      </div>
                     </div>
 
                     <div class="payment-stat-card due">
@@ -691,6 +711,24 @@
                         <div class="recurring-payments-list" id="recurringPaymentsList">
                             <div class="payment-loading">
                                 <i class="fas fa-spinner"></i> Loading payments...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Payments Section (Unified) -->
+                    <div class="pending-payments-section">
+                        <div class="pending-payments-header">
+                            <h2 class="pending-payments-title">
+                                <i class="fas fa-clock"></i> Pending Payments
+                            </h2>
+                            <div class="pending-payments-stats">
+                                <span class="pending-count">0 pending</span>
+                                <span class="pending-amount">₹0 pending</span>
+                            </div>
+                        </div>
+                        <div class="pending-payments-list" id="pendingPaymentsList">
+                            <div class="payment-loading">
+                                <i class="fas fa-spinner"></i> Loading pending payments...
                             </div>
                         </div>
                     </div>
@@ -1298,7 +1336,10 @@
       
       <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;">
         <button type="button" id="cancelRenewMembership" class="btn btn-secondary">Cancel</button>
-        <button type="submit" class="btn btn-primary">🔄 Renew Membership</button>
+        <button type="submit" class="btn btn-primary" id="renewMembershipBtn" style="display:flex;align-items:center;gap:8px;transition:color .2s;">
+          <i class="fas fa-redo-alt" style="transition:transform .2s;"></i>
+          <span>Renew Membership</span>
+        </button>
       </div>
     </form>
   </div>
@@ -2634,8 +2675,8 @@
             </div>
 
             <div class="payment-form-group">
-              <label class="payment-form-label" for="memberName">Member Name (if applicable)</label>
-              <input type="text" class="payment-form-input" id="memberName" name="memberName" placeholder="Enter member name" style="display: block;">
+              <label class="payment-form-label" for="memberName">Person Name (if applicable)</label>
+              <input type="text" class="payment-form-input" id="memberName" name="memberName" placeholder="Enter person name" style="display: block;">
               <select class="payment-form-input" id="memberSelect" name="memberId" style="display: none;">
                 <option value="">Select Member</option>
               </select>
@@ -2772,31 +2813,11 @@
         <input type="hidden" id="paidMemberId" name="memberId">
         <input type="hidden" id="paidSource" name="source">
         
-        <div class="form-group">
-          <label for="paidAmount">Amount Received</label>
-          <input type="number" id="paidAmount" name="amountReceived" min="0" step="0.01" required placeholder="Enter amount received">
-        </div>
-        
-        <div class="form-group">
-          <label for="paidMethod">Payment Method</label>
-          <select id="paidMethod" name="paymentMethod" required>
-            <option value="">Select Payment Method</option>
-            <option value="Cash">Cash</option>
-            <option value="Card">Card</option>
-            <option value="UPI">UPI</option>
-            <option value="Online">Online Transfer</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="paidDate">Payment Date</label>
-          <input type="date" id="paidDate" name="paymentDate" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="paidNotes">Notes (Optional)</label>
-          <textarea id="paidNotes" name="notes" rows="3" placeholder="Any additional notes about this payment..."></textarea>
+        <div style="background:#fff3cd;border:#ffeaa7 1px solid;border-radius:8px;padding:1rem;margin-bottom:1.5rem;text-align:center;">
+          <p style="margin:0;color:#856404;font-weight:500;">
+            <i class="fas fa-info-circle" style="margin-right:8px;"></i>
+            The full pending amount will be marked as paid with today's date.
+          </p>
         </div>
         
         <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;">

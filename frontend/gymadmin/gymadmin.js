@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
   fetchAndRenderActivities();
 });
 // --- Dialog Utility (Global) ---
-function showDialog({ title = '', message = '', confirmText = 'OK', cancelText = '', iconHtml = '', onConfirm = null, onCancel = null }) {
+function showDialog({ title = '', message = '', confirmText = 'OK', cancelText = '', iconHtml = '', customFooter = '', onConfirm = null, onCancel = null }) {
   // Remove any existing dialog
   let dialog = document.getElementById('customDialogBox');
   if (dialog) dialog.remove();
@@ -324,12 +324,12 @@ function showDialog({ title = '', message = '', confirmText = 'OK', cancelText =
   dialog.style.backdropFilter = 'blur(2px)';
   
   // Prepare buttons HTML
-  const buttonsHtml = cancelText ? 
+  const buttonsHtml = customFooter ? customFooter : (cancelText ? 
     `<div style="display:flex;gap:12px;justify-content:center;">
       <button id="dialogCancelBtn" style="background:#6c757d;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">${cancelText}</button>
       <button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">${confirmText}</button>
     </div>` :
-    `<button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">${confirmText}</button>`;
+    `<button id="dialogConfirmBtn" style="background:#1976d2;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:600;transition:background 0.2s ease;">${confirmText}</button>`);
   
   dialog.innerHTML = `
     <div style="background:#fff;max-width:450px;width:90vw;padding:30px 24px 20px 24px;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.2);text-align:center;position:relative;animation:dialogSlideIn 0.3s ease-out;">
@@ -348,6 +348,13 @@ function showDialog({ title = '', message = '', confirmText = 'OK', cancelText =
       }
       #dialogCancelBtn:hover {
         background: #5a6268 !important;
+      }
+      .mark-paid-btn-dialog:hover {
+        background: #218838 !important;
+      }
+      .mark-all-paid-btn-dialog:hover {
+        background: #218838 !important;
+      }
       }
     </style>
   `;
@@ -1826,13 +1833,13 @@ document.addEventListener('DOMContentLoaded', function() {
               await window.paymentManager.recordMembershipPayment(memberData);
               console.log('✅ Membership payment recorded successfully');
               
-              // Trigger payment notification
-              if (window.notificationSystem) {
-                window.notificationSystem.notifyPaymentReceived({
-                  amount: formData.get('paymentAmount'),
-                  memberName: memberName,
-                  plan: `${plan} (${monthlyPlan})`
-                });
+              // Trigger payment notification using enhanced system
+              if (window.NotificationManager) {
+                await window.NotificationManager.notifyPayment(
+                  memberName,
+                  formData.get('paymentAmount'),
+                  'success'
+                );
               }
             } catch (paymentError) {
               console.error('❌ Failed to record membership payment:', paymentError);
@@ -1840,25 +1847,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
           
-          // Trigger new member notification
-          if (window.notificationSystem) {
-            window.notificationSystem.notifyNewMember({
-              name: memberName,
-              planSelected: plan,
-              monthlyPlan: monthlyPlan
-            });
+          // Trigger new member notification using enhanced system
+          if (window.NotificationManager) {
+            await window.NotificationManager.notifyMember(
+              'added',
+              memberName,
+              `Plan: ${plan} (${monthlyPlan})`
+            );
           } else {
-            console.warn('Notification system not available yet, trying to initialize...');
+            console.warn('Enhanced notification system not available yet, trying to initialize...');
             // Try to initialize notification system if not available
-            setTimeout(() => {
-              if (window.notificationSystem) {
-                window.notificationSystem.notifyNewMember({
-                  name: memberName,
-                  planSelected: plan,
-                  monthlyPlan: monthlyPlan
-                });
+            setTimeout(async () => {
+              if (window.NotificationManager) {
+                await window.NotificationManager.notifyMember(
+                  'added',
+                  memberName,
+                  `Plan: ${plan} (${monthlyPlan})`
+                );
               } else {
-                console.error('Notification system still not available after retry');
+                console.error('Enhanced notification system still not available after retry');
               }
             }, 1000);
           }
@@ -1901,13 +1908,13 @@ document.addEventListener('DOMContentLoaded', function() {
                       await window.paymentManager.recordMembershipPayment(memberData);
                       console.log('✅ Membership payment recorded successfully (forced add)');
                       
-                      // Trigger payment notification for forced add
-                      if (window.notificationSystem) {
-                        window.notificationSystem.notifyPaymentReceived({
-                          amount: formData.get('paymentAmount'),
-                          memberName: memberName,
-                          plan: `${plan} (${monthlyPlan})`
-                        });
+                      // Trigger payment notification for forced add using enhanced system
+                      if (window.NotificationManager) {
+                        await window.NotificationManager.notifyPayment(
+                          memberName,
+                          formData.get('paymentAmount'),
+                          'success'
+                        );
                       }
                     } catch (paymentError) {
                       console.error('❌ Failed to record membership payment (forced add):', paymentError);
@@ -1915,25 +1922,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                   }
                   
-                  // Trigger new member notification for forced add
-                  if (window.notificationSystem) {
-                    window.notificationSystem.notifyNewMember({
-                      name: memberName,
-                      planSelected: plan,
-                      monthlyPlan: monthlyPlan
-                    });
+                  // Trigger new member notification for forced add using enhanced system
+                  if (window.NotificationManager) {
+                    await window.NotificationManager.notifyMember(
+                      'added',
+                      memberName,
+                      `Plan: ${plan} (${monthlyPlan}) - Forced Add`
+                    );
                   } else {
-                    console.warn('Notification system not available yet, trying to initialize...');
+                    console.warn('Enhanced notification system not available yet, trying to initialize...');
                     // Try to initialize notification system if not available
-                    setTimeout(() => {
-                      if (window.notificationSystem) {
-                        window.notificationSystem.notifyNewMember({
-                          name: memberName,
-                          planSelected: plan,
-                          monthlyPlan: monthlyPlan
-                        });
+                    setTimeout(async () => {
+                      if (window.NotificationManager) {
+                        await window.NotificationManager.notifyMember(
+                          'added',
+                          memberName,
+                          `Plan: ${plan} (${monthlyPlan}) - Forced Add`
+                        );
                       } else {
-                        console.error('Notification system still not available after retry');
+                        console.error('Enhanced notification system still not available after retry');
                       }
                     }, 1000);
                   }
@@ -2400,13 +2407,13 @@ document.addEventListener('DOMContentLoaded', function() {
               await window.paymentManager.recordRenewalPayment(memberData, renewalPaymentData);
               console.log('✅ Renewal payment recorded successfully');
               
-              // Trigger payment notification for renewal
-              if (window.notificationSystem) {
-                window.notificationSystem.notifyPaymentReceived({
-                  amount: formData.get('paymentAmount'),
-                  memberName: memberData.memberName,
-                  plan: `${renewalPaymentData.planSelected} (${renewalPaymentData.monthlyPlan}) - Renewal`
-                });
+              // Trigger payment notification for renewal using enhanced system
+              if (window.NotificationManager) {
+                await window.NotificationManager.notifyPayment(
+                  memberData.memberName,
+                  formData.get('paymentAmount'),
+                  'success'
+                );
               }
             } catch (paymentError) {
               console.error('❌ Failed to record renewal payment:', paymentError);
@@ -2422,12 +2429,11 @@ document.addEventListener('DOMContentLoaded', function() {
             successMessage = `Membership has been renewed with 7-day payment allowance!<br><br>📋 <b>New Expiry Date:</b> ${new Date(data.newExpiryDate).toLocaleDateString()}<br><br>💰 <b>Pending Amount:</b> ₹${formData.get('paymentAmount')}<br><br>⏰ <b>Payment Due:</b> Within 7 days<br><br>⚠️ The member is now marked as "Payment Pending" and has 7 days to complete payment.`;
             iconHtml = '<i class="fas fa-clock" style="color:#ffc107;font-size:2.5em;"></i>';
             
-            // Trigger payment pending notification
-            if (window.notificationSystem) {
-              window.notificationSystem.showNotification(
+            // Trigger payment pending notification using enhanced system
+            if (window.NotificationManager) {
+              await window.NotificationManager.notify(
                 'Payment Allowance Granted',
                 `${document.getElementById('renewMemberName')?.textContent || 'Member'} has been granted 7-day payment allowance for ₹${formData.get('paymentAmount')}`,
-                'medium',
                 'warning'
               );
             }

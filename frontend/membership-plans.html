@@ -3,13 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fit-verse - Gym Memberships Near You</title>
+    <title>Gym-Wale - Gym Memberships Near You</title>
     <link rel="stylesheet" href="membership-plans.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script defer src="membership-plans.js"></script>
     
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner">
+            <i class="fas fa-dumbbell fa-spin"></i>
+            <p>Finding the best gyms for you...</p>
+        </div>
+    </div>
+
     <header>
          <nav class="navbar">
             <a href="index.html" class="logo">FIT<span>-verse</span></a>
@@ -59,19 +67,58 @@
             <h1>Find the Perfect Gym Membership</h1>
             <p>Discover top-rated gyms near you with flexible membership options to fit your lifestyle and budget.</p>
             
-            <div class="location-filter">
-                <select id="locationSelect">
-                    <option value="Cities">All Cities</option>
-                    <option value="city">Delhi</option>
-                    <option value="city">Faridabad</option>
-                    <option value="city">Gurugram</option>
-                    <option value="city">Noida</option>
-                </select>
+            <div class="search-controls">
+                <div class="location-filter">
+                    <select id="locationSelect">
+                        <option value="">All Cities</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Faridabad">Faridabad</option>
+                        <option value="Gurugram">Gurugram</option>
+                        <option value="Noida">Noida</option>
+                    </select>
+                    <button id="nearMeBtn" class="near-me-btn">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Near Me
+                    </button>
+                </div>
+                
+                <!-- Filter Tabs -->
+                <div class="filter-tabs">
+                    <button class="tab-btn active" data-filter="rating">
+                        <i class="fas fa-star"></i>
+                        Top Rated
+                    </button>
+                    <button class="tab-btn" data-filter="budget">
+                        <i class="fas fa-rupee-sign"></i>
+                        Budget Friendly
+                    </button>
+                    <button class="tab-btn" data-filter="activities">
+                        <i class="fas fa-dumbbell"></i>
+                        Most Activities
+                    </button>
+                    <button class="tab-btn" data-filter="all">
+                        <i class="fas fa-th-large"></i>
+                        All Gyms
+                    </button>
+                </div>
             </div>
         </section>
 
-        <section class="gym-profiles" id="gymProfilesContainer">
-            <!-- Gym profiles will be dynamically inserted here -->
+        <section class="results-section">
+            <div class="results-header">
+                <h2 id="resultsTitle">Top Rated Gyms</h2>
+                <span id="resultsCount" class="results-count">Loading...</span>
+            </div>
+            
+            <div class="gym-profiles" id="gymProfilesContainer">
+                <!-- Gym profiles will be dynamically inserted here -->
+                <div class="loading-placeholder">
+                    <div class="placeholder-card"></div>
+                    <div class="placeholder-card"></div>
+                    <div class="placeholder-card"></div>
+                    <div class="placeholder-card"></div>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -80,7 +127,7 @@
             <div class="footer-content">
                 <!-- About Section -->
                 <div class="footer-section about">
-                    <h2>Fit-verse</h2>
+                    <h2>Gym-Wale</h2>
                     <p>Manage your fitness journey with ease. Find the best gyms, membership plans, and exciting offers.</p>
                 </div>
     
@@ -111,7 +158,7 @@
     
             <!-- Copyright Section -->
             <div class="footer-bottom">
-                <p>&copy; 2025 Fit-verse | Designed by Aayush & Team</p>
+                <p>&copy; 2025 Gym-Wale | Designed by Aayush & Team</p>
             </div>
         </div>
     </footer>

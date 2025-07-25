@@ -1,3 +1,47 @@
+/* --- Mark As Paid Modal Styles --- */
+#markAsPaidModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2vw 1vw;
+  z-index: 10010;
+}
+
+#markAsPaidModal .modal-content {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 32px rgba(25,118,210,0.14);
+  animation: modalFadeIn 0.3s;
+  margin: 0 auto;
+  max-width: 480px;
+  width: 98vw;
+  max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 28px 18px 22px 18px;
+}
+
+@media (max-width: 768px) {
+  #markAsPaidModal .modal-content {
+    max-width: 99vw;
+    padding: 12px 4vw 12px 4vw;
+    margin: 0 auto;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  #markAsPaidModal .modal-content {
+    padding: 10px 2vw 10px 2vw;
+    max-width: 100vw;
+    width: 100vw;
+    border-radius: 0;
+  }
+}
 
 /* === Animated User Profile Box (Top Nav) === */
 .user-profile-animated {
@@ -3761,3 +3805,231 @@ body[data-theme="dark"] .filter-btn {
 }
 
 /* === END RENEW MEMBERSHIP STYLES === */
+
+/* === MARK AS PAID BUTTON STYLES === */
+.mark-paid-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  color: white !important;
+  border: 2px solid #22c55e !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 0.85em !important;
+  font-weight: 600 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-width: 80px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+}
+
+.mark-paid-btn::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent) !important;
+  transition: left 0.5s !important;
+  z-index: 1 !important;
+}
+
+.mark-paid-btn:hover::before {
+  left: 100% !important;
+}
+
+.mark-paid-btn:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+  border-color: #16a34a !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4) !important;
+}
+
+.mark-paid-btn:active {
+  transform: translateY(-1px) scale(1.02) !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+}
+
+.mark-paid-btn:focus {
+  outline: none !important;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4), 0 0 0 3px rgba(34, 197, 94, 0.2) !important;
+}
+
+.mark-paid-btn i {
+  position: relative !important;
+  z-index: 2 !important;
+  transition: transform 0.2s ease !important;
+}
+
+.mark-paid-btn:hover i {
+  transform: scale(1.1) !important;
+}
+
+/* Notification modal mark paid button specific styles */
+#notificationModal .mark-paid-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  color: white !important;
+  border: 2px solid #22c55e !important;
+  min-width: 120px !important;
+  padding: 10px 20px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+#notificationModal .mark-paid-btn:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+  border-color: #16a34a !important;
+  transform: translateY(-1px) scale(1.02) !important;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4) !important;
+}
+/* === END MARK AS PAID BUTTON STYLES === */
+
+/* === MARK AS PAID MODAL ENHANCED STYLES === */
+/* Enhanced amount input field for mark as paid modal */
+#markAsPaidModal input[type="number"],
+#markAsPaidModal input[type="text"],
+#markAsPaidModal input[type="date"] {
+  transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#markAsPaidModal input[type="number"]:focus,
+#markAsPaidModal input[type="text"]:focus,
+#markAsPaidModal input[type="date"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  outline: none;
+}
+
+#paidAmountReceived {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+}
+
+/* Amount validation styles */
+.amount-valid {
+  border-color: #22c55e !important;
+  background: #f0fdf4 !important;
+}
+
+.amount-overpay {
+  border-color: #3b82f6 !important;
+  background: #eff6ff !important;
+}
+
+.amount-underpay {
+  border-color: #f59e0b !important;
+  background: #fffbeb !important;
+}
+
+.amount-invalid {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+}
+
+/* Pending amount display styling */
+#paidPendingAmount {
+  font-weight: 700;
+  color: #dc2626;
+  font-size: 1.1em;
+}
+
+/* Mark as paid modal submit button enhancement */
+#markAsPaidModal button[type="submit"] {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  color: white !important;
+  border: 2px solid #22c55e !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  cursor: pointer !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-width: 140px !important;
+}
+
+#markAsPaidModal button[type="submit"]::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent) !important;
+  transition: left 0.5s !important;
+  z-index: 1 !important;
+}
+
+#markAsPaidModal button[type="submit"]:hover::before {
+  left: 100% !important;
+}
+
+#markAsPaidModal button[type="submit"]:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+  border-color: #16a34a !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4) !important;
+}
+
+#markAsPaidModal button[type="submit"]:active {
+  transform: translateY(-1px) scale(1.01) !important;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3) !important;
+}
+
+#markAsPaidModal button[type="submit"]:disabled {
+  background: #9ca3af !important;
+  border-color: #9ca3af !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Amount hint tooltip */
+#amountHint {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Auto-fill animation for amount input */
+@keyframes autofillPulse {
+  0% {
+    background-color: #e8f5e8;
+    transform: scale(1);
+  }
+  50% {
+    background-color: #d1f5d1;
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: #e8f5e8;
+    transform: scale(1);
+  }
+}
+
+.autofill-animation {
+  animation: autofillPulse 0.6s ease-in-out;
+}
+/* === END MARK AS PAID MODAL ENHANCED STYLES === */
