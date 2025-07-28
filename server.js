@@ -27,6 +27,7 @@ const attendanceRoutes = require('./backend/routes/attendanceRoutes');
 const paymentRoutes = require('./backend/routes/paymentRoutes');
 const equipmentRoutes = require('./backend/routes/equipmentRoutes');
 const qrCodeRoutes = require('./backend/routes/qrCodeRoutes');
+const biometricRoutes = require('./backend/routes/biometricRoutes');
 const NotificationScheduler = require('./backend/services/notificationScheduler');  
 
 console.log("[DEBUG] server.js: trainerRoutes type is:", typeof trainerRoutes);
@@ -104,11 +105,16 @@ app.use('/api/equipment', (req, res, next) => {
 }, equipmentRoutes);
 
 // QR Code routes
-
 app.use('/api/qr-codes', (req, res, next) => {
   console.log(`📱 QR Code route accessed: ${req.method} ${req.url}`);
   next();
 }, qrCodeRoutes);
+
+// Biometric attendance routes
+app.use('/api/biometric', (req, res, next) => {
+  console.log(`🔐 Biometric route accessed: ${req.method} ${req.url}`);
+  next();
+}, biometricRoutes);
 
 // Serve register.html for /register route (for QR code registration)
 app.get('/register', (req, res) => {

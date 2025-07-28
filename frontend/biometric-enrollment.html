@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biometric Enrollment - Fitverse</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748, #4a5568);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .enrollment-tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            padding: 15px 30px;
+            border: none;
+            background: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .enrollment-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+        }
+
+        .people-list {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .person-card {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .person-card:hover {
+            background: #f8fafc;
+        }
+
+        .person-card.selected {
+            background: #e6f3ff;
+            border-left: 4px solid #667eea;
+        }
+
+        .person-info h4 {
+            margin-bottom: 5px;
+            color: #2d3748;
+        }
+
+        .person-meta {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 10px;
+        }
+
+        .enrollment-status {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-enrolled {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status-pending {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .enrollment-panel {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 25px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .device-selector {
+            margin-bottom: 20px;
+        }
+
+        .device-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .device-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .biometric-options {
+            margin-bottom: 20px;
+        }
+
+        .biometric-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .biometric-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .biometric-option.selected {
+            border-color: #667eea;
+            background: #e6f3ff;
+        }
+
+        .biometric-option input[type="radio"] {
+            margin: 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .enrollment-progress {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert.success {
+            background: #f0fff4;
+            border: 1px solid #68d391;
+            color: #2f855a;
+        }
+
+        .alert.error {
+            background: #fed7d7;
+            border: 1px solid #fc8181;
+            color: #c53030;
+        }
+
+        .alert.info {
+            background: #ebf8ff;
+            border: 1px solid #63b3ed;
+            color: #2b6cb0;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Biometric Enrollment</h1>
+            <p>Enroll members and trainers for secure biometric attendance</p>
+        </div>
+
+        <div class="content">
+            <div class="enrollment-tabs">
+                <button class="tab-btn active" onclick="switchTab('members')">
+                    <i class="fas fa-users"></i> Members
+                </button>
+                <button class="tab-btn" onclick="switchTab('trainers')">
+                    <i class="fas fa-user-tie"></i> Trainers
+                </button>
+            </div>
+
+            <div id="membersTab" class="tab-content active">
+                <div class="enrollment-grid">
+                    <div class="people-section">
+                        <input type="text" class="search-box" id="memberSearch" placeholder="Search members..." onkeyup="filterPeople('members')">
+                        <div class="people-list" id="membersList">
+                            <div style="text-align: center; padding: 40px; color: #718096;">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p>Loading members...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="enrollment-panel">
+                        <h3 style="margin-bottom: 20px; color: #2d3748;">Enrollment Setup</h3>
+                        
+                        <div class="device-selector">
+                            <label>Select Device:</label>
+                            <select id="deviceSelect">
+                                <option value="">Loading devices...</option>
+                            </select>
+                        </div>
+
+                        <div class="biometric-options">
+                            <label style="margin-bottom: 12px; display: block; font-weight: 600;">Biometric Type:</label>
+                            <div class="biometric-option" onclick="selectBiometricType('fingerprint')">
+                                <input type="radio" name="biometricType" value="fingerprint" id="fingerprintOption">
+                                <i class="fas fa-fingerprint" style="color: #4CAF50; font-size: 1.5rem;"></i>
+                                <div>
+                                    <strong>Fingerprint</strong>
+                                    <div style="font-size: 0.9rem; color: #718096;">Fast and secure</div>
+                                </div>
+                            </div>
+                            <div class="biometric-option" onclick="selectBiometricType('face')">
+                                <input type="radio" name="biometricType" value="face" id="faceOption">
+                                <i class="fas fa-camera" style="color: #2196F3; font-size: 1.5rem;"></i>
+                                <div>
+                                    <strong>Face Recognition</strong>
+                                    <div style="font-size: 0.9rem; color: #718096;">Contactless and hygienic</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn" id="enrollBtn" onclick="startEnrollment()" disabled>
+                            <i class="fas fa-user-plus"></i> Start Enrollment
+                        </button>
+
+                        <button class="btn secondary" onclick="verifyBiometric()" id="verifyBtn" disabled>
+                            <i class="fas fa-check-circle"></i> Test Verification
+                        </button>
+
+                        <div class="enrollment-progress" id="enrollmentProgress">
+                            <h4 id="progressTitle">Enrollment in Progress</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <p id="progressStatus">Preparing enrollment...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="trainersTab" class="tab-content">
+                <div class="enrollment-grid">
+                    <div class="people-section">
+                        <input type="text" class="search-box" id="trainerSearch" placeholder="Search trainers..." onkeyup="filterPeople('trainers')">
+                        <div class="people-list" id="trainersList">
+                            <div style="text-align: center; padding: 40px; color: #718096;">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p>Loading trainers...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="enrollment-panel">
+                        <h3 style="margin-bottom: 20px; color: #2d3748;">Trainer Enrollment</h3>
+                        
+                        <div class="device-selector">
+                            <label>Select Device:</label>
+                            <select id="trainerDeviceSelect">
+                                <option value="">Loading devices...</option>
+                            </select>
+                        </div>
+
+                        <div class="biometric-options">
+                            <label style="margin-bottom: 12px; display: block; font-weight: 600;">Biometric Type:</label>
+                            <div class="biometric-option" onclick="selectTrainerBiometricType('fingerprint')">
+                                <input type="radio" name="trainerBiometricType" value="fingerprint" id="trainerFingerprintOption">
+                                <i class="fas fa-fingerprint" style="color: #4CAF50; font-size: 1.5rem;"></i>
+                                <div>
+                                    <strong>Fingerprint</strong>
+                                    <div style="font-size: 0.9rem; color: #718096;">Fast and secure</div>
+                                </div>
+                            </div>
+                            <div class="biometric-option" onclick="selectTrainerBiometricType('face')">
+                                <input type="radio" name="trainerBiometricType" value="face" id="trainerFaceOption">
+                                <i class="fas fa-camera" style="color: #2196F3; font-size: 1.5rem;"></i>
+                                <div>
+                                    <strong>Face Recognition</strong>
+                                    <div style="font-size: 0.9rem; color: #718096;">Contactless and hygienic</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn" id="trainerEnrollBtn" onclick="startTrainerEnrollment()" disabled>
+                            <i class="fas fa-user-plus"></i> Start Enrollment
+                        </button>
+
+                        <button class="btn secondary" onclick="verifyTrainerBiometric()" id="trainerVerifyBtn" disabled>
+                            <i class="fas fa-check-circle"></i> Test Verification
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let members = [];
+        let trainers = [];
+        let devices = [];
+        let selectedPerson = null;
+        let selectedBiometricType = null;
+        let currentTab = 'members';
+
+        // Initialize the application
+        window.addEventListener('load', async () => {
+            await loadDevices();
+            await loadMembers();
+            await loadTrainers();
+        });
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${type}`;
+            alertDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            
+            const content = document.querySelector('.content');
+            content.insertBefore(alertDiv, content.firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        async function loadDevices() {
+            try {
+                const response = await fetch('/api/biometric/devices/installed', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    devices = result.devices || [];
+                    updateDeviceSelectors();
+                } else {
+                    console.error('Failed to load devices:', result.error);
+                    showAlert('Failed to load devices. Please check device setup.', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading devices:', error);
+                showAlert('Error loading devices', 'error');
+            }
+        }
+
+        function updateDeviceSelectors() {
+            const deviceSelect = document.getElementById('deviceSelect');
+            const trainerDeviceSelect = document.getElementById('trainerDeviceSelect');
+            
+            const options = devices.map(device => {
+                const deviceName = device.vendor && device.model ? 
+                    `${device.vendor} ${device.model}` : 
+                    device.name || `${device.category} Device`;
+                return `<option value="${device.deviceId}">${deviceName}</option>`;
+            }).join('');
+            
+            const defaultOption = devices.length > 0 ? 
+                '<option value="">Select a device</option>' : 
+                '<option value="">No devices available</option>';
+            
+            deviceSelect.innerHTML = defaultOption + options;
+            trainerDeviceSelect.innerHTML = defaultOption + options;
+        }
+
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.success || Array.isArray(result)) {
+                    members = result.members || result || [];
+                    displayPeople(members, 'membersList', 'Member');
+                } else {
+                    console.error('Failed to load members:', result.error);
+                    document.getElementById('membersList').innerHTML = '<p style="text-align: center; padding: 20px; color: #718096;">Failed to load members</p>';
+                }
+            } catch (error) {
+                console.error('Error loading members:', error);
+                document.getElementById('membersList').innerHTML = '<p style="text-align: center; padding: 20px; color: #718096;">Error loading members</p>';
+            }
+        }
+
+        async function loadTrainers() {
+            try {
+                const response = await fetch('/api/trainers', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.success || Array.isArray(result)) {
+                    trainers = result.trainers || result || [];
+                    displayPeople(trainers, 'trainersList', 'Trainer');
+                } else {
+                    console.error('Failed to load trainers:', result.error);
+                    document.getElementById('trainersList').innerHTML = '<p style="text-align: center; padding: 20px; color: #718096;">Failed to load trainers</p>';
+                }
+            } catch (error) {
+                console.error('Error loading trainers:', error);
+                document.getElementById('trainersList').innerHTML = '<p style="text-align: center; padding: 20px; color: #718096;">Error loading trainers</p>';
+            }
+        }
+
+        function displayPeople(peopleList, containerId, personType) {
+            const container = document.getElementById(containerId);
+            
+            if (peopleList.length === 0) {
+                container.innerHTML = `<p style="text-align: center; padding: 20px; color: #718096;">No ${personType.toLowerCase()}s found</p>`;
+                return;
+            }
+            
+            container.innerHTML = peopleList.map(person => {
+                const name = person.memberName || person.name || `${person.firstName || ''} ${person.lastName || ''}`.trim();
+                const email = person.email || 'No email';
+                const phone = person.phoneNumber || person.phone || 'No phone';
+                
+                return `
+                    <div class="person-card" onclick="selectPerson('${person._id}', '${personType}')">
+                        <div class="person-info">
+                            <h4>${name}</h4>
+                            <div class="person-meta">
+                                <i class="fas fa-envelope"></i> ${email} | 
+                                <i class="fas fa-phone"></i> ${phone}
+                            </div>
+                            <div class="enrollment-status">
+                                <span class="status-badge status-pending">Not Enrolled</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectPerson(personId, personType) {
+            // Remove previous selection
+            document.querySelectorAll('.person-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection to clicked card
+            event.target.closest('.person-card').classList.add('selected');
+            
+            selectedPerson = { id: personId, type: personType };
+            updateEnrollmentButtons();
+        }
+
+        function selectBiometricType(type) {
+            document.querySelectorAll('.biometric-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            event.target.closest('.biometric-option').classList.add('selected');
+            document.getElementById(type + 'Option').checked = true;
+            selectedBiometricType = type;
+            updateEnrollmentButtons();
+        }
+
+        function selectTrainerBiometricType(type) {
+            document.querySelectorAll('#trainersTab .biometric-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            event.target.closest('.biometric-option').classList.add('selected');
+            document.getElementById('trainer' + type.charAt(0).toUpperCase() + type.slice(1) + 'Option').checked = true;
+            selectedBiometricType = type;
+            updateTrainerEnrollmentButtons();
+        }
+
+        function updateEnrollmentButtons() {
+            const enrollBtn = document.getElementById('enrollBtn');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const deviceSelect = document.getElementById('deviceSelect');
+            
+            const canEnroll = selectedPerson && selectedBiometricType && deviceSelect.value;
+            enrollBtn.disabled = !canEnroll;
+            verifyBtn.disabled = !canEnroll;
+        }
+
+        function updateTrainerEnrollmentButtons() {
+            const enrollBtn = document.getElementById('trainerEnrollBtn');
+            const verifyBtn = document.getElementById('trainerVerifyBtn');
+            const deviceSelect = document.getElementById('trainerDeviceSelect');
+            
+            const canEnroll = selectedPerson && selectedBiometricType && deviceSelect.value;
+            enrollBtn.disabled = !canEnroll;
+            verifyBtn.disabled = !canEnroll;
+        }
+
+        async function startEnrollment() {
+            if (!selectedPerson || !selectedBiometricType) {
+                showAlert('Please select a person and biometric type', 'error');
+                return;
+            }
+            
+            const deviceId = document.getElementById('deviceSelect').value;
+            if (!deviceId) {
+                showAlert('Please select a device', 'error');
+                return;
+            }
+            
+            const progressDiv = document.getElementById('enrollmentProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressStatus = document.getElementById('progressStatus');
+            const progressTitle = document.getElementById('progressTitle');
+            
+            progressDiv.style.display = 'block';
+            progressTitle.textContent = `Enrolling ${selectedBiometricType} data...`;
+            progressStatus.textContent = 'Starting enrollment process...';
+            progressFill.style.width = '10%';
+            
+            try {
+                progressStatus.textContent = 'Communicating with device...';
+                progressFill.style.width = '30%';
+                
+                const response = await fetch('/api/biometric/enroll', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                    },
+                    body: JSON.stringify({
+                        personId: selectedPerson.id,
+                        personType: selectedPerson.type,
+                        biometricType: selectedBiometricType,
+                        deviceId: deviceId,
+                        enrollmentOptions: {
+                            quality: 'high',
+                            multiSample: true
+                        }
+                    })
+                });
+                
+                progressStatus.textContent = 'Processing enrollment data...';
+                progressFill.style.width = '70%';
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    progressStatus.textContent = 'Enrollment completed successfully!';
+                    progressFill.style.width = '100%';
+                    progressFill.style.background = '#4CAF50';
+                    
+                    showAlert(`${selectedBiometricType} enrollment completed successfully!`, 'success');
+                    
+                    // Update person card status
+                    const personCard = document.querySelector('.person-card.selected');
+                    if (personCard) {
+                        const statusBadge = personCard.querySelector('.status-badge');
+                        statusBadge.textContent = `${selectedBiometricType} Enrolled`;
+                        statusBadge.className = 'status-badge status-enrolled';
+                    }
+                    
+                    setTimeout(() => {
+                        progressDiv.style.display = 'none';
+                        progressFill.style.width = '0%';
+                        progressFill.style.background = 'linear-gradient(90deg, #667eea, #764ba2)';
+                    }, 3000);
+                } else {
+                    progressStatus.textContent = `Enrollment failed: ${result.error}`;
+                    progressFill.style.background = '#f44336';
+                    showAlert(`Enrollment failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                progressStatus.textContent = `Error: ${error.message}`;
+                progressFill.style.background = '#f44336';
+                showAlert(`Enrollment error: ${error.message}`, 'error');
+            }
+        }
+
+        async function verifyBiometric() {
+            if (!selectedPerson || !selectedBiometricType) {
+                showAlert('Please select a person and biometric type', 'error');
+                return;
+            }
+            
+            const deviceId = document.getElementById('deviceSelect').value;
+            if (!deviceId) {
+                showAlert('Please select a device', 'error');
+                return;
+            }
+            
+            showAlert('Starting biometric verification...', 'info');
+            
+            try {
+                const response = await fetch('/api/biometric/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                    },
+                    body: JSON.stringify({
+                        personId: selectedPerson.id,
+                        personType: selectedPerson.type,
+                        biometricType: selectedBiometricType,
+                        deviceId: deviceId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.verified) {
+                    showAlert(`Verification successful! Confidence: ${result.verificationResult.confidence}%`, 'success');
+                } else {
+                    showAlert(`Verification failed: ${result.error || 'No match found'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`Verification error: ${error.message}`, 'error');
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            currentTab = tabName;
+            selectedPerson = null;
+            selectedBiometricType = null;
+            
+            // Clear selections
+            document.querySelectorAll('.person-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelectorAll('.biometric-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+            });
+            
+            updateEnrollmentButtons();
+            updateTrainerEnrollmentButtons();
+        }
+
+        function startTrainerEnrollment() {
+            startEnrollment(); // Same process for trainers
+        }
+
+        function verifyTrainerBiometric() {
+            selectedBiometricType = document.querySelector('input[name="trainerBiometricType"]:checked')?.value;
+            const oldDeviceSelect = document.getElementById('deviceSelect');
+            const trainerDeviceSelect = document.getElementById('trainerDeviceSelect');
+            
+            // Temporarily swap device selectors for verification
+            oldDeviceSelect.value = trainerDeviceSelect.value;
+            verifyBiometric();
+        }
+
+        function filterPeople(type) {
+            const searchInput = document.getElementById(type + 'Search');
+            const searchTerm = searchInput.value.toLowerCase();
+            const peopleList = type === 'members' ? members : trainers;
+            
+            const filtered = peopleList.filter(person => {
+                const name = (person.memberName || person.name || `${person.firstName || ''} ${person.lastName || ''}`).toLowerCase();
+                const email = (person.email || '').toLowerCase();
+                const phone = (person.phoneNumber || person.phone || '').toLowerCase();
+                
+                return name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm);
+            });
+            
+            displayPeople(filtered, type + 'List', type === 'members' ? 'Member' : 'Trainer');
+        }
+
+        // Add device selector change handlers
+        document.getElementById('deviceSelect').addEventListener('change', updateEnrollmentButtons);
+        document.getElementById('trainerDeviceSelect').addEventListener('change', updateTrainerEnrollmentButtons);
+
+        // Check for admin token
+        if (!localStorage.getItem('gymAdminToken')) {
+            showAlert('Admin authentication required. Please login first.', 'error');
+        }
+    </script>
+</body>
+</html>

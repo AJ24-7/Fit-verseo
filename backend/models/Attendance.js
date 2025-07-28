@@ -43,6 +43,66 @@ const attendanceSchema = new mongoose.Schema({
         ref: 'Gym',
         default: null
     },
+    // Biometric authentication fields
+    authenticationMethod: {
+        type: String,
+        enum: ['manual', 'fingerprint', 'face_recognition', 'qr_code', 'card'],
+        default: 'manual'
+    },
+    biometricData: {
+        biometricType: {
+            type: String,
+            enum: ['fingerprint', 'face', 'none'],
+            default: 'none'
+        },
+        confidence: {
+            type: Number,
+            min: 0,
+            max: 100,
+            default: null
+        },
+        deviceId: {
+            type: String,
+            default: null
+        },
+        templateMatched: {
+            type: Boolean,
+            default: false
+        },
+        verificationTime: {
+            type: Number, // Time in milliseconds for verification
+            default: null
+        }
+    },
+    location: {
+        latitude: {
+            type: Number,
+            default: null
+        },
+        longitude: {
+            type: Number,
+            default: null
+        },
+        accuracy: {
+            type: Number,
+            default: null
+        }
+    },
+    deviceInfo: {
+        deviceType: {
+            type: String,
+            enum: ['web', 'mobile', 'scanner', 'kiosk'],
+            default: 'web'
+        },
+        userAgent: {
+            type: String,
+            default: null
+        },
+        ipAddress: {
+            type: String,
+            default: null
+        }
+    },
     createdAt: {
         type: Date,
         default: Date.now
