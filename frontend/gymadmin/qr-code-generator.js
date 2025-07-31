@@ -1,9 +1,90 @@
 // QR Code Generator for Member Registration
 class QRCodeGenerator {
     constructor() {
-        this.currentGymId = localStorage.getItem('gymId');
+        this.currentGymId = this.getGymId();
+        console.log('🏢 QRCodeGenerator initialized for gym:', this.currentGymId);
+        
+        if (!this.currentGymId) {
+            console.error('❌ No gym ID found! Checked localStorage, URL params, and global profile');
+            this.showNotification('Unable to determine gym ID. Please refresh and try again.', 'error');
+            return;
+        }
+        
         this.isQRLibraryReady = false;
         this.checkQRLibrary();
+        
+        // Listen for gym profile loaded event
+        window.addEventListener('gymProfileLoaded', (event) => {
+            console.log('🔄 Gym profile loaded event received, refreshing gym ID');
+            this.refreshGymId();
+        });
+        
+        // Store reference globally for other components
+        window.qrGenerator = this;
+    }
+
+    // Method to refresh the gym ID after profile loads
+    refreshGymId() {
+        const newGymId = this.getGymId();
+        if (newGymId && newGymId !== this.currentGymId) {
+            console.log('🔄 Updating gym ID from', this.currentGymId, 'to', newGymId);
+            this.currentGymId = newGymId;
+        }
+    }
+
+    // Robust method to get gym ID from multiple sources
+    getGymId() {
+        // Method 1: Check localStorage (preferred)
+        let gymId = localStorage.getItem('gymId');
+        if (gymId) {
+            console.log('✅ Found gymId in localStorage:', gymId);
+            return gymId;
+        }
+        
+        // Method 2: Check alternative localStorage keys
+        gymId = localStorage.getItem('currentGymId');
+        if (gymId) {
+            console.log('✅ Found gymId in localStorage as currentGymId:', gymId);
+            // Store it in the primary key for consistency
+            localStorage.setItem('gymId', gymId);
+            return gymId;
+        }
+        
+        // Method 3: Check URL parameters (in case redirected with gymId)
+        const urlParams = new URLSearchParams(window.location.search);
+        gymId = urlParams.get('gymId');
+        if (gymId) {
+            console.log('✅ Found gymId in URL parameters:', gymId);
+            // Store it in localStorage for future use
+            localStorage.setItem('gymId', gymId);
+            return gymId;
+        }
+        
+        // Method 4: Check global gym profile
+        if (window.currentGymProfile) {
+            gymId = window.currentGymProfile._id || window.currentGymProfile.id;
+            if (gymId) {
+                console.log('✅ Found gymId from window.currentGymProfile:', gymId);
+                // Store it in localStorage for future use
+                localStorage.setItem('gymId', gymId);
+                return gymId;
+            }
+        }
+        
+        // Method 5: Wait for gym profile to load and retry
+        setTimeout(() => {
+            if (window.currentGymProfile && !this.currentGymId) {
+                gymId = window.currentGymProfile._id || window.currentGymProfile.id;
+                if (gymId) {
+                    console.log('✅ Found gymId after waiting for profile load:', gymId);
+                    this.currentGymId = gymId;
+                    localStorage.setItem('gymId', gymId);
+                }
+            }
+        }, 1000);
+        
+        console.log('❌ No gymId found in any location');
+        return null;
     }
 
     checkQRLibrary() {
@@ -111,6 +192,19 @@ class QRCodeGenerator {
             return;
         }
 
+        // Re-verify gym ID before generating QR code
+        if (!this.currentGymId) {
+            console.log('🔄 Gym ID not found, attempting to refresh...');
+            this.currentGymId = this.getGymId();
+        }
+        
+        if (!this.currentGymId) {
+            this.showNotification('Unable to determine gym ID. Please refresh the page and try again.', 'error');
+            return;
+        }
+
+        console.log('🏢 Generating QR code for gym ID:', this.currentGymId);
+
         try {
             const button = document.getElementById('generateQRBtn');
             const originalText = button.innerHTML;
@@ -135,9 +229,16 @@ class QRCodeGenerator {
             // Create registration URL
             const baseUrl = window.location.origin;
             const registrationUrl = `${baseUrl}/register?gym=${this.currentGymId}&token=${token}`;
+            console.log('🔗 Generated QR URL for gym:', this.currentGymId, 'URL:', registrationUrl);
 
             // Save QR code data to backend
             await this.saveQRCodeData(qrData);
+
+            // Verify the QR data is for this gym
+            if (qrData.gymId !== this.currentGymId) {
+                console.error('QR code gym ID mismatch!', qrData.gymId, 'vs', this.currentGymId);
+                throw new Error('QR code gym ID mismatch');
+            }
 
             // Generate QR Code using qrcode-generator library
             const qr = qrcode(0, 'M');
@@ -194,7 +295,12 @@ class QRCodeGenerator {
     }
 
     generateUniqueToken() {
-        return 'qr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const gymSpecific = this.currentGymId ? this.currentGymId.substr(-4) : 'gym';
+        const token = `qr_${gymSpecific}_${timestamp}_${random}`;
+        console.log('Generated unique token for gym', this.currentGymId, ':', token);
+        return token;
     }
 
     async saveQRCodeData(qrData) {
@@ -221,9 +327,10 @@ class QRCodeGenerator {
     }
 
     saveQRCodeLocally(qrData) {
-        const qrCodes = JSON.parse(localStorage.getItem('gymQRCodes') || '[]');
+        const key = `gymQRCodes_${this.currentGymId}`;
+        const qrCodes = JSON.parse(localStorage.getItem(key) || '[]');
         qrCodes.push(qrData);
-        localStorage.setItem('gymQRCodes', JSON.stringify(qrCodes));
+        localStorage.setItem(key, JSON.stringify(qrCodes));
     }
 
     displayQRCode(canvas, url, qrData) {
@@ -265,17 +372,17 @@ class QRCodeGenerator {
             if (response.ok) {
                 qrCodes = await response.json();
             } else {
-                // Fallback to local storage
-                const allQRCodes = JSON.parse(localStorage.getItem('gymQRCodes') || '[]');
-                qrCodes = allQRCodes.filter(qr => qr.gymId === this.currentGymId);
+                // Fallback to local storage (gym-specific)
+                const key = `gymQRCodes_${this.currentGymId}`;
+                qrCodes = JSON.parse(localStorage.getItem(key) || '[]');
             }
 
             this.renderActiveQRCodes(qrCodes);
         } catch (error) {
             console.error('Error loading active QR codes:', error);
-            // Fallback to local storage
-            const allQRCodes = JSON.parse(localStorage.getItem('gymQRCodes') || '[]');
-            const qrCodes = allQRCodes.filter(qr => qr.gymId === this.currentGymId);
+            // Fallback to local storage (gym-specific)
+            const key = `gymQRCodes_${this.currentGymId}`;
+            const qrCodes = JSON.parse(localStorage.getItem(key) || '[]');
             this.renderActiveQRCodes(qrCodes);
         }
     }
@@ -283,12 +390,17 @@ class QRCodeGenerator {
     renderActiveQRCodes(qrCodes) {
         const container = document.getElementById('activeQRList');
         
-        if (qrCodes.length === 0) {
-            container.innerHTML = '<p style="color:#666;text-align:center;padding:20px;margin:0;">No active QR codes found.</p>';
+        // Filter QR codes to ensure they belong to the current gym
+        const gymSpecificQRCodes = qrCodes.filter(qr => qr.gymId === this.currentGymId);
+        
+        if (gymSpecificQRCodes.length === 0) {
+            container.innerHTML = '<p style="color:#666;text-align:center;padding:20px;margin:0;">No active QR codes found for this gym.</p>';
             return;
         }
 
-        const html = qrCodes.map(qr => {
+        console.log(`Rendering ${gymSpecificQRCodes.length} QR codes for gym ${this.currentGymId}`);
+
+        const html = gymSpecificQRCodes.map(qr => {
             const expiryDate = new Date(qr.expiryDate);
             const isExpired = expiryDate < new Date();
             const statusColor = isExpired ? '#dc3545' : '#28a745';
@@ -338,9 +450,10 @@ class QRCodeGenerator {
             if (response.ok) {
                 qrData = await response.json();
             } else {
-                // Fallback to local storage
-                const allQRCodes = JSON.parse(localStorage.getItem('gymQRCodes') || '[]');
-                qrData = allQRCodes.find(qr => qr.token === token);
+                // Fallback to local storage (gym-specific)
+                const key = `gymQRCodes_${this.currentGymId}`;
+                const gymQRCodes = JSON.parse(localStorage.getItem(key) || '[]');
+                qrData = gymQRCodes.find(qr => qr.token === token);
             }
 
             if (!qrData) {
@@ -351,6 +464,7 @@ class QRCodeGenerator {
             // Generate QR Code using qrcode-generator library
             const baseUrl = window.location.origin;
             const registrationUrl = `${baseUrl}/register?gym=${this.currentGymId}&token=${token}`;
+            console.log('Regenerated QR URL for gym:', this.currentGymId, 'URL:', registrationUrl);
             
             const qr = qrcode(0, 'M');
             qr.addData(registrationUrl);

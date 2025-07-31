@@ -2713,6 +2713,17 @@ document.addEventListener('DOMContentLoaded', function() {
         currentGymProfile = profile;
         window.currentGymProfile = profile; // Also set on window for global access
         
+        // Store gymId in localStorage for QR generator and other components
+        if (profile._id) {
+            localStorage.setItem('gymId', profile._id);
+            localStorage.setItem('currentGymId', profile._id);
+            console.log('✅ Stored gymId in localStorage:', profile._id);
+        } else if (profile.id) {
+            localStorage.setItem('gymId', profile.id);
+            localStorage.setItem('currentGymId', profile.id);
+            console.log('✅ Stored gymId in localStorage:', profile.id);
+        }
+        
         if (adminNameElement) {
             adminNameElement.textContent = profile.gymName || profile.name || 'Gym Admin';
         }
@@ -2747,6 +2758,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         // Ensure activities are rendered after profile is loaded
         if (typeof fetchAndRenderActivities === 'function') fetchAndRenderActivities();
+        
+        // Refresh QR generator with correct gym ID if it exists
+        if (window.qrGenerator && typeof window.qrGenerator.refreshGymId === 'function') {
+            window.qrGenerator.refreshGymId();
+        }
+        
+        // Trigger custom event for other components that depend on gym profile
+        window.dispatchEvent(new CustomEvent('gymProfileLoaded', { 
+            detail: { 
+                gymId: profile._id || profile.id,
+                profile: profile 
+            } 
+        }));
     }
 
     

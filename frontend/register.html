@@ -6,6 +6,41 @@
     <title>Gym Member Registration</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Month button group as grid for compact plan card */
+        .month-btn-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            justify-items: center;
+        }
+        .month-btn {
+            background: #f1f8e9;
+            color: #1976d2;
+            border: 1.5px solid #b2dfdb;
+            border-radius: 8px;
+            padding: 7px 0;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 90px;
+            outline: none;
+        }
+        .month-btn:hover {
+            background: #e3f2fd;
+            border-color: #1976d2;
+            color: #1976d2;
+        }
+        .month-btn.active, .month-btn:focus-visible {
+            background: linear-gradient(135deg, #1976d2 60%, #1565c0 100%);
+            color: #fff;
+            border-color: #1976d2;
+            box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+            transform: scale(1.07);
+            z-index: 1;
+        }
         * {
             margin: 0;
             padding: 0;
@@ -156,10 +191,10 @@
 
         .plan-card:hover,
         .plan-card.selected {
-            border-color: #1976d2;
+            border-color: #0cee3d;
             background: #f8f9ff;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
+            box-shadow: 0 4px 12px rgba(18, 205, 40, 0.15);
         }
 
         .plan-card.selected::after {
@@ -169,7 +204,7 @@
             position: absolute;
             top: 10px;
             right: 15px;
-            color: #1976d2;
+            color: #19d235;
             font-size: 1.2rem;
         }
 
@@ -400,36 +435,10 @@
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="paymentMode">Payment Mode *</label>
-                        <select id="paymentMode" name="paymentMode" required>
-                            <option value="">Select</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Card">Card</option>
-                            <option value="UPI">UPI</option>
-                            <option value="Online">Online</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="monthlyPlan">Monthly Plan *</label>
-                        <select id="monthlyPlan" name="monthlyPlan" required>
-                            <option value="">Select</option>
-                            <option value="1 Month">1 Month</option>
-                            <option value="3 Months">3 Months</option>
-                            <option value="6 Months">6 Months</option>
-                            <option value="12 Months">12 Months</option>
-                        </select>
-                    </div>
+                    <!-- Monthly plan selection moved to each plan card below -->
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="paymentAmount">Payment Amount *</label>
-                        <input type="number" id="paymentAmount" name="paymentAmount" min="0" required>
-                        <div id="discountInfo" style="margin-top: 8px; padding: 8px; border-radius: 4px; font-size: 0.9em; display: none;">
-                            <i class="fas fa-tag"></i> <span id="discountText">No discount applied</span>
-                        </div>
-                    </div>
                     <div class="form-group">
                         <label for="activityPreference">Activity Preference *</label>
                         <select id="activityPreference" name="activityPreference" required>
@@ -481,7 +490,37 @@
                 this.gymData = null;
                 this.selectedPlan = null;
                 
+                console.log('MemberRegistration initialized with:', {
+                    qrToken: this.qrToken,
+                    gymId: this.gymId,
+                    url: window.location.href,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Clear any previous gym data from memory and DOM
+                this.clearPreviousData();
+                
                 this.init();
+            }
+
+            clearPreviousData() {
+                // Clear DOM elements
+                document.getElementById('gymName').textContent = 'Loading...';
+                document.getElementById('headerGymName').textContent = 'Loading...';
+                document.getElementById('gymDetails').innerHTML = '<div style="color:#666;">Loading gym details...</div>';
+                document.getElementById('plansGrid').innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Loading membership plans...</div>';
+                
+                // Clear form fields
+                document.getElementById('gymId').value = '';
+                document.getElementById('qrToken').value = '';
+                
+                // Reset logo
+                const logoElement = document.getElementById('gymLogo');
+                if (logoElement) {
+                    logoElement.src = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
+                }
+                
+                console.log('Previous data cleared');
             }
 
             async init() {
@@ -490,9 +529,15 @@
                     return;
                 }
 
+                console.log('*** STARTING INIT with gymId:', this.gymId, 'qrToken:', this.qrToken, '***');
+
                 try {
                     await this.validateQRCode();
+                    console.log('*** AFTER QR VALIDATION, gymId is now:', this.gymId, '***');
+                    
                     await this.loadGymData();
+                    console.log('*** AFTER GYM DATA LOAD, final gymId:', this.gymId, '***');
+                    
                     this.setupForm();
                     this.bindEvents();
                 } catch (error) {
@@ -509,23 +554,93 @@
 
             async validateQRCode() {
                 try {
-                    const response = await fetch(`/api/qr-codes/validate/${this.qrToken}`);
+                    console.log('Validating QR code:', this.qrToken, 'for gym:', this.gymId);
+                    
+                    // Force cache bypass
+                    const timestamp = new Date().getTime();
+                    const response = await fetch(`/api/qr-codes/validate/${this.qrToken}?_t=${timestamp}`, {
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
                     const data = await response.json();
 
                     if (!response.ok || !data.valid) {
+                        console.log('Backend validation failed, status:', response.status, 'data:', data);
+                        // Try localStorage fallback - search across ALL gym QR codes to find the token
+                        console.log('Searching localStorage for token:', this.qrToken);
+                        let foundQRData = null;
+                        let foundGymId = null;
+                        
+                        // Get all localStorage keys that match the gym QR code pattern
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key && key.startsWith('gymQRCodes_')) {
+                                const gymId = key.replace('gymQRCodes_', '');
+                                const gymQRCodes = JSON.parse(localStorage.getItem(key) || '[]');
+                                const qrData = gymQRCodes.find(qr => qr.token === this.qrToken);
+                                
+                                if (qrData) {
+                                    // Check expiry
+                                    const now = new Date();
+                                    const expiry = new Date(qrData.expiryDate);
+                                    if (expiry >= now) {
+                                        foundQRData = qrData;
+                                        foundGymId = gymId;
+                                        console.log('Found QR code in localStorage for gym:', gymId);
+                                        break;
+                                    } else {
+                                        console.log('Found QR code but it is expired');
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (foundQRData && foundGymId) {
+                            this.qrData = foundQRData;
+                            this.gymId = foundGymId; // Update gymId to the correct gym
+                            this.gymData = {};
+                            document.getElementById('gymId').value = foundGymId;
+                            document.getElementById('qrToken').value = this.qrToken;
+                            document.getElementById('headerGymName').textContent = 'Loading...';
+                            console.log('*** USING localStorage QR data for gym:', foundGymId, '***');
+                            console.log('*** FORCED gymId update to:', foundGymId, '***');
+                            return;
+                        }
+                        
                         throw new Error(data.message || 'Invalid QR code');
                     }
 
+                    console.log('Backend validation successful:', data);
                     this.qrData = data;
                     // Some APIs return gym as nested, some as flat. Handle both.
                     this.gymData = data.gym || {};
 
-                    // Set hidden form fields
-                    if (this.gymData && this.gymData.id) {
-                        document.getElementById('gymId').value = this.gymData.id;
+                    // Set hidden form fields and update gymId to match the QR code's gym
+                    let correctGymId = null;
+                    
+                    if (data.gym && data.gym.id) {
+                        correctGymId = data.gym.id;
+                        console.log('Got gym ID from data.gym.id:', correctGymId);
                     } else if (data.gymId) {
-                        document.getElementById('gymId').value = data.gymId;
+                        correctGymId = data.gymId;
+                        console.log('Got gym ID from data.gymId:', correctGymId);
+                    } else if (data.qrCode && data.qrCode.gymId) {
+                        correctGymId = data.qrCode.gymId;
+                        console.log('Got gym ID from data.qrCode.gymId:', correctGymId);
                     }
+                    
+                    if (correctGymId) {
+                        // Force update the gym ID
+                        this.gymId = correctGymId;
+                        document.getElementById('gymId').value = correctGymId;
+                        console.log('*** UPDATED gymId to:', correctGymId, '***');
+                    } else {
+                        console.error('No gym ID found in QR validation response:', data);
+                        throw new Error('No gym ID in QR validation response');
+                    }
+                    
                     document.getElementById('qrToken').value = this.qrToken;
 
                     // Set header gym name if available
@@ -543,11 +658,33 @@
 
             async loadGymData() {
                 try {
-                    // Fetch gym data (includes membership plans and activities)
-                    const response = await fetch(`/api/gyms/${this.gymId}`);
+                    // Ensure we use the correct gymId (may have been updated during QR validation)
+                    const gymIdToUse = this.gymId || document.getElementById('gymId').value;
+                    console.log('Loading gym data for gymId:', gymIdToUse);
+                    
+                    if (!gymIdToUse) {
+                        throw new Error('No gym ID available for loading gym data');
+                    }
+                    
+                    // Force cache bypass by adding timestamp
+                    const timestamp = new Date().getTime();
+                    const response = await fetch(`/api/gyms/${gymIdToUse}?_t=${timestamp}`, {
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+                    
                     if (response.ok) {
                         const gymData = await response.json();
-                        console.log('Gym data loaded:', gymData);
+                        console.log('Gym data loaded for gym', gymIdToUse, ':', gymData);
+                        
+                        // Verify this is the correct gym
+                        if (gymData._id !== gymIdToUse) {
+                            console.error('Gym ID mismatch! Expected:', gymIdToUse, 'Got:', gymData._id);
+                            throw new Error('Gym data mismatch');
+                        }
+                        
                         // Store gym data
                         this.gymData = gymData;
                         // Set gym name in both header and info, prefer gymData.name, fallback to gymData.gymName
@@ -560,6 +697,10 @@
                         } else {
                             gymName = 'Unknown Gym';
                         }
+                        
+                        console.log(`Setting gym name to: "${gymName}" for gym ID: ${gymIdToUse}`);
+                        console.log('*** VERIFICATION: Loaded gym data _id:', gymData._id, 'Expected:', gymIdToUse, '***');
+                        
                         if (gymNameElem) gymNameElem.textContent = gymName;
                         // Always update headerGymName for consistency
                         const headerGymNameElem = document.getElementById('headerGymName');
@@ -671,18 +812,36 @@
                 try {
                     let plans = [];
                     
+                    // Ensure we use the correct gymId
+                    const gymIdToUse = this.gymId || document.getElementById('gymId').value;
+                    console.log('Loading membership plans for gymId:', gymIdToUse);
+                    
                     // Use gym data if already available, otherwise fetch it
                     if (this.gymData && this.gymData.membershipPlans) {
                         plans = this.gymData.membershipPlans;
+                        console.log('Using cached membership plans:', plans);
                     } else {
                         // Fetch gym data to get membership plans
-                        const response = await fetch(`/api/gyms/${this.gymId}`);
+                        const timestamp = new Date().getTime();
+                        const response = await fetch(`/api/gyms/${gymIdToUse}?_t=${timestamp}`, {
+                            headers: {
+                                'Cache-Control': 'no-cache',
+                                'Pragma': 'no-cache'
+                            }
+                        });
                         if (response.ok) {
                             const gymData = await response.json();
+                            
+                            // Verify this is the correct gym
+                            if (gymData._id !== gymIdToUse) {
+                                console.error('Membership plans: Gym ID mismatch! Expected:', gymIdToUse, 'Got:', gymData._id);
+                                throw new Error('Gym data mismatch in membership plans');
+                            }
+                            
                             plans = gymData.membershipPlans || [];
-                            console.log('Loaded membership plans from gym data:', plans);
+                            console.log('Loaded membership plans from API for gym', gymIdToUse, ':', plans);
                         } else {
-                            console.error('Failed to fetch gym data:', response.status);
+                            console.error('Failed to fetch gym data for membership plans:', response.status);
                         }
                     }
                     
@@ -822,7 +981,6 @@
 
             renderPlans(plans) {
                 const plansGrid = document.getElementById('plansGrid');
-                
                 let badge = '';
                 if (this.qrData && this.qrData.registrationType === 'trial') {
                     badge = '<span class="trial-badge">3-Day Trial</span>';
@@ -830,31 +988,120 @@
                     badge = '<span class="premium-badge">Premium Access</span>';
                 }
 
-                plansGrid.innerHTML = plans.map(plan => {
+                // Month options
+                const monthOptions = [
+                    { value: '1', label: '1 Month' },
+                    { value: '3', label: '3 Months' },
+                    { value: '6', label: '6 Months' },
+                    { value: '12', label: '12 Months' }
+                ];
+
+                plansGrid.innerHTML = plans.map((plan, idx) => {
                     const planId = plan._id || plan.name;
                     const planColor = plan.color || '#1976d2';
                     const planPrice = plan.price || 0;
-                    const planDuration = plan.duration || '1 month';
                     const planBenefits = plan.benefits || ['Standard features'];
-                    const planDescription = plan.description || plan.note || '';
+                    const planNote = plan.note || '';
                     const planDiscount = plan.discount || 0;
-                    
-                    let discountBadge = '';
-                    if (planDiscount > 0) {
-                        discountBadge = `<div style="position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold;">${planDiscount}%</div>`;
+                    // Discount months: can be array, number, or object {min:6} for 'on or above'
+                    let discountMonths = [];
+                    let discountMin = null;
+                    if (Array.isArray(plan.discountMonths)) {
+                        discountMonths = plan.discountMonths.map(Number);
+                    } else if (typeof plan.discountMonths === 'object' && plan.discountMonths !== null && plan.discountMonths.min) {
+                        discountMin = Number(plan.discountMonths.min);
+                    } else if (typeof plan.discountMonths === 'number' && plan.discountMonths > 0) {
+                        discountMin = plan.discountMonths;
                     }
-                    
+                    let discountBadge = '';
+                    if (planDiscount > 0 && (discountMonths.length > 0 || discountMin)) {
+                        discountBadge = `<div class="discount-badge">${planDiscount}%</div>`;
+                    }
+                    // Unique select id for each plan
+                    const selectId = `monthlyPlan_${idx}`;
+                    // Payment and discount display area
+                    const paymentId = `paymentAmount_${idx}`;
+                    const discountId = `discountInfo_${idx}`;
+                    // Month options as buttons (no inline style)
+                    const monthBtnGroup = monthOptions.map(opt =>
+                        `<button type="button" class="month-btn" data-plan-idx="${idx}" data-months="${opt.value}">${opt.label}</button>`
+                    ).join('');
+                    // Icon
+                    let iconHtml = '';
+                    if (plan.icon) {
+                        iconHtml = `<i class="fa-solid ${plan.icon}" style="margin-right:7px;color:${planColor};font-size:1.2em;"></i>`;
+                    }
+                    // Discount months text
+                    let discountMonthsText = '';
+                    if (planDiscount > 0 && discountMin) {
+                        discountMonthsText = `<div style=\"font-size:0.92em;color:#1976d2;margin:4px 0 0 0;\">Discount applies for: <b>${discountMin}+ months</b></div>`;
+                    } else if (planDiscount > 0 && discountMonths.length > 0) {
+                        discountMonthsText = `<div style=\"font-size:0.92em;color:#1976d2;margin:4px 0 0 0;\">Discount applies for: <b>${discountMonths.join(', ')} month${discountMonths.length>1?'s':''}</b></div>`;
+                    }
                     return `
                         <div class="plan-card" data-plan="${planId}" style="border-color: ${planColor}20; position: relative;">
                             ${discountBadge}
-                            <div class="plan-name" style="color: ${planColor};">${plan.name}${badge}</div>
-                            <div class="plan-price" style="color: ${planColor};">₹${planPrice}/${planDuration}</div>
-                            <div class="plan-features">${planBenefits.join(' • ')}</div>
-                            ${planDescription ? `<div style="font-size: 0.8rem; color: #666; margin-top: 8px; font-style: italic;">${planDescription}</div>` : ''}
-                            ${planDiscount > 0 ? `<div style="font-size: 0.75rem; color: #ff4444; margin-top: 4px; font-weight: bold;">Save ${planDiscount}% on this plan!</div>` : ''}
+                            <div class="plan-name" style="color: ${planColor};display:flex;align-items:center;justify-content:space-between;">
+                                <span>${iconHtml}${plan.name}${badge}</span>
+                                <span style="font-size:1.1rem;font-weight:500;background:#e3f2fd;color:${planColor};border-radius:6px;padding:4px 10px;">₹${planPrice}/mo</span>
+                            </div>
+                            <div class="plan-features">${planBenefits.map(b=>`<span style='margin-right:7px;'>• ${b}</span>`).join('')}</div>
+                            ${planNote ? `<div style=\"font-size: 0.8rem; color: #666; margin-top: 8px; font-style: italic;\">${planNote}</div>` : ''}
+                            ${discountMonthsText}
+                            <div style="margin: 14px 0 10px 0;">
+                                <span style="font-weight:600;color:#333;">Select Duration:</span>
+                                <div class="month-btn-group" data-plan-idx="${idx}">${monthBtnGroup}</div>
+                            </div>
+                            <div id="${paymentId}" class="plan-price" style="color:${planColor};font-size:1.2rem;margin-bottom:6px;">₹0</div>
+                            <div id="${discountId}" style="font-size:0.95em;color:#2e7d32;display:none;"></div>
                         </div>
                     `;
                 }).join('');
+
+                // Add event listeners for each month button
+                document.querySelectorAll('.month-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const idx = parseInt(btn.getAttribute('data-plan-idx'));
+                        const plan = plans[idx];
+                        const months = parseInt(btn.getAttribute('data-months'));
+                        const paymentId = `paymentAmount_${idx}`;
+                        const discountId = `discountInfo_${idx}`;
+                        // Remove active from all buttons in this group
+                        document.querySelectorAll(`.month-btn[data-plan-idx="${idx}"]`).forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        let totalAmount = 0;
+                        let discount = 0;
+                        if (plan && months) {
+                            totalAmount = plan.price * months;
+                            // Only apply plan discount if this month is eligible
+                            let discountMonths = [];
+                            let discountMin = null;
+                            if (Array.isArray(plan.discountMonths)) {
+                                discountMonths = plan.discountMonths.map(Number);
+                            } else if (typeof plan.discountMonths === 'object' && plan.discountMonths !== null && plan.discountMonths.min) {
+                                discountMin = Number(plan.discountMonths.min);
+                            } else if (typeof plan.discountMonths === 'number' && plan.discountMonths > 0) {
+                                discountMin = plan.discountMonths;
+                            }
+                            if (plan.discount && plan.discount > 0) {
+                                if (discountMin && months >= discountMin) {
+                                    discount += (totalAmount * plan.discount) / 100;
+                                } else if (discountMonths.length > 0 && discountMonths.includes(months)) {
+                                    discount += (totalAmount * plan.discount) / 100;
+                                }
+                            }
+                            totalAmount = totalAmount - discount;
+                        }
+                        // Update payment and discount display
+                        document.getElementById(paymentId).textContent = `₹${totalAmount > 0 ? Math.round(totalAmount) : 0}`;
+                        if (discount > 0) {
+                            document.getElementById(discountId).style.display = 'block';
+                            document.getElementById(discountId).textContent = `Discount applied: ₹${Math.round(discount)} saved!`;
+                        } else {
+                            document.getElementById(discountId).style.display = 'none';
+                        }
+                    });
+                });
             }
 
             setupForm() {
@@ -926,9 +1173,15 @@
                     const formData = new FormData(e.target);
                     const registrationData = Object.fromEntries(formData.entries());
 
+                    // Ensure we use the correct gymId
+                    const correctGymId = this.gymId || document.getElementById('gymId').value;
+                    registrationData.gymId = correctGymId;
+
                     // Add QR-specific data
                     registrationData.registrationType = this.qrData.registrationType;
                     registrationData.specialOffer = this.qrData.specialOffer;
+
+                    console.log('Submitting registration for gym:', correctGymId, 'with data:', registrationData);
 
                     // Submit registration
                     const response = await fetch('/api/register-via-qr', {

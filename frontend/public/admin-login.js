@@ -289,21 +289,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log('📡 Login response received:', response.status, response.statusText);
         const data = await response.json();
-        console.log('📦 Login response data:', { success: data.success, message: data.message, hasToken: !!data.token });
+        console.log('📦 Login response data:', { success: data.success, message: data.message, hasToken: !!data.token, gymId: data.gymId });
 
-        if (response.ok && data.token) {
+        if (response.ok && data.token && data.gymId) {
           // Successful login
           showAnimatedSuccess();
           console.log('🔑 About to store token:', data.token.substring(0, 20) + '...');
-          console.log('🌐 Current origin:', window.location.origin);
+          console.log('� About to store gymId:', data.gymId);
+          console.log('�🌐 Current origin:', window.location.origin);
           console.log('🌐 Current pathname:', window.location.pathname);
-          // Store JWT token in localStorage with verification
+          // Store JWT token and gymId in localStorage with verification
           try {
-            // Clear ALL potential old tokens first
+            // Clear ALL potential old tokens and gymId first
             const oldTokenKeys = ['gymAdminToken', 'token', 'authToken', 'gymAuthToken', 'adminToken'];
+            const oldGymKeys = ['gymId', 'currentGymId', 'gym_id'];
+            
             oldTokenKeys.forEach(key => {
               if (localStorage.getItem(key)) {
                 console.log(`🧹 Removing old token: ${key}`);
+                localStorage.removeItem(key);
+              }
+            });
+            
+            oldGymKeys.forEach(key => {
+              if (localStorage.getItem(key)) {
+                console.log(`🧹 Removing old gymId: ${key}`);
                 localStorage.removeItem(key);
               }
             });
@@ -312,39 +322,49 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('gymAdminToken', data.token);
             sessionStorage.setItem('gymAdminToken', data.token);
             
+            // Store the gymId in multiple keys for compatibility
+            localStorage.setItem('gymId', data.gymId);
+            localStorage.setItem('currentGymId', data.gymId);
+            sessionStorage.setItem('gymId', data.gymId);
+            
             // Also store it with alternative keys as backup
             localStorage.setItem('authToken', data.token);
             localStorage.setItem('token', data.token);
             
-            // Verify token was actually stored
+            // Verify token and gymId were actually stored
             const storedToken = localStorage.getItem('gymAdminToken');
             const sessionToken = sessionStorage.getItem('gymAdminToken');
+            const storedGymId = localStorage.getItem('gymId');
+            const sessionGymId = sessionStorage.getItem('gymId');
             
-            console.log('🔍 Token verification:', {
+            console.log('🔍 Token and GymId verification:', {
               localStorage: !!storedToken,
               sessionStorage: !!sessionToken,
-              matches: storedToken === data.token,
+              tokenMatches: storedToken === data.token,
               sessionMatches: sessionToken === data.token,
-              length: storedToken?.length || 0
+              tokenLength: storedToken?.length || 0,
+              gymId: storedGymId,
+              sessionGymId: sessionGymId,
+              gymIdMatches: storedGymId === data.gymId
             });
             
-            if (storedToken === data.token) {
-              console.log('✅ Token successfully stored in localStorage');
+            if (storedToken === data.token && storedGymId === data.gymId) {
+              console.log('✅ Token and GymId successfully stored in localStorage');
               console.log('📊 Final localStorage state:', Object.keys(localStorage).map(key => ({
                 key, 
-                value: localStorage.getItem(key)?.substring(0, 20) + '...',
+                value: key.includes('gymId') || key.includes('Id') ? localStorage.getItem(key) : localStorage.getItem(key)?.substring(0, 20) + '...',
                 length: localStorage.getItem(key)?.length
               })));
               
               // Use a longer delay to ensure localStorage has fully committed
               setTimeout(() => {
                 console.log('🚀 Redirecting to dashboard...');
-                // Pass token as URL parameter as backup
-                const dashboardUrl = `http://localhost:5000/gymadmin/gymadmin.html?token=${encodeURIComponent(data.token)}`;
+                // Pass token and gymId as URL parameters as backup
+                const dashboardUrl = `http://localhost:5000/gymadmin/gymadmin.html?token=${encodeURIComponent(data.token)}&gymId=${encodeURIComponent(data.gymId)}`;
                 window.location.replace(dashboardUrl);
               }, 1000); // Increased to 1 second
             } else {
-              throw new Error('Token verification failed');
+              throw new Error('Token or GymId verification failed');
             }
           } catch (storageError) {
             console.error('❌ localStorage error:', storageError);
