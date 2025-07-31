@@ -197,16 +197,23 @@ document.addEventListener('DOMContentLoaded', function() {
       submitNewPasswordButton.disabled = false;
       submitNewPasswordButton.textContent = "Reset Password";
     });
-    // Password visibility toggle
+
+    // Password visibility toggle (FontAwesome icon)
     const togglePassword = document.getElementById('togglePassword');
-    let passwordVisible = false;
-    
-    // Toggle password visibility
-    togglePassword.addEventListener('click', function() {
-      passwordVisible = !passwordVisible;
-      passwordInput.type = passwordVisible ? 'text' : 'password';
-      togglePassword.textContent = passwordVisible ? '🙈' : '👁️';
-    });
+    const toggleIcon = document.getElementById('togglePasswordIcon');
+    if (togglePassword && passwordInput && toggleIcon) {
+      togglePassword.addEventListener('click', function() {
+        const type = passwordInput.type === 'password' ? 'text' : 'password';
+        passwordInput.type = type;
+        toggleIcon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+      });
+      togglePassword.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          togglePassword.click();
+        }
+      });
+    }
     
     // Form validation
     emailInput.addEventListener('input', validateEmail);
@@ -286,12 +293,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (response.ok && data.token) {
           // Successful login
-          showSuccessMessage('Login successful! Redirecting...');
-          
+          showAnimatedSuccess();
           console.log('🔑 About to store token:', data.token.substring(0, 20) + '...');
           console.log('🌐 Current origin:', window.location.origin);
           console.log('🌐 Current pathname:', window.location.pathname);
-          
           // Store JWT token in localStorage with verification
           try {
             // Clear ALL potential old tokens first
@@ -380,20 +385,40 @@ document.addEventListener('DOMContentLoaded', function() {
       loginForm.appendChild(errorDiv);
     }
     
-    function showSuccessMessage(message) {
+    function showAnimatedSuccess() {
+      // Remove any previous success message
+      const existingSuccess = loginForm.querySelector('.submit-success');
+      if (existingSuccess) existingSuccess.remove();
+      // Create animated success message
       const successDiv = document.createElement('div');
-      successDiv.className = 'success-message';
-      successDiv.textContent = message;
-      successDiv.style.display = 'block';
+      successDiv.className = 'success-message submit-success';
+      successDiv.style.display = 'flex';
+      successDiv.style.flexDirection = 'column';
+      successDiv.style.alignItems = 'center';
+      successDiv.style.justifyContent = 'center';
+      successDiv.style.gap = '10px';
       successDiv.style.textAlign = 'center';
       successDiv.style.marginTop = '15px';
-      
-      const existingSuccess = loginForm.querySelector('.submit-success');
-      if (existingSuccess) {
-        existingSuccess.remove();
-      }
-      
-      successDiv.classList.add('submit-success');
+      successDiv.innerHTML = `
+        <div style="font-size:2.2rem;animation:bounceIn 0.7s;"><i class="fas fa-check-circle" style="color:#22c55e;"></i></div>
+        <div style="font-size:1.2rem;font-weight:600;letter-spacing:0.5px;">Login Successful!</div>
+        <div style="font-size:1rem;color:#1976d2;animation:fadeIn 1.2s;">Redirecting to dashboard...</div>
+      `;
+      // Add keyframes for bounceIn and fadeIn
+      const style = document.createElement('style');
+      style.innerHTML = `
+        @keyframes bounceIn {
+          0% { transform: scale(0.7); opacity: 0; }
+          60% { transform: scale(1.15); opacity: 1; }
+          80% { transform: scale(0.95); }
+          100% { transform: scale(1); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
       loginForm.appendChild(successDiv);
     }
   });

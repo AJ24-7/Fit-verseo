@@ -320,7 +320,12 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1><i class="fas fa-dumbbell"></i> Welcome to Gym-Wala</h1>
+            <h1>
+              <span style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:12px;padding:6px;box-shadow:0 2px 8px rgba(25,118,210,0.10);margin-right:12px;">
+                <img src="../gymadmin/public/Gym-Wale.png" alt="Gym-Wale Logo" style="height:48px;width:48px;border-radius:8px;transition:transform .2s;">
+              </span>
+              Gym-Wale
+            </h1>
             <p>Complete your membership registration for <span id="headerGymName">this gym</span></p>
         </div>
 
@@ -501,6 +506,7 @@
                 return urlParams.get(name);
             }
 
+
             async validateQRCode() {
                 try {
                     const response = await fetch(`/api/qr-codes/validate/${this.qrToken}`);
@@ -511,11 +517,23 @@
                     }
 
                     this.qrData = data;
-                    this.gymData = data.gym;
+                    // Some APIs return gym as nested, some as flat. Handle both.
+                    this.gymData = data.gym || {};
 
                     // Set hidden form fields
-                    document.getElementById('gymId').value = this.gymData.id;
+                    if (this.gymData && this.gymData.id) {
+                        document.getElementById('gymId').value = this.gymData.id;
+                    } else if (data.gymId) {
+                        document.getElementById('gymId').value = data.gymId;
+                    }
                     document.getElementById('qrToken').value = this.qrToken;
+
+                    // Set header gym name if available
+                    if (this.gymData && this.gymData.name) {
+                        document.getElementById('headerGymName').textContent = this.gymData.name;
+                    } else if (data.gymName) {
+                        document.getElementById('headerGymName').textContent = data.gymName;
+                    }
 
                 } catch (error) {
                     console.error('QR validation error:', error);
@@ -527,25 +545,46 @@
                 try {
                     // Fetch gym data (includes membership plans and activities)
                     const response = await fetch(`/api/gyms/${this.gymId}`);
-                    
                     if (response.ok) {
                         const gymData = await response.json();
                         console.log('Gym data loaded:', gymData);
-                        
                         // Store gym data
                         this.gymData = gymData;
-                        
-                        // Set gym name
-                        document.getElementById('gymName').textContent = gymData.name;
-                        document.getElementById('headerGymName').textContent = gymData.name;
-                        
-                        // Set gym logo if available
-                        const logoElement = document.getElementById('gymLogo');
-                        if (gymData.logo && logoElement) {
-                            logoElement.src = gymData.logo;
-                            logoElement.alt = `${gymData.name} Logo`;
+                        // Set gym name in both header and info, prefer gymData.name, fallback to gymData.gymName
+                        const gymNameElem = document.getElementById('gymName');
+                        let gymName = '';
+                        if (gymData.name && gymData.name.trim()) {
+                            gymName = gymData.name.trim();
+                        } else if (gymData.gymName && gymData.gymName.trim()) {
+                            gymName = gymData.gymName.trim();
+                        } else {
+                            gymName = 'Unknown Gym';
                         }
-                        
+                        if (gymNameElem) gymNameElem.textContent = gymName;
+                        // Always update headerGymName for consistency
+                        const headerGymNameElem = document.getElementById('headerGymName');
+                        if (headerGymNameElem) headerGymNameElem.textContent = gymName;
+                        // Robust gym logo logic (like gymdetails.js)
+                        const logoElement = document.getElementById('gymLogo');
+                        let logoUrl = '';
+                        if (gymData.logoUrl && gymData.logoUrl.trim()) {
+                            logoUrl = gymData.logoUrl;
+                        } else if (gymData.logo && gymData.logo.trim()) {
+                            logoUrl = gymData.logo;
+                        } else {
+                            logoUrl = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
+                        }
+                        console.log('Setting gym logo to:', logoUrl);
+                        if (logoElement) {
+                            logoElement.src = logoUrl;
+                            logoElement.alt = `${gymData.name || 'Gym'} Logo`;
+                            logoElement.setAttribute('loading', 'eager');
+                            logoElement.setAttribute('decoding', 'sync');
+                            logoElement.onerror = function() {
+                                this.onerror = null;
+                                this.src = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
+                            };
+                        }
                         // Display gym details
                         const gymDetails = document.getElementById('gymDetails');
                         gymDetails.innerHTML = `
@@ -562,22 +601,27 @@
                                 <span>${gymData.contactDetails?.email || gymData.email || 'Email not available'}</span>
                             </div>
                         `;
-                        
                         // Populate activities dropdown
                         this.populateActivities(gymData.activities || []);
-                        
                         // Load membership plans
                         await this.loadMembershipPlans();
-                        
                     } else {
                         console.error('Failed to fetch gym data:', response.status);
                         document.getElementById('gymName').textContent = 'Unknown Gym';
-                        document.getElementById('headerGymName').textContent = 'Unknown Gym';
+                        const headerGymNameElem = document.getElementById('headerGymName');
+                        if (headerGymNameElem) headerGymNameElem.textContent = 'Unknown Gym';
+                        // Set default logo on error
+                        const logoElement = document.getElementById('gymLogo');
+                        if (logoElement) logoElement.src = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
                     }
                 } catch (error) {
                     console.error('Error loading gym data:', error);
                     document.getElementById('gymName').textContent = 'Unknown Gym';
-                    document.getElementById('headerGymName').textContent = 'Unknown Gym';
+                    const headerGymNameElem = document.getElementById('headerGymName');
+                    if (headerGymNameElem) headerGymNameElem.textContent = 'Unknown Gym';
+                    // Set default logo on error
+                    const logoElement = document.getElementById('gymLogo');
+                    if (logoElement) logoElement.src = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
                 }
             }
 

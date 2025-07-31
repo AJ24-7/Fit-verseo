@@ -48,6 +48,104 @@ app.use('/uploads/gymPhotos', express.static(path.join(__dirname, 'uploads/gymPh
 app.use('/uploads/gym-logos', express.static(path.join(__dirname, 'uploads/gym-logos')));
 app.use('/uploads/equipment', express.static(path.join(__dirname, 'uploads/equipment')));
 
+// Serve biometric agent files
+app.use('/biometric-agent', express.static(path.join(__dirname, 'biometric-agent')));
+
+// Serve the frontend directory for direct HTML access (e.g., /frontend/biometric-device-setup.html)
+app.use('/frontend', require('express').static(path.join(__dirname, 'frontend')));
+
+// Route to download biometric agent as zip
+app.get('/biometric-agent.zip', (req, res) => {
+  const archiver = require('archiver');
+  const fs = require('fs');
+  
+  try {
+    const agentPath = path.join(__dirname, 'biometric-agent');
+    
+    // Check if biometric-agent folder exists
+    if (!fs.existsSync(agentPath)) {
+      return res.status(404).json({ error: 'Biometric agent files not found' });
+    }
+    
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="FitverseBiometricAgent.zip"');
+    
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    
+    archive.on('error', (err) => {
+      console.error('Archive error:', err);
+      res.status(500).json({ error: 'Failed to create archive' });
+    });
+    
+    archive.pipe(res);
+    archive.directory(agentPath, 'FitverseBiometricAgent');
+    archive.finalize();
+    
+  } catch (error) {
+    console.error('Error creating biometric agent zip:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Route to download simple biometric agent as zip (lightweight version)
+app.get('/simple-biometric-agent.zip', (req, res) => {
+  const archiver = require('archiver');
+  const fs = require('fs');
+  
+  try {
+    const agentPath = path.join(__dirname, 'biometric-agent');
+    
+    // Check if biometric-agent folder exists
+    if (!fs.existsSync(agentPath)) {
+      return res.status(404).json({ error: 'Biometric agent files not found' });
+    }
+    
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="FitverseSimpleBiometricAgent.zip"');
+    
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    
+    archive.on('error', (err) => {
+      console.error('Archive error:', err);
+      res.status(500).json({ error: 'Failed to create archive' });
+    });
+    
+    archive.pipe(res);
+    
+    // Only include files needed for simple agent
+    const simpleAgentFiles = [
+      'simple-agent.js',
+      'simple-package.json',
+      'install-service.js',
+      'install-simple-agent.bat',
+      'install-startup-agent.bat',
+      'monitor-service.bat',
+      'test-agent.bat',
+      'direct-test.bat',
+      'fix-firewall.ps1',
+      'advanced-diagnostics.bat'
+    ];
+    
+    simpleAgentFiles.forEach(file => {
+      const filePath = path.join(agentPath, file);
+      if (fs.existsSync(filePath)) {
+        if (file === 'simple-package.json') {
+          // Rename simple-package.json to package.json in the archive
+          archive.file(filePath, { name: 'package.json' });
+        } else {
+          archive.file(filePath, { name: file });
+        }
+      }
+    });
+    
+    archive.finalize();
+    
+  } catch (error) {
+    console.error('Error creating simple biometric agent zip:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 const allowedOrigins = [
   'http://localhost:5500',

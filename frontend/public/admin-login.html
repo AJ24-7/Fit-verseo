@@ -4,32 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Login</title>
- <link rel="stylesheet" href="admin-login.css">
+  <link rel="stylesheet" href="admin-login.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="login-container">
-    <h2>Admin Login</h2>
-    <form id="adminLoginForm">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;">
+    <div class="brand-header" style="display:flex;align-items:center;justify-content:center;gap:12px;margin:40px 0 18px 0;">
+      <img src="../gymadmin/public/Gym-Wale.png" alt="Gym-Wale Logo" style="height:48px;width:48px;border-radius:10px;box-shadow:0 2px 8px rgba(67,97,238,0.10);">
+      <span style="font-size:2.4rem;font-weight:800;color:var(--primary-color);letter-spacing:1.5px;line-height:1;">Gym-Wale</span>
+    </div>
+    <div class="login-container">
+    <h2 style="margin-bottom:18px;">Gym Admin Login</h2>
+    <form id="adminLoginForm" autocomplete="off">
       <div class="form-group">
-        <input type="email" name="email" id="email" placeholder="Admin Email" required />
+        <label for="email" style="font-weight:500;margin-bottom:4px;display:block;">Email Address</label>
+        <input type="email" name="email" id="email" placeholder="Admin Email" required autocomplete="username" />
         <div class="error-message" id="email-error">Please enter a valid email address</div>
       </div>
-      
       <div class="form-group">
+        <label for="password" style="font-weight:500;margin-bottom:4px;display:block;">Password</label>
         <div class="password-container">
-          <input type="password" name="password" id="password" placeholder="Password" required />
-          <span class="toggle-password" id="togglePassword">👁️</span>
+          <input type="password" name="password" id="password" placeholder="Password" required autocomplete="current-password" />
+          <span class="toggle-password" id="togglePassword" tabindex="0" aria-label="Show/Hide Password" style="font-size:1.2em;">
+            <i class="fas fa-eye" id="togglePasswordIcon"></i>
+          </span>
         </div>
         <div class="error-message" id="password-error">Password must be at least 8 characters</div>
       </div>
-      
       <button type="submit" id="loginButton">
         <span id="buttonText">Login</span>
         <div class="loading-spinner" id="spinner"></div>
       </button>
-      
       <a href="#" class="forgot-password" id="forgotPassword">Forgot Password?</a>
     </form>
+    <div id="login-feedback" style="margin-top:18px;text-align:center;font-size:1.05em;"></div>
   </div>
   <div id="global-success-message" class="success-message" style="display:none;text-align:center;margin-top:20px;"></div>
   <div class="forgot-password-modal" id="forgotPasswordModal">
@@ -57,5 +65,6 @@
   </div>
   
   <script src="admin-login.js"></script>
+ 
 </body>
 </html>

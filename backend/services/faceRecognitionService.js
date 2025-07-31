@@ -1,9 +1,46 @@
-const cv = require('@opencv/opencv-js'); // We'll add this package
+// Face Recognition Service for Node.js backend
 const fs = require('fs').promises;
 const path = require('path');
 const { exec } = require('child_process');
 const util = require('util');
 const execAsync = util.promisify(exec);
+
+// Try to import opencv4nodejs and related packages, fall back to simulation if not available
+let cv = null;
+let faceapi = null;
+let tf = null;
+let simulationMode = false;
+
+try {
+    cv = require('opencv4nodejs');
+    console.log('✅ OpenCV4NodeJS loaded successfully');
+} catch (error) {
+    console.warn('⚠️ OpenCV4NodeJS not available, using simulation mode');
+    simulationMode = true;
+}
+
+try {
+    faceapi = require('face-api.js');
+    console.log('✅ Face-API.js loaded successfully');
+} catch (error) {
+    console.warn('⚠️ Face-API.js not available, using simulation mode');
+    simulationMode = true;
+}
+
+try {
+    tf = require('@tensorflow/tfjs-node');
+    console.log('✅ TensorFlow.js Node loaded successfully');
+} catch (error) {
+    console.warn('⚠️ TensorFlow.js Node not available, using simulation mode');
+    simulationMode = true;
+}
+
+if (simulationMode) {
+    console.log('🎭 Face Recognition Service running in simulation mode');
+    console.log('💡 For production use, install required dependencies:');
+    console.log('   npm install opencv4nodejs face-api.js @tensorflow/tfjs-node');
+    console.log('   Note: opencv4nodejs requires CMake and Visual Studio Build Tools');
+}
 
 class FaceRecognitionService {
     constructor() {
@@ -12,6 +49,18 @@ class FaceRecognitionService {
         this.enrollmentSessions = new Map();
         this.faceDetector = null;
         this.faceRecognizer = null;
+        this.simulationMode = simulationMode;
+        
+        if (this.simulationMode) {
+            console.log('🎭 FaceRecognitionService initialized in simulation mode');
+        } else {
+            console.log('🔧 FaceRecognitionService initialized with real CV libraries');
+        }
+    }
+
+    // Check if service is running in simulation mode
+    isSimulationMode() {
+        return this.simulationMode;
     }
 
     // Initialize face recognition device

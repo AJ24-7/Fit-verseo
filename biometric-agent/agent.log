@@ -1,0 +1,26 @@
+[2025-07-29T14:30:49.749Z] [INFO] 🔧 Initializing Fitverse Biometric Agent...
+[2025-07-29T14:30:49.780Z] [INFO] 🚀 Fitverse Biometric Agent started successfully on port 5001
+[2025-07-29T14:30:49.781Z] [INFO] 🌐 Service URL: http://localhost:5001
+[2025-07-29T14:30:49.782Z] [INFO] ✅ Ready to serve gym admin system requests
+[2025-07-29T14:30:49.782Z] [INFO] � Started at: 2025-07-29T14:30:49.782Z
+[2025-07-29T14:30:49.786Z] [INFO] 🔧 Mode: Service/Production
+[2025-07-29T14:31:02.915Z] [INFO] 📨 GET /health from 127.0.0.1
+[2025-07-29T14:31:13.431Z] [ERROR] ❌ Error handling request POST /enroll: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+[2025-07-29T14:33:03.742Z] [INFO] 🔧 Initializing Fitverse Biometric Agent...
+[2025-07-29T14:33:03.769Z] [INFO] 🚀 Fitverse Biometric Agent started successfully on port 5001
+[2025-07-29T14:33:03.770Z] [INFO] 🌐 Service URL: http://localhost:5001
+[2025-07-29T14:33:03.770Z] [INFO] ✅ Ready to serve gym admin system requests
+[2025-07-29T14:33:03.771Z] [INFO] � Started at: 2025-07-29T14:33:03.771Z
+[2025-07-29T14:33:03.772Z] [INFO] 🔧 Mode: Service/Production
+[2025-07-29T14:33:18.017Z] [ERROR] ❌ Error handling request POST /enroll: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+[2025-07-29T14:33:30.167Z] [INFO] 📨 GET /logs from 127.0.0.1
+[2025-07-29T14:33:41.343Z] [INFO] 📨 POST /enroll from 127.0.0.1
+[2025-07-29T14:33:41.346Z] [INFO] 📝 Enrollment request for member: TEST001 (John Doe) at gym: GYM001
+[2025-07-29T14:33:42.361Z] [INFO] ✅ Enrollment completed for member: TEST001
+[2025-07-29T14:33:53.947Z] [INFO] 📨 POST /verify from 127.0.0.1
+[2025-07-29T14:33:53.950Z] [INFO] 🔍 Verification request at gym: GYM001
+[2025-07-29T14:33:54.754Z] [INFO] ✅ Verification successful for member: MEM_977
+[2025-07-29T14:34:03.793Z] [INFO] 📨 GET /health from 127.0.0.1
+[2025-07-29T14:34:04.803Z] [INFO] 📨 POST /attendance from 127.0.0.1
+[2025-07-29T14:34:04.806Z] [INFO] 📋 Attendance check-in for member: TEST001 at gym: GYM001
+[2025-07-29T14:34:04.810Z] [INFO] ✅ Attendance check-in recorded for member: TEST001

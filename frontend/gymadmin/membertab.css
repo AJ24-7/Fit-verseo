@@ -108,7 +108,7 @@
   transition: color 0.2s;
 }
 .modal-close:hover {
-  color: #1976d2;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 .member-detail-body {
   padding: 28px 24px 24px 24px;
@@ -238,13 +238,13 @@
 }
 
 .member-action-btn.add-member-action-btn {
-  background: linear-gradient(90deg, #1976d2 0%, #21cbf3 100%);
+  background: var(--primary);
   color: #fff;
   box-shadow: 0 4px 18px 0 rgba(33,203,243,0.10);
 }
 
 .member-action-btn.remove-member-action-btn {
-  background: linear-gradient(90deg, #d32f2f 0%, #ff6b6b 100%);
+  background: var(--danger);
   color: #fff;
   box-shadow: 0 4px 18px 0 rgba(211,47,47,0.10);
 }

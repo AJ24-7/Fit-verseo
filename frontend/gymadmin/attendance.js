@@ -295,6 +295,11 @@ class AttendanceManager {
         }
 
         container.innerHTML = filteredData.map(person => this.createAttendanceRow(person)).join('');
+        
+        // Add biometric status indicators after rows are rendered
+        setTimeout(() => {
+            this.addBiometricStatusToRows();
+        }, 100);
     }
 
     filterExpiredMembers(data) {
@@ -330,7 +335,7 @@ class AttendanceManager {
             (person.specialty || 'General');
 
         return `
-            <div class="attendance-row ${status}" data-id="${person._id}">
+            <div class="attendance-row ${status}" data-id="${person._id}" data-person-id="${person._id}" data-person-type="${person.isTrainer ? 'trainer' : 'member'}">
                 <div class="member-photo-container">
                     <img src="${avatarUrl}" alt="${personName}" class="member-photo">
                 </div>
@@ -1397,6 +1402,280 @@ class AttendanceManager {
                 <div style="font-size: 12px; color: #666;">Working Days: ${totalWorkingDays}</div>
             </div>
         `;
+    }
+
+    // ========== BIOMETRIC ATTENDANCE FUNCTIONS ==========
+
+    // Show biometric enrollment modal for a member/trainer
+    async showBiometricEnrollment(personId, personType, personName) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content biometric-modal">
+                <div class="modal-header">
+                    <h3>Biometric Enrollment - ${personName}</h3>
+                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="enrollment-tabs">
+                        <button class="tab-btn active" data-tab="fingerprint">
+                            <i class="fas fa-fingerprint"></i> Fingerprint
+                        </button>
+                        <button class="tab-btn" data-tab="face">
+                            <i class="fas fa-user"></i> Face Recognition
+                        </button>
+                    </div>
+                    
+                    <div class="tab-content active" id="fingerprint-tab">
+                        <div class="enrollment-area">
+                            <div class="scanner-visual">
+                                <div class="fingerprint-scanner">
+                                    <i class="fas fa-fingerprint scanner-icon"></i>
+                                    <div class="scan-animation"></div>
+                                </div>
+                            </div>
+                            <p class="instruction-text">Place finger on scanner and hold still</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="fingerprint-progress"></div>
+                            </div>
+                            <div class="scan-status" id="fingerprint-status">Ready to scan</div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="face-tab">
+                        <div class="enrollment-area">
+                            <div class="camera-visual">
+                                <div class="face-camera">
+                                    <i class="fas fa-camera camera-icon"></i>
+                                    <div class="face-outline"></div>
+                                </div>
+                            </div>
+                            <p class="instruction-text">Look directly at camera and remain still</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="face-progress"></div>
+                            </div>
+                            <div class="scan-status" id="face-status">Ready to scan</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                    <button class="btn btn-primary" id="start-enrollment">Start Enrollment</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Tab switching
+        const tabBtns = modal.querySelectorAll('.tab-btn');
+        const tabContents = modal.querySelectorAll('.tab-content');
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                modal.querySelector(`#${tabId}-tab`).classList.add('active');
+            });
+        });
+
+        // Start enrollment
+        modal.querySelector('#start-enrollment').addEventListener('click', () => {
+            const activeTab = modal.querySelector('.tab-btn.active').dataset.tab;
+            this.startBiometricEnrollment(personId, personType, activeTab, modal);
+        });
+    }
+
+    // Start the actual enrollment process
+    async startBiometricEnrollment(personId, personType, biometricType, modal) {
+        const progressBar = modal.querySelector(`#${biometricType}-progress`);
+        const statusElement = modal.querySelector(`#${biometricType}-status`);
+        const scannerIcon = modal.querySelector('.scanner-icon, .camera-icon');
+        
+        try {
+            statusElement.textContent = 'Initializing scanner...';
+            progressBar.style.width = '10%';
+            
+            await this.simulateDelay(1000);
+            
+            statusElement.textContent = 'Place finger on scanner' || 'Look at camera';
+            progressBar.style.width = '25%';
+            scannerIcon.classList.add('scanning');
+            
+            await this.simulateDelay(2000);
+            
+            statusElement.textContent = 'Scanning...';
+            progressBar.style.width = '50%';
+            
+            await this.simulateDelay(2000);
+            
+            statusElement.textContent = 'Processing data...';
+            progressBar.style.width = '75%';
+            
+            await this.simulateDelay(1500);
+            
+            // Call API to enroll biometric data
+            const response = await fetch('/api/biometric/enroll', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await this.getAuthToken()}`
+                },
+                body: JSON.stringify({
+                    personId,
+                    personType,
+                    biometricType,
+                    deviceId: 'scanner-001',
+                    templateData: this.generateMockTemplate(biometricType)
+                })
+            });
+
+            if (response.ok) {
+                statusElement.textContent = 'Enrollment successful!';
+                progressBar.style.width = '100%';
+                progressBar.style.backgroundColor = '#4CAF50';
+                
+                this.showToast(`${biometricType} enrollment completed for ${personType}`, 'success');
+                
+                setTimeout(() => {
+                    modal.remove();
+                    this.loadData(); // Refresh to show updated biometric status
+                }, 2000);
+            } else {
+                throw new Error('Enrollment failed');
+            }
+            
+        } catch (error) {
+            statusElement.textContent = 'Enrollment failed';
+            progressBar.style.backgroundColor = '#f44336';
+            this.showToast('Biometric enrollment failed', 'error');
+            console.error('Enrollment error:', error);
+        } finally {
+            scannerIcon.classList.remove('scanning');
+        }
+    }
+
+    // Verify biometric and mark attendance
+    async verifyBiometricAttendance(personId, personType, biometricType) {
+        const loadingToast = this.showToast('Verifying biometric data...', 'info', 0);
+        
+        try {
+            // Simulate biometric verification
+            await this.simulateDelay(2000);
+            
+            const response = await fetch('/api/biometric/verify-attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await this.getAuthToken()}`
+                },
+                body: JSON.stringify({
+                    personId,
+                    personType,
+                    biometricType,
+                    deviceId: 'scanner-001',
+                    templateData: this.generateMockTemplate(biometricType)
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.hideToast(loadingToast);
+                
+                if (result.verified) {
+                    this.showToast(`${biometricType} verified! Attendance marked.`, 'success');
+                    this.loadData(); // Refresh attendance data
+                } else {
+                    this.showToast('Biometric verification failed', 'error');
+                }
+            } else {
+                throw new Error('Verification request failed');
+            }
+            
+        } catch (error) {
+            this.hideToast(loadingToast);
+            this.showToast('Biometric verification error', 'error');
+            console.error('Verification error:', error);
+        }
+    }
+
+    // Generate mock biometric template for development
+    generateMockTemplate(biometricType) {
+        if (biometricType === 'fingerprint') {
+            return {
+                minutiae: Array.from({length: 20}, () => ({
+                    x: Math.floor(Math.random() * 256),
+                    y: Math.floor(Math.random() * 256),
+                    angle: Math.floor(Math.random() * 360),
+                    type: Math.random() > 0.5 ? 'ridge_ending' : 'bifurcation'
+                })),
+                quality: Math.floor(Math.random() * 30) + 70 // 70-100
+            };
+        } else if (biometricType === 'face') {
+            return {
+                encoding: Array.from({length: 128}, () => Math.random() * 2 - 1),
+                landmarks: Array.from({length: 68}, () => ({
+                    x: Math.floor(Math.random() * 256),
+                    y: Math.floor(Math.random() * 256)
+                })),
+                quality: Math.floor(Math.random() * 30) + 70 // 70-100
+            };
+        }
+    }
+
+    // Add biometric status indicators to attendance rows
+    addBiometricStatusToRows() {
+        const rows = document.querySelectorAll('.attendance-row');
+        
+        rows.forEach(row => {
+            const personId = row.dataset.personId;
+            const personType = row.dataset.personType;
+            
+            if (!personId) return;
+            
+            // Check if biometric status already added
+            if (row.querySelector('.biometric-status')) return;
+            
+            const statusContainer = document.createElement('div');
+            statusContainer.className = 'biometric-status';
+            statusContainer.innerHTML = `
+                <div class="biometric-indicators">
+                    <span class="biometric-indicator fingerprint" title="Fingerprint enrolled">
+                        <i class="fas fa-fingerprint"></i>
+                    </span>
+                    <span class="biometric-indicator face" title="Face recognition enrolled">
+                        <i class="fas fa-user"></i>
+                    </span>
+                </div>
+                <div class="biometric-actions">
+                    <button class="btn btn-sm btn-biometric" onclick="window.attendanceManager.showBiometricEnrollment('${personId}', '${personType}', '${row.querySelector('.member-name, .trainer-name')?.textContent || 'Unknown'}')">
+                        <i class="fas fa-plus"></i> Enroll
+                    </button>
+                    <button class="btn btn-sm btn-verify" onclick="window.attendanceManager.verifyBiometricAttendance('${personId}', '${personType}', 'fingerprint')">
+                        <i class="fas fa-fingerprint"></i> Verify
+                    </button>
+                </div>
+            `;
+            
+            // Add to the row (append to the end)
+            row.appendChild(statusContainer);
+        });
+    }
+
+    // Simulate delay for demo purposes
+    simulateDelay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Hide toast message
+    hideToast(toastElement) {
+        if (toastElement && toastElement.parentNode) {
+            toastElement.parentNode.removeChild(toastElement);
+        }
     }
 }
 

@@ -607,44 +607,79 @@ document.addEventListener("DOMContentLoaded", function () {
   function populateMembershipDetails(membership) {
     // Remove loading class
     document.querySelector('.membership-card').classList.remove('loading');
-    
+
+    // Always robustly check for valid membership
+    const detailsSection = document.getElementById('membership-details-section');
+    const noMembershipMsg = document.getElementById('no-membership-message');
+
+    // If no membership object, or not an object, or missing key fields, or not active, show only the message
+    if (!membership || typeof membership !== 'object' || !membership.isActive || !membership.membershipId || !membership.gym || !membership.planSelected || !membership.membershipValidUntil) {
+      if (detailsSection) detailsSection.style.display = 'none';
+      if (noMembershipMsg) noMembershipMsg.style.display = '';
+      // Optionally clear all fields to avoid stale data
+      [
+        'membership-id', 'gym-name', 'plan-details', 'valid-till', 'amount-paid', 'payment-method', 'join-date', 'days-left-display'
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+      });
+      const statusElement = document.getElementById('membership-status');
+      if (statusElement) {
+        const statusBadge = statusElement.querySelector('.status-badge');
+        if (statusBadge) statusBadge.textContent = '';
+      }
+      return;
+    }
+
+    // Show details, hide message
+    if (detailsSection) detailsSection.style.display = '';
+    if (noMembershipMsg) noMembershipMsg.style.display = 'none';
+
     // Update membership ID
     document.getElementById('membership-id').textContent = membership.membershipId || 'N/A';
-    
+
     // Update gym name
-    const gymLocation = membership.gym.city && membership.gym.state 
+    const gymLocation = membership.gym && membership.gym.city && membership.gym.state 
       ? `, ${membership.gym.city}, ${membership.gym.state}`
       : '';
-    document.getElementById('gym-name').textContent = `${membership.gym.name}${gymLocation}`;
-    
+    document.getElementById('gym-name').textContent = membership.gym ? `${membership.gym.name}${gymLocation}` : 'N/A';
+
     // Update plan details (use planSelected)
-    document.getElementById('plan-details').textContent = `${membership.planSelected} (${membership.monthlyPlan})`;
-    
+    document.getElementById('plan-details').textContent = membership.planSelected ? `${membership.planSelected} (${membership.monthlyPlan})` : 'N/A';
+
     // Update valid till (use membershipValidUntil)
-    const validTillDate = new Date(membership.membershipValidUntil);
-    document.getElementById('valid-till').textContent = validTillDate.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-    
+    if (membership.membershipValidUntil) {
+      const validTillDate = new Date(membership.membershipValidUntil);
+      document.getElementById('valid-till').textContent = validTillDate.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } else {
+      document.getElementById('valid-till').textContent = 'N/A';
+    }
+
     // Update amount paid (use paymentAmount)
-    document.getElementById('amount-paid').textContent = `₹${membership.paymentAmount?.toLocaleString('en-IN') || 'N/A'}`;
-    
+    document.getElementById('amount-paid').textContent = membership.paymentAmount ? `₹${membership.paymentAmount?.toLocaleString('en-IN')}` : 'N/A';
+
     // Update payment method (use paymentMode)
     document.getElementById('payment-method').textContent = membership.paymentMode || 'N/A';
-    
+
     // Update join date
-    const joinDate = new Date(membership.joinDate);
-    document.getElementById('join-date').textContent = joinDate.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-    
+    if (membership.joinDate) {
+      const joinDate = new Date(membership.joinDate);
+      document.getElementById('join-date').textContent = joinDate.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } else {
+      document.getElementById('join-date').textContent = 'N/A';
+    }
+
     // Update days left and progress
     updateDaysLeftDisplay(membership.daysLeft, membership.isActive);
-    
+
     // Update membership status
     updateMembershipStatus(membership.daysLeft, membership.isActive);
   }
@@ -717,12 +752,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // === SHOW NO MEMBERSHIP FOUND ===
   function showNoMembershipFound() {
-    const membershipCard = document.getElementById('membershipCard');
+    // Hide membership details, show no-membership message in card
+    const detailsSection = document.getElementById('membership-details-section');
+    const noMembershipMsg = document.getElementById('no-membership-message');
+    if (detailsSection) detailsSection.style.display = 'none';
+    if (noMembershipMsg) noMembershipMsg.style.display = '';
+    // Optionally, also hide the old noMembershipCard if present
     const noMembershipCard = document.getElementById('noMembershipCard');
-    
-    if (membershipCard) {
-      membershipCard.style.display = 'none';
-    }
+    if (noMembershipCard) noMembershipCard.style.display = 'none';
     
     if (noMembershipCard) {
       noMembershipCard.style.display = 'block';

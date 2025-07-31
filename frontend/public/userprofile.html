@@ -14,8 +14,10 @@
   <!-- Navbar -->
   <header>
     <nav class="navbar">
-      <div class="logo">Gym<span>-Wale</span></div>
-
+  <a href="/frontend/index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+              <img class="logo" src="Gym-Wale.png" alt="Gym-Wale Logo">
+              <h3 class="brand-title">Gym<span>-Wale</span></h3>
+            </a>
       <ul class="nav-links">
         <li><a href="/frontend/index.html" class="nav-item">Home</a></li>
         <li><a href="#" class="nav-item">About</a></li>
@@ -247,79 +249,87 @@
 
    <!-- Active Membership Info with Interactive Elements -->
 <div class="membership-card loading" id="membershipCard">
-  <div class="membership-header">
-    <h3><i class="fas fa-id-card"></i> Membership Details</h3>
-    <div class="progress-ring" data-progress="0">
-      <svg width="60" height="60">
-        <circle class="progress-ring-circle" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
-      </svg>
-      <span id="days-left-display">Loading...</span>
+  <div id="membership-details-section">
+    <div class="membership-header">
+      <h3><i class="fas fa-id-card"></i> Membership Details</h3>
+      <div class="progress-ring" data-progress="0">
+        <svg width="60" height="60">
+          <circle class="progress-ring-circle" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
+        </svg>
+        <span id="days-left-display">Loading...</span>
+      </div>
+    </div>
+    <div class="membership-status" id="membership-status">
+      <span class="status-badge loading">Loading...</span>
+    </div>
+    <div class="membership-details">
+      <div class="detail-item">
+        <i class="fas fa-hashtag"></i>
+        <div>
+          <span class="label">Membership ID</span>
+          <span class="value" id="membership-id">Loading...</span>
+        </div>
+      </div>
+      <div class="detail-item">
+        <i class="fas fa-dumbbell"></i>
+        <div>
+          <span class="label">Gym</span>
+          <span class="value" id="gym-name">Loading...</span>
+        </div>
+      </div>
+      <div class="detail-item">
+        <i class="fas fa-crown"></i>
+        <div>
+          <span class="label">Plan</span>
+          <span class="value" id="plan-details">Loading...</span>
+        </div>
+      </div>
+      <div class="detail-item">
+        <i class="fas fa-calendar-alt"></i>
+        <div>
+          <span class="label">Valid Till</span>
+          <span class="value" id="valid-till">Loading...</span>
+        </div>
+      </div>
+      <div class="detail-item">
+        <i class="fas fa-rupee-sign"></i>
+        <div>
+          <span class="label">Amount Paid</span>
+          <span class="value" id="amount-paid">Loading...</span>
+        </div>
+      </div>
+      <div class="detail-item">
+        <i class="fas fa-credit-card"></i>
+        <div>
+          <span class="label">Payment Method</span>
+          <span class="value" id="payment-method">Loading...</span>
+        </div>
+      </div>
+      <div class="detail-item">
+        <i class="fas fa-calendar-plus"></i>
+        <div>
+          <span class="label">Join Date</span>
+          <span class="value" id="join-date">Loading...</span>
+        </div>
+      </div>
+    </div>
+    <div class="membership-actions">
+      <button class="btn-renew">
+        <i class="fas fa-sync-alt"></i> Renew Membership
+      </button>
+      <button class="btn-attendance" onclick="openAttendanceModal()">
+        <i class="fas fa-calendar-check"></i> View Attendance
+      </button>
     </div>
   </div>
-  
-  <div class="membership-status" id="membership-status">
-    <span class="status-badge loading">Loading...</span>
-  </div>
-  
-  <div class="membership-details">
-    <div class="detail-item">
-      <i class="fas fa-hashtag"></i>
-      <div>
-        <span class="label">Membership ID</span>
-        <span class="value" id="membership-id">Loading...</span>
-      </div>
-    </div>
-    <div class="detail-item">
-      <i class="fas fa-dumbbell"></i>
-      <div>
-        <span class="label">Gym</span>
-        <span class="value" id="gym-name">Loading...</span>
-      </div>
-    </div>
-    <div class="detail-item">
-      <i class="fas fa-crown"></i>
-      <div>
-        <span class="label">Plan</span>
-        <span class="value" id="plan-details">Loading...</span>
-      </div>
-    </div>
-    <div class="detail-item">
-      <i class="fas fa-calendar-alt"></i>
-      <div>
-        <span class="label">Valid Till</span>
-        <span class="value" id="valid-till">Loading...</span>
-      </div>
-    </div>
-    <div class="detail-item">
-      <i class="fas fa-rupee-sign"></i>
-      <div>
-        <span class="label">Amount Paid</span>
-        <span class="value" id="amount-paid">Loading...</span>
-      </div>
-    </div>
-    <div class="detail-item">
-      <i class="fas fa-credit-card"></i>
-      <div>
-        <span class="label">Payment Method</span>
-        <span class="value" id="payment-method">Loading...</span>
-      </div>
-    </div>
-    <div class="detail-item">
-      <i class="fas fa-calendar-plus"></i>
-      <div>
-        <span class="label">Join Date</span>
-        <span class="value" id="join-date">Loading...</span>
-      </div>
-    </div>
-  </div>
-  
-  <div class="membership-actions">
-    <button class="btn-renew">
-      <i class="fas fa-sync-alt"></i> Renew Membership
-    </button>
-    <button class="btn-attendance" onclick="openAttendanceModal()">
-      <i class="fas fa-calendar-check"></i> View Attendance
-    </button>
+  <!-- No Membership Message (hidden by default, shown if no membership) -->
+  <div id="no-membership-message" style="display:none;text-align:center;padding:32px 0;">
+    <i class="fas fa-info-circle" style="font-size:2.2em;color:#ff9800;"></i>
+    <h3 style="margin:16px 0 8px 0;">No current memberships</h3>
+    <p style="margin-bottom:18px;">You don't have an active gym membership. Join now to start your fitness journey!</p>
+    <a href="/frontend/membership-plans.html" class="btn-join-now" style="display:inline-block;margin-top:8px;">
+      <i class="fas fa-plus-circle"></i> Join Now
+    </a>
   </div>
 </div>
 

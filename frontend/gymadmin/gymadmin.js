@@ -1301,7 +1301,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <input type="text" id="customRemoveSearch" style="width:100%;margin-top:6px;padding:8px;border-radius:6px;border:1px solid #ccc;">
         </div>
         <div id="customRemoveMembersList" style="max-height:260px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:8px 0;background:#fafbfc;"></div>
-        <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:12px;">
+        <div style="margin-top:18px;display:flex;justify-content:center;gap:12px;">
           <button class="btn btn-secondary" id="cancelCustomRemoveBtn">Cancel</button>
           <button class="btn btn-danger" id="confirmCustomRemoveBtn" disabled>Remove Selected</button>
         </div>
@@ -2745,6 +2745,8 @@ document.addEventListener('DOMContentLoaded', function() {
             };
            
         }
+        // Ensure activities are rendered after profile is loaded
+        if (typeof fetchAndRenderActivities === 'function') fetchAndRenderActivities();
     }
 
     
@@ -3243,24 +3245,33 @@ function clearUploadPhotoMsgAndCloseModal() {
         const addEquipmentBtn = document.getElementById('uploadEquipmentBtn');
         if (addEquipmentBtn) {
             addEquipmentBtn.addEventListener('click', () => {
-                // Find and click the equipment menu link
-                const equipmentMenuLink = document.querySelector('.menu-link .menu-text');
-                const equipmentLinks = Array.from(document.querySelectorAll('.menu-link .menu-text')).filter(el => el.textContent.trim() === 'Equipment');
-                
-                if (equipmentLinks.length > 0) {
-                    // Click the parent menu-link
-                    const equipmentMenuParent = equipmentLinks[0].closest('.menu-link');
-                    if (equipmentMenuParent) {
-                        equipmentMenuParent.click();
+                // Directly open the add equipment modal without navigating to Equipment tab
+                // This allows adding equipment even when the Equipment tab is hidden
+                if (window.equipmentManager && typeof window.equipmentManager.openAddEquipmentModal === 'function') {
+                    window.equipmentManager.openAddEquipmentModal();
+                } else {
+                    // Fallback: try to open modal directly if equipment manager isn't loaded yet
+                    const equipmentModal = document.getElementById('equipmentModal');
+                    if (equipmentModal) {
+                        // Reset form
+                        const form = document.getElementById('equipmentForm');
+                        if (form) form.reset();
+                        
+                        // Set title to Add mode
+                        const title = document.getElementById('equipmentModalTitle');
+                        if (title) title.innerHTML = '<i class="fas fa-plus"></i> Add Equipment';
+                        
+                        // Show modal
+                        equipmentModal.style.display = 'flex';
+                    } else {
+                        // Last resort: show notification that equipment functionality is disabled
+                        if (typeof showNotification === 'function') {
+                            showNotification('Equipment functionality is currently hidden. Enable it in Settings → Customize Dashboard to access all features.', 'info');
+                        } else {
+                            alert('Equipment functionality is currently hidden. Enable it in Settings → Customize Dashboard to access all features.');
+                        }
                     }
                 }
-                
-                // Wait for tab to load, then open add equipment modal
-                setTimeout(() => {
-                    if (window.equipmentManager) {
-                        window.equipmentManager.openAddEquipmentModal();
-                    }
-                }, 100);
             });
         }
 
