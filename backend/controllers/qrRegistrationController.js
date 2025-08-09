@@ -7,27 +7,86 @@ const sendEmail = require('../utils/sendEmail');
 const registerMemberViaQR = async (req, res) => {
   try {
     const {
-      firstName,
-      lastName,
+      memberName,
       email,
       phone,
-      dateOfBirth,
+      age,
       gender,
       address,
-      emergencyName,
-      emergencyPhone,
-      selectedPlan,
+      activityPreference,
+      planSelected,
+      monthlyPlan,
+      paymentAmount,
+      paymentMode,
       gymId,
       qrToken,
       registrationType,
-      specialOffer
+      specialOffer,
+      // Legacy field names for backward compatibility
+      firstName,
+      lastName,
+      selectedPlan
     } = req.body;
 
+    console.log('=== QR REGISTRATION REQUEST ===');
+    console.log('Request body:', req.body);
+
+    // Use memberName if provided, otherwise combine firstName and lastName
+    const finalMemberName = memberName || (firstName && lastName ? `${firstName} ${lastName}` : '');
+    const finalPlanSelected = planSelected || selectedPlan || '';
+
+    // Validate required fields
+    if (!finalMemberName || !email || !phone || !age || !gender || !activityPreference || !finalPlanSelected || !monthlyPlan || !paymentAmount || !paymentMode) {
+      return res.status(400).json({ 
+        message: 'Missing required fields',
+        required: ['memberName', 'email', 'phone', 'age', 'gender', 'activityPreference', 'planSelected', 'monthlyPlan', 'paymentAmount', 'paymentMode']
+      });
+    }
+
     // Validate QR code
+    console.log('=== QR VALIDATION DEBUG ===');
+    console.log('Received QR token:', qrToken);
+    console.log('Received gym ID:', gymId);
+    console.log('Token type:', typeof qrToken);
+    console.log('Gym ID type:', typeof gymId);
+    
     const qrCode = await QRCode.getValidQRCode(qrToken);
-    if (!qrCode || qrCode.gymId._id.toString() !== gymId) {
+    console.log('QR code query result:', qrCode ? 'FOUND' : 'NOT FOUND');
+    
+    if (!qrCode) {
+      // Let's also try to find ANY QR code with this token (even expired/inactive)
+      const anyQRCode = await QRCode.findOne({ token: qrToken });
+      console.log('Any QR code with token (including expired):', anyQRCode ? 'EXISTS' : 'DOES NOT EXIST');
+      
+      if (anyQRCode) {
+        console.log('Found QR code details:');
+        console.log('- ID:', anyQRCode._id);
+        console.log('- Token:', anyQRCode.token);
+        console.log('- Gym ID:', anyQRCode.gymId);
+        console.log('- Is Active:', anyQRCode.isActive);
+        console.log('- Expiry Date:', anyQRCode.expiryDate);
+        console.log('- Usage Count:', anyQRCode.usageCount);
+        console.log('- Usage Limit:', anyQRCode.usageLimit);
+        console.log('- Current Time:', new Date());
+        console.log('- Is Expired:', new Date() > anyQRCode.expiryDate);
+      }
+      
+      console.log('QR code not found or invalid:', qrToken);
       return res.status(400).json({ 
         message: 'Invalid or expired QR code' 
+      });
+    }
+    
+    console.log('QR code found:', qrCode._id, 'for gym:', qrCode.gymId._id.toString());
+    
+    // Handle both ObjectId and string comparisons
+    const qrGymId = qrCode.gymId._id ? qrCode.gymId._id.toString() : qrCode.gymId.toString();
+    const providedGymId = gymId.toString();
+    
+    if (qrGymId !== providedGymId) {
+      console.log('Gym ID mismatch. QR gym:', qrGymId, 'Provided gym:', providedGymId);
+      return res.status(400).json({ 
+        message: 'QR code is not valid for this gym' 
       });
     }
 
@@ -57,30 +116,26 @@ const registerMemberViaQR = async (req, res) => {
       membershipEndDate.setMonth(membershipEndDate.getMonth() + 1);
     }
 
-    // Create member record
+    // Create member record with correct field names for Member schema
     const memberData = {
-      name: `${firstName} ${lastName}`,
-      email,
-      phone,
-      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-      gender,
-      address,
-      emergencyContact: {
-        name: emergencyName,
-        phone: emergencyPhone
-      },
       gym: gymId,
-      membershipPlan: selectedPlan,
-      membershipStartDate,
-      membershipEndDate,
-      membershipStatus,
-      registrationSource: 'qr_code',
-      qrCodeToken: qrToken,
-      registrationType,
-      specialOffer,
-      paymentStatus: registrationType === 'trial' ? 'paid' : 'pending',
-      joinedDate: new Date()
+      memberName: finalMemberName,
+      age: parseInt(age),
+      gender,
+      phone,
+      email,
+      paymentMode: paymentMode || 'pending',
+      paymentAmount: parseFloat(paymentAmount),
+      planSelected: finalPlanSelected.charAt(0).toUpperCase() + finalPlanSelected.slice(1).toLowerCase(), // Ensure proper case
+      monthlyPlan: monthlyPlan.charAt(0).toUpperCase() + monthlyPlan.slice(1).toLowerCase(), // Ensure proper case
+      activityPreference,
+      address: address || '',
+      joinDate: new Date(),
+      membershipId: `${gym.name.substring(0,3).toUpperCase()}${Date.now()}`,
+      paymentStatus: registrationType === 'trial' ? 'paid' : 'pending'
     };
+
+    console.log('Creating member with data:', memberData);
 
     const newMember = new Member(memberData);
     await newMember.save();
@@ -107,15 +162,27 @@ const registerMemberViaQR = async (req, res) => {
       nextSteps = {
         message: 'Trial membership activated! You can start using the gym immediately.',
         action: 'visit_gym',
-        details: 'Your 3-day trial starts now. Visit the gym to begin your fitness journey!'
+        details: 'Your 3-day trial starts now. Visit the gym to begin your fitness journey!',
+        redirectUrl: '/registration-complete?type=trial'
       };
     } else {
-      // Create payment link/session for paid memberships
+      // For paid memberships, prepare payment options
+      const baseAmount = selectedPlan?.price || 1000; // Default amount if plan not found
+      const duration = selectedPlan?.duration || 1;
+      
       nextSteps = {
         message: 'Registration successful! Please complete payment to activate your membership.',
         action: 'payment_required',
-        paymentUrl: `/payment?member=${newMember._id}&plan=${selectedPlan}`,
-        details: 'You will be redirected to complete your payment.'
+        paymentOptions: {
+          memberId: newMember._id,
+          amount: baseAmount,
+          duration: duration,
+          planName: selectedPlan?.name || 'Membership Plan',
+          supportedMethods: ['razorpay', 'stripe', 'upi', 'paypal']
+        },
+        paymentUrl: `/payment?member=${newMember._id}&plan=${selectedPlan}&amount=${baseAmount}`,
+        details: 'Choose your preferred payment method to complete the registration.',
+        redirectUrl: '/payment-gateway'
       };
     }
 

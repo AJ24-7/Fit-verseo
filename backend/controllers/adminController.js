@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Gym = require('../models/gym');
 const Trainer = require('../models/trainerModel');
 const Membership = require('../models/Membership');
+const Subscription = require('../models/Subscription');
 const Notification = require('../models/Notification');
 const TrialBooking = require('../models/TrialBooking');
 const sendEmail = require('../utils/sendEmail');
@@ -37,8 +38,47 @@ exports.getDashboardData = async (req, res) => {
     const pendingGyms = await Gym.countDocuments({ status: 'pending' });
     const pendingTrainers = await Trainer.countDocuments({ status: 'pending' });
 
-    // Revenue
+    // Revenue from subscriptions
+    const subscriptionRevenue = await Subscription.aggregate([
+      {
+        $unwind: '$billingHistory'
+      },
+      {
+        $match: {
+          'billingHistory.status': 'success'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$billingHistory.amount' }
+        }
+      }
+    ]);
+
+    const thisMonthSubscriptionRevenue = await Subscription.aggregate([
+      {
+        $unwind: '$billingHistory'
+      },
+      {
+        $match: {
+          'billingHistory.status': 'success',
+          'billingHistory.date': { $gte: firstDayOfThisMonth }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$billingHistory.amount' }
+        }
+      }
+    ]);
+
+    // Combine gym revenue with subscription revenue
     const totalRevenue = await Gym.aggregate([{ $group: { _id: null, total: { $sum: '$revenue' } } }]);
+    const combinedTotalRevenue = (totalRevenue[0]?.total || 0) + (subscriptionRevenue[0]?.total || 0);
+    const combinedThisMonthRevenue = (thisMonthSubscriptionRevenue[0]?.total || 0);
+    
     const thisMonthRevenue = await Gym.aggregate([
       { $match: { createdAt: { $gte: firstDayOfThisMonth } } },
       { $group: { _id: null, total: { $sum: '$revenue' } } }
@@ -47,6 +87,14 @@ exports.getDashboardData = async (req, res) => {
       { $match: { createdAt: { $gte: firstDayOfLastMonth, $lte: lastDayOfLastMonth } } },
       { $group: { _id: null, total: { $sum: '$revenue' } } }
     ]);
+
+    // Subscription analytics
+    const totalSubscriptions = await Subscription.countDocuments();
+    const activeSubscriptions = await Subscription.countDocuments({ status: 'active' });
+    const trialSubscriptions = await Subscription.countDocuments({ status: 'trial' });
+    const expiredSubscriptions = await Subscription.countDocuments({ 
+      $or: [{ status: 'expired' }, { status: 'cancelled' }] 
+    });
 
     const percent = (curr, prev) =>
       prev === 0 ? 100 : Math.round(((curr - prev) / prev) * 100);
@@ -67,15 +115,21 @@ exports.getDashboardData = async (req, res) => {
       activeMembers,
       pendingGyms,
       pendingTrainers,
-      totalRevenue: totalRevenue[0]?.total || 0,
+      totalRevenue: combinedTotalRevenue,
+      subscriptionRevenue: combinedThisMonthRevenue,
       totalTrialBookings,
       pendingTrialApprovals,
       totalGymsRegistered,
       gymsUsingDashboard,
+      // Subscription metrics
+      totalSubscriptions,
+      activeSubscriptions,
+      trialSubscriptions,
+      expiredSubscriptions,
       changes: {
         users: percent(thisMonthUsers, lastMonthUsers),
         members: percent(thisMonthMembers, lastMonthMembers),
-        revenue: percent(thisMonthRevenue[0]?.total || 0, lastMonthRevenue[0]?.total || 0),
+        revenue: percent((thisMonthRevenue[0]?.total || 0) + combinedThisMonthRevenue, lastMonthRevenue[0]?.total || 0),
       }
     });
 

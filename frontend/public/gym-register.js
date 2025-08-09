@@ -1294,6 +1294,17 @@ function showSubmissionErrorDialog(msg) {
     formData.append('openingTime', form.openingTime.value);
     formData.append('closingTime', form.closingTime.value);
 
+    // Subscription Plan Data
+    const selectedPlan = document.querySelector('input[name="subscriptionPlan"]:checked');
+    const selectedPaymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    
+    if (selectedPlan) {
+      formData.append('subscriptionPlan', selectedPlan.value);
+    }
+    if (selectedPaymentMethod) {
+      formData.append('paymentMethod', selectedPaymentMethod.value);
+    }
+
     return formData;
   }
 }

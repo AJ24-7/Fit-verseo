@@ -452,8 +452,14 @@ exports.updateMember = async (req, res) => {
 // Get all members for a gym
 exports.getMembers = async (req, res) => {
   try {
-    const gymId = (req.admin && (req.admin.gymId || req.admin.id)) || req.body.gymId;
-    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    // Get gym ID from various sources: query parameter, admin object, or request body
+    const gymId = req.query.gym || 
+                  (req.admin && (req.admin.gymId || req.admin.id)) || 
+                  req.body.gymId;
+                  
+    if (!gymId) {
+      return res.status(400).json({ message: 'Gym ID is required.' });
+    }
     
     const members = await Member.find({ gym: gymId });
     res.status(200).json(members);

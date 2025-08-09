@@ -1,3 +1,180 @@
+// ===== SCRIPT LOADING TEST =====
+console.log('🔧 settings.js is loading...');
+window.settingsJsLoaded = true;
+
+// Simple test function available immediately
+window.testSettingsLoaded = function() {
+  console.log('✅ settings.js is loaded and working!');
+  return 'Settings.js is loaded and working!';
+};
+
+// Test if DOM elements exist
+window.checkBiometricToggles = function() {
+  const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
+  const faceToggle = document.getElementById('toggleFaceRecognitionAttendance');
+  
+  console.log('Fingerprint toggle:', fingerprintToggle);
+  console.log('Face toggle:', faceToggle);
+  
+  return {
+    fingerprintExists: !!fingerprintToggle,
+    faceExists: !!faceToggle,
+    bothExist: !!fingerprintToggle && !!faceToggle
+  };
+};
+
+// Test direct event listener setup
+window.setupDirectToggleTest = function() {
+  console.log('🔧 Setting up direct toggle test...');
+  
+  const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
+  const faceToggle = document.getElementById('toggleFaceRecognitionAttendance');
+  
+  if (fingerprintToggle) {
+    console.log('Adding direct event listener to fingerprint toggle');
+    fingerprintToggle.addEventListener('change', function() {
+      console.log('🔧 DIRECT: Fingerprint toggle changed to:', this.checked);
+    });
+  } else {
+    console.error('❌ Fingerprint toggle not found for direct test');
+  }
+  
+  if (faceToggle) {
+    console.log('Adding direct event listener to face toggle');
+    faceToggle.addEventListener('change', function() {
+      console.log('🔧 DIRECT: Face toggle changed to:', this.checked);
+    });
+  } else {
+    console.error('❌ Face toggle not found for direct test');
+  }
+  
+  return 'Direct toggle test setup complete';
+};
+
+// Test when DOM is actually ready
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔧 DOM Content Loaded - settings.js executing');
+  
+  setTimeout(function() {
+    console.log('🔧 Delayed check after DOM ready');
+    window.checkBiometricToggles();
+    
+    // Auto-setup direct test
+    if (typeof window.setupDirectToggleTest === 'function') {
+      window.setupDirectToggleTest();
+    }
+    
+    // Check if we need to navigate to settings tab first
+    const settingsTab = document.getElementById('settingsTab');
+    if (settingsTab) {
+      console.log('Settings tab found:', settingsTab.style.display);
+    } else {
+      console.log('Settings tab not found');
+    }
+  }, 2000); // Increased delay to ensure setupBiometricAttendance has run
+});
+
+// Add function to navigate to settings tab and test
+window.goToSettingsAndTest = function() {
+  console.log('🔧 Navigating to settings tab...');
+  
+  // Click on settings menu item
+  const settingsMenuItem = document.querySelector('[data-tab="settingsTab"]') || 
+                          document.querySelector('.menu-item:last-child .menu-link');
+  
+  if (settingsMenuItem) {
+    console.log('Clicking settings menu item');
+    settingsMenuItem.click();
+    
+    // Wait for tab switch, then test
+    setTimeout(() => {
+      console.log('Testing after tab switch...');
+      window.checkBiometricToggles();
+      if (typeof window.setupDirectToggleTest === 'function') {
+        window.setupDirectToggleTest();
+      }
+    }, 500);
+  } else {
+    console.error('Settings menu item not found');
+  }
+};
+
+// Comprehensive biometric system test
+window.fullBiometricTest = function() {
+  console.log('🧪 === FULL BIOMETRIC SYSTEM TEST ===');
+  
+  // 1. Check if settings.js is loaded
+  console.log('1. Settings.js loaded:', !!window.settingsJsLoaded);
+  
+  // 2. Navigate to settings tab first
+  const settingsMenuItem = document.querySelector('[data-tab="settingsTab"]') || 
+                          document.querySelector('.menu-item:last-child .menu-link');
+  
+  if (settingsMenuItem) {
+    console.log('2. Clicking settings tab...');
+    settingsMenuItem.click();
+    
+    setTimeout(() => {
+      // 3. Check DOM elements
+      const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
+      const faceToggle = document.getElementById('toggleFaceRecognitionAttendance');
+      
+      console.log('3. DOM Elements:');
+      console.log('   - Fingerprint toggle:', !!fingerprintToggle);
+      console.log('   - Face toggle:', !!faceToggle);
+      
+      if (fingerprintToggle) {
+        console.log('   - Fingerprint current state:', fingerprintToggle.checked);
+        console.log('   - Fingerprint visible:', fingerprintToggle.offsetParent !== null);
+      }
+      
+      // 4. Check gym ID
+      const gymId = typeof getGymId === 'function' ? getGymId() : 'function not available';
+      console.log('4. Gym ID:', gymId);
+      
+      // 5. Check biometric settings
+      if (typeof getBiometricSettings === 'function' && gymId !== 'function not available') {
+        const settings = getBiometricSettings(gymId);
+        console.log('5. Current biometric settings:', settings);
+      } else {
+        console.log('5. getBiometricSettings function not available');
+      }
+      
+      // 6. Enable bypass and test
+      if (typeof window.enableBiometricBypass === 'function') {
+        window.enableBiometricBypass();
+        console.log('6. Biometric bypass enabled for testing');
+      }
+      
+      // 7. Add direct event listeners for testing
+      if (fingerprintToggle) {
+        const existingListeners = fingerprintToggle.cloneNode(true);
+        fingerprintToggle.addEventListener('change', function() {
+          console.log('🔧 TEST LISTENER: Fingerprint toggle changed to:', this.checked);
+        });
+        console.log('7. Added test event listener to fingerprint toggle');
+      }
+      
+      if (faceToggle) {
+        faceToggle.addEventListener('change', function() {
+          console.log('🔧 TEST LISTENER: Face toggle changed to:', this.checked);
+        });
+        console.log('7. Added test event listener to face toggle');
+      }
+      
+      console.log('=== TEST SETUP COMPLETE ===');
+      console.log('Now try clicking the toggles manually and watch for log messages');
+      
+    }, 1000);
+  } else {
+    console.error('Settings menu item not found!');
+  }
+};
+
+window.addEventListener('load', function() {
+  console.log('🔧 Window fully loaded - settings.js');
+});
+
 // ===== GENERIC ALERT FALLBACK =====
 // Use this for legacy showAlert calls in agent manager
 function showAlert(message, type = 'info') {
@@ -15,6 +192,312 @@ class BiometricAgentManager {
         this.agentUrl = 'http://localhost:5001';
         this.agentStatus = 'unknown';
         this.checkInterval = null;
+        this.devices = [];
+        this.enrollmentInProgress = false;
+    }
+
+    // Enhanced device management
+    async getDevices() {
+        try {
+            const response = await fetch(`${this.agentUrl}/api/devices`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.devices = data.devices || [];
+                return this.devices;
+            } else {
+                console.error('Failed to get devices:', response.status);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error getting devices:', error);
+            return [];
+        }
+    }
+
+    async scanDevices() {
+        try {
+            const response = await fetch(`${this.agentUrl}/api/devices/scan`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.devices = data.devices || [];
+                return this.devices;
+            } else {
+                console.error('Failed to scan devices:', response.status);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error scanning devices:', error);
+            return [];
+        }
+    }
+
+    // Enhanced biometric enrollment
+    async enrollFingerprint(personId, personType, gymId, deviceId = null) {
+        try {
+            this.enrollmentInProgress = true;
+            
+            const response = await fetch(`${this.agentUrl}/api/fingerprint/enroll`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    personId,
+                    personType,
+                    gymId,
+                    deviceId
+                })
+            });
+            
+            const data = await response.json();
+            this.enrollmentInProgress = false;
+            
+            return {
+                success: data.success,
+                templateId: data.templateId,
+                quality: data.quality,
+                deviceName: data.deviceName,
+                message: data.message,
+                error: data.error
+            };
+        } catch (error) {
+            this.enrollmentInProgress = false;
+            console.error('Fingerprint enrollment error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async verifyFingerprint(personId, gymId, deviceId = null) {
+        try {
+            const response = await fetch(`${this.agentUrl}/api/fingerprint/verify`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    personId,
+                    gymId,
+                    deviceId
+                })
+            });
+            
+            const data = await response.json();
+            
+            return {
+                success: data.success,
+                verified: data.verified,
+                confidence: data.confidence,
+                deviceName: data.deviceName,
+                message: data.message,
+                error: data.error
+            };
+        } catch (error) {
+            console.error('Fingerprint verification error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Enhanced face recognition
+    async enrollFace(personId, personType, gymId, deviceId = null) {
+        try {
+            this.enrollmentInProgress = true;
+            
+            const response = await fetch(`${this.agentUrl}/api/face/enroll`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    personId,
+                    personType,
+                    gymId,
+                    deviceId
+                })
+            });
+            
+            const data = await response.json();
+            this.enrollmentInProgress = false;
+            
+            return {
+                success: data.success,
+                templateId: data.templateId,
+                quality: data.quality,
+                livenessScore: data.livenessScore,
+                deviceName: data.deviceName,
+                message: data.message,
+                error: data.error
+            };
+        } catch (error) {
+            this.enrollmentInProgress = false;
+            console.error('Face enrollment error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async verifyFace(personId, gymId, deviceId = null) {
+        try {
+            const response = await fetch(`${this.agentUrl}/api/face/verify`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    personId,
+                    gymId,
+                    deviceId
+                })
+            });
+            
+            const data = await response.json();
+            
+            return {
+                success: data.success,
+                verified: data.verified,
+                confidence: data.confidence,
+                livenessScore: data.livenessScore,
+                deviceName: data.deviceName,
+                message: data.message,
+                error: data.error
+            };
+        } catch (error) {
+            console.error('Face verification error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Legacy enrollment for backward compatibility
+    async legacyEnroll(memberId, memberName, gymId) {
+        try {
+            const response = await fetch(`${this.agentUrl}/enroll`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    memberId,
+                    memberName,
+                    gymId
+                })
+            });
+            
+            const data = await response.json();
+            
+            return {
+                success: data.success,
+                enrollmentId: data.enrollmentId,
+                biometricTemplate: data.biometricTemplate,
+                results: data.results,
+                message: data.message,
+                error: data.error
+            };
+        } catch (error) {
+            console.error('Legacy enrollment error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Legacy verification for backward compatibility
+    async legacyVerify(biometricData, gymId) {
+        try {
+            const response = await fetch(`${this.agentUrl}/verify`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    biometricData,
+                    gymId
+                })
+            });
+            
+            const data = await response.json();
+            
+            return {
+                success: data.success,
+                verified: data.verified,
+                memberId: data.memberId,
+                memberName: data.memberName,
+                confidence: data.confidence,
+                method: data.method,
+                message: data.message,
+                error: data.error
+            };
+        } catch (error) {
+            console.error('Legacy verification error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Attendance recording
+    async recordAttendance(memberId, gymId, action = 'check-in') {
+        try {
+            const response = await fetch(`${this.agentUrl}/attendance`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    memberId,
+                    gymId,
+                    action
+                })
+            });
+            
+            const data = await response.json();
+            
+            return {
+                success: data.success,
+                attendanceId: data.attendanceId,
+                verified: data.verified,
+                method: data.method,
+                message: data.message,
+                error: data.error
+            };
+        } catch (error) {
+            console.error('Attendance recording error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
     }
 
     async checkAgentStatus() {
@@ -26,10 +509,8 @@ class BiometricAgentManager {
             const response = await fetch(`${this.agentUrl}/health`, {
                 method: 'GET',
                 signal: controller.signal,
-                cache: 'no-cache', // Prevent caching issues
                 headers: {
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
+                    'Accept': 'application/json'
                 }
             });
             
@@ -1195,6 +1676,192 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
+// ===== BIOMETRIC FEEDBACK SYSTEM =====
+function showBiometricFeedback(message, type = 'info') {
+  const colors = {
+    success: '#4CAF50',
+    error: '#f44336',
+    warning: '#ff9800',
+    info: '#2196F3'
+  };
+  
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${colors[type] || colors.info};
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10001;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    max-width: 300px;
+    font-weight: 500;
+  `;
+  
+  toast.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+      ${message}
+    </div>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.style.transform = 'translateX(0)', 100);
+  setTimeout(() => {
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ===== ESSENTIAL BIOMETRIC FUNCTIONS (EARLY DEFINITION) =====
+function openBiometricEnrollment() {
+  window.location.href = '/frontend/biometric-enrollment.html';
+}
+
+function openBiometricReports() {
+  if (typeof showBiometricReports === 'function') {
+    showBiometricReports();
+  } else {
+    showBiometricFeedback('Biometric reports feature coming soon!', 'info');
+  }
+}
+
+function showDeviceConfigurationModal() {
+  window.biometricAgentManager.checkAgentStatus().then(isRunning => {
+    if (!isRunning) {
+      showBiometricFeedback('⚠️ Biometric agent is not running. Please install and start the agent first.', 'warning');
+      return;
+    }
+    
+    const modal = createBiometricModal('Device Configuration', `
+      <div style="padding: 20px; text-align: center;">
+        <i class="fas fa-cogs fa-3x" style="color: #2196F3; margin-bottom: 20px;"></i>
+        <h4>Configure Biometric Devices</h4>
+        <p style="margin: 16px 0; color: #666;">Manage fingerprint scanners and cameras</p>
+        
+        <div id="devicesList" style="margin: 20px 0; min-height: 100px;">
+          <div style="color: #666;">
+            <i class="fas fa-spinner fa-spin"></i> Scanning for devices...
+          </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+          <button class="btn btn-primary" onclick="scanForDevices()" style="margin-right: 10px;">
+            <i class="fas fa-search"></i> Scan Devices
+          </button>
+          <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove();">
+            Close
+          </button>
+        </div>
+      </div>
+    `);
+    
+    document.body.appendChild(modal);
+    
+    // Auto-scan for devices
+    setTimeout(() => scanForDevices(), 500);
+  }).catch(error => {
+    showBiometricFeedback('Unable to check agent status: ' + error.message, 'error');
+  });
+}
+
+function testBiometricConnection() {
+  showBiometricFeedback('Testing biometric agent connection...', 'info');
+  
+  window.biometricAgentManager.checkAgentStatus().then(isRunning => {
+    if (isRunning) {
+      showBiometricFeedback('✅ Biometric agent connection successful!', 'success');
+    } else {
+      showBiometricFeedback('❌ Biometric agent is not running', 'error');
+    }
+  }).catch(error => {
+    showBiometricFeedback('❌ Connection test failed: ' + error.message, 'error');
+  });
+}
+
+function openBiometricDeviceSetup() {
+  showDeviceConfigurationModal();
+}
+
+function createBiometricModal(title, content, maxWidth = '90%') {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  `;
+  
+  overlay.innerHTML = `
+    <div class="modal-body" style="background: white; border-radius: 12px; max-width: ${maxWidth}; max-height: 90%; overflow-y: auto; position: relative;">
+      <div class="modal-header" style="padding: 20px 24px 0 24px; border-bottom: 1px solid #eee; margin-bottom: 0;">
+        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+          <i class="fas fa-fingerprint"></i> ${title}
+        </h3>
+        <button onclick="this.closest('.modal-overlay').remove()" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
+      </div>
+      <div class="modal-content">
+        ${content}
+      </div>
+    </div>
+  `;
+  
+  // Close on background click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  });
+  
+  return overlay;
+}
+
+function scanForDevices() {
+  const devicesList = document.getElementById('devicesList');
+  if (!devicesList) return;
+  
+  devicesList.innerHTML = '<div style="color: #666;"><i class="fas fa-spinner fa-spin"></i> Scanning for devices...</div>';
+  
+  window.biometricAgentManager.scanDevices().then(devices => {
+    if (devices && devices.length > 0) {
+      devicesList.innerHTML = devices.map(device => `
+        <div style="background: #f8f9fa; padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 4px solid #28a745;">
+          <strong>${device.name || 'Unknown Device'}</strong><br>
+          <small style="color: #666;">${device.type || 'Unknown Type'} - ${device.status || 'Unknown Status'}</small>
+        </div>
+      `).join('');
+      showBiometricFeedback(`Found ${devices.length} device(s)`, 'success');
+    } else {
+      devicesList.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">No devices found</div>';
+      showBiometricFeedback('No biometric devices detected', 'warning');
+    }
+  }).catch(error => {
+    devicesList.innerHTML = '<div style="color: #f44336; text-align: center; padding: 20px;">Error scanning devices</div>';
+    showBiometricFeedback('Device scan failed: ' + error.message, 'error');
+  });
+}
+
+// Make functions globally available
+window.openBiometricEnrollment = openBiometricEnrollment;
+window.openBiometricReports = openBiometricReports;
+window.showDeviceConfigurationModal = showDeviceConfigurationModal;
+window.testBiometricConnection = testBiometricConnection;
+window.openBiometricDeviceSetup = openBiometricDeviceSetup;
+window.createBiometricModal = createBiometricModal;
+window.scanForDevices = scanForDevices;
+
 // ===== SETTINGS INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
   // Theme Management
@@ -1327,6 +1994,19 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(() => {
     setupDashboardCustomization();
     setupBiometricAttendance(); // Initialize biometric settings
+    
+    // Initialize biometric button visibility based on current settings
+    const gymId = getGymId();
+    if (gymId) {
+      const biometricEnabled = isBiometricAttendanceEnabled(gymId);
+      updateBiometricQuickActionVisibility(gymId, biometricEnabled);
+      console.log(`Initial biometric status for gym ${gymId}: ${biometricEnabled}`);
+    }
+    
+    // Initialize passkey settings UI if payment manager is available
+    if (window.paymentManager && typeof window.paymentManager.updatePasskeySettingsUI === 'function') {
+      window.paymentManager.updatePasskeySettingsUI();
+    }
   }, 100); // Small delay to ensure all DOM elements are ready
 });
 
@@ -1633,6 +2313,95 @@ window.handleGymSwitch = handleGymSwitch;
 window.verifyGymIsolation = verifyGymIsolation;
 window.debugJWTToken = debugJWTToken;
 window.resetGymDetection = resetGymDetection;
+
+// Make biometric status checking functions globally available
+window.isBiometricAttendanceEnabled = isBiometricAttendanceEnabled;
+window.isFingerprintAttendanceEnabled = isFingerprintAttendanceEnabled;
+window.isFaceRecognitionAttendanceEnabled = isFaceRecognitionAttendanceEnabled;
+window.updateBiometricQuickActionVisibility = updateBiometricQuickActionVisibility;
+window.handleBiometricEnrollmentRedirect = handleBiometricEnrollmentRedirect;
+window.handleBiometricDeviceSetupRedirect = handleBiometricDeviceSetupRedirect;
+window.showBiometricEnablementPrompt = showBiometricEnablementPrompt;
+
+// Add biometric toggle debugging function
+window.testBiometricToggle = function() {
+  console.log('🧪 Testing biometric toggle functionality...');
+  
+  const gymId = getGymId();
+  console.log('Current gym ID:', gymId);
+  
+  const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
+  const faceRecognitionToggle = document.getElementById('toggleFaceRecognitionAttendance');
+  
+  console.log('Fingerprint toggle element:', fingerprintToggle);
+  console.log('Face recognition toggle element:', faceRecognitionToggle);
+  
+  if (fingerprintToggle) {
+    console.log('Fingerprint toggle checked:', fingerprintToggle.checked);
+  }
+  
+  if (faceRecognitionToggle) {
+    console.log('Face recognition toggle checked:', faceRecognitionToggle.checked);
+  }
+  
+  // Test current settings
+  const currentSettings = getBiometricSettings(gymId);
+  console.log('Current biometric settings:', currentSettings);
+  
+  // Test saving a setting
+  console.log('Testing save fingerprint setting...');
+  setBiometricSetting(gymId, 'fingerprintEnabled', true);
+  
+  const savedValue = getBiometricSetting(gymId, 'fingerprintEnabled');
+  console.log('Retrieved saved value:', savedValue, typeof savedValue);
+  
+  return {
+    gymId,
+    fingerprintToggle: !!fingerprintToggle,
+    faceRecognitionToggle: !!faceRecognitionToggle,
+    currentSettings,
+    testSave: savedValue
+  };
+};
+
+// Add manual toggle test function
+window.manualToggleTest = function() {
+  console.log('🔧 Manual toggle test starting...');
+  
+  const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
+  if (!fingerprintToggle) {
+    console.error('❌ Fingerprint toggle not found!');
+    return false;
+  }
+  
+  console.log('Toggle found, current state:', fingerprintToggle.checked);
+  
+  // Manually trigger the toggle
+  fingerprintToggle.checked = !fingerprintToggle.checked;
+  console.log('Toggle state changed to:', fingerprintToggle.checked);
+  
+  // Manually trigger the change event
+  const changeEvent = new Event('change', { bubbles: true });
+  fingerprintToggle.dispatchEvent(changeEvent);
+  
+  console.log('Change event dispatched');
+  return true;
+};
+
+// Add bypass function for testing
+window.bypassBiometricAgentCheck = false;
+
+window.enableBiometricBypass = function() {
+  window.bypassBiometricAgentCheck = true;
+  console.log('✅ Biometric agent check bypassed - toggles will work without agent');
+  return 'Biometric agent check bypassed for testing';
+};
+
+window.disableBiometricBypass = function() {
+  window.bypassBiometricAgentCheck = false;
+  console.log('🔒 Biometric agent check re-enabled - agent required for toggles');
+  return 'Biometric agent check re-enabled';
+};
 
 // Add biometric testing functions
 window.testBiometricAgent = async function() {
@@ -2014,9 +2783,10 @@ function setupBiometricAttendance() {
   function updateBiometricSettingsVisibility() {
     const fingerprintEnabled = fingerprintToggle?.checked || false;
     const faceRecognitionEnabled = faceRecognitionToggle?.checked || false;
+    const anyBiometricEnabled = fingerprintEnabled || faceRecognitionEnabled;
     
     if (biometricSettings) {
-      if (fingerprintEnabled || faceRecognitionEnabled) {
+      if (anyBiometricEnabled) {
         biometricSettings.style.display = 'block';
         biometricSettings.classList.add('show');
       } else {
@@ -2024,10 +2794,34 @@ function setupBiometricAttendance() {
         biometricSettings.classList.remove('show');
       }
     }
+    
+    // Update quick action button visibility globally
+    updateBiometricQuickActionVisibility(gymId, anyBiometricEnabled);
+    
+    // Hide/show advanced biometric controls
+    const advancedControls = document.querySelectorAll('.biometric-advanced-control');
+    advancedControls.forEach(control => {
+      control.style.display = anyBiometricEnabled ? 'block' : 'none';
+    });
+    
+    // Store global state for quick access
+    window.biometricEnabled = anyBiometricEnabled;
+    
+    console.log(`Updated biometric settings visibility for gym ${gymId}:`, {
+      fingerprint: fingerprintEnabled,
+      faceRecognition: faceRecognitionEnabled,
+      anyEnabled: anyBiometricEnabled
+    });
   }
 
   // Check agent status before enabling biometric features
   async function checkAgentAndEnable(type, toggle) {
+    // Allow bypass for testing/development
+    if (window.bypassBiometricAgentCheck) {
+      console.log('⚠️ Biometric agent check bypassed for testing');
+      return true;
+    }
+    
     const isRunning = await window.biometricAgentManager.checkAgentStatus();
     
     if (!isRunning) {
@@ -2068,40 +2862,58 @@ function setupBiometricAttendance() {
   if (fingerprintToggle) {
     fingerprintToggle.addEventListener('change', async function() {
       const isEnabled = this.checked;
+      console.log('🔧 Fingerprint toggle clicked:', isEnabled, 'for gym:', gymId);
       
       if (isEnabled) {
         const agentReady = await checkAgentAndEnable('fingerprint', this);
-        if (!agentReady) return;
+        if (!agentReady) {
+          console.log('❌ Agent not ready, reverting toggle');
+          return;
+        }
       }
       
       setBiometricSetting(gymId, 'fingerprintEnabled', isEnabled);
       updateBiometricSettingsVisibility();
       showBiometricFeedback('Fingerprint attendance ' + (isEnabled ? 'enabled' : 'disabled'));
       
+      // Update quick action visibility
+      updateBiometricQuickActionVisibility(gymId, isBiometricAttendanceEnabled(gymId));
+      
       if (isEnabled) {
         checkBiometricDeviceCompatibility('fingerprint');
       }
     });
+  } else {
+    console.warn('❌ Fingerprint toggle element not found!');
   }
 
   // Face recognition attendance toggle
   if (faceRecognitionToggle) {
     faceRecognitionToggle.addEventListener('change', async function() {
       const isEnabled = this.checked;
+      console.log('🔧 Face recognition toggle clicked:', isEnabled, 'for gym:', gymId);
       
       if (isEnabled) {
         const agentReady = await checkAgentAndEnable('face recognition', this);
-        if (!agentReady) return;
+        if (!agentReady) {
+          console.log('❌ Agent not ready, reverting toggle');
+          return;
+        }
       }
       
       setBiometricSetting(gymId, 'faceRecognitionEnabled', isEnabled);
       updateBiometricSettingsVisibility();
       showBiometricFeedback('Face recognition attendance ' + (isEnabled ? 'enabled' : 'disabled'));
       
+      // Update quick action visibility
+      updateBiometricQuickActionVisibility(gymId, isBiometricAttendanceEnabled(gymId));
+      
       if (isEnabled) {
         checkBiometricDeviceCompatibility('face');
       }
     });
+  } else {
+    console.warn('❌ Face recognition toggle element not found!');
   }
 
   // Auto-enroll toggle
@@ -2175,6 +2987,17 @@ function getBiometricSettings(gymId) {
   }
 }
 
+// Get a specific biometric setting value
+function getBiometricSetting(gymId, key) {
+  try {
+    const settings = getBiometricSettings(gymId);
+    return settings[key];
+  } catch (error) {
+    console.error('Error getting biometric setting:', error);
+    return false; // Default to false for safety
+  }
+}
+
 // Set biometric setting for a specific gym
 function setBiometricSetting(gymId, key, value) {
   try {
@@ -2189,29 +3012,217 @@ function setBiometricSetting(gymId, key, value) {
 
 // Setup biometric action buttons
 function setupBiometricButtons(gymId) {
-  // Setup Devices button
-  const setupDevicesBtn = document.getElementById('setupBiometricDevices');
-  if (setupDevicesBtn) {
-    setupDevicesBtn.addEventListener('click', () => openBiometricDeviceSetup());
-  }
+  // Use setTimeout to ensure functions are loaded
+  setTimeout(() => {
+    // Setup Devices button
+    const setupDevicesBtn = document.getElementById('setupBiometricDevices');
+    if (setupDevicesBtn) {
+      setupDevicesBtn.onclick = () => {
+        if (typeof showDeviceConfigurationModal === 'function') {
+          showDeviceConfigurationModal();
+        }
+      };
+    }
 
-  // Test Connection button
-  const testConnectionBtn = document.getElementById('testBiometricConnection');
-  if (testConnectionBtn) {
-    testConnectionBtn.addEventListener('click', () => testBiometricConnection());
-  }
+    // Test Connection button
+    const testConnectionBtn = document.getElementById('testBiometricConnection');
+    if (testConnectionBtn) {
+      testConnectionBtn.onclick = () => {
+        if (typeof testBiometricConnection === 'function') {
+          testBiometricConnection();
+        }
+      };
+    }
 
-  // Enroll Members button
-  const enrollMembersBtn = document.getElementById('enrollBiometricData');
-  if (enrollMembersBtn) {
-    enrollMembersBtn.addEventListener('click', () => openBiometricEnrollment());
-  }
+    // Enroll Members button
+    const enrollMembersBtn = document.getElementById('enrollBiometricData');
+    if (enrollMembersBtn) {
+      enrollMembersBtn.onclick = () => {
+        if (typeof openBiometricEnrollment === 'function') {
+          openBiometricEnrollment();
+        }
+      };
+    }
 
-  // View Reports button
-  const reportsBtn = document.getElementById('biometricReports');
-  if (reportsBtn) {
-    reportsBtn.addEventListener('click', () => openBiometricReports());
+    // View Reports button
+    const reportsBtn = document.getElementById('biometricReports');
+    if (reportsBtn) {
+      reportsBtn.onclick = () => {
+        if (typeof openBiometricReports === 'function') {
+          openBiometricReports();
+        }
+      };
+    }
+  }, 100);
+}
+
+// ===== BIOMETRIC STATUS CHECKING FUNCTIONS =====
+
+// Check if biometric attendance is enabled for a specific gym
+function isBiometricAttendanceEnabled(gymId) {
+  if (!gymId) return false;
+  
+  const fingerprintEnabled = getBiometricSetting(gymId, 'fingerprintEnabled') === true;
+  const faceEnabled = getBiometricSetting(gymId, 'faceRecognitionEnabled') === true;
+  
+  return fingerprintEnabled || faceEnabled;
+}
+
+// Check if fingerprint attendance is specifically enabled
+function isFingerprintAttendanceEnabled(gymId) {
+  if (!gymId) return false;
+  return getBiometricSetting(gymId, 'fingerprintEnabled') === true;
+}
+
+// Check if face recognition attendance is specifically enabled
+function isFaceRecognitionAttendanceEnabled(gymId) {
+  if (!gymId) return false;
+  return getBiometricSetting(gymId, 'faceRecognitionEnabled') === true;
+}
+
+// Update visibility of biometric quick action buttons throughout the app
+function updateBiometricQuickActionVisibility(gymId, isEnabled) {
+  console.log(`Updating biometric quick action visibility for gym ${gymId}: ${isEnabled}`);
+  
+  // Quick action buttons in dashboard
+  const biometricEnrollBtn = document.getElementById('biometricEnrollBtn');
+  const deviceSetupBtn = document.getElementById('deviceSetupBtn');
+  
+  if (biometricEnrollBtn) {
+    biometricEnrollBtn.style.display = isEnabled ? 'flex' : 'none';
   }
+  
+  if (deviceSetupBtn) {
+    deviceSetupBtn.style.display = isEnabled ? 'flex' : 'none';
+  }
+  
+  // Advanced biometric controls in settings
+  const advancedControls = document.querySelectorAll('.biometric-advanced-control');
+  advancedControls.forEach(control => {
+    control.style.display = isEnabled ? 'block' : 'none';
+  });
+  
+  // Biometric buttons in settings quick actions
+  const settingsBiometricBtns = document.querySelectorAll('.biometric-settings-btn');
+  settingsBiometricBtns.forEach(btn => {
+    btn.style.display = isEnabled ? 'inline-block' : 'none';
+  });
+}
+
+// Redirect to biometric enrollment or settings based on status
+function handleBiometricEnrollmentRedirect() {
+  const gymId = getGymId();
+  
+  if (!gymId) {
+    showBiometricFeedback('Unable to determine gym context', 'error');
+    return;
+  }
+  
+  const isEnabled = isBiometricAttendanceEnabled(gymId);
+  
+  if (isEnabled) {
+    // Redirect to enrollment page
+    console.log('Biometric attendance is enabled, redirecting to enrollment page');
+    window.location.href = '/frontend/biometric-enrollment.html';
+  } else {
+    // Redirect to settings and highlight biometric section
+    console.log('Biometric attendance is disabled, redirecting to settings');
+    showBiometricEnablementPrompt();
+  }
+}
+
+// Redirect to device setup or settings based on status
+function handleBiometricDeviceSetupRedirect() {
+  const gymId = getGymId();
+  
+  if (!gymId) {
+    showBiometricFeedback('Unable to determine gym context', 'error');
+    return;
+  }
+  
+  const isEnabled = isBiometricAttendanceEnabled(gymId);
+  
+  if (isEnabled) {
+    // Open device setup modal
+    console.log('Biometric attendance is enabled, opening device setup');
+    showDeviceConfigurationModal();
+  } else {
+    // Redirect to settings and highlight biometric section
+    console.log('Biometric attendance is disabled, redirecting to settings');
+    showBiometricEnablementPrompt();
+  }
+}
+
+// Show prompt to enable biometric attendance
+function showBiometricEnablementPrompt() {
+  // First navigate to settings tab
+  const settingsTab = document.querySelector('[data-tab="settingsTab"]') || 
+                     document.querySelector('.menu-link:last-child');
+  
+  if (settingsTab) {
+    settingsTab.click();
+  }
+  
+  // Wait for settings tab to load, then highlight biometric section
+  setTimeout(() => {
+    const biometricSection = document.getElementById('biometricAttendanceSection');
+    if (biometricSection) {
+      // Scroll to biometric section
+      biometricSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Highlight the section
+      biometricSection.style.transition = 'all 0.3s ease';
+      biometricSection.style.border = '3px solid #ff6b35';
+      biometricSection.style.borderRadius = '12px';
+      biometricSection.style.boxShadow = '0 0 20px rgba(255, 107, 53, 0.3)';
+      
+      // Show instructional modal
+      const modal = createBiometricModal(
+        'Enable Biometric Attendance',
+        `
+        <div style="padding: 20px;">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <strong>Biometric attendance is currently disabled</strong>
+          </div>
+          
+          <p>To use biometric enrollment and device setup features, you need to first enable biometric attendance in the settings below.</p>
+          
+          <div style="margin: 20px 0;">
+            <h4>Steps to enable:</h4>
+            <ol style="margin: 10px 0; padding-left: 25px; line-height: 1.8;">
+              <li>Toggle <strong>Enable Fingerprint Attendance</strong> or <strong>Enable Face Recognition Attendance</strong></li>
+              <li>Install the biometric agent if prompted</li>
+              <li>Return to the dashboard to access enrollment features</li>
+            </ol>
+          </div>
+          
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            These settings are gym-specific and will only apply to your current gym.
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px;">
+            <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">
+              <i class="fas fa-check"></i> Got it
+            </button>
+          </div>
+        </div>
+        `,
+        '600px'
+      );
+      
+      document.body.appendChild(modal);
+      
+      // Remove highlight after modal is closed
+      modal.addEventListener('click', () => {
+        setTimeout(() => {
+          biometricSection.style.border = '';
+          biometricSection.style.boxShadow = '';
+        }, 500);
+      });
+    }
+  }, 500);
 }
 
 // Check device compatibility for biometric features
@@ -2287,7 +3298,13 @@ async function checkBiometricDeviceCompatibility(type) {
     statusText.textContent = 'Scanning for connected devices...';
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const devicesResponse = await fetch('http://localhost:5001/api/devices/scan');
+    const devicesResponse = await fetch('http://localhost:5001/api/devices/scan', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
     const devicesResult = await devicesResponse.json();
     
     if (!devicesResult.success) {
@@ -2330,8 +3347,8 @@ async function checkBiometricDeviceCompatibility(type) {
           <i class="fas fa-exclamation-triangle"></i>
           <strong>No ${type} devices found</strong>
           <p>Please connect a compatible ${type === 'fingerprint' ? 'fingerprint scanner' : 'camera'} and try again.</p>
-          <button class="btn btn-primary" onclick="window.location.href='/frontend/biometric-device-setup.html'">
-            <i class="fas fa-cog"></i> Device Setup
+          <button class="btn btn-primary" onclick="showDeviceConfigurationModal(); this.closest('.modal-overlay').remove();">
+            <i class="fas fa-cog"></i> Configure Devices
           </button>
         </div>
       `;
@@ -2361,10 +3378,10 @@ async function checkBiometricDeviceCompatibility(type) {
             ${deviceList}
           </div>
           <div style="margin-top: 15px;">
-            <button class="btn btn-primary" onclick="window.location.href='/frontend/biometric-device-setup.html'">
-              <i class="fas fa-cog"></i> Manage Devices
+            <button class="btn btn-primary" onclick="showDeviceConfigurationModal(); this.closest('.modal-overlay').remove();">
+              <i class="fas fa-cog"></i> Configure Devices
             </button>
-            <button class="btn btn-secondary" onclick="window.location.href='/frontend/biometric-enrollment.html'">
+            <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove(); window.location.href='/frontend/biometric-enrollment.html'">
               <i class="fas fa-user-plus"></i> Start Enrollment
             </button>
           </div>
@@ -2474,7 +3491,7 @@ function checkBiometricDeviceCompatibilitySimulation(type) {
               ${type === 'fingerprint' ? 'Fingerprint scanner' : 'Camera'} is ready for biometric attendance.
             </p>
             <div style="margin-top: 16px;">
-              <button class="btn btn-success" onclick="startDeviceConfiguration('${type}')">
+              <button class="btn btn-success" onclick="showDeviceConfigurationModal(); this.closest('.modal-overlay').remove();">
                 <i class="fas fa-cog"></i> Configure Device
               </button>
             </div>
@@ -2533,7 +3550,7 @@ function checkBiometricDeviceCompatibilitySimulation(type) {
     closeButton.style.marginTop = '15px';
     modalBody.appendChild(closeButton);
   }, 2000);
-}// Open biometric device setup modal
+// Open biometric device setup modal
 function openBiometricDeviceSetup() {
   // Check if agent is running first
   window.biometricAgentManager.checkAgentStatus().then(isRunning => {
@@ -2567,13 +3584,214 @@ function openBiometricDeviceSetup() {
       return;
     }
     
-    // Agent is running, redirect to device setup page
-    window.open('/frontend/biometric-device-setup.html', '_blank');
+    // Agent is running, show device configuration modal instead of redirecting
+    showDeviceConfigurationModal();
   }).catch(error => {
     console.error('Error checking agent status:', error);
     showBiometricFeedback('Unable to check agent status. Please try installing the agent manually.', 'error');
     window.biometricAgentManager.showManualInstallationGuide();
   });
+}
+
+// Show device configuration modal using Enhanced Biometric Agent
+async function showDeviceConfigurationModal() {
+  const configModal = createBiometricModal('Biometric Device Configuration', `
+    <div style="padding: 20px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <i class="fas fa-cogs fa-3x" style="color: #2196F3; margin-bottom: 15px;"></i>
+        <h4>Configure Biometric Devices</h4>
+        <p style="color: #666;">Manage your fingerprint scanners and face recognition cameras</p>
+      </div>
+      
+      <div id="deviceScanProgress" style="margin: 20px 0; display: none;">
+        <div style="background: #f0f0f0; border-radius: 8px; overflow: hidden; height: 6px;">
+          <div id="scanProgressBar" style="background: #2196F3; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+        </div>
+        <p id="scanStatus" style="margin: 12px 0; color: #666; text-align: center;">Scanning for devices...</p>
+      </div>
+      
+      <div id="devicesList" style="margin: 20px 0;">
+        <div style="text-align: center; color: #666;">
+          <i class="fas fa-spinner fa-spin"></i> Loading devices...
+        </div>
+      </div>
+      
+      <div style="margin-top: 20px; text-align: center;">
+        <button id="scanDevicesBtn" class="btn btn-primary" style="margin-right: 10px;">
+          <i class="fas fa-search"></i> Scan Devices
+        </button>
+        <button id="enrollMemberBtn" class="btn btn-success" style="margin-right: 10px;">
+          <i class="fas fa-user-plus"></i> Enroll Member
+        </button>
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove();">
+          Close
+        </button>
+      </div>
+    </div>
+  `);
+  
+  document.body.appendChild(configModal);
+  
+  // Load devices initially
+  loadDevicesInModal();
+  
+  // Set up scan button
+  document.getElementById('scanDevicesBtn').addEventListener('click', scanAndRefreshDevices);
+  document.getElementById('enrollMemberBtn').addEventListener('click', () => {
+    configModal.remove();
+    window.location.href = '/frontend/biometric-enrollment.html';
+  });
+}
+
+// Load devices in the configuration modal
+async function loadDevicesInModal() {
+  const devicesList = document.getElementById('devicesList');
+  
+  try {
+    const devices = await window.biometricAgentManager.getDevices();
+    
+    if (devices.length === 0) {
+      devicesList.innerHTML = `
+        <div style="text-align: center; padding: 20px; color: #666;">
+          <i class="fas fa-exclamation-circle fa-2x" style="color: #ff9800; margin-bottom: 10px;"></i>
+          <p>No biometric devices detected</p>
+          <small>Connect your fingerprint scanner or camera and click "Scan Devices"</small>
+        </div>
+      `;
+      return;
+    }
+    
+    const deviceCards = devices.map(device => `
+      <div class="device-card" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9;">
+        <div style="display: flex; justify-content: between; align-items: center;">
+          <div style="flex: 1;">
+            <h5 style="margin: 0 0 5px 0; color: #333;">
+              <i class="fas fa-${device.type === 'fingerprint' ? 'fingerprint' : 'camera'}" style="margin-right: 8px; color: #2196F3;"></i>
+              ${device.name}
+            </h5>
+            <div style="font-size: 0.9rem; color: #666;">
+              <span><strong>Type:</strong> ${device.type}</span><br>
+              <span><strong>Status:</strong> <span class="status-badge status-${device.status === 'ready' ? 'enrolled' : 'pending'}">${device.status}</span></span>
+              ${device.driver ? `<br><span><strong>Driver:</strong> ${device.driver}</span>` : ''}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <button class="btn btn-sm btn-outline-primary" onclick="testDevice('${device.id}', '${device.type}')" style="margin-bottom: 5px;">
+              <i class="fas fa-vial"></i> Test
+            </button>
+            ${device.type === 'fingerprint' ? `
+              <button class="btn btn-sm btn-outline-success" onclick="testFingerprint('${device.id}')" style="display: block; width: 100%;">
+                <i class="fas fa-fingerprint"></i> Test Scan
+              </button>
+            ` : `
+              <button class="btn btn-sm btn-outline-success" onclick="testCamera('${device.id}')" style="display: block; width: 100%;">
+                <i class="fas fa-camera"></i> Test Camera
+              </button>
+            `}
+          </div>
+        </div>
+      </div>
+    `).join('');
+    
+    devicesList.innerHTML = deviceCards;
+    
+  } catch (error) {
+    console.error('Error loading devices:', error);
+    devicesList.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: #f44336;">
+        <i class="fas fa-times-circle fa-2x" style="margin-bottom: 10px;"></i>
+        <p>Error loading devices: ${error.message}</p>
+        <button class="btn btn-sm btn-primary" onclick="loadDevicesInModal()">
+          <i class="fas fa-refresh"></i> Retry
+        </button>
+      </div>
+    `;
+  }
+}
+
+// Scan and refresh devices
+async function scanAndRefreshDevices() {
+  const progress = document.getElementById('deviceScanProgress');
+  const progressBar = document.getElementById('scanProgressBar');
+  const statusText = document.getElementById('scanStatus');
+  const scanBtn = document.getElementById('scanDevicesBtn');
+  
+  progress.style.display = 'block';
+  scanBtn.disabled = true;
+  scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+  
+  try {
+    progressBar.style.width = '30%';
+    statusText.textContent = 'Scanning for devices...';
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const devices = await window.biometricAgentManager.scanDevices();
+    
+    progressBar.style.width = '100%';
+    statusText.textContent = 'Scan complete!';
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    progress.style.display = 'none';
+    await loadDevicesInModal();
+    
+    showBiometricFeedback(`Found ${devices.length} biometric device(s)`, 'success');
+    
+  } catch (error) {
+    console.error('Device scan failed:', error);
+    progressBar.style.background = '#f44336';
+    statusText.textContent = 'Scan failed';
+    showBiometricFeedback('Device scan failed: ' + error.message, 'error');
+  } finally {
+    scanBtn.disabled = false;
+    scanBtn.innerHTML = '<i class="fas fa-search"></i> Scan Devices';
+  }
+}
+
+// Test device functions
+async function testDevice(deviceId, deviceType) {
+  showBiometricFeedback(`Testing ${deviceType} device...`, 'info');
+  
+  try {
+    if (deviceType === 'fingerprint') {
+      await testFingerprint(deviceId);
+    } else if (deviceType === 'camera') {
+      await testCamera(deviceId);
+    }
+  } catch (error) {
+    showBiometricFeedback('Device test failed: ' + error.message, 'error');
+  }
+}
+
+async function testFingerprint(deviceId) {
+  showBiometricFeedback('Please place your finger on the scanner...', 'info');
+  
+  try {
+    const result = await window.biometricAgentManager.verifyFingerprint('test_user', 'test_gym', deviceId);
+    
+    if (result.success) {
+      showBiometricFeedback('✅ Fingerprint scanner test successful!', 'success');
+    } else {
+      showBiometricFeedback('Fingerprint scanner is working but no enrolled template found for test user.', 'info');
+    }
+  } catch (error) {
+    showBiometricFeedback('Fingerprint test failed: ' + error.message, 'error');
+  }
+}
+
+async function testCamera(deviceId) {
+  showBiometricFeedback('Testing camera device...', 'info');
+  
+  try {
+    const result = await window.biometricAgentManager.verifyFace('test_user', 'test_gym', deviceId);
+    
+    if (result.success) {
+      showBiometricFeedback('✅ Camera test successful!', 'success');
+    } else {
+      showBiometricFeedback('Camera is working but no enrolled template found for test user.', 'info');
+    }
+  } catch (error) {
+    showBiometricFeedback('Camera test failed: ' + error.message, 'error');
+  }
 }
 
 // Test biometric connection
@@ -2605,7 +3823,13 @@ async function testBiometricConnection() {
     const healthData = await healthResponse.json();
     
     // Scan for devices
-    const devicesResponse = await fetch('http://localhost:5001/api/devices/scan');
+    const devicesResponse = await fetch('http://localhost:5001/api/devices/scan', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
     const devicesData = await devicesResponse.json();
     
     if (devicesData.success) {
@@ -3681,13 +4905,15 @@ window.emailBiometricReport = function() {
   }, 2000);
 };
 
-// Global functions for device setup
+// Global functions for device setup (redirects to new modal)
 window.selectDevice = function(deviceType) {
-  showBiometricFeedback(`Selected ${deviceType} device for setup`, 'info');
+  showBiometricFeedback(`Opening ${deviceType} device configuration...`, 'info');
+  showDeviceConfigurationModal();
 };
 
 window.startDeviceSetup = function() {
-  showBiometricFeedback('Starting device setup wizard...', 'info');
+  showBiometricFeedback('Opening device configuration...', 'info');
+  showDeviceConfigurationModal();
 };
 
 // Global functions for enrollment modal
@@ -3805,48 +5031,6 @@ function openBiometricReports() {
 // Create reusable biometric modal
 
 
-// Show biometric feedback messages
-function showBiometricFeedback(message, type = 'info') {
-  const colors = {
-    success: '#4CAF50',
-    error: '#f44336',
-    warning: '#ff9800',
-    info: '#2196F3'
-  };
-  
-  const toast = document.createElement('div');
-  toast.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: ${colors[type] || colors.info};
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 10001;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-    max-width: 300px;
-    font-weight: 500;
-  `;
-  
-  toast.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-      ${message}
-    </div>
-  `;
-  
-  document.body.appendChild(toast);
-  
-  setTimeout(() => toast.style.transform = 'translateX(0)', 100);
-  setTimeout(() => {
-    toast.style.transform = 'translateX(100%)';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
 // Update device status indicator
 function updateDeviceStatus(status) {
   // This would update any device status indicators in the UI
@@ -3932,14 +5116,13 @@ window.selectDevice = function(deviceType) {
   showBiometricFeedback(`${deviceType} device selected`);
 };
 
-window.startDeviceSetup = function() {
-  showBiometricFeedback('Starting device setup wizard...', 'info');
-  // Close modal and start wizard
-  document.querySelector('.biometric-modal').remove();
+// Redirect old device configuration function to new modal
+window.startDeviceConfiguration = function(deviceType) {
+  showBiometricFeedback(`Opening ${deviceType} device configuration...`, 'info');
+  showDeviceConfigurationModal();
 };
 
-// Enhanced device configuration functions
-window.startDeviceConfiguration = function(deviceType) {
+// Global functions for enrollment modal
   const configModal = createBiometricModal(`Configure ${deviceType.charAt(0).toUpperCase() + deviceType.slice(1)} Device`, `
     <div style="padding: 20px;">
       <h4 style="text-align: center; margin-bottom: 20px;">
@@ -4800,3 +5983,997 @@ window.startAdvancedSetup = function() {
   // This would open a more detailed setup wizard
   openBiometricDeviceSetup();
 };
+
+// ===== SECURITY & PRIVACY FEATURES =====
+
+// Two-Factor Authentication Management
+class TwoFactorAuthManager {
+  constructor() {
+    this.isSetupInProgress = false;
+  }
+
+  async enable2FA() {
+    if (this.isSetupInProgress) return;
+    
+    try {
+      this.isSetupInProgress = true;
+      
+      // Check if 2FA is already enabled
+      const currentStatus = await this.get2FAStatus();
+      if (currentStatus.enabled) {
+        showNotification('Two-Factor Authentication is already enabled', 'info');
+        return;
+      }
+
+      // Show 2FA setup modal
+      this.show2FASetupModal();
+      
+    } catch (error) {
+      console.error('Error enabling 2FA:', error);
+      showNotification('Failed to enable Two-Factor Authentication', 'error');
+    } finally {
+      this.isSetupInProgress = false;
+    }
+  }
+
+  async disable2FA() {
+    try {
+      const result = await this.showDisable2FAModal();
+      if (!result.confirmed) return;
+
+      const response = await this.apiCall('/api/gyms/security/disable-2fa', {
+        method: 'POST',
+        body: JSON.stringify({ password: result.password })
+      });
+
+      if (response.success) {
+        this.update2FAToggle(false);
+        showNotification('Two-Factor Authentication disabled successfully', 'success');
+      } else {
+        showNotification(response.message || 'Failed to disable 2FA', 'error');
+      }
+    } catch (error) {
+      console.error('Error disabling 2FA:', error);
+      showNotification('Failed to disable Two-Factor Authentication', 'error');
+    }
+  }
+
+  show2FASetupModal() {
+    const modal = this.createSecurityModal('Setup Two-Factor Authentication', `
+      <div class="security-modal-content">
+        <div class="setup-step" id="step1" style="display: block;">
+          <div class="step-header">
+            <div class="step-number">1</div>
+            <h3>Install Authenticator App</h3>
+          </div>
+          <p>Install an authenticator app on your phone such as:</p>
+          <div class="app-recommendations">
+            <div class="app-item">
+              <i class="fab fa-google"></i>
+              <span>Google Authenticator</span>
+            </div>
+            <div class="app-item">
+              <i class="fas fa-shield-alt"></i>
+              <span>Microsoft Authenticator</span>
+            </div>
+            <div class="app-item">
+              <i class="fas fa-key"></i>
+              <span>Authy</span>
+            </div>
+          </div>
+          <button class="security-btn primary" onclick="window.twoFactorManager.showStep2()">
+            I have an authenticator app
+          </button>
+        </div>
+        
+        <div class="setup-step" id="step2" style="display: none;">
+          <div class="step-header">
+            <div class="step-number">2</div>
+            <h3>Scan QR Code</h3>
+          </div>
+          <div class="qr-code-container">
+            <div class="qr-code-placeholder" id="qrCodeContainer">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Generating QR code...</span>
+            </div>
+          </div>
+          <div class="manual-entry">
+            <p>Can't scan? Enter this code manually:</p>
+            <div class="manual-code" id="manualCode">Loading...</div>
+          </div>
+          <button class="security-btn primary" onclick="window.twoFactorManager.showStep3()">
+            I've added the account
+          </button>
+        </div>
+        
+        <div class="setup-step" id="step3" style="display: none;">
+          <div class="step-header">
+            <div class="step-number">3</div>
+            <h3>Verify Setup</h3>
+          </div>
+          <p>Enter the 6-digit code from your authenticator app:</p>
+          <div class="verification-code-input">
+            <input type="text" id="verificationCode" maxlength="6" placeholder="000000" 
+                   style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;">
+          </div>
+          <div class="verification-actions">
+            <button class="security-btn secondary" onclick="window.twoFactorManager.showStep2()">
+              Back
+            </button>
+            <button class="security-btn primary" onclick="window.twoFactorManager.verifyAndEnable()">
+              Verify & Enable
+            </button>
+          </div>
+        </div>
+      </div>
+    `);
+
+    // Generate QR code and secret when modal opens
+    setTimeout(() => this.generateQRCode(), 500);
+  }
+
+  async generateQRCode() {
+    try {
+      const response = await this.apiCall('/api/gyms/security/generate-2fa-secret');
+      if (response.success) {
+        const { qrCode, secret } = response.data;
+        
+        // Display QR code
+        const qrContainer = document.getElementById('qrCodeContainer');
+        if (qrContainer) {
+          qrContainer.innerHTML = `<img src="${qrCode}" alt="QR Code" style="max-width: 200px;">`;
+        }
+        
+        // Display manual code
+        const manualCodeEl = document.getElementById('manualCode');
+        if (manualCodeEl) {
+          manualCodeEl.textContent = secret;
+        }
+        
+        this.tempSecret = secret;
+      }
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      const qrContainer = document.getElementById('qrCodeContainer');
+      if (qrContainer) {
+        qrContainer.innerHTML = '<p style="color: var(--error-color);">Failed to generate QR code</p>';
+      }
+    }
+  }
+
+  showStep2() {
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+    document.getElementById('step3').style.display = 'none';
+  }
+
+  showStep3() {
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = 'block';
+    setTimeout(() => {
+      document.getElementById('verificationCode').focus();
+    }, 100);
+  }
+
+  async verifyAndEnable() {
+    const code = document.getElementById('verificationCode').value;
+    if (code.length !== 6) {
+      showNotification('Please enter a 6-digit code', 'error');
+      return;
+    }
+
+    try {
+      const response = await this.apiCall('/api/gyms/security/verify-2fa-setup', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          secret: this.tempSecret,
+          code: code 
+        })
+      });
+
+      if (response.success) {
+        this.closeCurrentModal();
+        this.update2FAToggle(true);
+        showNotification('Two-Factor Authentication enabled successfully!', 'success');
+        
+        // Show backup codes
+        if (response.data.backupCodes) {
+          this.showBackupCodes(response.data.backupCodes);
+        }
+      } else {
+        showNotification(response.message || 'Invalid verification code', 'error');
+      }
+    } catch (error) {
+      console.error('Error verifying 2FA setup:', error);
+      showNotification('Failed to verify setup', 'error');
+    }
+  }
+
+  showBackupCodes(codes) {
+    const modal = this.createSecurityModal('Backup Codes', `
+      <div class="security-modal-content">
+        <div class="backup-codes-info">
+          <i class="fas fa-exclamation-triangle" style="color: var(--warning-color); font-size: 2rem;"></i>
+          <h3>Save Your Backup Codes</h3>
+          <p>These codes can be used to access your account if you lose your phone. Save them in a secure location.</p>
+        </div>
+        <div class="backup-codes-list">
+          ${codes.map(code => `<div class="backup-code">${code}</div>`).join('')}
+        </div>
+        <div class="backup-codes-actions">
+          <button class="security-btn secondary" onclick="window.twoFactorManager.downloadBackupCodes(${JSON.stringify(codes).replace(/"/g, '&quot;')})">
+            <i class="fas fa-download"></i> Download
+          </button>
+          <button class="security-btn secondary" onclick="window.twoFactorManager.copyBackupCodes(${JSON.stringify(codes).replace(/"/g, '&quot;')})">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+          <button class="security-btn primary" onclick="window.twoFactorManager.closeCurrentModal()">
+            I've saved them
+          </button>
+        </div>
+      </div>
+    `);
+  }
+
+  downloadBackupCodes(codes) {
+    const content = `Gym-Wale Two-Factor Authentication Backup Codes\n\nGenerated: ${new Date().toLocaleDateString()}\n\n${codes.join('\n')}\n\nKeep these codes secure and don't share them with anyone.`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'gym-wale-backup-codes.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  copyBackupCodes(codes) {
+    const content = codes.join('\n');
+    navigator.clipboard.writeText(content).then(() => {
+      showNotification('Backup codes copied to clipboard', 'success');
+    }).catch(() => {
+      showNotification('Failed to copy backup codes', 'error');
+    });
+  }
+
+  async showDisable2FAModal() {
+    return new Promise((resolve) => {
+      const modal = this.createSecurityModal('Disable Two-Factor Authentication', `
+        <div class="security-modal-content">
+          <div class="warning-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Are you sure?</h3>
+            <p>Disabling two-factor authentication will make your account less secure.</p>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Enter your password to confirm:</label>
+            <input type="password" id="confirmPassword" placeholder="Password" required>
+          </div>
+          <div class="modal-actions">
+            <button class="security-btn secondary" onclick="window.twoFactorManager.resolveDisable2FA(false)">
+              Cancel
+            </button>
+            <button class="security-btn danger" onclick="window.twoFactorManager.confirmDisable2FA()">
+              Disable 2FA
+            </button>
+          </div>
+        </div>
+      `);
+      
+      this.disable2FAResolver = resolve;
+    });
+  }
+
+  confirmDisable2FA() {
+    const password = document.getElementById('confirmPassword').value;
+    if (!password) {
+      showNotification('Please enter your password', 'error');
+      return;
+    }
+    this.resolveDisable2FA({ confirmed: true, password });
+  }
+
+  resolveDisable2FA(result) {
+    if (this.disable2FAResolver) {
+      this.disable2FAResolver(result);
+      this.disable2FAResolver = null;
+    }
+    this.closeCurrentModal();
+  }
+
+  async get2FAStatus() {
+    try {
+      const response = await this.apiCall('/api/gyms/security/2fa-status');
+      return response.data || { enabled: false };
+    } catch (error) {
+      console.error('Error getting 2FA status:', error);
+      return { enabled: false };
+    }
+  }
+
+  update2FAToggle(enabled) {
+    const toggle = document.getElementById('twoFactorAuth');
+    if (toggle) {
+      toggle.checked = enabled;
+    }
+  }
+
+  createSecurityModal(title, content) {
+    // Remove existing modal if any
+    this.closeCurrentModal();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'currentSecurityModal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-content security-modal-content" style="max-width: 600px;">
+        <div class="modal-header-style">
+          <h3 class="modal-title-style">
+            <i class="fas fa-shield-alt"></i> ${title}
+          </h3>
+          <button class="modal-close" onclick="window.twoFactorManager.closeCurrentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          ${content}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  closeCurrentModal() {
+    const modal = document.getElementById('currentSecurityModal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  async apiCall(endpoint, options = {}) {
+    const token = localStorage.getItem('gymAdminToken');
+    const defaultOptions = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    };
+
+    const response = await fetch(`http://localhost:5000${endpoint}`, {
+      ...defaultOptions,
+      ...options,
+      headers: { ...defaultOptions.headers, ...options.headers }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+}
+
+// Login Notifications Manager
+class LoginNotificationsManager {
+  constructor() {
+    this.notificationTypes = {
+      email: 'Email notifications',
+      browser: 'Browser notifications',
+      sms: 'SMS notifications (Premium)'
+    };
+  }
+
+  async toggleLoginNotifications(enabled) {
+    try {
+      const response = await this.apiCall('/api/gyms/security/toggle-login-notifications', {
+        method: 'POST',
+        body: JSON.stringify({ enabled })
+      });
+
+      if (response.success) {
+        showNotification(
+          enabled ? 'Login notifications enabled' : 'Login notifications disabled',
+          'success'
+        );
+        this.updateNotificationPreferences();
+      } else {
+        showNotification(response.message || 'Failed to update login notifications', 'error');
+        // Revert toggle
+        const toggle = document.getElementById('loginNotifications');
+        if (toggle) toggle.checked = !enabled;
+      }
+    } catch (error) {
+      console.error('Error toggling login notifications:', error);
+      showNotification('Failed to update login notifications', 'error');
+      // Revert toggle
+      const toggle = document.getElementById('loginNotifications');
+      if (toggle) toggle.checked = !enabled;
+    }
+  }
+
+  async showNotificationPreferences() {
+    const modal = this.createSecurityModal('Login Notification Preferences', `
+      <div class="security-modal-content">
+        <div class="notification-preferences">
+          <h3>Choose how you want to be notified of login attempts:</h3>
+          
+          <div class="preference-item">
+            <label class="preference-label">
+              <input type="checkbox" id="emailNotifications" checked>
+              <span class="checkmark"></span>
+              <div class="preference-info">
+                <strong>Email Notifications</strong>
+                <p>Get email alerts for all login attempts</p>
+              </div>
+            </label>
+          </div>
+          
+          <div class="preference-item">
+            <label class="preference-label">
+              <input type="checkbox" id="browserNotifications">
+              <span class="checkmark"></span>
+              <div class="preference-info">
+                <strong>Browser Notifications</strong>
+                <p>Get real-time browser notifications</p>
+              </div>
+            </label>
+          </div>
+          
+          <div class="preference-item">
+            <label class="preference-label">
+              <input type="checkbox" id="suspiciousOnlyNotifications">
+              <span class="checkmark"></span>
+              <div class="preference-info">
+                <strong>Suspicious Activity Only</strong>
+                <p>Only notify for suspicious login attempts</p>
+              </div>
+            </label>
+          </div>
+          
+          <div class="location-settings">
+            <h4>Location-based Security</h4>
+            <div class="preference-item">
+              <label class="preference-label">
+                <input type="checkbox" id="newLocationNotifications" checked>
+                <span class="checkmark"></span>
+                <div class="preference-info">
+                  <strong>New Location Alerts</strong>
+                  <p>Alert when login from a new location is detected</p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button class="security-btn secondary" onclick="window.loginNotificationsManager.closeCurrentModal()">
+            Cancel
+          </button>
+          <button class="security-btn primary" onclick="window.loginNotificationsManager.saveNotificationPreferences()">
+            Save Preferences
+          </button>
+        </div>
+      </div>
+    `);
+
+    // Load current preferences
+    await this.loadNotificationPreferences();
+  }
+
+  async loadNotificationPreferences() {
+    try {
+      const response = await this.apiCall('/api/gyms/security/notification-preferences');
+      if (response.success && response.data) {
+        const prefs = response.data;
+        document.getElementById('emailNotifications').checked = prefs.email || false;
+        document.getElementById('browserNotifications').checked = prefs.browser || false;
+        document.getElementById('suspiciousOnlyNotifications').checked = prefs.suspiciousOnly || false;
+        document.getElementById('newLocationNotifications').checked = prefs.newLocation || false;
+      }
+    } catch (error) {
+      console.error('Error loading notification preferences:', error);
+    }
+  }
+
+  async saveNotificationPreferences() {
+    try {
+      const preferences = {
+        email: document.getElementById('emailNotifications').checked,
+        browser: document.getElementById('browserNotifications').checked,
+        suspiciousOnly: document.getElementById('suspiciousOnlyNotifications').checked,
+        newLocation: document.getElementById('newLocationNotifications').checked
+      };
+
+      const response = await this.apiCall('/api/gyms/security/notification-preferences', {
+        method: 'POST',
+        body: JSON.stringify(preferences)
+      });
+
+      if (response.success) {
+        showNotification('Notification preferences saved successfully', 'success');
+        this.closeCurrentModal();
+      } else {
+        showNotification(response.message || 'Failed to save preferences', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving notification preferences:', error);
+      showNotification('Failed to save notification preferences', 'error');
+    }
+  }
+
+  async showRecentLogins() {
+    try {
+      const response = await this.apiCall('/api/gyms/security/recent-logins');
+      if (response.success && response.data) {
+        const logins = response.data;
+        
+        const modal = this.createSecurityModal('Recent Login Activity', `
+          <div class="security-modal-content">
+            <div class="recent-logins-header">
+              <h3>Recent login attempts to your account</h3>
+              <p>Review recent activity and report any suspicious logins</p>
+            </div>
+            
+            <div class="logins-list">
+              ${logins.map(login => `
+                <div class="login-item ${login.suspicious ? 'suspicious' : ''}">
+                  <div class="login-info">
+                    <div class="login-status">
+                      <i class="fas fa-${login.success ? 'check-circle' : 'times-circle'}"></i>
+                      <span class="status-text">${login.success ? 'Successful' : 'Failed'}</span>
+                    </div>
+                    <div class="login-details">
+                      <div class="login-time">${new Date(login.timestamp).toLocaleString()}</div>
+                      <div class="login-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${login.location && login.location.city ? 
+                          `${login.location.city}${login.location.region ? ', ' + login.location.region : ''}, ${login.location.country}` : 
+                          'Unknown location'}
+                      </div>
+                      <div class="login-device">
+                        <i class="fas fa-desktop"></i>
+                        ${login.device || 'Unknown device'}
+                      </div>
+                      <div class="login-ip">
+                        <i class="fas fa-globe"></i>
+                        IP: ${login.ipAddress}
+                      </div>
+                    </div>
+                  </div>
+                  ${login.suspicious ? `
+                    <div class="login-actions">
+                      <button class="security-btn danger small" onclick="window.loginNotificationsManager.reportSuspicious('${login.id}')">
+                        Report Suspicious
+                      </button>
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+            
+            <div class="modal-actions">
+              <button class="security-btn primary" onclick="window.loginNotificationsManager.closeCurrentModal()">
+                Close
+              </button>
+            </div>
+          </div>
+        `);
+      }
+    } catch (error) {
+      console.error('Error loading recent logins:', error);
+      showNotification('Failed to load recent login activity', 'error');
+    }
+  }
+
+  async reportSuspicious(loginId) {
+    try {
+      const response = await this.apiCall('/api/gyms/security/report-suspicious', {
+        method: 'POST',
+        body: JSON.stringify({ loginId })
+      });
+
+      if (response.success) {
+        showNotification('Suspicious activity reported successfully', 'success');
+        // Refresh the recent logins view
+        this.showRecentLogins();
+      } else {
+        showNotification(response.message || 'Failed to report suspicious activity', 'error');
+      }
+    } catch (error) {
+      console.error('Error reporting suspicious activity:', error);
+      showNotification('Failed to report suspicious activity', 'error');
+    }
+  }
+
+  createSecurityModal(title, content) {
+    // Remove existing modal if any
+    this.closeCurrentModal();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'currentSecurityModal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-content security-modal-content" style="max-width: 600px;">
+        <div class="modal-header-style">
+          <h3 class="modal-title-style">
+            <i class="fas fa-bell"></i> ${title}
+          </h3>
+          <button class="modal-close" onclick="window.loginNotificationsManager.closeCurrentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          ${content}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  closeCurrentModal() {
+    const modal = document.getElementById('currentSecurityModal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  async updateNotificationPreferences() {
+    // This method can be called to refresh the UI after changes
+    const status = await this.getNotificationStatus();
+    const toggle = document.getElementById('loginNotifications');
+    if (toggle) {
+      toggle.checked = status.enabled;
+    }
+  }
+
+  async getNotificationStatus() {
+    try {
+      const response = await this.apiCall('/api/gyms/security/notification-status');
+      return response.data || { enabled: false };
+    } catch (error) {
+      console.error('Error getting notification status:', error);
+      return { enabled: false };
+    }
+  }
+
+  async apiCall(endpoint, options = {}) {
+    const token = localStorage.getItem('gymAdminToken');
+    const defaultOptions = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    };
+
+    const response = await fetch(`http://localhost:5000${endpoint}`, {
+      ...defaultOptions,
+      ...options,
+      headers: { ...defaultOptions.headers, ...options.headers }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+}
+
+// Session Timeout Manager
+class SessionTimeoutManager {
+  constructor() {
+    this.timeoutId = null;
+    this.warningId = null;
+    this.timeoutDuration = 60 * 60 * 1000; // Default 1 hour
+    this.warningTime = 5 * 60 * 1000; // Warning 5 minutes before timeout
+    this.isActive = true;
+    this.activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    this.bindActivityListeners();
+    this.loadTimeoutSettings();
+  }
+
+  bindActivityListeners() {
+    this.activityEvents.forEach(event => {
+      document.addEventListener(event, () => this.resetTimeout(), { passive: true });
+    });
+  }
+
+  async loadTimeoutSettings() {
+    try {
+      const response = await this.apiCall('/api/gyms/security/session-timeout');
+      if (response.success && response.data) {
+        this.setTimeoutDuration(response.data.timeoutMinutes || 60);
+        this.isActive = response.data.enabled !== false;
+      }
+    } catch (error) {
+      console.error('Error loading session timeout settings:', error);
+    }
+    
+    if (this.isActive) {
+      this.resetTimeout();
+    }
+  }
+
+  setTimeoutDuration(minutes) {
+    this.timeoutDuration = minutes * 60 * 1000;
+    this.warningTime = Math.min(5 * 60 * 1000, this.timeoutDuration / 4); // Warning at 25% remaining time or 5 mins
+    
+    // Update UI if dropdown exists
+    const dropdown = document.querySelector('.setting-select');
+    if (dropdown) {
+      dropdown.value = minutes.toString();
+    }
+    
+    if (this.isActive) {
+      this.resetTimeout();
+    }
+  }
+
+  resetTimeout() {
+    if (!this.isActive || this.timeoutDuration === 0) return;
+
+    // Clear existing timeouts
+    if (this.timeoutId) clearTimeout(this.timeoutId);
+    if (this.warningId) clearTimeout(this.warningId);
+
+    // Set warning timeout
+    this.warningId = setTimeout(() => {
+      this.showTimeoutWarning();
+    }, this.timeoutDuration - this.warningTime);
+
+    // Set logout timeout
+    this.timeoutId = setTimeout(() => {
+      this.performLogout();
+    }, this.timeoutDuration);
+  }
+
+  showTimeoutWarning() {
+    const remainingTime = Math.ceil(this.warningTime / 1000 / 60); // Minutes remaining
+    
+    const modal = this.createSecurityModal('Session Timeout Warning', `
+      <div class="security-modal-content">
+        <div class="timeout-warning">
+          <i class="fas fa-clock" style="font-size: 3rem; color: var(--warning-color);"></i>
+          <h3>Your session will expire soon</h3>
+          <p>You will be automatically logged out in <strong id="countdown">${remainingTime}</strong> minutes due to inactivity.</p>
+        </div>
+        
+        <div class="timeout-actions">
+          <button class="security-btn secondary" onclick="window.sessionTimeoutManager.extendSession()">
+            <i class="fas fa-clock"></i> Extend Session
+          </button>
+          <button class="security-btn primary" onclick="window.sessionTimeoutManager.stayLoggedIn()">
+            <i class="fas fa-user-check"></i> Stay Logged In
+          </button>
+        </div>
+        
+        <div class="timeout-info">
+          <p><small>Click "Stay Logged In" to continue your session, or "Extend Session" to add more time.</small></p>
+        </div>
+      </div>
+    `);
+
+    // Start countdown
+    this.startCountdown(remainingTime);
+  }
+
+  startCountdown(minutes) {
+    let remainingSeconds = minutes * 60;
+    const countdownEl = document.getElementById('countdown');
+    
+    const interval = setInterval(() => {
+      remainingSeconds--;
+      if (countdownEl) {
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        countdownEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      }
+      
+      if (remainingSeconds <= 0) {
+        clearInterval(interval);
+        this.closeCurrentModal();
+        this.performLogout();
+      }
+    }, 1000);
+
+    // Store interval ID for cleanup
+    this.countdownInterval = interval;
+  }
+
+  stayLoggedIn() {
+    this.closeCurrentModal();
+    this.resetTimeout();
+    showNotification('Session extended successfully', 'success');
+  }
+
+  async extendSession() {
+    try {
+      const response = await this.apiCall('/api/gyms/security/extend-session', {
+        method: 'POST'
+      });
+
+      if (response.success) {
+        this.closeCurrentModal();
+        this.resetTimeout();
+        showNotification('Session extended by 1 hour', 'success');
+      } else {
+        showNotification('Failed to extend session', 'error');
+      }
+    } catch (error) {
+      console.error('Error extending session:', error);
+      showNotification('Failed to extend session', 'error');
+    }
+  }
+
+  async performLogout() {
+    this.closeCurrentModal();
+    
+    try {
+      // Clear timeouts
+      if (this.timeoutId) clearTimeout(this.timeoutId);
+      if (this.warningId) clearTimeout(this.warningId);
+      if (this.countdownInterval) clearInterval(this.countdownInterval);
+
+      // Call logout API
+      await this.apiCall('/api/gyms/logout', { method: 'POST' });
+      
+      // Clear local storage
+      localStorage.removeItem('gymAdminToken');
+      sessionStorage.removeItem('gymAdminToken');
+      
+      // Show logout message
+      showNotification('Session expired. You have been logged out.', 'info');
+      
+      // Redirect to login
+      setTimeout(() => {
+        window.location.href = '/frontend/public/admin-login.html';
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Force redirect even if API call fails
+      window.location.href = '/frontend/public/admin-login.html';
+    }
+  }
+
+  async updateTimeoutSettings(minutes) {
+    try {
+      const response = await this.apiCall('/api/gyms/security/session-timeout', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          timeoutMinutes: minutes,
+          enabled: minutes > 0 
+        })
+      });
+
+      if (response.success) {
+        this.setTimeoutDuration(minutes);
+        this.isActive = minutes > 0;
+        
+        showNotification(
+          minutes === 0 ? 'Session timeout disabled' : `Session timeout set to ${minutes} minutes`,
+          'success'
+        );
+      } else {
+        showNotification(response.message || 'Failed to update session timeout', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating session timeout:', error);
+      showNotification('Failed to update session timeout', 'error');
+    }
+  }
+
+  createSecurityModal(title, content) {
+    // Remove existing modal if any
+    this.closeCurrentModal();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'currentSecurityModal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-content security-modal-content" style="max-width: 600px;">
+        <div class="modal-header-style">
+          <h3 class="modal-title-style">
+            <i class="fas fa-clock"></i> ${title}
+          </h3>
+          <button class="modal-close" onclick="window.sessionTimeoutManager.closeCurrentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          ${content}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  closeCurrentModal() {
+    const modal = document.getElementById('currentSecurityModal');
+    if (modal) {
+      modal.remove();
+    }
+    
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
+  async apiCall(endpoint, options = {}) {
+    const token = localStorage.getItem('gymAdminToken');
+    const defaultOptions = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    };
+
+    const response = await fetch(`http://localhost:5000${endpoint}`, {
+      ...defaultOptions,
+      ...options,
+      headers: { ...defaultOptions.headers, ...options.headers }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+}
+
+// Initialize security managers
+window.twoFactorManager = new TwoFactorAuthManager();
+window.loginNotificationsManager = new LoginNotificationsManager();
+window.sessionTimeoutManager = new SessionTimeoutManager();
+
+// Setup security feature event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Two-Factor Authentication toggle
+  const twoFactorToggle = document.getElementById('twoFactorAuth');
+  if (twoFactorToggle) {
+    twoFactorToggle.addEventListener('change', function() {
+      if (this.checked) {
+        window.twoFactorManager.enable2FA();
+      } else {
+        window.twoFactorManager.disable2FA();
+      }
+    });
+  }
+
+  // Login notifications toggle
+  const loginNotificationsToggle = document.getElementById('loginNotifications');
+  if (loginNotificationsToggle) {
+    loginNotificationsToggle.addEventListener('change', function() {
+      window.loginNotificationsManager.toggleLoginNotifications(this.checked);
+    });
+  }
+
+  // Session timeout dropdown
+  const sessionTimeoutSelect = document.querySelector('.setting-select');
+  if (sessionTimeoutSelect) {
+    sessionTimeoutSelect.addEventListener('change', function() {
+      const minutes = parseInt(this.value);
+      window.sessionTimeoutManager.updateTimeoutSettings(minutes);
+    });
+  }
+
+  // Load initial states
+  setTimeout(async () => {
+    try {
+      // Load 2FA status
+      const twoFactorStatus = await window.twoFactorManager.get2FAStatus();
+      window.twoFactorManager.update2FAToggle(twoFactorStatus.enabled);
+
+      // Load login notifications status
+      const notificationStatus = await window.loginNotificationsManager.getNotificationStatus();
+      window.loginNotificationsManager.updateNotificationPreferences();
+    } catch (error) {
+      console.error('Error loading security settings:', error);
+    }
+  }, 1000);
+});

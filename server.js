@@ -15,6 +15,7 @@ const userRoutes = require('./backend/routes/userRoutes');
 const trainerRoutes = require('./backend/routes/trainerRoutes');
 const adminRoutes = require('./backend/routes/adminRoutes');
 const gymRoutes = require('./backend/routes/gymRoutes');
+const subscriptionRoutes = require('./backend/routes/subscriptionRoutes');
 const trialBookingRoutes = require('./backend/routes/trialBookingRoutes');
 const reviewRoutes = require('./backend/routes/reviewRoutes');
 const dietRoutes = require('./backend/routes/dietRoutes');
@@ -28,7 +29,9 @@ const paymentRoutes = require('./backend/routes/paymentRoutes');
 const equipmentRoutes = require('./backend/routes/equipmentRoutes');
 const qrCodeRoutes = require('./backend/routes/qrCodeRoutes');
 const biometricRoutes = require('./backend/routes/biometricRoutes');
-const NotificationScheduler = require('./backend/services/notificationScheduler');  
+const securityRoutes = require('./backend/routes/securityRoutes');
+const NotificationScheduler = require('./backend/services/notificationScheduler');
+const SubscriptionService = require('./backend/services/subscriptionService');  
 
 console.log("[DEBUG] server.js: trainerRoutes type is:", typeof trainerRoutes);
 console.log("[DEBUG] server.js: notificationRoutes type is:", typeof notificationRoutes);
@@ -165,6 +168,211 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// ===== QR REGISTRATION ROUTES (MUST BE BEFORE OTHER API ROUTES) =====
+// QR-based member registration route
+app.post('/api/register-via-qr', async (req, res) => {
+  try {
+    console.log('=== QR REGISTRATION DEBUG ===');
+    console.log('Request body:', req.body);
+    
+    const QRCode = require('./backend/models/QRCode');
+    const Member = require('./backend/models/Member');
+    const Gym = require('./backend/models/gym');
+    
+    const {
+      qrToken,
+      memberName,
+      memberEmail,
+      memberPhone, 
+      memberAge,
+      memberGender,
+      memberAddress,
+      gymId,
+      activityPreference,
+      planSelected,
+      registrationType = 'standard',
+      specialOffer
+    } = req.body;
+
+    console.log('Extracted fields:', {
+      qrToken, memberName, memberEmail, memberPhone, memberAge, memberGender,
+      activityPreference, planSelected, gymId, registrationType
+    });
+
+    // Validate required fields based on what frontend actually sends
+    if (!memberName || !memberEmail || !memberPhone || !memberAge || !memberGender || !activityPreference || !planSelected) {
+      return res.status(400).json({ 
+        message: 'Missing required fields',
+        required: ['memberName', 'memberEmail', 'memberPhone', 'memberAge', 'memberGender', 'activityPreference', 'planSelected'],
+        received: Object.keys(req.body)
+      });
+    }
+
+    // Validate QR code (make it optional for testing)
+    let qrCode = null;
+    if (qrToken) {
+      qrCode = await QRCode.findOne({ 
+        token: qrToken, 
+        isActive: true,
+        expiryDate: { $gt: new Date() }
+      });
+      
+      if (!qrCode) {
+        console.log(`QR code validation failed for token: ${qrToken}`);
+        console.log('Available QR codes in database:');
+        const allQRCodes = await QRCode.find({ gymId: gymId });
+        allQRCodes.forEach(qr => {
+          console.log(`- Token: ${qr.token}, Active: ${qr.isActive}, Expires: ${qr.expiryDate}`);
+        });
+        
+        // Instead of rejecting, proceed with direct registration
+        console.log('Proceeding with direct registration (no QR benefits)');
+        qrCode = null; // Ensure it's null for later logic
+      } else {
+        console.log(`Valid QR code found: ${qrToken}`);
+      }
+    } else {
+      console.log('No QR token provided - proceeding with direct registration');
+    }
+
+    // Get gym details
+    const gym = await Gym.findById(gymId);
+    if (!gym) {
+      return res.status(404).json({ message: 'Gym not found' });
+    }
+
+    console.log('Gym object fields:', Object.keys(gym.toObject()));
+    console.log('Gym name:', gym.name);
+    console.log('Gym gymName:', gym.gymName);
+
+    // Convert planSelected from ID to name if needed
+    let planName = planSelected;
+    if (planSelected && planSelected.length === 24) { // Looks like ObjectId
+      console.log('Converting plan ID to name, looking in gym.membershipPlans:', gym.membershipPlans);
+      if (gym.membershipPlans && gym.membershipPlans.length > 0) {
+        const selectedPlan = gym.membershipPlans.find(plan => 
+          plan._id && plan._id.toString() === planSelected
+        );
+        if (selectedPlan) {
+          planName = selectedPlan.name;
+          console.log('Found plan name:', planName, 'for ID:', planSelected);
+        } else {
+          console.log('Plan not found, using fallback name');
+          // Fallback to default plan names
+          planName = 'Standard';
+        }
+      } else {
+        console.log('No membership plans found, using fallback');
+        planName = 'Standard';
+      }
+    }
+
+    // Ensure plan name is properly capitalized and valid
+    const validPlanNames = ['Basic', 'Standard', 'Premium'];
+    const formattedPlanName = planName.charAt(0).toUpperCase() + planName.slice(1).toLowerCase();
+    const finalPlanName = validPlanNames.includes(formattedPlanName) ? formattedPlanName : 'Standard';
+
+    console.log('Final plan name:', finalPlanName);
+
+    // Create member record with correct field names for Member schema
+    const memberData = {
+      gym: gymId,
+      memberName: memberName,
+      age: parseInt(memberAge),
+      gender: memberGender,
+      phone: memberPhone,
+      email: memberEmail,
+      paymentMode: 'pending', // Default since payment is handled separately
+      paymentAmount: 800, // Default amount, will be updated based on plan selection
+      planSelected: finalPlanName,
+      monthlyPlan: '1 Month', // Default, will be updated when user selects duration
+      activityPreference,
+      address: memberAddress || '',
+      joinDate: new Date(),
+      membershipId: `${(gym.gymName || gym.name || 'GYM').substring(0,3).toUpperCase()}${Date.now()}`,
+      paymentStatus: registrationType === 'trial' ? 'paid' : 'pending'
+    };
+
+    console.log('Creating member with data:', memberData);
+
+    const newMember = new Member(memberData);
+    await newMember.save();
+
+    console.log('Member created successfully:', newMember._id);
+
+    // Increment QR code usage (only if QR code was used)
+    if (qrCode) {
+      qrCode.usageCount += 1;
+      qrCode.lastUsedAt = new Date();
+      await qrCode.save();
+      console.log('QR code usage updated');
+    } else {
+      console.log('No QR code to update - direct registration');
+    }
+
+    // Determine next steps based on registration type
+    let nextSteps = {};
+    
+    if (registrationType === 'trial') {
+      nextSteps = {
+        message: 'Trial membership activated!',
+        action: 'visit_gym',
+        redirectUrl: '/registration-complete?type=trial&name=' + encodeURIComponent(memberName)
+      };
+    } else {
+      // For paid memberships, redirect to payment
+      nextSteps = {
+        message: 'Registration successful! Please complete payment.',
+        action: 'payment_required',
+        paymentOptions: {
+          memberId: newMember._id,
+          planName: planSelected,
+          amount: 800, // Default amount
+          duration: '1 Month'
+        },
+        redirectUrl: '/payment-gateway'
+      };
+    }
+
+    res.json({
+      success: true,
+      message: 'Registration successful!',
+      memberId: newMember._id,
+      membershipId: memberData.membershipId,
+      nextSteps
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ 
+      message: 'Registration failed. Please try again.',
+      error: error.message 
+    });
+  }
+});
+
+// Debug route to see what data is being sent
+app.post('/api/debug-qr-data', (req, res) => {
+  console.log('=== DEBUG QR DATA ===');
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  console.log('Body type:', typeof req.body);
+  console.log('Body keys:', Object.keys(req.body));
+  res.json({ 
+    message: 'Debug complete', 
+    received: req.body,
+    keys: Object.keys(req.body)
+  });
+});
+// ===== END QR REGISTRATION ROUTES =====
+
+// Simple test endpoint
+app.get('/api/test-endpoint', (req, res) => {
+  console.log('Test endpoint hit!');
+  res.json({ message: 'Test endpoint working!', timestamp: new Date().toISOString() });
+});
+
 app.use(express.static(path.join(__dirname, 'frontend')));
 app.use('/public', express.static(path.join(__dirname, 'frontend/public')));
 app.use('/gymadmin', express.static(path.join(__dirname, 'frontend/gymadmin')));
@@ -173,6 +381,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/trainers', trainerRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/gyms', gymRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/trial-bookings', trialBookingRoutes);
 app.use('/api/reviews', reviewRoutes);
@@ -188,7 +397,6 @@ app.use('/api/attendance', (req, res, next) => {
   next();
 }, attendanceRoutes);
 app.use('/api/payments', (req, res, next) => {
-  console.log(`💳 Payment route accessed: ${req.method} ${req.url}`);
   next();
 }, paymentRoutes);
 app.use('/api/gym', (req, res, next) => {
@@ -214,14 +422,155 @@ app.use('/api/biometric', (req, res, next) => {
   next();
 }, biometricRoutes);
 
+// Security routes for gym dashboard
+app.use('/api/gyms/security', securityRoutes);
+
 // Serve register.html for /register route (for QR code registration)
 app.get('/register', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'register.html'));
 });
 
-// QR-based member registration route
-const { registerMemberViaQR } = require('./backend/controllers/qrRegistrationController');
-app.post('/api/register-via-qr', registerMemberViaQR);
+// Debug route to see what data is being sent
+app.post('/api/debug-qr-data', (req, res) => {
+  console.log('=== DEBUG QR DATA ===');
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  console.log('Body type:', typeof req.body);
+  console.log('Body keys:', Object.keys(req.body));
+  res.json({ 
+    message: 'Debug complete', 
+    received: req.body,
+    keys: Object.keys(req.body)
+  });
+});
+
+// Direct registration endpoint (no QR validation required)
+app.post('/api/register-direct', async (req, res) => {
+  try {
+    console.log('=== DIRECT REGISTRATION DEBUG ===');
+    console.log('Request body:', req.body);
+    
+    const Member = require('./backend/models/Member');
+    const Gym = require('./backend/models/gym');
+    
+    const {
+      memberName,
+      memberEmail,
+      memberPhone, 
+      memberAge,
+      memberGender,
+      memberAddress,
+      gymId,
+      activityPreference,
+      planSelected,
+      registrationType = 'standard'
+    } = req.body;
+
+    console.log('Direct registration - extracted fields:', {
+      memberName, memberEmail, memberPhone, memberAge, memberGender,
+      activityPreference, planSelected, gymId, registrationType
+    });
+
+    // Validate required fields
+    if (!memberName || !memberEmail || !memberPhone || !memberAge || !memberGender || !activityPreference || !planSelected) {
+      return res.status(400).json({ 
+        message: 'Missing required fields',
+        required: ['memberName', 'memberEmail', 'memberPhone', 'memberAge', 'memberGender', 'activityPreference', 'planSelected'],
+        received: Object.keys(req.body)
+      });
+    }
+
+    // Get gym details (optional - can work without gymId)
+    let gym = null;
+    if (gymId) {
+      gym = await Gym.findById(gymId);
+      if (!gym) {
+        return res.status(404).json({ message: 'Gym not found' });
+      }
+    }
+
+    console.log('Processing direct registration for gym:', gym ? gym.name : 'Default');
+
+    // Use plan name directly
+    const planName = planSelected || 'Standard';
+
+    // Create member record
+    const memberData = {
+      gym: gymId || null,
+      memberName: memberName,
+      age: parseInt(memberAge),
+      gender: memberGender,
+      phone: memberPhone,
+      email: memberEmail,
+      paymentMode: 'pending',
+      paymentAmount: 800,
+      planSelected: planName,
+      monthlyPlan: '1 Month',
+      activityPreference,
+      address: memberAddress || '',
+      joinDate: new Date(),
+      membershipId: `${gym ? (gym.gymName || gym.name || 'GYM').substring(0,3).toUpperCase() : 'DIR'}${Date.now()}`,
+      paymentStatus: registrationType === 'trial' ? 'paid' : 'pending'
+    };
+
+    console.log('Creating member with direct registration data:', memberData);
+
+    const newMember = new Member(memberData);
+    await newMember.save();
+
+    console.log('Direct registration member created successfully:', newMember._id);
+
+    // Determine next steps
+    let nextSteps = {
+      message: 'Registration successful! Please complete payment.',
+      action: 'payment_required',
+      paymentOptions: {
+        memberId: newMember._id,
+        planName: planName,
+        amount: 800,
+        duration: '1 Month'
+      },
+      redirectUrl: '/payment-gateway'
+    };
+
+    res.json({
+      success: true,
+      message: 'Direct registration successful!',
+      memberId: newMember._id,
+      membershipId: memberData.membershipId,
+      nextSteps
+    });
+
+  } catch (error) {
+    console.error('Direct registration error:', error);
+    res.status(500).json({ 
+      message: 'Direct registration failed. Please try again.',
+      error: error.message 
+    });
+  }
+});
+
+// Payment integration routes for QR registrations
+const { createPaymentSession, verifyPayment, getPaymentStatus, handlePaymentWebhook } = require('./backend/controllers/paymentController');
+app.post('/api/payment/create-session', createPaymentSession);
+app.post('/api/payment/verify', verifyPayment);
+app.get('/api/payment/status/:paymentId', getPaymentStatus);
+app.post('/api/payment/webhook', handlePaymentWebhook);
+
+// Serve payment gateway page
+app.get('/payment-gateway', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'payment-gateway.html'));
+});
+
+// Serve payment success page
+app.get('/payment/success', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'payment-success.html'));
+});
+
+// Serve payment cancel page
+app.get('/payment/cancel', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'payment-cancel.html'));
+});
 
 // ✅ Connect MongoDB and Start Server
 const startServer = async () => {
@@ -236,13 +585,20 @@ const startServer = async () => {
     // Initialize notification scheduler
     const notificationScheduler = new NotificationScheduler();
 
+    // Initialize subscription service cron jobs
+    SubscriptionService.initializeCronJobs();
+
     // Initialize QR code cleanup scheduler
     const QRCodeModel = require('./backend/models/QRCode');
     QRCodeModel.scheduleCleanup();
 
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    const HOST = process.env.HOST || '0.0.0.0'; // Listen on all interfaces
+    
+    app.listen(PORT, HOST, () => {
+      console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+      console.log(`🌐 Server accessible on local network at http://[YOUR_IP]:${PORT}`);
+      console.log(`📊 Subscription management system initialized`);
     });
 
   } catch (err) {

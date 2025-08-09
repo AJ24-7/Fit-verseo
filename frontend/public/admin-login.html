@@ -15,7 +15,7 @@
     </div>
     <div class="login-container">
     <h2 style="margin-bottom:18px;">Gym Admin Login</h2>
-    <form id="adminLoginForm" autocomplete="off">
+    <form id="adminLoginForm" autocomplete="off" onsubmit="return false;">
       <div class="form-group">
         <label for="email" style="font-weight:500;margin-bottom:4px;display:block;">Email Address</label>
         <input type="email" name="email" id="email" placeholder="Admin Email" required autocomplete="username" />
@@ -31,7 +31,7 @@
         </div>
         <div class="error-message" id="password-error">Password must be at least 8 characters</div>
       </div>
-      <button type="submit" id="loginButton">
+      <button type="button" id="loginButton">
         <span id="buttonText">Login</span>
         <div class="loading-spinner" id="spinner"></div>
       </button>

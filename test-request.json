@@ -1,0 +1,12 @@
+{
+  "qrToken": "test123",
+  "memberName": "Test User",
+  "memberEmail": "test@example.com", 
+  "memberPhone": "1234567890",
+  "memberAge": 25,
+  "memberGender": "Male",
+  "memberAddress": "Test Address",
+  "gymId": "507f1f77bcf86cd799439011",
+  "activityPreference": "Cardio",
+  "planSelected": "basic"
+}

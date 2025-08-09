@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration Complete - FitVerse</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -22,32 +21,441 @@
             padding: 20px;
         }
 
-        .container {
-            max-width: 600px;
+        .completion-container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
             text-align: center;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4caf50, #45a049);
-            color: white;
-            padding: 40px 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.6s ease-out;
         }
 
         .success-icon {
-            font-size: 4rem;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #4caf50, #43a047);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 2.5rem;
+            color: white;
+            animation: bounce 0.6s ease-out 0.3s both;
+        }
+
+        .completion-header h1 {
+            color: #1a365d;
+            font-size: 2rem;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .completion-header p {
+            color: #64748b;
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .registration-details {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            text-align: left;
+        }
+
+        .detail-group {
             margin-bottom: 20px;
-            animation: bounce 2s infinite;
+        }
+
+        .detail-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .detail-value {
+            color: #1f2937;
+            font-size: 1rem;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-trial {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-pending {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .next-steps {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+            text-align: left;
+        }
+
+        .next-steps h3 {
+            color: #1e40af;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .next-steps ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .next-steps li {
+            margin: 12px 0;
+            padding-left: 24px;
+            position: relative;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .next-steps li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 32px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .contact-info {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .contact-info strong {
+            color: #374151;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
+            0%, 20%, 53%, 80%, 100% {
+                transform: translate3d(0, 0, 0);
             }
-            40% {
+            40%, 43% {
+                transform: translate3d(0, -15px, 0);
+            }
+            70% {
+                transform: translate3d(0, -8px, 0);
+            }
+            90% {
+                transform: translate3d(0, -3px, 0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .completion-container {
+                padding: 24px;
+                margin: 10px;
+            }
+
+            .completion-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="completion-container">
+        <div class="success-icon">
+            ✓
+        </div>
+        
+        <div class="completion-header">
+            <h1>Registration Complete!</h1>
+            <p>Welcome to FitVerse! Your fitness journey starts here.</p>
+        </div>
+
+        <div class="registration-details" id="registrationDetails">
+            <!-- Details will be populated by JavaScript -->
+        </div>
+
+        <div class="next-steps" id="nextSteps">
+            <!-- Next steps will be populated by JavaScript -->
+        </div>
+
+        <div class="action-buttons">
+            <a href="/frontend/index.html" class="btn btn-secondary">
+                🏠 Back to Home
+            </a>
+            <a href="#" class="btn btn-primary" id="primaryAction">
+                📱 Download App
+            </a>
+        </div>
+
+        <div class="contact-info">
+            <strong>Need Help?</strong> Contact our support team at 
+            <strong>support@fitverse.com</strong> or call <strong>+91 98765 43210</strong>
+        </div>
+    </div>
+
+    <script>
+        class RegistrationComplete {
+            constructor() {
+                this.urlParams = new URLSearchParams(window.location.search);
+                this.memberData = this.getMemberData();
+                this.init();
+            }
+
+            getMemberData() {
+                // Get data from URL parameters or localStorage
+                const data = {
+                    name: this.urlParams.get('name') || localStorage.getItem('registrationName') || 'Member',
+                    email: this.urlParams.get('email') || localStorage.getItem('registrationEmail') || '',
+                    phone: this.urlParams.get('phone') || localStorage.getItem('registrationPhone') || '',
+                    gymName: this.urlParams.get('gym') || localStorage.getItem('registrationGym') || 'FitVerse Gym',
+                    membershipType: this.urlParams.get('type') || localStorage.getItem('registrationtype') || 'trial',
+                    planName: this.urlParams.get('plan') || localStorage.getItem('registrationPlan') || 'Trial Membership',
+                    memberId: this.urlParams.get('memberId') || localStorage.getItem('registrationMemberId') || 'FV' + Date.now(),
+                    paymentStatus: this.urlParams.get('paymentStatus') || 'completed',
+                    qrRegistration: this.urlParams.get('qr') === 'true' || localStorage.getItem('qrRegistration') === 'true'
+                };
+
+                // Clean up localStorage
+                this.cleanupLocalStorage();
+                
+                return data;
+            }
+
+            cleanupLocalStorage() {
+                const keys = [
+                    'registrationName', 'registrationEmail', 'registrationPhone',
+                    'registrationGym', 'registrationtype', 'registrationPlan',
+                    'registrationMemberId', 'qrRegistration'
+                ];
+                keys.forEach(key => localStorage.removeItem(key));
+            }
+
+            init() {
+                this.renderRegistrationDetails();
+                this.renderNextSteps();
+                this.setupActionButton();
+            }
+
+            renderRegistrationDetails() {
+                const container = document.getElementById('registrationDetails');
+                const status = this.getStatusInfo();
+                
+                container.innerHTML = `
+                    <div class="detail-group">
+                        <span class="detail-label">Member Name</span>
+                        <div class="detail-value">${this.memberData.name}</div>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Member ID</span>
+                        <div class="detail-value">${this.memberData.memberId}</div>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Email</span>
+                        <div class="detail-value">${this.memberData.email}</div>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Gym Location</span>
+                        <div class="detail-value">${this.memberData.gymName}</div>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Membership Plan</span>
+                        <div class="detail-value">
+                            ${this.memberData.planName}
+                            <span class="status-badge ${status.class}">${status.text}</span>
+                        </div>
+                    </div>
+                    ${this.memberData.qrRegistration ? `
+                    <div class="detail-group">
+                        <span class="detail-label">Registration Method</span>
+                        <div class="detail-value">🔗 QR Code Registration</div>
+                    </div>
+                    ` : ''}
+                `;
+            }
+
+            getStatusInfo() {
+                if (this.memberData.membershipType === 'trial') {
+                    return { class: 'status-trial', text: 'Trial Active' };
+                } else if (this.memberData.paymentStatus === 'completed') {
+                    return { class: 'status-active', text: 'Active' };
+                } else {
+                    return { class: 'status-pending', text: 'Payment Pending' };
+                }
+            }
+
+            renderNextSteps() {
+                const container = document.getElementById('nextSteps');
+                const isTrial = this.memberData.membershipType === 'trial';
+                const isPaid = this.memberData.paymentStatus === 'completed';
+                
+                let nextStepsContent;
+                
+                if (isTrial) {
+                    nextStepsContent = `
+                        <h3>📋 Your Trial Membership</h3>
+                        <ul>
+                            <li>Your 3-day trial membership is now active</li>
+                            <li>Visit the gym with a valid ID to complete verification</li>
+                            <li>Access all gym facilities during your trial period</li>
+                            <li>Upgrade to a full membership anytime during your trial</li>
+                            <li>Download our mobile app for workout tracking</li>
+                        </ul>
+                    `;
+                } else if (isPaid) {
+                    nextStepsContent = `
+                        <h3>🎉 Your Membership is Active</h3>
+                        <ul>
+                            <li>Your membership payment has been confirmed</li>
+                            <li>Visit the gym with a valid ID for onboarding</li>
+                            <li>Meet with a trainer for your fitness assessment</li>
+                            <li>Download our mobile app for full features</li>
+                            <li>Book your first personal training session</li>
+                        </ul>
+                    `;
+                } else {
+                    nextStepsContent = `
+                        <h3>💳 Complete Your Payment</h3>
+                        <ul>
+                            <li>Your registration is pending payment completion</li>
+                            <li>Complete payment to activate your membership</li>
+                            <li>You'll receive confirmation once payment is processed</li>
+                            <li>Visit the gym for payment assistance if needed</li>
+                        </ul>
+                    `;
+                }
+                
+                container.innerHTML = nextStepsContent;
+            }
+
+            setupActionButton() {
+                const button = document.getElementById('primaryAction');
+                const isTrial = this.memberData.membershipType === 'trial';
+                const isPaid = this.memberData.paymentStatus === 'completed';
+                
+                if (!isPaid && !isTrial) {
+                    button.innerHTML = '💳 Complete Payment';
+                    button.href = '/payment-gateway?retry=true&member=' + this.memberData.memberId;
+                } else if (isTrial) {
+                    button.innerHTML = '⬆️ Upgrade Membership';
+                    button.href = '/frontend/membership-plans.html';
+                } else {
+                    button.innerHTML = '📱 Download App';
+                    button.href = '#';
+                    button.onclick = this.showAppDownload.bind(this);
+                }
+            }
+
+            showAppDownload() {
+                alert('📱 FitVerse Mobile App\n\nComing soon to App Store and Google Play!\n\nFor now, bookmark our website for easy access to all features.');
+                return false;
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new RegistrationComplete();
+        });
+    </script>
+</body>
+</html>
                 transform: translateY(-10px);
             }
             60% {

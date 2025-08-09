@@ -7,7 +7,13 @@ const gymSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   password: { type: String, required: true },
   passwordResetOTP: { type: String },
-passwordResetOTPExpiry: { type: Date },
+  passwordResetOTPExpiry: { type: Date },
+  
+  // Two-Factor Authentication fields
+  twoFactorEnabled: { type: Boolean, default: false },
+  twoFactorSecret: { type: String },
+  twoFactorTempSecret: { type: String }, // Temporary secret during setup
+  twoFactorBackupCodes: [{ type: String }], // Hashed backup codes
    
   location: {
     address: { type: String, required: true },

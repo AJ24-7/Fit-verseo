@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - Gym Registration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            padding: 40px;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: checkmark 0.6s ease-in-out;
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .payment-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2E7D32;
+        }
+
+        .next-steps {
+            background: #e8f5e8;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .next-steps h3 {
+            color: #2E7D32;
+            margin-bottom: 15px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .step-number {
+            background: #4CAF50;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .membership-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .membership-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .card-subtitle {
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .membership-id {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .contact-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .contact-info h4 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .contact-detail {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .contact-detail i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1>Payment Successful!</h1>
+            <p>Your gym membership has been activated</p>
+        </div>
+
+        <div class="content">
+            <!-- Membership Card -->
+            <div class="membership-card">
+                <div class="card-content">
+                    <div class="card-title">🏋️ Your Membership is Active!</div>
+                    <div class="card-subtitle">Welcome to your fitness journey</div>
+                    <div>
+                        <strong>Member ID:</strong>
+                        <div class="membership-id" id="memberId">MEM-XXXX-XXXX</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="payment-details">
+                <h3 style="margin-bottom: 20px; color: #2d3748;">
+                    <i class="fas fa-receipt"></i> Payment Details
+                </h3>
+                <div class="detail-row">
+                    <span>Payment ID:</span>
+                    <span id="paymentId">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <span>Amount Paid:</span>
+                    <span id="amountPaid">₹0</span>
+                </div>
+                <div class="detail-row">
+                    <span>Payment Date:</span>
+                    <span id="paymentDate">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <span>Payment Method:</span>
+                    <span id="paymentMethod">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <span>Membership Plan:</span>
+                    <span id="membershipPlan">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <span>Valid Until:</span>
+                    <span id="validUntil">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h3><i class="fas fa-list-check"></i> What's Next?</h3>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Visit the Gym</strong><br>
+                        Show this confirmation or your Member ID to start your workout
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Download Our App</strong><br>
+                        Track your workouts, book classes, and manage your membership
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Meet Your Trainer</strong><br>
+                        Get a personalized fitness assessment and workout plan
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Join Our Community</strong><br>
+                        Connect with other members and participate in group activities
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gym Contact Information -->
+            <div class="contact-info">
+                <h4><i class="fas fa-info-circle"></i> Need Help? Contact Your Gym</h4>
+                <div class="contact-detail">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="gymAddress">Loading gym address...</span>
+                </div>
+                <div class="contact-detail">
+                    <i class="fas fa-phone"></i>
+                    <span id="gymPhone">Loading contact number...</span>
+                </div>
+                <div class="contact-detail">
+                    <i class="fas fa-envelope"></i>
+                    <span id="gymEmail">Loading email...</span>
+                </div>
+                <div class="contact-detail">
+                    <i class="fas fa-clock"></i>
+                    <span>Mon-Sat: 6:00 AM - 11:00 PM, Sun: 7:00 AM - 9:00 PM</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="margin-top: 30px;">
+                <a href="/registration-complete" class="btn">
+                    <i class="fas fa-home"></i> Go to Dashboard
+                </a>
+                <a href="javascript:window.print()" class="btn secondary">
+                    <i class="fas fa-print"></i> Print Receipt
+                </a>
+            </div>
+
+            <!-- Download Receipt -->
+            <div style="margin-top: 20px;">
+                <button onclick="downloadReceipt()" class="btn secondary">
+                    <i class="fas fa-download"></i> Download Receipt (PDF)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize success page
+        window.addEventListener('load', async () => {
+            console.log('🎉 Payment success page loaded');
+            
+            // Get payment details from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentId = urlParams.get('payment');
+            const planName = urlParams.get('plan');
+            const amount = urlParams.get('amount');
+            const duration = urlParams.get('duration');
+            const method = urlParams.get('method');
+            
+            if (paymentId) {
+                await loadPaymentDetails(paymentId, planName, amount, duration, method);
+            } else {
+                // Load demo data
+                loadDemoData();
+            }
+        });
+
+        async function loadPaymentDetails(paymentId, planName, amount, duration, method) {
+            try {
+                console.log('Loading payment details for:', paymentId);
+                
+                // Try to fetch from backend first
+                try {
+                    const response = await fetch(`/api/payment/status/${paymentId}`);
+                    
+                    if (response.ok) {
+                        const payment = await response.json();
+                        displayPaymentDetails(payment);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Backend fetch failed, using URL parameters');
+                }
+                
+                // Fallback to URL parameters if backend fails
+                if (planName && amount) {
+                    const mockPayment = {
+                        id: paymentId,
+                        amount: parseFloat(amount) || 0,
+                        createdAt: new Date().toISOString(),
+                        paymentMethod: method || 'Cash Payment',
+                        plan: { name: planName },
+                        duration: duration || '1',
+                        member: { id: 'member_' + Date.now() }
+                    };
+                    
+                    displayPaymentDetails(mockPayment);
+                } else {
+                    loadDemoData();
+                }
+            } catch (error) {
+                console.error('Error loading payment details:', error);
+                loadDemoData();
+            }
+        }
+
+        function displayPaymentDetails(payment) {
+            // Update payment details
+            document.getElementById('paymentId').textContent = payment.id;
+            document.getElementById('amountPaid').textContent = `₹${payment.amount}`;
+            document.getElementById('paymentDate').textContent = new Date(payment.createdAt).toLocaleDateString();
+            document.getElementById('paymentMethod').textContent = payment.paymentMethod || 'Online';
+            document.getElementById('membershipPlan').textContent = payment.plan?.name || 'Membership Plan';
+            
+            // Generate member ID
+            const memberId = `MEM-${payment.member?.id?.slice(-8).toUpperCase() || 'DEMO1234'}`;
+            document.getElementById('memberId').textContent = memberId;
+            
+            // Calculate valid until date (assume 1 month from now)
+            const validUntil = new Date();
+            validUntil.setMonth(validUntil.getMonth() + 1);
+            document.getElementById('validUntil').textContent = validUntil.toLocaleDateString();
+            
+            console.log('Payment details displayed:', payment);
+        }
+
+        function loadDemoData() {
+            // Demo data for testing
+            document.getElementById('paymentId').textContent = 'PAY-DEMO-123456';
+            document.getElementById('amountPaid').textContent = '₹1,180';
+            document.getElementById('paymentDate').textContent = new Date().toLocaleDateString();
+            document.getElementById('paymentMethod').textContent = 'Razorpay';
+            document.getElementById('membershipPlan').textContent = 'Basic Monthly Plan';
+            document.getElementById('memberId').textContent = 'MEM-DEMO-1234';
+            
+            const validUntil = new Date();
+            validUntil.setMonth(validUntil.getMonth() + 1);
+            document.getElementById('validUntil').textContent = validUntil.toLocaleDateString();
+            
+            // Demo gym info
+            document.getElementById('gymAddress').textContent = '123 Fitness Street, Health City, HC 12345';
+            document.getElementById('gymPhone').textContent = '+91 98765 43210';
+            document.getElementById('gymEmail').textContent = 'info@fitnessgym.com';
+        }
+
+        function downloadReceipt() {
+            // Create receipt content
+            const receiptContent = `
+                PAYMENT RECEIPT
+                ===============
+                
+                Payment ID: ${document.getElementById('paymentId').textContent}
+                Member ID: ${document.getElementById('memberId').textContent}
+                Amount: ${document.getElementById('amountPaid').textContent}
+                Date: ${document.getElementById('paymentDate').textContent}
+                Method: ${document.getElementById('paymentMethod').textContent}
+                Plan: ${document.getElementById('membershipPlan').textContent}
+                Valid Until: ${document.getElementById('validUntil').textContent}
+                
+                Thank you for joining our gym!
+                
+                For support, contact: ${document.getElementById('gymPhone').textContent}
+            `;
+
+            // Create download link
+            const blob = new Blob([receiptContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gym-receipt-${document.getElementById('paymentId').textContent}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Confetti animation for celebration
+        function createConfetti() {
+            const colors = ['#4CAF50', '#2E7D32', '#81C784', '#A5D6A7'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.top = '-10px';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = '50%';
+                    confetti.style.zIndex = '9999';
+                    confetti.style.pointerEvents = 'none';
+                    confetti.style.animation = 'fall 3s linear forwards';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 3000);
+                }, i * 100);
+            }
+        }
+
+        // Add CSS for confetti animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                to {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Start confetti animation
+        setTimeout(createConfetti, 500);
+    </script>
+</body>
+</html>

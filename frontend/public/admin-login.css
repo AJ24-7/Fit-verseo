@@ -102,7 +102,7 @@
       color: var(--primary-color);
     }
     
-    button[type="submit"] {
+    button[type="button"] {
       width: 100%;
       padding: 15px;
       background: linear-gradient(to right, var(--primary-color), var(--secondary-color));

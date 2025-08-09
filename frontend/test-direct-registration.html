@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Direct Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🧪 Direct Registration Test</h2>
+        <p>Test the direct registration endpoint without QR codes</p>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label>Member Name:</label>
+                <input type="text" id="memberName" value="John Doe" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="memberEmail" value="john.doe@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Phone:</label>
+                <input type="tel" id="memberPhone" value="9876543210" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Age:</label>
+                <input type="number" id="memberAge" value="25" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Gender:</label>
+                <select id="memberGender" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Address:</label>
+                <input type="text" id="memberAddress" value="123 Test Street">
+            </div>
+            
+            <div class="form-group">
+                <label>Activity Preference:</label>
+                <select id="activityPreference" required>
+                    <option value="Cardio">Cardio</option>
+                    <option value="Strength Training">Strength Training</option>
+                    <option value="Yoga">Yoga</option>
+                    <option value="CrossFit">CrossFit</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Plan Selected:</label>
+                <select id="planSelected" required>
+                    <option value="Standard">Standard</option>
+                    <option value="Premium">Premium</option>
+                    <option value="Basic">Basic</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Gym ID:</label>
+                <input type="text" id="gymId" value="6808bc380d3a005a225fc891" required>
+            </div>
+            
+            <button type="submit">🚀 Test Direct Registration</button>
+        </form>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            
+            const formData = {
+                memberName: document.getElementById('memberName').value,
+                memberEmail: document.getElementById('memberEmail').value,
+                memberPhone: document.getElementById('memberPhone').value,
+                memberAge: document.getElementById('memberAge').value,
+                memberGender: document.getElementById('memberGender').value,
+                memberAddress: document.getElementById('memberAddress').value,
+                activityPreference: document.getElementById('activityPreference').value,
+                planSelected: document.getElementById('planSelected').value,
+                gymId: document.getElementById('gymId').value,
+                registrationType: 'standard'
+            };
+            
+            console.log('Testing direct registration with data:', formData);
+            
+            try {
+                const response = await fetch('/api/register-direct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Registration Successful!</h3>
+                        <p><strong>Member ID:</strong> ${result.memberId}</p>
+                        <p><strong>Membership ID:</strong> ${result.membershipId}</p>
+                        <p><strong>Message:</strong> ${result.message}</p>
+                        <div style="margin-top: 15px;">
+                            <a href="/frontend/payment-gateway.html?username=${encodeURIComponent(formData.memberName)}&email=${encodeURIComponent(formData.memberEmail)}&phone=${encodeURIComponent(formData.memberPhone)}&gymId=${encodeURIComponent(formData.gymId)}&planName=${encodeURIComponent(formData.planSelected)}&duration=1&amount=800&paymentType=online" style="display: inline-block; background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+                                💳 Go to Payment Gateway
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ Registration Failed</h3>
+                        <p><strong>Error:</strong> ${result.message}</p>
+                    `;
+                }
+                
+                resultDiv.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+                resultDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

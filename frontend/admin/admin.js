@@ -295,7 +295,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const pendingTotal = data.pendingGyms + data.pendingTrainers;
             document.getElementById('pending-approvals').textContent = pendingTotal;
             document.getElementById('approvals-detail').textContent = `Gyms: ${data.pendingGyms}, Trainers: ${data.pendingTrainers}`;
-            document.getElementById('total-revenue').textContent = `$${data.totalRevenue.toLocaleString()}`;
+            
+            // Updated revenue to include subscription revenue
+            const totalRevenue = data.totalRevenue || 0;
+            const subscriptionRevenue = data.subscriptionRevenue || 0;
+            document.getElementById('total-revenue').textContent = `₹${totalRevenue.toLocaleString()}`;
 
             // Trial Bookings
             document.getElementById('total-trial-bookings').textContent = data.totalTrialBookings || 0;
@@ -306,13 +310,39 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('members-change').innerHTML = `<span class="text-success">${data.changes.members}%</span> from last month`;
             document.getElementById('revenue-change').innerHTML = `<span class="text-success">${data.changes.revenue}%</span> from last month`;
 
-            // New: Total gyms registered and gyms using dashboard
+            // Total gyms registered and gyms using dashboard
             if (typeof data.totalGymsRegistered !== 'undefined') {
                 document.getElementById('total-gyms-registered').textContent = data.totalGymsRegistered;
             }
             if (typeof data.gymsUsingDashboard !== 'undefined') {
                 document.getElementById('gyms-using-dashboard').innerHTML = `<span class="text-success">${data.gymsUsingDashboard}</span> using dashboard`;
             }
+
+            // Subscription analytics (if elements exist)
+            if (data.totalSubscriptions !== undefined) {
+                const subscriptionElement = document.getElementById('total-subscriptions');
+                if (subscriptionElement) {
+                    subscriptionElement.textContent = data.totalSubscriptions;
+                }
+                
+                const activeSubsElement = document.getElementById('active-subscriptions');
+                if (activeSubsElement) {
+                    activeSubsElement.textContent = data.activeSubscriptions;
+                }
+                
+                const trialSubsElement = document.getElementById('trial-subscriptions');
+                if (trialSubsElement) {
+                    trialSubsElement.textContent = data.trialSubscriptions;
+                }
+                
+                const expiredSubsElement = document.getElementById('expired-subscriptions');
+                if (expiredSubsElement) {
+                    expiredSubsElement.textContent = data.expiredSubscriptions;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dashboard data:', error);
         });
 
 

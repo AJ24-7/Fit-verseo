@@ -9,7 +9,11 @@ const {
   addPayment,
   updatePayment,
   markPaymentAsPaid,
-  deletePayment
+  deletePayment,
+  createCashPaymentRequest,
+  checkCashValidation,
+  getPendingCashValidations,
+  approveCashValidation
 } = require('../controllers/paymentController');
 
 const gymAdminAuth = require('../middleware/gymadminAuth');
@@ -26,5 +30,11 @@ router.post('/', gymAdminAuth, addPayment);
 router.put('/:id', gymAdminAuth, updatePayment);
 router.patch('/:id/mark-paid', gymAdminAuth, markPaymentAsPaid);
 router.delete('/:id', gymAdminAuth, deletePayment);
+
+// Cash payment validation routes
+router.post('/cash-payment-request', createCashPaymentRequest);
+router.get('/check-cash-validation/:validationCode', checkCashValidation);
+router.get('/pending-cash-validations', gymAdminAuth, getPendingCashValidations);
+router.post('/approve-cash-validation/:validationCode', gymAdminAuth, approveCashValidation);
 
 module.exports = router;

@@ -202,6 +202,46 @@ class AdminNotificationService {
     );
   }
 
+  // Handle gym admin replies
+  async notifyGymAdminReply(replyData, gymData) {
+    return this.createNotification(
+      `Reply from ${gymData.gymName || 'Gym Admin'}`,
+      replyData.message,
+      'gym-admin-reply',
+      'fa-reply',
+      '#1976d2',
+      {
+        originalNotificationId: replyData.originalNotificationId,
+        gymId: gymData.gymId,
+        gymName: gymData.gymName,
+        replyTimestamp: new Date().toISOString(),
+        status: replyData.status,
+        priority: replyData.priority,
+        source: 'gym-admin-reply'
+      },
+      replyData.priority || 'medium'
+    );
+  }
+
+  // Handle gym admin messages to main admin
+  async notifyGymAdminMessage(messageData, gymData) {
+    return this.createNotification(
+      messageData.title,
+      messageData.message,
+      'gym-admin-message',
+      'fa-comment',
+      '#1976d2',
+      {
+        gymId: gymData.gymId,
+        gymName: gymData.gymName,
+        messageTimestamp: new Date().toISOString(),
+        messageType: messageData.type,
+        source: 'gym-admin-message'
+      },
+      messageData.priority || 'medium'
+    );
+  }
+
   // Helper method to get trainer display name
   getTrainerDisplayName(trainerData) {
     const firstName = trainerData.firstName || '';

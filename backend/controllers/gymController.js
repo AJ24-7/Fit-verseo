@@ -2,12 +2,16 @@
 const Gym = require('../models/gym');
 const Notification = require('../models/Notification');
 const TrialBooking = require('../models/TrialBooking');
+const LoginAttempt = require('../models/LoginAttempt');
+const SecuritySettings = require('../models/SecuritySettings');
 const sendEmail = require('../utils/sendEmail');
 const adminNotificationService = require('../services/adminNotificationService');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const axios = require('axios');
 const jwt = require('jsonwebtoken'); // Added jsonwebtoken
 const nodemailer = require('nodemailer');
+const speakeasy = require('speakeasy');
 
 // Geocoding function to get lat/lng from address
 const geocodeAddress = async (address, city, state, pincode) => {
@@ -66,23 +70,92 @@ const sendOTPEmail = async (email, otp) => {
 
 // Unified Gym/Admin Login (use for both gym and admin dashboard)
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, twoFactorCode } = req.body;
+  const ipAddress = req.ip || req.connection.remoteAddress || 'Unknown';
+  const userAgent = req.get('User-Agent') || 'Unknown';
+  
+  // Helper function to record login attempt
+  const recordLoginAttempt = async (gymId, success, failureReason = null) => {
+    try {
+      const loginAttempt = new LoginAttempt({
+        gymId,
+        ipAddress,
+        userAgent,
+        success,
+        failureReason,
+        device: extractDeviceInfo(userAgent),
+        browser: extractBrowserInfo(userAgent),
+        suspicious: await isSuspiciousLogin(gymId, ipAddress),
+        location: await getLocationFromIP(ipAddress)
+      });
+      await loginAttempt.save();
+      
+      // Send notification if enabled
+      if (success || (gymId && await shouldNotifyFailedLogin(gymId))) {
+        await sendLoginNotification(gymId, loginAttempt);
+      }
+    } catch (error) {
+      console.error('Error recording login attempt:', error);
+    }
+  };
   
   try {
     // Find gym by email
     const gym = await Gym.findOne({ email });
     if (!gym) {
+      await recordLoginAttempt(null, false, 'Invalid email');
       return res.status(401).json({ success: false, message: 'Invalid credentials or gym not found.' });
     }
         
     // Check password
     const isMatch = await bcrypt.compare(password, gym.password);
     if (!isMatch) {
+      await recordLoginAttempt(gym._id, false, 'Invalid password');
       return res.status(401).json({ success: false, message: 'Invalid credentials or gym not found.' });
+    }
+    
+    // Check if 2FA is enabled
+    if (gym.twoFactorEnabled) {
+      if (!twoFactorCode) {
+        // Generate temporary token for 2FA verification
+        const tempPayload = {
+          admin: {
+            id: gym.id,
+            email: gym.email,
+            temp: true
+          }
+        };
+        const tempToken = jwt.sign(tempPayload, process.env.JWT_SECRET, { expiresIn: '10m' });
+        
+        return res.status(200).json({ 
+          success: true, 
+          requires2FA: true,
+          tempToken,
+          message: 'Two-factor authentication code required' 
+        });
+      }
+      
+      // Verify 2FA code
+      const verified = speakeasy.totp.verify({
+        secret: gym.twoFactorSecret,
+        encoding: 'base32',
+        token: twoFactorCode,
+        window: 2
+      });
+      
+      if (!verified) {
+        // Check if it's a backup code
+        const isBackupCode = await verifyBackupCode(gym, twoFactorCode);
+        if (!isBackupCode) {
+          await recordLoginAttempt(gym._id, false, 'Invalid 2FA code');
+          return res.status(401).json({ success: false, message: 'Invalid two-factor authentication code.' });
+        }
+      }
     }
         
     // Check approval status
     if (gym.status !== 'approved') {
+      await recordLoginAttempt(gym._id, false, `Account status: ${gym.status}`);
       if (gym.status === 'pending') {
         return res.status(403).json({ success: false, message: 'Your gym registration is pending approval. Please wait for the admin to review your application.' });
       } else if (gym.status === 'rejected') {
@@ -101,10 +174,12 @@ exports.login = async (req, res) => {
     };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
     
-   
     // Update lastLogin field
     gym.lastLogin = new Date();
     await gym.save();
+    
+    // Record successful login
+    await recordLoginAttempt(gym._id, true);
     
     res.status(200).json({
       success: true,
@@ -538,6 +613,40 @@ exports.registerGym = async (req, res) => {
 
     await newGym.save();
 
+    // Create subscription for the gym
+    try {
+      const subscriptionController = require('./subscriptionController');
+      const subscriptionReq = {
+        body: {
+          gymId: newGym._id,
+          plan: req.body.subscriptionPlan || '1month',
+          paymentMethod: req.body.paymentMethod || 'razorpay'
+        }
+      };
+      
+      // Create a mock response object to capture the subscription result
+      let subscriptionCreated = false;
+      const mockRes = {
+        status: () => mockRes,
+        json: (data) => {
+          if (data.success) {
+            subscriptionCreated = true;
+            console.log('✅ Subscription created successfully for gym:', newGym.gymName);
+          }
+          return mockRes;
+        }
+      };
+      
+      await subscriptionController.createSubscription(subscriptionReq, mockRes);
+      
+      if (!subscriptionCreated) {
+        console.warn('⚠️ Subscription creation may have failed for gym:', newGym.gymName);
+      }
+    } catch (subscriptionError) {
+      console.error('Error creating subscription for gym:', subscriptionError);
+      // Don't fail the registration if subscription creation fails
+    }
+
     // Create admin notification for new gym registration
     try {
       await adminNotificationService.notifyGymRegistration(newGym);
@@ -545,14 +654,40 @@ exports.registerGym = async (req, res) => {
       console.error('Error creating admin notification:', notificationError);
     }
 
-    // Send confirmation email
+    // Send confirmation email with subscription information
     try {
+      const subscriptionPlan = req.body.subscriptionPlan || '1month';
+      const planNames = {
+        '1month': 'Monthly',
+        '3month': 'Quarterly', 
+        '6month': 'Half-Yearly',
+        '12month': 'Annual'
+      };
+      
       await sendEmail(
         newGym.email,
         'Your Gym Registration is Received - Gym-Wale',
         `<h2>Thank you for registering your gym on Gym-Wale!</h2>
         <p>Dear ${newGym.contactPerson || newGym.gymName},</p>
         <p>Your registration has been received and is under review. Our team will contact you soon.</p>
+        
+        <div style="background: #e3eafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #1976d2; margin: 0 0 10px 0;">Your Subscription Plan</h3>
+          <p style="margin: 5px 0;"><strong>Plan:</strong> ${planNames[subscriptionPlan] || 'Monthly'}</p>
+          <p style="margin: 5px 0;"><strong>Trial Period:</strong> 1 Month FREE</p>
+          <p style="margin: 5px 0;">Your free trial will begin once your gym is approved by our admin team.</p>
+        </div>
+        
+        <p>During your trial period, you'll have access to all features including:</p>
+        <ul>
+          <li>Customizable Dashboard</li>
+          <li>Full Payment Management</li>
+          <li>Enhanced Membership Handler</li>
+          <li>Fingerprint & Face Recognition</li>
+          <li>Advanced Analytics & Reports</li>
+          <li>And much more!</li>
+        </ul>
+        
         <p>Regards,<br/>Gym-Wale Team</p>`
       );
     } catch (mailErr) {
@@ -561,7 +696,9 @@ exports.registerGym = async (req, res) => {
 
     res.status(201).json({
       status: "pending",
-      message: "✅ Gym registered successfully! Pending admin approval."
+      message: "✅ Gym registered successfully! Pending admin approval.",
+      subscriptionIncluded: true,
+      trialPeriod: "1 month free trial included"
     });
 
   } catch (error) {
@@ -1087,6 +1224,204 @@ exports.updateMembershipPlans = async (req, res) => {
   } catch (error) {
     console.error('Error updating membership plans:', error);
     res.status(500).json({ message: 'Server error while updating membership plans' });
+  }
+};
+
+// ===== SECURITY HELPER FUNCTIONS =====
+
+// Extract device info from user agent
+const extractDeviceInfo = (userAgent) => {
+  if (!userAgent) return 'Unknown device';
+  
+  if (userAgent.includes('Mobile')) return 'Mobile Device';
+  if (userAgent.includes('Tablet')) return 'Tablet';
+  if (userAgent.includes('Windows')) return 'Windows PC';
+  if (userAgent.includes('Mac')) return 'Mac';
+  if (userAgent.includes('Linux')) return 'Linux PC';
+  
+  return 'Unknown device';
+};
+
+// Extract browser info from user agent
+const extractBrowserInfo = (userAgent) => {
+  if (!userAgent) return 'Unknown browser';
+  
+  if (userAgent.includes('Chrome')) return 'Chrome';
+  if (userAgent.includes('Firefox')) return 'Firefox';
+  if (userAgent.includes('Safari')) return 'Safari';
+  if (userAgent.includes('Edge')) return 'Edge';
+  if (userAgent.includes('Opera')) return 'Opera';
+  
+  return 'Unknown browser';
+};
+
+// Check if login is suspicious based on patterns
+const isSuspiciousLogin = async (gymId, ipAddress) => {
+  try {
+    if (!gymId) return false;
+    
+    // Check for multiple failed attempts from same IP in last hour
+    const recentFailures = await LoginAttempt.countDocuments({
+      gymId,
+      ipAddress,
+      success: false,
+      timestamp: { $gt: new Date(Date.now() - 60 * 60 * 1000) }
+    });
+    
+    if (recentFailures >= 3) return true;
+    
+    // Check if this is a new IP for this gym
+    const previousLogins = await LoginAttempt.countDocuments({
+      gymId,
+      ipAddress,
+      success: true
+    });
+    
+    // If no previous successful logins from this IP, mark as suspicious
+    if (previousLogins === 0) return true;
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking suspicious login:', error);
+    return false;
+  }
+};
+
+// Get location from IP address using a free geolocation service
+const getLocationFromIP = async (ipAddress) => {
+  try {
+    console.log(`🌍 Getting location for IP: ${ipAddress}`);
+    
+    // Handle local/private IP addresses
+    if (ipAddress === '127.0.0.1' || 
+        ipAddress === '::1' || 
+        ipAddress.startsWith('192.168.') || 
+        ipAddress.startsWith('10.') || 
+        ipAddress.startsWith('172.')) {
+      console.log('📍 Local IP detected, returning Local Network');
+      return {
+        city: 'Local Network',
+        country: 'Local',
+        coordinates: { lat: 0, lng: 0 }
+      };
+    }
+
+    // Use a free geolocation service (ip-api.com allows 1000 requests/month for free)
+    console.log(`🔍 Querying geolocation service for IP: ${ipAddress}`);
+    const response = await axios.get(`http://ip-api.com/json/${ipAddress}?fields=status,country,city,lat,lon,regionName`, {
+      timeout: 5000 // 5 second timeout
+    });
+    
+    if (response.data && response.data.status === 'success') {
+      const locationData = {
+        city: response.data.city || 'Unknown',
+        country: response.data.country || 'Unknown',
+        region: response.data.regionName || '',
+        coordinates: { 
+          lat: response.data.lat || 0, 
+          lng: response.data.lon || 0 
+        }
+      };
+      console.log('✅ Location found:', locationData);
+      return locationData;
+    } else {
+      console.log('⚠️ Geolocation service returned unsuccessful status');
+    }
+    
+    // Fallback for failed requests or invalid IPs
+    console.log('📍 Using fallback location');
+    return {
+      city: 'Unknown',
+      country: 'Unknown',
+      coordinates: { lat: 0, lng: 0 }
+    };
+  } catch (error) {
+    console.error('❌ Error getting location from IP:', error.message);
+    // Return fallback location on error
+    return {
+      city: 'Unknown',
+      country: 'Unknown',
+      coordinates: { lat: 0, lng: 0 }
+    };
+  }
+};
+
+// Check if failed login should trigger notification
+const shouldNotifyFailedLogin = async (gymId) => {
+  try {
+    const settings = await SecuritySettings.findOne({ gymId });
+    return settings && settings.loginNotifications.enabled;
+  } catch (error) {
+    console.error('Error checking notification settings:', error);
+    return false;
+  }
+};
+
+// Send login notification
+const sendLoginNotification = async (gymId, loginAttempt) => {
+  try {
+    const gym = await Gym.findById(gymId);
+    const settings = await SecuritySettings.findOne({ gymId });
+    
+    if (!gym || !settings || !settings.loginNotifications.enabled) return;
+    
+    const preferences = settings.loginNotifications.preferences;
+    
+    // Only send notification if preferences allow it
+    if (preferences.suspiciousOnly && !loginAttempt.suspicious) return;
+    
+    const subject = loginAttempt.success ? 
+      'Successful Login to Your Gym Account' : 
+      'Failed Login Attempt on Your Gym Account';
+    
+    const message = `
+      ${loginAttempt.success ? 'Successful' : 'Failed'} login attempt for ${gym.gymName}
+      
+      Time: ${loginAttempt.timestamp.toLocaleString()}
+      IP Address: ${loginAttempt.ipAddress}
+      Device: ${loginAttempt.device}
+      Browser: ${loginAttempt.browser}
+      Location: ${loginAttempt.location?.city || 'Unknown'}${loginAttempt.location?.region ? ', ' + loginAttempt.location.region : ''}, ${loginAttempt.location?.country || 'Unknown'}
+      
+      ${loginAttempt.suspicious ? '⚠️ This login attempt has been marked as suspicious.' : ''}
+      ${!loginAttempt.success ? `Failure reason: ${loginAttempt.failureReason}` : ''}
+      
+      If this wasn't you, please secure your account immediately.
+    `;
+    
+    if (preferences.email) {
+      await sendEmail(gym.email, subject, message);
+    }
+    
+    // You can add browser notification logic here if needed
+    
+  } catch (error) {
+    console.error('Error sending login notification:', error);
+  }
+};
+
+// Verify backup code for 2FA
+const verifyBackupCode = async (gym, code) => {
+  try {
+    if (!gym.twoFactorBackupCodes || gym.twoFactorBackupCodes.length === 0) {
+      return false;
+    }
+    
+    // Check if any of the hashed backup codes match
+    for (let i = 0; i < gym.twoFactorBackupCodes.length; i++) {
+      const isMatch = await bcrypt.compare(code, gym.twoFactorBackupCodes[i]);
+      if (isMatch) {
+        // Remove the used backup code
+        gym.twoFactorBackupCodes.splice(i, 1);
+        await gym.save();
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error verifying backup code:', error);
+    return false;
   }
 };
 

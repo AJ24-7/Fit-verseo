@@ -1093,12 +1093,14 @@ input:checked + .slider:before {
   transform: translateY(-1px);
 }
 
-.btn-secondary {
+.btn-secondary,
+.btn.secondary {
   background: #f5f5f5;
   color: #666;
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover,
+.btn.secondary:hover {
   background: #e0e0e0;
   color: #333;
 }
@@ -1148,3 +1150,505 @@ input:checked + .slider:before {
 }
 
 /* ===== END BIOMETRIC ATTENDANCE STYLES ===== */
+
+/* ===== SECURITY SETTINGS ENHANCEMENTS ===== */
+.setting-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.security-action-btn {
+  padding: 8px 10px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+}
+
+.security-action-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.security-actions-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e9ecef;
+}
+
+.security-actions-section h4 {
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+
+.security-action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.security-tips-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e9ecef;
+}
+
+.security-tips-section h4 {
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+
+.security-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.security-tip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9ff;
+  border-radius: 8px;
+  border-left: 4px solid var(--success-color, #28a745);
+}
+
+.security-tip i {
+  color: var(--success-color, #28a745);
+  font-size: 1.1rem;
+}
+
+.security-tip span {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .setting-controls {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  
+  .security-action-buttons {
+    flex-direction: column;
+  }
+  
+  .security-action-btn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 12px 16px;
+  }
+}
+
+/* ===== ENHANCED MODAL STYLES FOR SECURITY ===== */
+
+/* Info Icon Styles */
+.section-info-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.section-info-icon:hover {
+  background: var(--primary-dark);
+  transform: scale(1.1);
+}
+
+.settings-card {
+  position: relative;
+}
+
+/* Enhanced Modal Overlay */
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-overlay {
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Security Modal Content */
+.security-modal-content {
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s ease;
+  color: var(--text-primary);
+}
+
+.modal-overlay.active .security-modal-content {
+  transform: scale(1) translateY(0);
+}
+
+/* Info Modal Specific Styles */
+.info-modal-content {
+  max-width: 500px;
+}
+
+.info-modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-modal-header h3 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.4rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.info-modal-body {
+  padding: 24px;
+}
+
+.info-section {
+  margin-bottom: 24px;
+}
+
+.info-section:last-child {
+  margin-bottom: 0;
+}
+
+.info-section h4 {
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-section p {
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+  line-height: 1.6;
+}
+
+.info-tips {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0 0;
+}
+
+.info-tips li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.info-tips li i {
+  color: var(--success);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Setup Steps for 2FA Modal */
+.setup-step {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.app-recommendations {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+
+.app-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  min-width: 120px;
+  transition: all 0.2s ease;
+  background: var(--card-bg);
+}
+
+.app-item:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.app-item i {
+  font-size: 2rem;
+  color: var(--primary);
+}
+
+/* QR Code Container */
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.qr-code-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  min-height: 200px;
+  justify-content: center;
+  background: var(--background-light);
+}
+
+/* Verification Code Input */
+.verification-code-input {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.verification-code-input input {
+  width: 200px;
+  padding: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1.5rem;
+  text-align: center;
+  letter-spacing: 0.5rem;
+  transition: border-color 0.2s ease;
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+
+.verification-code-input input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Backup Codes */
+.backup-codes-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.backup-code {
+  background: var(--background-light);
+  padding: 12px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Login History Styles */
+.logins-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.login-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+  background: var(--card-bg);
+}
+
+.login-item:hover {
+  background: var(--background-light);
+}
+
+.login-item.suspicious {
+  border-color: var(--warning);
+  background: var(--warning-light);
+}
+
+.login-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.login-status i.fa-check-circle {
+  color: var(--success);
+}
+
+.login-status i.fa-times-circle {
+  color: var(--danger);
+}
+
+/* Notification Preferences */
+.preference-item {
+  margin-bottom: 20px;
+}
+
+.preference-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 16px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.preference-label:hover {
+  background: var(--background-light);
+}
+
+/* Security Buttons */
+.security-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+}
+
+.security-btn.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.security-btn.primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.security-btn.secondary {
+  background: var(--background-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.security-btn.secondary:hover {
+  background: var(--border-color);
+}
+
+.security-btn.danger {
+  background: var(--danger);
+  color: white;
+}
+
+.security-btn.danger:hover {
+  background: var(--danger-dark);
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.verification-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .security-modal-content {
+    margin: 20px;
+    width: calc(100% - 40px);
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .backup-codes-list {
+    grid-template-columns: 1fr;
+  }
+}

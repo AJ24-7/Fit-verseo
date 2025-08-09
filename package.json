@@ -29,7 +29,9 @@
     "node-cron": "^4.2.1",
     "node-hid": "^3.0.0",
     "nodemailer": "^6.10.1",
+    "qrcode": "^1.5.4",
     "serialport": "^12.0.0",
+    "speakeasy": "^2.0.0",
     "usb": "^2.11.0"
   },
   "optionalDependencies": {

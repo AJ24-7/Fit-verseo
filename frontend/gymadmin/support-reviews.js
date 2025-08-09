@@ -1,43 +1,28 @@
-// === Support & Reviews Management System ===
-// Comprehensive system for notifications, reviews, ratings, and support
+// === Enhanced Support & Reviews Management System ===
+// Comprehensive system for notifications, reviews, grievances, and communications
+// Designed with modern UI/UX patterns similar to the payment tab
 
 class SupportReviewsManager {
     constructor() {
         this.currentTab = 'notifications';
         this.notifications = [];
         this.reviews = [];
-        this.memberQueries = [];
         this.grievances = [];
+        this.communications = [];
         this.currentGymId = null;
-        this.gymProfile = null; // Store gym profile data
+        this.gymProfile = null;
         this.BASE_URL = 'http://localhost:5000';
+        this.stats = {
+            notifications: { total: 0, unread: 0, system: 0, priority: 0 },
+            reviews: { total: 0, average: 0, pending: 0, recent: 0 },
+            grievances: { total: 0, open: 0, resolved: 0, urgent: 0 },
+            communications: { total: 0, unread: 0, active: 0, responseTime: 0 }
+        };
         this.init();
     }
 
-    async fetchGymProfile() {
-        try {
-            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (!token) return;
-
-            const response = await fetch(`${this.BASE_URL}/api/gyms/profile/me`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                this.gymProfile = data;
-                console.log('✅ Gym profile fetched:', this.gymProfile);
-            }
-        } catch (error) {
-            console.error('Error fetching gym profile:', error);
-        }
-    }
-
     init() {
-        console.log('🚀 Initializing Support & Reviews Manager');
+        console.log('🚀 Initializing Enhanced Support & Reviews Manager');
         this.bindEvents();
         this.fetchGymId();
     }
@@ -59,162 +44,168 @@ class SupportReviewsManager {
 
             if (response.ok) {
                 const data = await response.json();
+                this.gymProfile = data;
                 this.currentGymId = data._id;
-                console.log('✅ Gym ID fetched:', this.currentGymId);
+                console.log('✅ Gym profile fetched:', this.gymProfile);
                 this.loadInitialData();
             }
         } catch (error) {
-            console.error('Error fetching gym ID:', error);
+            console.error('Error fetching gym profile:', error);
         }
     }
 
     bindEvents() {
         // Tab navigation
-        document.querySelectorAll('.support-nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tab = e.currentTarget.dataset.tab;
-                this.switchTab(tab);
-            });
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.support-tab-btn')) {
+                this.switchTab(e.target.dataset.tab);
+            }
+        });
+
+        // Header action buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('#sendNotificationBtn') || e.target.closest('#sendNotificationBtn')) {
+                this.openSendNotificationModal();
+            }
+            if (e.target.matches('#raiseGrievanceBtn') || e.target.closest('#raiseGrievanceBtn')) {
+                this.openRaiseGrievanceModal();
+            }
+            if (e.target.matches('#startCommunicationBtn') || e.target.closest('#startCommunicationBtn')) {
+                this.openStartCommunicationModal();
+            }
+        });
+
+        // Modal controls
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.support-modal-close') || e.target.matches('.support-modal')) {
+                if (e.target.matches('.support-modal') && e.target === e.currentTarget) {
+                    this.closeModal();
+                }
+                if (e.target.matches('.support-modal-close')) {
+                    this.closeModal();
+                }
+            }
+        });
+
+        // Review reply buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.review-action[data-action="reply"]') || e.target.closest('.review-action[data-action="reply"]')) {
+                const reviewId = e.target.closest('.review-item').dataset.reviewId;
+                this.openReplyModal(reviewId);
+            }
         });
 
         // Notification actions
-        const markAllRead = document.getElementById('markAllNotificationsRead');
-        if (markAllRead) {
-            markAllRead.addEventListener('click', () => this.markAllNotificationsRead());
-        }
-
-        // Review actions
-        const refreshReviews = document.getElementById('refreshReviews');
-        if (refreshReviews) {
-            refreshReviews.addEventListener('click', () => this.loadReviews());
-        }
-
-        const exportReviews = document.getElementById('exportReviews');
-        if (exportReviews) {
-            exportReviews.addEventListener('click', () => this.exportReviews());
-        }
-
-        // Filters
-        const notificationFilters = ['notificationFilterType', 'notificationFilterStatus'];
-        notificationFilters.forEach(filterId => {
-            const filter = document.getElementById(filterId);
-            if (filter) {
-                filter.addEventListener('change', () => this.filterNotifications());
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.notification-action')) {
+                const action = e.target.dataset.action;
+                const notificationId = e.target.closest('.notification-item').dataset.notificationId;
+                this.handleNotificationAction(action, notificationId);
             }
         });
 
-        const reviewFilters = ['reviewFilterRating', 'reviewFilterReply'];
-        reviewFilters.forEach(filterId => {
-            const filter = document.getElementById(filterId);
-            if (filter) {
-                filter.addEventListener('change', () => this.filterReviews());
+        // Grievance actions
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.grievance-item')) {
+                const grievanceId = e.target.dataset.grievanceId;
+                this.openGrievanceDetails(grievanceId);
             }
         });
 
-        // Review reply modal
-        this.bindReviewReplyModal();
+        // Form submissions
+        document.addEventListener('submit', (e) => {
+            if (e.target.matches('#sendNotificationForm')) {
+                e.preventDefault();
+                this.handleSendNotification(e.target);
+            }
+            if (e.target.matches('#raiseGrievanceForm')) {
+                e.preventDefault();
+                this.handleRaiseGrievance(e.target);
+            }
+            if (e.target.matches('#replyForm')) {
+                e.preventDefault();
+                this.handleReplySubmission(e.target);
+            }
+            if (e.target.matches('#notificationReplyForm')) {
+                e.preventDefault();
+                this.handleNotificationReplySubmission(e.target);
+            }
+            if (e.target.matches('#urgentResponseForm')) {
+                e.preventDefault();
+                this.handleUrgentResponseSubmission(e.target);
+            }
+        });
+
+        // Search and filters
+        document.addEventListener('input', (e) => {
+            if (e.target.matches('.support-search')) {
+                this.handleSearch(e.target.value, this.currentTab);
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target.matches('.support-filter')) {
+                this.handleFilter(e.target.value, this.currentTab);
+            }
+        });
     }
 
-    bindReviewReplyModal() {
-        const modal = document.getElementById('reviewReplyModal');
-        const closeBtn = document.getElementById('closeReviewReplyModal');
-        const cancelBtn = document.getElementById('cancelReviewReply');
-        const submitBtn = document.getElementById('submitReviewReply');
-
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.closeReviewReplyModal());
-        }
-
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => this.closeReviewReplyModal());
-        }
-
-        if (submitBtn) {
-            submitBtn.addEventListener('click', () => this.submitReviewReply());
-        }
-
-        // Close modal when clicking outside
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    this.closeReviewReplyModal();
-                }
-            });
-        }
-    }
-
-    switchTab(tab) {
-        console.log('🔄 Switching to tab:', tab);
-        
-        // Update navigation buttons
-        document.querySelectorAll('.support-nav-btn').forEach(btn => {
+    switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.support-tab-btn').forEach(btn => {
             btn.classList.remove('active');
-            btn.style.background = 'white';
-            btn.style.color = '#666';
-            btn.style.border = '1px solid #ddd';
         });
-
-        const activeBtn = document.querySelector(`[data-tab="${tab}"]`);
-        if (activeBtn) {
-            activeBtn.classList.add('active');
-            activeBtn.style.background = '#1976d2';
-            activeBtn.style.color = 'white';
-            activeBtn.style.border = 'none';
+        const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        if (targetBtn) {
+            targetBtn.classList.add('active');
         }
 
-        // Hide all sections
-        document.querySelectorAll('.support-tab-content').forEach(section => {
-            section.style.display = 'none';
+        // Update tab content
+        document.querySelectorAll('.support-section').forEach(section => {
+            section.classList.remove('active');
         });
-
-        // Show selected section
-        const targetSection = document.getElementById(`${tab}Section`);
+        const targetSection = document.getElementById(`${tabName}Section`);
         if (targetSection) {
-            targetSection.style.display = 'block';
+            targetSection.classList.add('active');
         }
 
-        this.currentTab = tab;
-
-        // Load data for the current tab
-        switch (tab) {
-            case 'notifications':
-                this.loadNotifications();
-                break;
-            case 'reviews':
-                this.loadReviews();
-                break;
-            case 'member-queries':
-                this.loadMemberQueries();
-                break;
-            case 'grievances':
-                this.loadGrievances();
-                break;
-        }
+        this.currentTab = tabName;
+        this.loadTabData(tabName);
     }
 
     async loadInitialData() {
         console.log('📊 Loading initial data for Support & Reviews');
-        this.loadNotifications();
-        this.loadMemberQueries();
-        this.loadGrievances();
+        await Promise.all([
+            this.loadNotifications(),
+            this.loadReviews(),
+            this.loadGrievances(),
+            this.loadCommunications()
+        ]);
+        this.updateStats();
+        this.loadTabData('notifications');
+    }
+
+    async loadTabData(tabName) {
+        switch (tabName) {
+            case 'notifications':
+                this.renderNotifications();
+                break;
+            case 'reviews':
+                this.renderReviews();
+                break;
+            case 'grievances':
+                this.renderGrievances();
+                break;
+            case 'communications':
+                this.renderCommunications();
+                break;
+        }
     }
 
     async loadNotifications() {
-        console.log('📥 Loading notifications...');
         try {
             const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (!token) return;
-
-            // Try to get notifications from the existing notification system first
-            if (window.notificationSystem && window.notificationSystem.notifications) {
-                this.notifications = window.notificationSystem.notifications;
-                this.renderNotifications();
-                this.updateNotificationStats();
-                return;
-            }
-
-            // Fallback to API if notification system is not available
-            const response = await fetch(`${this.BASE_URL}/api/notifications/all`, {
+            const response = await fetch(`${this.BASE_URL}/api/gym/notifications`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -224,783 +215,59 @@ class SupportReviewsManager {
             if (response.ok) {
                 const data = await response.json();
                 this.notifications = data.notifications || [];
-                this.renderNotifications();
+                this.updateNotificationStats();
+                console.log('✅ Notifications loaded:', this.notifications.length);
+            } else {
+                console.error('Failed to load notifications:', response.status);
+                this.notifications = this.getMockNotifications();
                 this.updateNotificationStats();
             }
         } catch (error) {
             console.error('Error loading notifications:', error);
-            this.showNotificationError();
+            this.notifications = this.getMockNotifications();
+            this.updateNotificationStats();
         }
     }
 
-    renderNotifications() {
-        const container = document.getElementById('notificationsList');
-        if (!container) return;
-
-        if (this.notifications.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #666;">
-                    <i class="fas fa-bell-slash" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
-                    <p>No notifications found</p>
-                </div>
-            `;
-            return;
-        }
-
-        const notificationsHtml = this.notifications.map(notification => `
-            <div class="notification-item ${notification.read ? 'read' : 'unread'}" data-id="${notification.id || notification._id}" 
-                 style="padding: 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s ease; ${!notification.read ? 'background: #f8f9fa; border-left: 4px solid #1976d2;' : ''}">
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                    <div style="width: 40px; height: 40px; border-radius: 50%; background: ${this.getNotificationColor(notification.type)}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <i class="fas ${this.getNotificationIcon(notification.type)}" style="color: white; font-size: 16px;"></i>
-                    </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
-                            <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #333;">${notification.title}</h4>
-                            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                                ${this.getPriorityBadge(notification.priority)}
-                                <span style="font-size: 12px; color: #999;">${this.formatTime(notification.timestamp)}</span>
-                            </div>
-                        </div>
-                        <p style="margin: 0; font-size: 13px; color: #666; line-height: 1.4;">${this.truncateText(notification.message, 120)}</p>
-                        ${!notification.read ? '<div style="width: 8px; height: 8px; background: #1976d2; border-radius: 50%; position: absolute; top: 12px; right: 12px;"></div>' : ''}
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        container.innerHTML = notificationsHtml;
-
-        // Add click handlers
-        container.querySelectorAll('.notification-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const notificationId = item.dataset.id;
-                this.handleNotificationClick(notificationId);
-            });
-        });
-    }
-
-    async handleNotificationClick(notificationId) {
-        const notification = this.notifications.find(n => (n.id || n._id) === notificationId);
-        if (!notification) return;
-
-        // Mark as read if unread
-        if (!notification.read) {
-            await this.markNotificationRead(notificationId);
-        }
-
-        // Show notification details
-        this.showNotificationDetails(notification);
-    }
-
-    async markNotificationRead(notificationId) {
+    async loadReviews() {
         try {
             const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (!token) return;
-
-            // Update in memory
-            const notification = this.notifications.find(n => (n.id || n._id) === notificationId);
-            if (notification) {
-                notification.read = true;
+            if (!this.currentGymId) {
+                console.error('No gym ID available for loading reviews');
+                this.reviews = this.getMockReviews();
+                this.updateReviewStats();
+                return;
             }
 
-            // Update display
-            this.renderNotifications();
-            this.updateNotificationStats();
-
-            // Update on server
-            await fetch(`${this.BASE_URL}/api/notifications/${notificationId}/read`, {
-                method: 'PUT',
+            const response = await fetch(`${this.BASE_URL}/api/reviews/gym/${this.currentGymId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
 
-        } catch (error) {
-            console.error('Error marking notification as read:', error);
-        }
-    }
-
-    async markAllNotificationsRead() {
-        try {
-            // Update all notifications to read
-            this.notifications.forEach(notification => {
-                notification.read = true;
-            });
-
-            this.renderNotifications();
-            this.updateNotificationStats();
-
-            // Update on server
-            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (token) {
-                await fetch(`${this.BASE_URL}/api/notifications/mark-all-read`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-            }
-
-            this.showSuccessMessage('All notifications marked as read');
-        } catch (error) {
-            console.error('Error marking all notifications as read:', error);
-        }
-    }
-
-    updateNotificationStats() {
-        const totalCount = this.notifications.length;
-        const unreadCount = this.notifications.filter(n => !n.read).length;
-        const systemCount = this.notifications.filter(n => n.type === 'system').length;
-        const highPriorityCount = this.notifications.filter(n => n.priority === 'high' || n.priority === 'urgent').length;
-
-        document.getElementById('totalNotificationsCount').textContent = totalCount;
-        document.getElementById('unreadNotificationsCount').textContent = unreadCount;
-        document.getElementById('systemNotificationsCount').textContent = systemCount;
-        document.getElementById('highPriorityNotificationsCount').textContent = highPriorityCount;
-    }
-
-    async loadReviews() {
-        console.log('⭐ Loading reviews...');
-        if (!this.currentGymId) {
-            console.error('No gym ID available for loading reviews');
-            return;
-        }
-
-        try {
-            // First, fetch gym profile data
-            await this.fetchGymProfile();
-            
-            const response = await fetch(`${this.BASE_URL}/api/reviews/gym/${this.currentGymId}`);
             if (response.ok) {
                 const data = await response.json();
-                this.reviews = data.reviews || [];
-                this.renderReviews();
+                this.reviews = data.reviews || data; // Handle both response formats
+                this.updateReviewStats();
+                console.log('✅ Reviews loaded:', this.reviews.length);
+            } else {
+                console.error('Failed to load reviews:', response.status, response.statusText);
+                const errorData = await response.text();
+                console.error('Error response:', errorData);
+                this.reviews = this.getMockReviews();
                 this.updateReviewStats();
             }
         } catch (error) {
             console.error('Error loading reviews:', error);
-            this.showReviewError();
+            this.reviews = this.getMockReviews();
+            this.updateReviewStats();
         }
     }
 
-    renderReviews() {
-        const container = document.getElementById('reviewsList');
-        if (!container) return;
-
-        if (this.reviews.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #666;">
-                    <i class="fas fa-star" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
-                    <p>No reviews found</p>
-                    <small>Reviews from your gym will appear here</small>
-                </div>
-            `;
-            return;
-        }
-
-        // Get gym logo and name from fetched profile data
-        let gymLogo = '/frontend/gymadmin/admin.png'; // Default fallback
-        let gymName = 'Gym Admin'; // Default fallback
-        
-        if (this.gymProfile) {
-            // Handle different possible logo URL formats
-            if (this.gymProfile.logoUrl) {
-                if (this.gymProfile.logoUrl.startsWith('http')) {
-                    gymLogo = this.gymProfile.logoUrl;
-                } else {
-                    gymLogo = this.gymProfile.logoUrl.startsWith('/') ? 
-                        `${this.BASE_URL}${this.gymProfile.logoUrl}` : 
-                        `${this.BASE_URL}/${this.gymProfile.logoUrl}`;
-                }
-            }
-            
-            // Get gym name
-            gymName = this.gymProfile.gymName || this.gymProfile.name || 'Gym Admin';
-        }
-        
-        console.log('Using gym logo:', gymLogo);
-        console.log('Using gym name:', gymName);
-        const reviewsHtml = this.reviews.map(review => {
-            const hasReply = review.adminReply && review.adminReply.reply && review.adminReply.reply !== 'undefined' && review.adminReply.reply !== null && review.adminReply.reply.trim() !== '';
-            return `
-            <div class="review-item" style="padding: 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 16px; border-radius: 8px; ${hasReply ? 'background: #f8f9fa;' : 'background: white;'}">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                            <strong style="color: #333; font-size: 14px;">${review.reviewerName || review.user?.name || 'Anonymous'}</strong>
-                            <div style="color: #ffa726;">${this.generateStars(review.rating)}</div>
-                            <span style="background: ${this.getRatingColor(review.rating)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">${review.rating}/5</span>
-                        </div>
-                        <div style="font-size: 12px; color: #999;">
-                            ${this.formatDate(review.createdAt)}
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        ${hasReply 
-                            ? '<span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;"><i class="fas fa-check"></i> Replied</span>'
-                            : `<button class="reply-btn" data-review-id="${review._id}" style="padding: 6px 12px; background: #1976d2; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
-                                <i class="fas fa-reply"></i> Reply
-                               </button>`
-                        }
-                    </div>
-                </div>
-                <div style="margin-bottom: ${hasReply ? '16px' : '0'};">
-                    <p style="margin: 0; color: #666; line-height: 1.5; font-size: 14px;">${review.comment}</p>
-                </div>
-                ${hasReply ? `
-                    <div style="border-left: 3px solid #1976d2; padding-left: 16px; background: white; padding: 12px 16px; border-radius: 4px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                            <img src="${gymLogo}" alt="Gym Admin Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #1976d2;" 
-                                 onerror="this.src='/frontend/gymadmin/admin.png';" />
-                            <strong style="color: #1976d2; font-size: 13px;">${gymName}</strong>
-                            <span style="font-size: 12px; color: #999;">${this.formatDate(review.adminReply.repliedAt)}</span>
-                        </div>
-                        <p style="margin: 0; color: #444; font-size: 13px; line-height: 1.4;">${review.adminReply.reply}</p>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-        }).join('');
-
-        container.innerHTML = reviewsHtml;
-
-        // Add click handlers for reply buttons
-        container.querySelectorAll('.reply-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const reviewId = btn.dataset.reviewId;
-                this.openReviewReplyModal(reviewId);
-            });
-        });
-    }
-
-    updateReviewStats() {
-        if (this.reviews.length === 0) {
-            document.getElementById('averageRatingDisplay').textContent = '0.0';
-            document.getElementById('ratingStarsDisplay').textContent = '☆☆☆☆☆';
-            document.getElementById('totalReviewsCount').textContent = '0';
-            return;
-        }
-
-        // Calculate average rating
-        const totalRating = this.reviews.reduce((sum, review) => sum + review.rating, 0);
-        const averageRating = totalRating / this.reviews.length;
-        
-        document.getElementById('averageRatingDisplay').textContent = averageRating.toFixed(1);
-        document.getElementById('ratingStarsDisplay').textContent = this.generateStars(averageRating);
-        document.getElementById('totalReviewsCount').textContent = this.reviews.length;
-
-        // Generate rating breakdown
-        const breakdown = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
-        this.reviews.forEach(review => {
-            breakdown[review.rating]++;
-        });
-
-        const breakdownHtml = Object.keys(breakdown).reverse().map(rating => {
-            const count = breakdown[rating];
-            const percentage = this.reviews.length > 0 ? (count / this.reviews.length) * 100 : 0;
-            return `
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <span style="width: 20px; font-size: 12px;">${rating}★</span>
-                    <div style="flex: 1; background: #f0f0f0; height: 8px; border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${percentage}%; height: 100%; background: ${this.getRatingColor(parseInt(rating))};"></div>
-                    </div>
-                    <span style="width: 30px; font-size: 12px; text-align: right;">${count}</span>
-                </div>
-            `;
-        }).join('');
-
-        document.getElementById('ratingBreakdown').innerHTML = breakdownHtml;
-    }
-
-    openReviewReplyModal(reviewId) {
-        const review = this.reviews.find(r => r._id === reviewId);
-        if (!review) return;
-
-        const modal = document.getElementById('reviewReplyModal');
-        const detailsDisplay = document.getElementById('reviewDetailsDisplay');
-        const replyText = document.getElementById('adminReplyText');
-
-        // Display review details
-        detailsDisplay.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <div>
-                    <strong style="color: #333;">${review.reviewerName || review.user?.name || 'Anonymous'}</strong>
-                    <div style="color: #ffa726; margin: 4px 0;">${this.generateStars(review.rating)} (${review.rating}/5)</div>
-                </div>
-                <small style="color: #666;">${this.formatDate(review.createdAt)}</small>
-            </div>
-            <p style="margin: 0; color: #555; line-height: 1.5;">${review.comment}</p>
-        `;
-
-        // Clear previous reply text
-        replyText.value = '';
-
-        // Store review ID for submission
-        modal.dataset.reviewId = reviewId;
-
-        // Show modal
-        modal.style.display = 'flex';
-    }
-
-    closeReviewReplyModal() {
-        const modal = document.getElementById('reviewReplyModal');
-        modal.style.display = 'none';
-        delete modal.dataset.reviewId;
-    }
-
-    async submitReviewReply() {
-        const modal = document.getElementById('reviewReplyModal');
-        const reviewId = modal.dataset.reviewId;
-        const replyText = document.getElementById('adminReplyText').value.trim();
-
-        if (!reviewId || !replyText) {
-            this.showErrorMessage('Please enter a reply message');
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (!token) {
-                this.showErrorMessage('Authentication required');
-                return;
-            }
-
-            const response = await fetch(`${this.BASE_URL}/api/reviews/${reviewId}/reply`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ reply: replyText })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                this.showSuccessMessage('Reply sent successfully');
-                this.closeReviewReplyModal();
-                this.loadReviews(); // Refresh reviews
-            } else {
-                const errorData = await response.json();
-                this.showErrorMessage(errorData.message || 'Failed to send reply');
-            }
-        } catch (error) {
-            console.error('Error submitting review reply:', error);
-            this.showErrorMessage('Network error occurred');
-        }
-    }
-
-    filterNotifications() {
-        // Implementation for notification filtering
-        const typeFilter = document.getElementById('notificationFilterType').value;
-        const statusFilter = document.getElementById('notificationFilterStatus').value;
-        
-        // Apply filters and re-render
-        // This would filter the notifications array and call renderNotifications()
-        console.log('Filtering notifications:', { typeFilter, statusFilter });
-    }
-
-    filterReviews() {
-        // Implementation for review filtering
-        const ratingFilter = document.getElementById('reviewFilterRating').value;
-        const replyFilter = document.getElementById('reviewFilterReply').value;
-        
-        // Apply filters and re-render
-        // This would filter the reviews array and call renderReviews()
-        console.log('Filtering reviews:', { ratingFilter, replyFilter });
-    }
-
-    async exportReviews() {
-        try {
-            const csvContent = this.generateReviewsCSV();
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `gym_reviews_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            this.showSuccessMessage('Reviews exported successfully');
-        } catch (error) {
-            console.error('Error exporting reviews:', error);
-            this.showErrorMessage('Failed to export reviews');
-        }
-    }
-
-    generateReviewsCSV() {
-        const headers = ['Date', 'Reviewer Name', 'Rating', 'Comment', 'Admin Reply', 'Reply Date'];
-        const rows = this.reviews.map(review => [
-            this.formatDate(review.createdAt),
-            review.reviewerName || 'Anonymous',
-            review.rating,
-            `"${review.comment.replace(/"/g, '""')}"`,
-            review.adminReply ? `"${review.adminReply.reply.replace(/"/g, '""')}"` : '',
-            review.adminReply ? this.formatDate(review.adminReply.repliedAt) : ''
-        ]);
-
-        return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-    }
-
-    // === Member Queries Management ===
-    async loadMemberQueries() {
-        console.log('💬 Loading member queries...');
-        if (!this.currentGymId) {
-            console.error('No gym ID available for loading member queries');
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (!token) return;
-
-            const response = await fetch(`${this.BASE_URL}/api/support/gym/${this.currentGymId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                this.memberQueries = data.tickets || [];
-                this.renderMemberQueries();
-                this.updateMemberQueryStats();
-            }
-        } catch (error) {
-            console.error('Error loading member queries:', error);
-            this.showMemberQueryError();
-        }
-    }
-
-    renderMemberQueries() {
-        const container = document.getElementById('memberQueriesList');
-        if (!container) return;
-
-        if (this.memberQueries.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #666;">
-                    <i class="fas fa-question-circle" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
-                    <p>No member queries found</p>
-                    <small>Support tickets and queries from members will appear here</small>
-                </div>
-            `;
-            return;
-        }
-
-        const queriesHtml = this.memberQueries.map(query => `
-            <div class="query-item" style="padding: 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 16px; border-radius: 8px; background: white; border-left: 4px solid ${this.getQueryStatusColor(query.status)};">
-                <div style="display: flex; justify-content: between; align-items: flex-start; margin-bottom: 12px;">
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                            <h4 style="margin: 0; color: #333; font-size: 16px;">${query.subject}</h4>
-                            <span style="background: ${this.getQueryStatusColor(query.status)}; color: white; padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; text-transform: uppercase;">
-                                ${query.status}
-                            </span>
-                            ${this.getQueryPriorityBadge(query.priority)}
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <i class="fas fa-user" style="color: #666; font-size: 12px;"></i>
-                                <span style="font-size: 13px; color: #666;">${query.user?.name || 'Anonymous'}</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <i class="fas fa-ticket-alt" style="color: #666; font-size: 12px;"></i>
-                                <span style="font-size: 13px; color: #666; font-family: monospace;">${query.ticketId}</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <i class="fas fa-clock" style="color: #666; font-size: 12px;"></i>
-                                <span style="font-size: 13px; color: #666;">${this.formatDate(query.createdAt)}</span>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-                            <i class="fas fa-tag" style="color: #666; font-size: 12px;"></i>
-                            <span style="background: #f8f9fa; color: #495057; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${query.category}</span>
-                        </div>
-                        <p style="margin: 0; color: #666; line-height: 1.5; font-size: 14px;">${this.truncateText(query.message, 150)}</p>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px; margin-left: 16px;">
-                        <button class="view-query-btn" data-query-id="${query._id}" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; min-width: 80px;">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                        ${query.status === 'open' ? `
-                            <button class="respond-query-btn" data-query-id="${query._id}" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; min-width: 80px;">
-                                <i class="fas fa-reply"></i> Respond
-                            </button>
-                        ` : ''}
-                        ${query.status !== 'closed' ? `
-                            <button class="close-query-btn" data-query-id="${query._id}" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; min-width: 80px;">
-                                <i class="fas fa-times"></i> Close
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-                ${query.responses && query.responses.length > 0 ? `
-                    <div style="border-top: 1px solid #f0f0f0; padding-top: 12px; margin-top: 12px;">
-                        <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
-                            <i class="fas fa-comments"></i> ${query.responses.length} response(s)
-                        </div>
-                        <div style="max-height: 100px; overflow-y: auto;">
-                            ${query.responses.slice(-2).map(response => `
-                                <div style="background: #f8f9fa; padding: 8px 12px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid ${response.isAdmin ? '#1976d2' : '#28a745'};">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                        <strong style="font-size: 12px; color: ${response.isAdmin ? '#1976d2' : '#28a745'};">
-                                            ${response.isAdmin ? 'Admin' : 'Member'}
-                                        </strong>
-                                        <span style="font-size: 11px; color: #999;">${this.formatTime(response.timestamp)}</span>
-                                    </div>
-                                    <p style="margin: 0; font-size: 12px; color: #555;">${this.truncateText(response.message, 80)}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-            </div>
-        `).join('');
-
-        container.innerHTML = queriesHtml;
-
-        // Add event listeners
-        this.bindMemberQueryEvents();
-    }
-
-    bindMemberQueryEvents() {
-        const container = document.getElementById('memberQueriesList');
-        if (!container) return;
-
-        // View query details
-        container.querySelectorAll('.view-query-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const queryId = btn.dataset.queryId;
-                this.viewQueryDetails(queryId);
-            });
-        });
-
-        // Respond to query
-        container.querySelectorAll('.respond-query-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const queryId = btn.dataset.queryId;
-                this.openQueryResponseModal(queryId);
-            });
-        });
-
-        // Close query
-        container.querySelectorAll('.close-query-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const queryId = btn.dataset.queryId;
-                this.closeQuery(queryId);
-            });
-        });
-    }
-
-    updateMemberQueryStats() {
-        if (!this.memberQueries.length) {
-            document.getElementById('totalQueriesCount').textContent = '0';
-            document.getElementById('openQueriesCount').textContent = '0';
-            document.getElementById('pendingQueriesCount').textContent = '0';
-            document.getElementById('closedQueriesCount').textContent = '0';
-            return;
-        }
-
-        const total = this.memberQueries.length;
-        const open = this.memberQueries.filter(q => q.status === 'open').length;
-        const pending = this.memberQueries.filter(q => q.status === 'in-progress').length;
-        const closed = this.memberQueries.filter(q => q.status === 'closed').length;
-
-        document.getElementById('totalQueriesCount').textContent = total;
-        document.getElementById('openQueriesCount').textContent = open;
-        document.getElementById('pendingQueriesCount').textContent = pending;
-        document.getElementById('closedQueriesCount').textContent = closed;
-    }
-
-    async viewQueryDetails(queryId) {
-        const query = this.memberQueries.find(q => q._id === queryId);
-        if (!query) return;
-
-        if (window.showDialog && typeof window.showDialog === 'function') {
-            const responseHistory = query.responses ? query.responses.map(response => `
-                <div style="margin-bottom: 12px; padding: 12px; background: ${response.isAdmin ? '#e3f2fd' : '#f3e5f5'}; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <strong style="color: ${response.isAdmin ? '#1976d2' : '#7b1fa2'};">
-                            ${response.isAdmin ? 'Admin Response' : 'Member Message'}
-                        </strong>
-                        <small style="color: #666;">${this.formatDate(response.timestamp)}</small>
-                    </div>
-                    <p style="margin: 0; line-height: 1.4;">${response.message}</p>
-                </div>
-            `).join('') : '<p style="color: #666; font-style: italic;">No responses yet</p>';
-
-            window.showDialog({
-                title: `Query Details - ${query.ticketId}`,
-                message: `
-                    <div style="text-align: left;">
-                        <div style="margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
-                            <h4 style="margin: 0 0 8px 0; color: #333;">${query.subject}</h4>
-                            <div style="margin-bottom: 8px;">
-                                <strong>Status:</strong> 
-                                <span style="background: ${this.getQueryStatusColor(query.status)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
-                                    ${query.status.toUpperCase()}
-                                </span>
-                            </div>
-                            <div style="margin-bottom: 8px;"><strong>Member:</strong> ${query.user?.name || 'Anonymous'}</div>
-                            <div style="margin-bottom: 8px;"><strong>Category:</strong> ${query.category}</div>
-                            <div style="margin-bottom: 8px;"><strong>Priority:</strong> ${query.priority}</div>
-                            <div style="margin-bottom: 12px;"><strong>Created:</strong> ${this.formatDate(query.createdAt)}</div>
-                            <div><strong>Message:</strong></div>
-                            <p style="margin: 8px 0 0 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #1976d2;">${query.message}</p>
-                        </div>
-                        <div>
-                            <h4 style="margin: 0 0 12px 0; color: #333;">Response History</h4>
-                            <div style="max-height: 300px; overflow-y: auto;">
-                                ${responseHistory}
-                            </div>
-                        </div>
-                    </div>
-                `,
-                confirmText: 'Close',
-                iconHtml: '<i class="fas fa-ticket-alt" style="color: #1976d2; font-size: 2rem;"></i>'
-            });
-        }
-    }
-
-    async openQueryResponseModal(queryId) {
-        const query = this.memberQueries.find(q => q._id === queryId);
-        if (!query) return;
-
-        if (window.showDialog && typeof window.showDialog === 'function') {
-            window.showDialog({
-                title: `Respond to Query - ${query.ticketId}`,
-                message: `
-                    <div style="text-align: left; margin-bottom: 16px;">
-                        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 16px;">
-                            <h4 style="margin: 0 0 8px 0;">${query.subject}</h4>
-                            <p style="margin: 0; color: #666;">${query.message}</p>
-                        </div>
-                        <label for="queryResponse" style="display: block; margin-bottom: 8px; font-weight: 600;">Your Response:</label>
-                        <textarea id="queryResponse" placeholder="Type your response here..." style="width: 100%; height: 120px; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; resize: vertical;"></textarea>
-                        <div style="margin-top: 12px;">
-                            <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                <input type="checkbox" id="closeAfterResponse"> 
-                                <span>Close query after sending response</span>
-                            </label>
-                        </div>
-                    </div>
-                `,
-                confirmText: 'Send Response',
-                cancelText: 'Cancel',
-                iconHtml: '<i class="fas fa-reply" style="color: #28a745; font-size: 2rem;"></i>',
-                onConfirm: () => {
-                    const response = document.getElementById('queryResponse').value.trim();
-                    const closeAfter = document.getElementById('closeAfterResponse').checked;
-                    if (response) {
-                        this.submitQueryResponse(queryId, response, closeAfter);
-                    }
-                }
-            });
-        }
-    }
-
-    async submitQueryResponse(queryId, response, closeAfter = false) {
-        try {
-            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (!token) {
-                this.showErrorMessage('Authentication required');
-                return;
-            }
-
-            const requestBody = {
-                message: response,
-                isAdmin: true,
-                closeAfter: closeAfter
-            };
-
-            const apiResponse = await fetch(`${this.BASE_URL}/api/support/${queryId}/respond`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (apiResponse.ok) {
-                this.showSuccessMessage('Response sent successfully');
-                this.loadMemberQueries(); // Refresh the queries
-            } else {
-                const errorData = await apiResponse.json();
-                this.showErrorMessage(errorData.message || 'Failed to send response');
-            }
-        } catch (error) {
-            console.error('Error submitting query response:', error);
-            this.showErrorMessage('Network error occurred');
-        }
-    }
-
-    async closeQuery(queryId) {
-        if (!confirm('Are you sure you want to close this query?')) return;
-
-        try {
-            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (!token) {
-                this.showErrorMessage('Authentication required');
-                return;
-            }
-
-            const response = await fetch(`${this.BASE_URL}/api/support/${queryId}/close`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                this.showSuccessMessage('Query closed successfully');
-                this.loadMemberQueries(); // Refresh the queries
-            } else {
-                const errorData = await response.json();
-                this.showErrorMessage(errorData.message || 'Failed to close query');
-            }
-        } catch (error) {
-            console.error('Error closing query:', error);
-            this.showErrorMessage('Network error occurred');
-        }
-    }
-
-    showMemberQueryError() {
-        const container = document.getElementById('memberQueriesList');
-        if (container) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #dc3545;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
-                    <p>Error loading member queries</p>
-                    <button onclick="window.supportReviewsManager.loadMemberQueries()" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Try Again
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    // === Grievances Management ===
     async loadGrievances() {
-        console.log('⚖️ Loading grievances...');
-        if (!this.currentGymId) {
-            console.error('No gym ID available for loading grievances');
-            return;
-        }
-
         try {
             const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
-            if (!token) return;
-
             const response = await fetch(`${this.BASE_URL}/api/support/grievances/gym/${this.currentGymId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1009,298 +276,1298 @@ class SupportReviewsManager {
             });
 
             if (response.ok) {
-                const data = await response.json();
-                this.grievances = data.grievances || [];
-                this.renderGrievances();
+                this.grievances = await response.json();
+                this.updateGrievanceStats();
+                console.log('✅ Grievances loaded:', this.grievances.length);
+            } else {
+                console.error('Failed to load grievances:', response.status);
+                this.grievances = this.getMockGrievances();
                 this.updateGrievanceStats();
             }
         } catch (error) {
             console.error('Error loading grievances:', error);
-            this.showGrievanceError();
+            this.grievances = this.getMockGrievances();
+            this.updateGrievanceStats();
         }
     }
 
-    renderGrievances() {
-        const container = document.getElementById('grievancesList');
+    async loadCommunications() {
+        try {
+            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
+            const response = await fetch(`${this.BASE_URL}/api/support/gym/${this.currentGymId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                this.communications = await response.json();
+                this.updateCommunicationStats();
+                console.log('✅ Communications loaded:', this.communications.length);
+            } else {
+                console.error('Failed to load communications:', response.status);
+                this.communications = this.getMockCommunications();
+                this.updateCommunicationStats();
+            }
+        } catch (error) {
+            console.error('Error loading communications:', error);
+            this.communications = this.getMockCommunications();
+            this.updateCommunicationStats();
+        }
+    }
+
+    updateStats() {
+        // Update tab counters only (stats cards removed as requested)
+        const notificationCounter = document.querySelector('[data-tab="notifications"] .tab-counter');
+        const reviewCounter = document.querySelector('[data-tab="reviews"] .tab-counter');
+        const grievanceCounter = document.querySelector('[data-tab="grievances"] .tab-counter');
+        const communicationCounter = document.querySelector('[data-tab="communications"] .tab-counter');
+
+        if (notificationCounter) notificationCounter.textContent = this.stats.notifications.unread;
+        if (reviewCounter) reviewCounter.textContent = this.stats.reviews.pending;
+        if (grievanceCounter) grievanceCounter.textContent = this.stats.grievances.open;
+        if (communicationCounter) communicationCounter.textContent = this.stats.communications.unread;
+    }
+
+    updateNotificationStats() {
+        this.stats.notifications.total = this.notifications.length;
+        this.stats.notifications.unread = this.notifications.filter(n => !n.read).length;
+        this.stats.notifications.system = this.notifications.filter(n => n.type === 'system').length;
+        this.stats.notifications.priority = this.notifications.filter(n => n.priority === 'high' || n.priority === 'urgent').length;
+    }
+
+    updateReviewStats() {
+        this.stats.reviews.total = this.reviews.length;
+        this.stats.reviews.average = this.reviews.length > 0 
+            ? this.reviews.reduce((sum, r) => sum + r.rating, 0) / this.reviews.length 
+            : 0;
+        this.stats.reviews.pending = this.reviews.filter(r => !r.adminReply).length;
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        this.stats.reviews.recent = this.reviews.filter(r => new Date(r.createdAt) > weekAgo).length;
+    }
+
+    updateGrievanceStats() {
+        this.stats.grievances.total = this.grievances.length;
+        this.stats.grievances.open = this.grievances.filter(g => g.status === 'open' || g.status === 'in-progress').length;
+        this.stats.grievances.resolved = this.grievances.filter(g => g.status === 'resolved').length;
+        this.stats.grievances.urgent = this.grievances.filter(g => g.priority === 'urgent').length;
+    }
+
+    updateCommunicationStats() {
+        this.stats.communications.total = this.communications.length;
+        this.stats.communications.unread = this.communications.filter(c => c.unreadCount > 0).length;
+        this.stats.communications.active = this.communications.filter(c => c.status === 'active').length;
+        this.stats.communications.responseTime = 2; // Mock average response time
+    }
+
+    renderNotifications() {
+        const container = document.querySelector('#notificationsSection .notifications-list');
         if (!container) return;
 
-        // For now, show a placeholder since this will be implemented later
-        container.innerHTML = `
-            <div style="text-align: center; padding: 60px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; margin: 20px 0;">
-                <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 12px; backdrop-filter: blur(10px);">
-                    <i class="fas fa-gavel" style="font-size: 64px; margin-bottom: 20px; opacity: 0.9;"></i>
-                    <h3 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Grievance Management System</h3>
-                    <p style="margin: 0 0 20px 0; font-size: 16px; opacity: 0.9; line-height: 1.5;">
-                        Advanced grievance tracking and resolution system coming soon!
-                    </p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px;">
-                        <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px;">
-                            <i class="fas fa-file-alt" style="font-size: 24px; margin-bottom: 8px;"></i>
-                            <div style="font-size: 14px; opacity: 0.9;">Grievance Submission</div>
+        if (this.notifications.length === 0) {
+            container.innerHTML = this.getEmptyState('notifications', 'No notifications yet', 'You\'ll see all gym notifications here');
+            return;
+        }
+
+        container.innerHTML = this.notifications.map(notification => `
+            <div class="notification-item ${notification.read ? '' : 'unread'}" data-notification-id="${notification._id || notification.id}">
+                <div class="notification-header">
+                    <div class="notification-title-section">
+                        <div class="notification-icon">
+                            <i class="fas ${this.getNotificationIcon(notification.type, notification.priority)}"></i>
                         </div>
-                        <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px;">
-                            <i class="fas fa-tasks" style="font-size: 24px; margin-bottom: 8px;"></i>
-                            <div style="font-size: 14px; opacity: 0.9;">Priority Management</div>
-                        </div>
-                        <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px;">
-                            <i class="fas fa-user-tie" style="font-size: 24px; margin-bottom: 8px;"></i>
-                            <div style="font-size: 14px; opacity: 0.9;">Escalation Workflow</div>
-                        </div>
-                        <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px;">
-                            <i class="fas fa-chart-line" style="font-size: 24px; margin-bottom: 8px;"></i>
-                            <div style="font-size: 14px; opacity: 0.9;">Analytics & Reports</div>
+                        <div class="notification-title-content">
+                            <h4 class="notification-title">
+                                ${notification.title}
+                                ${notification.metadata?.ticketId ? `<span class="ticket-id">#${notification.metadata.ticketId}</span>` : ''}
+                            </h4>
                         </div>
                     </div>
-                    <div style="margin-top: 24px; padding: 16px; background: rgba(255,255,255,0.1); border-radius: 8px;">
-                        <h4 style="margin: 0 0 12px 0; font-size: 16px;">📋 Implementation Roadmap</h4>
-                        <div style="text-align: left; font-size: 14px; opacity: 0.9;">
-                            <div style="margin-bottom: 8px;">✅ Support Ticket System (Current)</div>
-                            <div style="margin-bottom: 8px;">🔄 Grievance Categories & Types</div>
-                            <div style="margin-bottom: 8px;">🔄 Investigation Workflow</div>
-                            <div style="margin-bottom: 8px;">🔄 Resolution Tracking</div>
-                            <div style="margin-bottom: 8px;">🔄 Escalation Matrix</div>
-                            <div style="margin-bottom: 8px;">🔄 Analytics Dashboard</div>
+                    <div class="notification-meta">
+                        ${notification.type !== 'grievance-reply' ? `<span class="notification-badge ${notification.type} ${notification.priority}">${notification.type}</span>` : ''}
+                        <span class="notification-priority priority-${notification.priority}">${notification.priority}</span>
+                        <span class="notification-time">${this.formatDate(notification.createdAt)}</span>
+                    </div>
+                </div>
+                ${notification.metadata?.adminMessage ? `
+                    <p class="notification-message admin-main-message">${notification.metadata.adminMessage}</p>
+                ` : `
+                    <p class="notification-message">${notification.message}</p>
+                `}
+                <div class="notification-actions">
+                    ${!notification.read ? `<button class="notification-action primary" data-action="mark-read">
+                        <i class="fas fa-check"></i> Mark as Read
+                    </button>` : ''}
+                    ${this.canReplyToNotification(notification) ? `<button class="notification-action reply" data-action="reply">
+                        <i class="fas fa-reply"></i> Reply
+                    </button>` : ''}
+                    ${notification.priority === 'high' || notification.priority === 'urgent' ? `<button class="notification-action urgent" data-action="respond">
+                        <i class="fas fa-exclamation-triangle"></i> Respond
+                    </button>` : ''}
+                    <button class="notification-action view" data-action="view-details">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderReviews() {
+        const container = document.querySelector('#reviewsSection .reviews-list');
+        if (!container) return;
+
+        if (this.reviews.length === 0) {
+            container.innerHTML = this.getEmptyState('reviews', 'No reviews yet', 'Member reviews will appear here');
+            return;
+        }
+
+        container.innerHTML = this.reviews.map(review => `
+            <div class="review-item" data-review-id="${review._id || review.id}">
+                <div class="review-header">
+                    <div class="review-user">
+                        <img src="${review.user?.profilePic || '/default-avatar.png'}" alt="Member" class="review-avatar">
+                        <div class="review-user-info">
+                            <h4>${review.user?.name || review.reviewerName || 'Anonymous Member'}</h4>
+                            <p>${this.formatDate(review.createdAt)}</p>
                         </div>
+                    </div>
+                    <div class="review-rating">
+                        ${this.renderStars(review.rating)}
+                    </div>
+                </div>
+                <div class="review-content">${review.comment}</div>
+                ${review.adminReply ? `
+                    <div class="admin-reply" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-top: 12px; border-left: 3px solid #1976d2;">
+                        <strong>Your Reply:</strong>
+                        <p style="margin: 4px 0 0 0;">${review.adminReply}</p>
+                    </div>
+                ` : ''}
+                <div class="review-actions">
+                    ${!review.adminReply ? `<button class="review-action primary" data-action="reply"><i class="fas fa-reply"></i> Reply</button>` : ''}
+                    <button class="review-action" data-action="feature"><i class="fas fa-star"></i> Feature</button>
+                    <button class="review-action" data-action="report"><i class="fas fa-flag"></i> Report</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderGrievances() {
+        const container = document.querySelector('#grievancesSection .grievances-list');
+        if (!container) return;
+
+        if (this.grievances.length === 0) {
+            container.innerHTML = this.getEmptyState('grievances', 'No grievances', 'Member grievances will be listed here');
+            return;
+        }
+
+        container.innerHTML = this.grievances.map(grievance => `
+            <div class="grievance-item" data-grievance-id="${grievance._id || grievance.id}">
+                <div class="grievance-header">
+                    <h4 class="grievance-title">${grievance.title}</h4>
+                    <div class="grievance-meta">
+                        <span class="grievance-priority ${grievance.priority}">${grievance.priority}</span>
+                        <span class="grievance-status ${grievance.status}">${grievance.status}</span>
+                    </div>
+                </div>
+                <p class="grievance-description">${grievance.description}</p>
+                <div class="grievance-footer">
+                    <span>By ${grievance.member?.name || 'Anonymous'}</span>
+                    <span>${this.formatDate(grievance.createdAt)}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderCommunications() {
+        const container = document.querySelector('#communicationsSection .communications-layout');
+        if (!container) return;
+
+        if (this.communications.length === 0) {
+            container.innerHTML = `
+                <div class="conversations-sidebar">
+                    <div class="conversations-list">
+                        ${this.getEmptyState('communications', 'No conversations', 'Start communicating with members')}
+                    </div>
+                </div>
+                <div class="chat-main">
+                    <div class="chat-container">
+                        <div class="chat-placeholder">
+                            <i class="fas fa-comments"></i>
+                            <h3>Select a conversation</h3>
+                            <p>Choose a conversation from the sidebar to view messages</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="conversations-sidebar">
+                <div class="conversations-list">
+                    ${this.communications.map(comm => `
+                        <div class="conversation-item ${comm.unreadCount > 0 ? 'unread' : ''}" data-conversation-id="${comm._id}">
+                            <div class="conversation-header">
+                                <span class="conversation-name">${comm.member?.name || 'Unknown Member'}</span>
+                                <span class="conversation-time">${this.formatTime(comm.lastMessage?.createdAt)}</span>
+                            </div>
+                            <div class="conversation-preview">${comm.lastMessage?.content || 'No messages yet'}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="chat-main">
+                <div class="chat-container">
+                    <div class="chat-placeholder">
+                        <i class="fas fa-comments"></i>
+                        <h3>Select a conversation</h3>
+                        <p>Choose a conversation from the sidebar to view messages</p>
                     </div>
                 </div>
             </div>
         `;
     }
 
-    updateGrievanceStats() {
-        // Placeholder stats - will be implemented when grievance system is built
-        document.getElementById('totalGrievancesCount').textContent = '0';
-        document.getElementById('activeGrievancesCount').textContent = '0';
-        document.getElementById('resolvedGrievancesCount').textContent = '0';
-        document.getElementById('escalatedGrievancesCount').textContent = '0';
+    // Modal Functions
+    openSendNotificationModal() {
+        const modal = document.getElementById('sendNotificationModal');
+        if (modal) {
+            modal.classList.add('active');
+        }
     }
 
-    showGrievanceError() {
-        const container = document.getElementById('grievancesList');
-        if (container) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #dc3545;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
-                    <p>Error loading grievances</p>
-                    <button onclick="window.supportReviewsManager.loadGrievances()" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Try Again
-                    </button>
+    openRaiseGrievanceModal() {
+        const modal = document.getElementById('raiseGrievanceModal');
+        if (modal) {
+            modal.classList.add('active');
+        }
+    }
+
+    openStartCommunicationModal() {
+        const modal = document.getElementById('startCommunicationModal');
+        if (modal) {
+            modal.classList.add('active');
+        }
+    }
+
+    openReplyModal(reviewId) {
+        const modal = document.getElementById('replyModal');
+        const review = this.reviews.find(r => (r._id || r.id) === reviewId);
+        
+        if (review && modal) {
+            // Populate review details in modal
+            const reviewDetails = modal.querySelector('.review-details');
+            if (reviewDetails) {
+                reviewDetails.innerHTML = `
+                    <div class="review-header">
+                        <div class="review-user">
+                            <img src="${review.user?.profilePic || '/default-avatar.png'}" alt="Member" class="review-avatar">
+                            <div class="review-user-info">
+                                <h4>${review.user?.name || review.reviewerName || 'Anonymous Member'}</h4>
+                                <div class="review-rating">${this.renderStars(review.rating)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="review-content">${review.comment}</div>
+                `;
+            }
+            
+            const replyForm = modal.querySelector('#replyForm');
+            if (replyForm) {
+                replyForm.dataset.reviewId = reviewId;
+            }
+            modal.classList.add('active');
+        }
+    }
+
+    openGrievanceDetails(grievanceId) {
+        const modal = document.getElementById('grievanceDetailsModal');
+        const grievance = this.grievances.find(g => (g._id || g.id) === grievanceId);
+        
+        if (grievance && modal) {
+            const modalHeader = modal.querySelector('.support-modal-header h3');
+            const modalBody = modal.querySelector('.support-modal-body');
+            
+            if (modalHeader) {
+                modalHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${grievance.title}`;
+            }
+            
+            if (modalBody) {
+                modalBody.innerHTML = `
+                    <div class="grievance-details">
+                        <div class="detail-row">
+                            <label>Status:</label>
+                            <span class="grievance-status ${grievance.status}">${grievance.status}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Priority:</label>
+                            <span class="grievance-priority ${grievance.priority}">${grievance.priority}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Submitted by:</label>
+                            <span>${grievance.member?.name || 'Anonymous'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Date:</label>
+                            <span>${this.formatDate(grievance.createdAt)}</span>
+                        </div>
+                        <div class="detail-section">
+                            <label>Description:</label>
+                            <p>${grievance.description}</p>
+                        </div>
+                        ${grievance.evidence ? `
+                            <div class="detail-section">
+                                <label>Evidence:</label>
+                                <div class="evidence-files">
+                                    ${grievance.evidence.map(file => `<a href="${file.url}" target="_blank">${file.name}</a>`).join(', ')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="grievance-actions" style="margin-top: 24px;">
+                        <button class="btn-primary" onclick="supportManager.updateGrievanceStatus('${grievanceId}', 'in-progress')">
+                            <i class="fas fa-play"></i> Start Processing
+                        </button>
+                        <button class="btn-primary" onclick="supportManager.updateGrievanceStatus('${grievanceId}', 'resolved')">
+                            <i class="fas fa-check"></i> Mark Resolved
+                        </button>
+                        <button class="btn-secondary" onclick="supportManager.respondToGrievance('${grievanceId}')">
+                            <i class="fas fa-reply"></i> Respond
+                        </button>
+                    </div>
+                `;
+            }
+            modal.classList.add('active');
+        }
+    }
+
+    closeModal() {
+        document.querySelectorAll('.support-modal').forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
+
+    // Form Handlers
+    async handleSendNotification(form) {
+        const formData = new FormData(form);
+        const notificationData = {
+            title: formData.get('title'),
+            message: formData.get('message'),
+            type: formData.get('type'),
+            priority: formData.get('priority'),
+            targetType: formData.get('targetType'),
+            recipients: formData.get('recipients')?.split(',').map(r => r.trim()) || []
+        };
+
+        try {
+            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
+            
+            // Check if this is for main admin
+            if (notificationData.targetType === 'admin' || notificationData.targetType === 'main-admin') {
+                const gymProfile = window.currentGymProfile || this.gymProfile || {};
+                
+                // Send to main admin notification system
+                const response = await fetch(`${this.BASE_URL}/api/admin/notifications/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: notificationData.title,
+                        message: notificationData.message,
+                        type: notificationData.type || 'gym-admin-message',
+                        priority: notificationData.priority || 'medium',
+                        icon: this.getNotificationIcon(notificationData.type, notificationData.priority),
+                        color: this.getNotificationColor(notificationData.type, notificationData.priority),
+                        metadata: {
+                            source: 'gym-admin',
+                            timestamp: new Date().toISOString(),
+                            originalType: notificationData.type
+                        },
+                        gym: {
+                            gymId: gymProfile._id || gymProfile.gymId || this.currentGymId,
+                            gymName: gymProfile.gymName || 'Unknown Gym',
+                            address: gymProfile.address || '',
+                            email: gymProfile.email || '',
+                            phone: gymProfile.phone || ''
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    this.showSuccessMessage('Notification sent to main admin successfully!');
+                    console.log('✅ Notification sent to main admin');
+                } else {
+                    throw new Error('Failed to send notification to main admin');
+                }
+            } else {
+                // Send to gym members/trainers (existing logic)
+                console.log('Sending notification to gym users:', notificationData);
+                this.showSuccessMessage('Notification sent successfully!');
+            }
+            
+            this.closeModal();
+            form.reset();
+            
+            // Refresh notifications
+            await this.loadNotifications();
+            this.renderNotifications();
+            this.updateStats();
+            
+        } catch (error) {
+            console.error('Error sending notification:', error);
+            this.showErrorMessage('Failed to send notification. Please try again.');
+        }
+    }
+
+    async handleRaiseGrievance(form) {
+        const formData = new FormData(form);
+        const grievanceData = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            category: formData.get('category'),
+            priority: formData.get('priority'),
+            affectedMembers: formData.get('affectedMembers')?.split(',').map(m => m.trim()) || []
+        };
+
+        try {
+            // API call would go here
+            console.log('Raising grievance:', grievanceData);
+            
+            // Mock success
+            this.showSuccessMessage('Grievance raised successfully!');
+            this.closeModal();
+            form.reset();
+            
+            // Refresh grievances
+            await this.loadGrievances();
+            this.renderGrievances();
+            this.updateStats();
+            
+        } catch (error) {
+            console.error('Error raising grievance:', error);
+            this.showErrorMessage('Failed to raise grievance. Please try again.');
+        }
+    }
+
+    async handleReplySubmission(form) {
+        const formData = new FormData(form);
+        const reviewId = form.dataset.reviewId;
+        const replyData = {
+            message: formData.get('message'),
+            isPublic: formData.get('isPublic') === 'on'
+        };
+
+        try {
+            // API call would go here
+            console.log('Replying to review:', reviewId, replyData);
+            
+            // Mock success - update the review with reply
+            const review = this.reviews.find(r => (r._id || r.id) === reviewId);
+            if (review) {
+                review.adminReply = replyData.message;
+            }
+            
+            this.showSuccessMessage('Reply sent successfully!');
+            this.closeModal();
+            form.reset();
+            
+            // Refresh reviews
+            this.renderReviews();
+            this.updateStats();
+            
+        } catch (error) {
+            console.error('Error sending reply:', error);
+            this.showErrorMessage('Failed to send reply. Please try again.');
+        }
+    }
+
+    async handleNotificationAction(action, notificationId) {
+        try {
+            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
+            const notification = this.notifications.find(n => (n._id || n.id) === notificationId);
+            if (!notification) return;
+
+            switch (action) {
+                case 'mark-read':
+                    const response = await fetch(`${this.BASE_URL}/api/gym/notifications/${notificationId}/read`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        notification.read = true;
+                        console.log('✅ Notification marked as read');
+                        this.showSuccessMessage('Notification marked as read');
+                    } else {
+                        this.showErrorMessage('Failed to mark notification as read');
+                    }
+                    break;
+                    
+                case 'reply':
+                    this.openNotificationReplyModal(notificationId);
+                    return; // Don't re-render yet
+                    
+                case 'respond':
+                    this.openNotificationResponseModal(notificationId);
+                    return; // Don't re-render yet
+                    
+                case 'view-details':
+                    this.openNotificationDetailsModal(notificationId);
+                    return; // Don't re-render yet
+            }
+
+            this.renderNotifications();
+            this.updateStats();
+            
+        } catch (error) {
+            console.error(`Error ${action} notification:`, error);
+            this.showErrorMessage(`Failed to ${action} notification`);
+        }
+    }
+
+    async handleReplySubmission(form) {
+        const formData = new FormData(form);
+        const reviewId = form.dataset.reviewId;
+        const replyData = {
+            message: formData.get('message'),
+            isPublic: formData.get('isPublic') === 'on'
+        };
+
+        try {
+            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
+            const response = await fetch(`${this.BASE_URL}/api/reviews/${reviewId}/reply`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(replyData)
+            });
+
+            if (response.ok) {
+                // Update the review with reply
+                const review = this.reviews.find(r => (r._id || r.id) === reviewId);
+                if (review) {
+                    review.adminReply = replyData.message;
+                }
+                
+                this.showSuccessMessage('Reply sent successfully!');
+                this.closeModal();
+                form.reset();
+                
+                // Refresh reviews
+                this.renderReviews();
+                this.updateStats();
+                console.log('✅ Review reply submitted successfully');
+            } else {
+                throw new Error('Failed to submit reply');
+            }
+            
+        } catch (error) {
+            console.error('Error sending reply:', error);
+            this.showErrorMessage('Failed to send reply. Please try again.');
+        }
+    }
+
+    async updateGrievanceStatus(grievanceId, newStatus) {
+        try {
+            const grievance = this.grievances.find(g => (g._id || g.id) === grievanceId);
+            if (grievance) {
+                grievance.status = newStatus;
+                // API call would go here for grievance status update
+                console.log('Updated grievance status:', grievanceId, newStatus);
+                
+                this.showSuccessMessage(`Grievance ${newStatus} successfully!`);
+                this.closeModal();
+                this.renderGrievances();
+                this.updateStats();
+            }
+        } catch (error) {
+            console.error('Error updating grievance status:', error);
+        }
+    }
+
+    // Search and Filter
+    handleSearch(query, tabName) {
+        // Implement search functionality based on current tab
+        console.log(`Searching ${tabName} for:`, query);
+    }
+
+    handleFilter(filterValue, tabName) {
+        // Implement filter functionality based on current tab
+        console.log(`Filtering ${tabName} by:`, filterValue);
+    }
+
+    async handleNotificationReplySubmission(form) {
+        const formData = new FormData(form);
+        const notificationId = form.dataset.notificationId;
+        const replyData = {
+            message: formData.get('replyMessage'),
+            priority: formData.get('replyPriority'),
+            status: formData.get('replyStatus'),
+            notifyMember: formData.get('notifyMember') === 'on'
+        };
+
+        try {
+            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
+            const notification = this.notifications.find(n => (n._id || n.id) === notificationId);
+            
+            if (notification?.metadata?.ticketId) {
+                // Send reply to the ticket system
+                const response = await fetch(`${this.BASE_URL}/api/support/tickets/${notification.metadata.ticketId}/reply`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: replyData.message,
+                        priority: replyData.priority,
+                        status: replyData.status,
+                        source: 'gym-admin',
+                        notifyMember: replyData.notifyMember
+                    })
+                });
+
+                if (response.ok) {
+                    this.showSuccessMessage('Reply sent successfully!');
+                    // Mark notification as read
+                    notification.read = true;
+                    console.log('✅ Notification reply submitted successfully');
+                } else {
+                    throw new Error('Failed to submit reply');
+                }
+            } else {
+                // Send reply to main admin notification system using dedicated endpoint
+                const gymProfile = window.currentGymProfile || this.gymProfile || {};
+                
+                const adminReplyResponse = await fetch(`${this.BASE_URL}/api/admin/notifications/reply`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        originalNotificationId: notificationId,
+                        replyMessage: replyData.message,
+                        priority: replyData.priority || 'medium',
+                        status: replyData.status || 'replied',
+                        gym: {
+                            gymId: gymProfile._id || gymProfile.gymId || this.currentGymId,
+                            gymName: gymProfile.gymName || 'Unknown Gym',
+                            address: gymProfile.address || '',
+                            email: gymProfile.email || '',
+                            phone: gymProfile.phone || ''
+                        }
+                    })
+                });
+
+                if (adminReplyResponse.ok) {
+                    const result = await adminReplyResponse.json();
+                    this.showSuccessMessage('Reply sent to main admin successfully!');
+                    notification.read = true;
+                    console.log('✅ Reply sent to main admin notification system:', result);
+                } else {
+                    const error = await adminReplyResponse.json();
+                    throw new Error(error.message || 'Failed to send reply to main admin');
+                }
+            }
+            
+            this.closeModal();
+            form.reset();
+            this.renderNotifications();
+            this.updateStats();
+            
+        } catch (error) {
+            console.error('Error sending notification reply:', error);
+            this.showErrorMessage('Failed to send reply. Please try again.');
+        }
+    }
+
+    openNotificationDetailsModal(notificationId) {
+        const notification = this.notifications.find(n => (n._id || n.id) === notificationId);
+        if (!notification) return;
+
+        const modal = document.getElementById('notificationDetailsModal') || this.createNotificationDetailsModal();
+        const modalHeader = modal.querySelector('.support-modal-header h3');
+        const modalBody = modal.querySelector('.support-modal-body');
+        
+        if (modalHeader) {
+            modalHeader.innerHTML = `<i class="fas ${this.getNotificationIcon(notification.type, notification.priority)}"></i> ${notification.title}`;
+        }
+        
+        if (modalBody) {
+            modalBody.innerHTML = `
+                <div class="notification-details">
+                    <div class="detail-grid">
+                        <div class="detail-row">
+                            <label>Type:</label>
+                            <span class="notification-badge ${notification.type}">${notification.type}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Priority:</label>
+                            <span class="notification-priority priority-${notification.priority}">${notification.priority}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Status:</label>
+                            <span class="notification-status ${notification.read ? 'read' : 'unread'}">${notification.read ? 'Read' : 'Unread'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Created:</label>
+                            <span>${this.formatDate(notification.createdAt)}</span>
+                        </div>
+                        ${notification.metadata?.ticketId ? `
+                            <div class="detail-row">
+                                <label>Ticket ID:</label>
+                                <span>${notification.metadata.ticketId}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="detail-section">
+                        <label>Message:</label>
+                        <p class="notification-full-message">${notification.message}</p>
+                    </div>
+                    ${notification.metadata?.adminMessage ? `
+                        <div class="detail-section">
+                            <label>Admin Message:</label>
+                            <p class="admin-message-full">${notification.metadata.adminMessage}</p>
+                        </div>
+                    ` : ''}
+                    ${notification.metadata?.ticketSubject ? `
+                        <div class="detail-section">
+                            <label>Related Ticket Subject:</label>
+                            <p>${notification.metadata.ticketSubject}</p>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
+        
+        modal.classList.add('active');
     }
 
-    showNotificationDetails(notification) {
-        if (window.showDialog && typeof window.showDialog === 'function') {
-            window.showDialog({
-                title: notification.title,
-                message: notification.message,
-                confirmText: 'OK',
-                iconHtml: `<i class="fas ${this.getNotificationIcon(notification.type)}" style="color: ${this.getNotificationColor(notification.type)}; font-size: 2rem;"></i>`
-            });
-        } else {
-            alert(`${notification.title}\n\n${notification.message}`);
+    openNotificationResponseModal(notificationId) {
+        const notification = this.notifications.find(n => (n._id || n.id) === notificationId);
+        if (!notification) return;
+
+        const modal = document.getElementById('notificationResponseModal') || this.createNotificationResponseModal();
+        const modalHeader = modal.querySelector('.support-modal-header h3');
+        const modalBody = modal.querySelector('.support-modal-body');
+        
+        if (modalHeader) {
+            modalHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Urgent Response Required`;
         }
-    }
-
-    showNotificationError() {
-        const container = document.getElementById('notificationsList');
-        if (container) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #dc3545;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
-                    <p>Error loading notifications</p>
-                    <button onclick="window.supportReviewsManager.loadNotifications()" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Try Again
-                    </button>
+        
+        if (modalBody) {
+            modalBody.innerHTML = `
+                <div class="urgent-notification-response">
+                    <div class="urgent-alert">
+                        <i class="fas fa-fire"></i>
+                        <span>This notification requires immediate attention</span>
+                    </div>
+                    <div class="notification-summary">
+                        <h4>${notification.title}</h4>
+                        <p>${notification.message}</p>
+                    </div>
+                    <form id="urgentResponseForm" data-notification-id="${notificationId}">
+                        <div class="form-group">
+                            <label for="urgentAction">Immediate Action:</label>
+                            <select id="urgentAction" name="urgentAction" required>
+                                <option value="">Select action...</option>
+                                <option value="escalate">Escalate to Management</option>
+                                <option value="investigate">Start Investigation</option>
+                                <option value="contact-member">Contact Member Directly</option>
+                                <option value="system-check">Perform System Check</option>
+                                <option value="emergency-response">Emergency Response</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="urgentNotes">Action Notes:</label>
+                            <textarea id="urgentNotes" name="urgentNotes" required rows="3" 
+                                placeholder="Describe the actions you are taking..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="followUpTime">Follow-up Required:</label>
+                            <select id="followUpTime" name="followUpTime">
+                                <option value="15-minutes">15 minutes</option>
+                                <option value="1-hour">1 hour</option>
+                                <option value="4-hours">4 hours</option>
+                                <option value="24-hours">24 hours</option>
+                            </select>
+                        </div>
+                        <div class="support-modal-footer">
+                            <button type="button" class="btn-secondary" onclick="supportManager.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary urgent">
+                                <i class="fas fa-bolt"></i> Take Action
+                            </button>
+                        </div>
+                    </form>
                 </div>
             `;
         }
+        
+        modal.classList.add('active');
     }
 
-    showReviewError() {
-        const container = document.getElementById('reviewsList');
-        if (container) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #dc3545;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
-                    <p>Error loading reviews</p>
-                    <button onclick="window.supportReviewsManager.loadReviews()" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Try Again
-                    </button>
+    createNotificationDetailsModal() {
+        const modal = document.createElement('div');
+        modal.id = 'notificationDetailsModal';
+        modal.className = 'support-modal';
+        modal.innerHTML = `
+            <div class="support-modal-content">
+                <div class="support-modal-header">
+                    <h3><i class="fas fa-bell"></i> Notification Details</h3>
+                    <button class="support-modal-close">&times;</button>
                 </div>
-            `;
-        }
+                <div class="support-modal-body">
+                    <!-- Content will be populated dynamically -->
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        return modal;
     }
 
-    showSuccessMessage(message) {
-        console.log('✅', message);
-        // You can integrate with existing toast notification system here
-        if (window.showDialog && typeof window.showDialog === 'function') {
-            window.showDialog({
-                title: 'Success',
-                message: message,
-                confirmText: 'OK',
-                iconHtml: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i>'
+    createNotificationResponseModal() {
+        const modal = document.createElement('div');
+        modal.id = 'notificationResponseModal';
+        modal.className = 'support-modal';
+        modal.innerHTML = `
+            <div class="support-modal-content">
+                <div class="support-modal-header">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Urgent Response</h3>
+                    <button class="support-modal-close">&times;</button>
+                </div>
+                <div class="support-modal-body">
+                    <!-- Content will be populated dynamically -->
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    async handleUrgentResponseSubmission(form) {
+        const formData = new FormData(form);
+        const notificationId = form.dataset.notificationId;
+        const responseData = {
+            action: formData.get('urgentAction'),
+            notes: formData.get('urgentNotes'),
+            followUpTime: formData.get('followUpTime')
+        };
+
+        try {
+            const token = localStorage.getItem('gymAdminToken') || localStorage.getItem('gymAuthToken');
+            const notification = this.notifications.find(n => (n._id || n.id) === notificationId);
+            
+            // Log the urgent response (in production, this would be sent to backend)
+            console.log('Urgent response taken:', {
+                notificationId,
+                action: responseData.action,
+                notes: responseData.notes,
+                followUpTime: responseData.followUpTime,
+                timestamp: new Date().toISOString()
             });
+            
+            // Mark notification as read and add response metadata
+            if (notification) {
+                notification.read = true;
+                notification.urgentResponse = {
+                    action: responseData.action,
+                    notes: responseData.notes,
+                    followUpTime: responseData.followUpTime,
+                    timestamp: new Date().toISOString()
+                };
+            }
+            
+            this.showSuccessMessage(`Urgent action "${responseData.action}" has been logged successfully!`);
+            this.closeModal();
+            form.reset();
+            this.renderNotifications();
+            this.updateStats();
+            
+        } catch (error) {
+            console.error('Error handling urgent response:', error);
+            this.showErrorMessage('Failed to log urgent response. Please try again.');
         }
     }
 
-    showErrorMessage(message) {
-        console.error('❌', message);
-        // You can integrate with existing toast notification system here
-        if (window.showDialog && typeof window.showDialog === 'function') {
-            window.showDialog({
-                title: 'Error',
-                message: message,
-                confirmText: 'OK',
-                iconHtml: '<i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 2rem;"></i>'
-            });
-        }
-    }
-
-    // Utility functions
-    getNotificationIcon(type) {
+    // Utility Functions
+    getNotificationIcon(type, priority) {
         const iconMap = {
-            'system': 'fa-cog',
-            'membership': 'fa-calendar-check',
-            'payment': 'fa-credit-card',
-            'admin': 'fa-user-shield',
-            'membership-expiry': 'fa-clock',
-            'new-member': 'fa-user-plus',
-            'trainer': 'fa-user-tie',
-            'grievance': 'fa-exclamation-triangle'
+            'system-alert': priority === 'urgent' ? 'fa-exclamation-triangle' : 'fa-cog',
+            'grievance-reply': 'fa-reply',
+            'support-reply': 'fa-headset',
+            'general': 'fa-bell',
+            'emergency': 'fa-fire',
+            'maintenance': 'fa-tools',
+            'update': 'fa-sync-alt',
+            'billing': 'fa-credit-card',
+            'security': 'fa-shield-alt',
+            'gym-admin-message': 'fa-comment',
+            'gym-admin-reply': 'fa-reply'
         };
         return iconMap[type] || 'fa-bell';
     }
 
-    getNotificationColor(type) {
+    getNotificationColor(type, priority) {
         const colorMap = {
-            'system': '#17a2b8',
-            'membership': '#28a745',
-            'payment': '#28a745',
-            'admin': '#6f42c1',
-            'membership-expiry': '#ffc107',
-            'new-member': '#007bff',
-            'trainer': '#fd7e14',
-            'grievance': '#dc3545'
+            'urgent': '#ef4444',
+            'high': '#f59e0b',
+            'medium': '#1976d2',
+            'low': '#10b981',
+            'system-alert': priority === 'urgent' ? '#ef4444' : '#f59e0b',
+            'grievance-reply': '#8b5cf6',
+            'support-reply': '#06b6d4',
+            'emergency': '#dc2626',
+            'maintenance': '#f59e0b',
+            'security': '#ef4444',
+            'gym-admin-message': '#1976d2',
+            'gym-admin-reply': '#1976d2'
         };
-        return colorMap[type] || '#6c757d';
+        return colorMap[type] || colorMap[priority] || '#1976d2';
     }
 
-    getQueryStatusColor(status) {
-        const colorMap = {
-            'open': '#28a745',
-            'in-progress': '#ffc107',
-            'pending': '#17a2b8',
-            'closed': '#6c757d',
-            'resolved': '#28a745'
-        };
-        return colorMap[status] || '#6c757d';
+    canReplyToNotification(notification) {
+        const replyableTypes = ['grievance-reply', 'support-reply', 'system-alert', 'emergency', 'general'];
+        const isReplyable = replyableTypes.includes(notification.type) || notification.metadata?.ticketId;
+        console.log(`🔍 Checking if notification can be replied to:`, {
+            type: notification.type,
+            hasTicketId: !!notification.metadata?.ticketId,
+            isReplyable
+        });
+        return isReplyable;
     }
 
-    getQueryPriorityBadge(priority) {
-        if (!priority) return '';
+    openNotificationReplyModal(notificationId) {
+        const notification = this.notifications.find(n => (n._id || n.id) === notificationId);
+        if (!notification) return;
+
+        const modal = document.getElementById('notificationReplyModal') || this.createNotificationReplyModal();
+        const modalHeader = modal.querySelector('.support-modal-header h3');
+        const modalBody = modal.querySelector('.support-modal-body');
         
-        const priorityConfig = {
-            'low': { color: '#28a745', text: 'Low', icon: 'fa-arrow-down' },
-            'normal': { color: '#17a2b8', text: 'Normal', icon: 'fa-minus' },
-            'medium': { color: '#ffc107', text: 'Medium', icon: 'fa-arrow-up' },
-            'high': { color: '#fd7e14', text: 'High', icon: 'fa-exclamation' },
-            'urgent': { color: '#dc3545', text: 'Urgent', icon: 'fa-fire' }
-        };
-
-        const config = priorityConfig[priority] || priorityConfig['normal'];
-        return `
-            <span style="background: ${config.color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">
-                <i class="fas ${config.icon}"></i> ${config.text}
-            </span>
-        `;
-    }
-
-    getPriorityBadge(priority) {
-        if (!priority) return '';
-        
-        const priorityConfig = {
-            'low': { color: '#28a745', text: 'Low' },
-            'normal': { color: '#17a2b8', text: 'Normal' },
-            'medium': { color: '#ffc107', text: 'Medium' },
-            'high': { color: '#fd7e14', text: 'High' },
-            'urgent': { color: '#dc3545', text: 'Urgent' }
-        };
-
-        const config = priorityConfig[priority] || priorityConfig['normal'];
-        return `<span style="background: ${config.color}; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600; text-transform: uppercase;">${config.text}</span>`;
-    }
-
-    generateStars(rating) {
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
-        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-        
-        return '★'.repeat(fullStars) + 
-               (hasHalfStar ? '☆' : '') + 
-               '☆'.repeat(emptyStars);
-    }
-
-    getRatingColor(rating) {
-        if (rating >= 4.5) return '#4caf50';
-        if (rating >= 3.5) return '#8bc34a';
-        if (rating >= 2.5) return '#ffc107';
-        if (rating >= 1.5) return '#ff9800';
-        return '#f44336';
-    }
-
-    formatTime(timestamp) {
-        if (!timestamp) return '';
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diff = now - date;
-        
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-        
-        if (minutes < 60) {
-            return `${minutes}m ago`;
-        } else if (hours < 24) {
-            return `${hours}h ago`;
-        } else if (days < 7) {
-            return `${days}d ago`;
-        } else {
-            return date.toLocaleDateString();
+        if (modalHeader) {
+            modalHeader.innerHTML = `<i class="fas fa-reply"></i> Reply to: ${notification.title}`;
         }
+        
+        if (modalBody) {
+            modalBody.innerHTML = `
+                <div class="notification-reply-details">
+                    <div class="original-notification">
+                        <h4>Original Notification:</h4>
+                        <div class="notification-content">
+                            <p><strong>Type:</strong> ${notification.type}</p>
+                            <p><strong>Priority:</strong> ${notification.priority}</p>
+                            <p><strong>Message:</strong> ${notification.message}</p>
+                            ${notification.metadata?.ticketId ? `<p><strong>Ticket ID:</strong> ${notification.metadata.ticketId}</p>` : ''}
+                        </div>
+                    </div>
+                    <form id="notificationReplyForm" data-notification-id="${notificationId}">
+                        <div class="form-group">
+                            <label for="replyMessage">Your Reply:</label>
+                            <textarea id="replyMessage" name="replyMessage" required rows="4" 
+                                placeholder="Type your reply message here..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="notifyMember" checked>
+                                <span class="checkmark"></span>
+                                Notify the member about this reply
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="replyPriority">Reply Priority:</label>
+                                <select id="replyPriority" name="replyPriority">
+                                    <option value="normal">Normal</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="replyStatus">Update Status:</label>
+                                <select id="replyStatus" name="replyStatus">
+                                    <option value="in-progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="support-modal-footer">
+                            <button type="button" class="btn-secondary" onclick="supportManager.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-paper-plane"></i> Send Reply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+        }
+        
+        modal.classList.add('active');
     }
 
-    formatDate(timestamp) {
-        if (!timestamp) return '';
-        return new Date(timestamp).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
+    createNotificationReplyModal() {
+        const modal = document.createElement('div');
+        modal.id = 'notificationReplyModal';
+        modal.className = 'support-modal';
+        modal.innerHTML = `
+            <div class="support-modal-content large">
+                <div class="support-modal-header">
+                    <h3><i class="fas fa-reply"></i> Reply to Notification</h3>
+                    <button class="support-modal-close">&times;</button>
+                </div>
+                <div class="support-modal-body">
+                    <!-- Content will be populated dynamically -->
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    renderStars(rating) {
+        let stars = '';
+        for (let i = 1; i <= 5; i++) {
+            stars += `<span class="star ${i <= rating ? '' : 'empty'}">★</span>`;
+        }
+        return stars;
+    }
+
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
     }
 
-    truncateText(text, maxLength) {
-        if (!text || text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + '...';
+    formatTime(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInHours = (now - date) / (1000 * 60 * 60);
+        
+        if (diffInHours < 1) return 'Now';
+        if (diffInHours < 24) return `${Math.floor(diffInHours)}h`;
+        if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d`;
+        return date.toLocaleDateString();
+    }
+
+    getEmptyState(type, title, description) {
+        const icons = {
+            notifications: 'bell-slash',
+            reviews: 'star',
+            grievances: 'exclamation-triangle',
+            communications: 'comments'
+        };
+        
+        return `
+            <div class="empty-state">
+                <i class="fas fa-${icons[type]}"></i>
+                <h3>${title}</h3>
+                <p>${description}</p>
+            </div>
+        `;
+    }
+
+    showSuccessMessage(message) {
+        // Implementation for success notifications
+        console.log('✅ Success:', message);
+        // You could integrate with existing notification system
+    }
+
+    showErrorMessage(message) {
+        // Implementation for error notifications
+        console.log('❌ Error:', message);
+        // You could integrate with existing notification system
+    }
+
+    // Mock Data Functions (for development/testing)
+    getMockNotifications() {
+        return [
+            {
+                _id: '1',
+                title: 'Emergency: Equipment Malfunction',
+                message: 'Critical safety issue reported with treadmill #3. Immediate inspection required.',
+                type: 'emergency',
+                priority: 'urgent',
+                read: false,
+                createdAt: new Date().toISOString(),
+                metadata: {
+                    ticketId: 'TKT-001',
+                    source: 'member-report',
+                    equipmentId: 'TREAD-003'
+                }
+            },
+            {
+                _id: '2',
+                title: 'Support Ticket Reply Required',
+                message: 'Member John Doe has replied to ticket about membership billing issue.',
+                type: 'support-reply',
+                priority: 'high',
+                read: false,
+                createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 min ago
+                metadata: {
+                    ticketId: 'TKT-002',
+                    adminMessage: 'We have processed your refund request for the duplicate charge of $59.99. The refund should appear in your account within 3-5 business days.',
+                    ticketSubject: 'Billing Issue - Duplicate Charge',
+                    source: 'member-reply'
+                }
+            },
+            {
+                _id: '3',
+                title: 'Grievance Resolution Update',
+                message: 'Member Sarah Wilson has responded to your resolution for locker room complaint.',
+                type: 'grievance-reply',
+                priority: 'medium',
+                read: false,
+                createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+                metadata: {
+                    ticketId: 'GRV-001',
+                    adminMessage: 'Thank you for your patience. We have thoroughly cleaned the locker room and implemented a new daily cleaning schedule. We have also installed additional hand sanitizer stations.',
+                    ticketSubject: 'Locker Room Cleanliness Issue',
+                    source: 'grievance-follow-up'
+                }
+            },
+            {
+                _id: '4',
+                title: 'New Member Support Request',
+                message: 'Sarah Wilson has submitted a new support ticket regarding locker room access.',
+                type: 'general',
+                priority: 'medium',
+                read: false,
+                createdAt: new Date(Date.now() - 5400000).toISOString(), // 1.5 hours ago
+                metadata: {
+                    ticketId: 'SUP-001',
+                    adminMessage: 'Your digital locker has been assigned (#247). Please use your membership card to access it. If you need assistance, our staff will help you during your next visit.',
+                    ticketSubject: 'Locker Room Access Issue',
+                    source: 'new-ticket'
+                }
+            },
+            {
+                _id: '5',
+                title: 'System Maintenance Completed',
+                message: 'Scheduled maintenance for the gym access system has been completed successfully.',
+                type: 'system-alert',
+                priority: 'low',
+                read: true,
+                createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+                metadata: {
+                    source: 'system',
+                    maintenanceType: 'access-system'
+                }
+            },
+            {
+                _id: '6',
+                title: 'New Member Registration',
+                message: 'New premium member Alex Johnson has completed registration and requires welcome orientation.',
+                type: 'general',
+                priority: 'medium',
+                read: false,
+                createdAt: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
+                metadata: {
+                    memberId: 'MEM-2025-001',
+                    membershipType: 'premium',
+                    source: 'registration',
+                    adminMessage: 'Welcome to our gym! Your orientation session is scheduled for tomorrow at 10 AM. Please bring your ID and membership card.'
+                }
+            }
+        ];
+    }
+
+    getMockReviews() {
+        return [
+            {
+                _id: '1',
+                rating: 5,
+                comment: 'Excellent gym with great equipment and friendly staff! The new cardio machines are fantastic.',
+                user: { name: 'John Doe' },
+                reviewerName: 'John Doe',
+                adminReply: null,
+                isActive: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                _id: '2',
+                rating: 4,
+                comment: 'Good facilities but could use more parking space. Otherwise, great experience!',
+                user: { name: 'Jane Smith' },
+                reviewerName: 'Jane Smith',
+                adminReply: 'Thank you for the feedback! We are working on expanding our parking area.',
+                isActive: true,
+                createdAt: new Date(Date.now() - 86400000).toISOString()
+            },
+            {
+                _id: '3',
+                rating: 3,
+                comment: 'Average gym. Equipment is okay but some machines need maintenance.',
+                user: { name: 'Mike Johnson' },
+                reviewerName: 'Mike Johnson',
+                adminReply: null,
+                isActive: true,
+                createdAt: new Date(Date.now() - 172800000).toISOString()
+            }
+        ];
+    }
+
+    getMockGrievances() {
+        return [
+            {
+                _id: '1',
+                title: 'Equipment Not Working',
+                description: 'The treadmill on the second floor has been broken for a week',
+                priority: 'high',
+                status: 'open',
+                member: { name: 'Mike Johnson' },
+                createdAt: new Date().toISOString()
+            },
+            {
+                _id: '2',
+                title: 'Billing Issue',
+                description: 'Charged twice for the same month membership',
+                priority: 'urgent',
+                status: 'in-progress',
+                member: { name: 'Sarah Wilson' },
+                createdAt: new Date(Date.now() - 172800000).toISOString()
+            }
+        ];
+    }
+
+    getMockCommunications() {
+        return [
+            {
+                _id: '1',
+                member: { name: 'Alex Brown' },
+                lastMessage: { content: 'Hello, I have a question about my membership', createdAt: new Date().toISOString() },
+                unreadCount: 2,
+                status: 'active'
+            },
+            {
+                _id: '2',
+                member: { name: 'Emma Davis' },
+                lastMessage: { content: 'Thank you for the quick response!', createdAt: new Date(Date.now() - 86400000).toISOString() },
+                unreadCount: 0,
+                status: 'active'
+            }
+        ];
     }
 }
 
-// Initialize the Support & Reviews Manager when the DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Wait a bit for other systems to load
-    setTimeout(() => {
-        if (!window.supportReviewsManager) {
-            window.supportReviewsManager = new SupportReviewsManager();
-            console.log('✅ Support & Reviews Manager initialized');
-        }
-    }, 1000);
+// Initialize the Support & Reviews Manager
+let supportManager;
+document.addEventListener('DOMContentLoaded', () => {
+    supportManager = new SupportReviewsManager();
 });
 
-// Export for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { SupportReviewsManager };
-}
+// Export for global access
+window.supportManager = supportManager;

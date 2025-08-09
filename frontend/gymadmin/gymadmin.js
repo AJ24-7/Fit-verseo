@@ -3299,6 +3299,38 @@ function clearUploadPhotoMsgAndCloseModal() {
             });
         }
 
+        // Biometric Enrollment quick action button
+        const biometricEnrollBtn = document.getElementById('biometricEnrollBtn');
+        if (biometricEnrollBtn) {
+            biometricEnrollBtn.addEventListener('click', () => {
+                // Check if biometric attendance is enabled and redirect accordingly
+                if (typeof handleBiometricEnrollmentRedirect === 'function') {
+                    handleBiometricEnrollmentRedirect();
+                } else {
+                    // Fallback: navigate to biometric enrollment page
+                    window.location.href = '/frontend/biometric-enrollment.html';
+                }
+            });
+        }
+
+        // Device Setup quick action button
+        const deviceSetupBtn = document.getElementById('deviceSetupBtn');
+        if (deviceSetupBtn) {
+            deviceSetupBtn.addEventListener('click', () => {
+                // Check if biometric attendance is enabled and redirect accordingly
+                if (typeof handleBiometricDeviceSetupRedirect === 'function') {
+                    handleBiometricDeviceSetupRedirect();
+                } else {
+                    // Fallback: call the device configuration modal function from settings.js
+                    if (typeof showDeviceConfigurationModal === 'function') {
+                        showDeviceConfigurationModal();
+                    } else {
+                        alert('Device setup functionality will be available after enabling biometric attendance in settings.');
+                    }
+                }
+            });
+        }
+
         // File input change for logo preview in Edit Profile Modal
         const editGymLogoInput = document.getElementById('editGymLogo');
         if (editGymLogoInput && logoPreviewImage) {
@@ -3591,8 +3623,9 @@ if (toggleBtn && sidebar && mainContent) {
     toggleBtn.addEventListener('click', () => {
         if (window.innerWidth > 900) {
             const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
-            // Always update margins for both tabs and navbar on toggle
-            updateMainContentMargins();
+            // Also toggle on body for global state management
+            document.body.classList.toggle('sidebar-collapsed', isCollapsed);
+            
             // Rotate the icon
             const icon = toggleBtn.querySelector('i');
             if (isCollapsed) {
@@ -3655,7 +3688,6 @@ if (attendanceMenuLink && attendanceTab) {
     e.preventDefault();
     hideAllMainTabs();
     attendanceTab.style.display = 'block';
-    updateMainContentMargins();
     // Initialize attendance manager if it exists
     if (typeof window.attendanceManager !== 'undefined') {
       window.attendanceManager.loadData();
@@ -3671,7 +3703,6 @@ if (paymentsMenuLink && paymentTab) {
     e.preventDefault();
     hideAllMainTabs();
     paymentTab.style.display = 'block';
-    updateMainContentMargins();
     // Initialize payment manager if it exists
     if (typeof window.paymentManager !== 'undefined') {
       window.paymentManager.loadPaymentData();
@@ -3686,7 +3717,6 @@ if (equipmentMenuLink && equipmentTab) {
     e.preventDefault();
     hideAllMainTabs();
     equipmentTab.style.display = 'block';
-    updateMainContentMargins();
     // Initialize equipment manager if it exists
     if (typeof window.equipmentManager !== 'undefined') {
       window.equipmentManager.loadEquipmentData();
@@ -3701,7 +3731,6 @@ if (supportMenuLink && supportReviewsTab) {
     e.preventDefault();
     hideAllMainTabs();
     supportReviewsTab.style.display = 'block';
-    updateMainContentMargins();
     sidebarMenuLinks.forEach(link => link.classList.remove('active'));
     supportMenuLink.classList.add('active');
   });
@@ -3712,7 +3741,6 @@ if (trainersMenuLink && trainerTab) {
     e.preventDefault();
     hideAllMainTabs();
     trainerTab.style.display = 'block';
-    updateMainContentMargins();
     if (typeof window.showTrainerTab === 'function') window.showTrainerTab();
     sidebarMenuLinks.forEach(link => link.classList.remove('active'));
     trainersMenuLink.classList.add('active');
@@ -3723,7 +3751,6 @@ if (membersMenuLink && memberDisplayTab) {
     e.preventDefault();
     hideAllMainTabs();
     memberDisplayTab.style.display = 'block';
-    updateMainContentMargins();
     if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
     sidebarMenuLinks.forEach(link => link.classList.remove('active'));
     membersMenuLink.classList.add('active');
@@ -3734,7 +3761,6 @@ if (dashboardMenuLink && dashboardContent) {
     e.preventDefault();
     hideAllMainTabs();
     dashboardContent.style.display = 'block';
-    updateMainContentMargins();
     sidebarMenuLinks.forEach(link => link.classList.remove('active'));
     dashboardMenuLink.classList.add('active');
   });
@@ -3745,12 +3771,63 @@ if (dashboardMenuLink && dashboardContent) {
 document.addEventListener('DOMContentLoaded', function() {
   hideAllMainTabs();
   if (dashboardContent) dashboardContent.style.display = 'block';
-  updateMainContentMargins();
+  
+  // Initialize stat cards with loading states
+  initializeStatCards();
 });
+
+// --- Stat Card Loading Utilities ---
+function setStatCardLoading(cardSelector, isLoading) {
+  const card = document.querySelector(cardSelector);
+  if (!card) return;
+  
+  if (isLoading) {
+    card.classList.add('loading');
+    card.style.pointerEvents = 'none';
+  } else {
+    card.classList.remove('loading');
+    card.style.pointerEvents = 'auto';
+  }
+}
+
+function setAllStatCardsLoading(isLoading) {
+  const cards = [
+    '.stat-card.new-users',
+    '.stat-card.payments', 
+    '.stat-card.attendance',
+    '.stat-card.trainers'
+  ];
+  
+  cards.forEach(selector => setStatCardLoading(selector, isLoading));
+}
+
+function initializeStatCards() {
+  // Start with loading state
+  setAllStatCardsLoading(true);
+  
+  // Simulate initial data loading with staggered completion
+  setTimeout(() => {
+    updateMembersStatsCard();
+  }, 800);
+  
+  setTimeout(() => {
+    updatePaymentsStatsCard();
+  }, 1200);
+  
+  setTimeout(() => {
+    updateTrainersStatsCard();
+  }, 1600);
+  
+  // Attendance card is handled separately by attendance.js
+  setTimeout(() => {
+    setStatCardLoading('.stat-card.attendance', false);
+  }, 2000);
+}
 
 
 // --- Dynamic Members Stats Card ---
 async function updateMembersStatsCard() {
+  setStatCardLoading('.stat-card.new-users', true);
   const membersStatValue = document.querySelector('.stat-card.new-users .stat-value');
   const membersStatChange = document.querySelector('.stat-card.new-users .stat-change');
   if (!membersStatValue || !membersStatChange) return;
@@ -3811,12 +3888,16 @@ async function updateMembersStatsCard() {
     membersStatChange.innerHTML = '<i class="fas fa-minus"></i> N/A';
     membersStatChange.classList.remove('positive', 'negative');
     membersStatChange.title = '';
+  } finally {
+    // Remove loading state
+    setStatCardLoading('.stat-card.new-users', false);
   }
 }
 
 
 // --- Dynamic Payments Stats Card ---
 async function updatePaymentsStatsCard() {
+  setStatCardLoading('.stat-card.payments', true);
   const paymentsStatValue = document.querySelector('.stat-card.payments .stat-value');
   const paymentsStatChange = document.querySelector('.stat-card.payments .stat-change');
   const paymentsStatTitle = document.querySelector('.stat-card.payments .stat-title');
@@ -3888,11 +3969,15 @@ async function updatePaymentsStatsCard() {
       paymentsStatChange.classList.remove('positive', 'negative');
       paymentsStatChange.title = 'Unable to load payment statistics';
     }
+  } finally {
+    // Remove loading state
+    setStatCardLoading('.stat-card.payments', false);
   }
 }
 
 // --- Dynamic Trainers Stats Card ---
 async function updateTrainersStatsCard() {
+  setStatCardLoading('.stat-card.trainers', true);
   const trainersStatValue = document.querySelector('.stat-card.trainers .stat-value');
   const trainersStatChange = document.querySelector('.stat-card.trainers .stat-change');
   if (!trainersStatValue || !trainersStatChange) return;
@@ -3946,41 +4031,12 @@ async function updateTrainersStatsCard() {
     console.error('Error updating trainers stats card:', err);
     trainersStatValue.textContent = '--';
     trainersStatChange.innerHTML = '<i class="fas fa-minus"></i> N/A';
+  } finally {
+    // Remove loading state
+    setStatCardLoading('.stat-card.trainers', false);
   }
 }
-// Call on load
-document.addEventListener('DOMContentLoaded', function() {
-  updateMembersStatsCard();
-  updatePaymentsStatsCard();
-  updateTrainersStatsCard();
-  // Attendance stat card logic moved to a different file
-});
-
-function updateMainContentMargins() {
-  if (!mainContent) return;
-  const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
-  const dashboardTab = mainContent.querySelector('.content');
-  const memberTab = document.getElementById('memberDisplayTab');
-  // Use global trainerTab and settingsTab variables instead of redeclaring
-
-  function setTabMargin(tab) {
-    if (!tab || tab.style.display === 'none') return;
-    if (window.innerWidth > 900) {
-      tab.style.marginLeft = isCollapsed ? '80px' : '250px';
-    } else {
-      tab.style.marginLeft = '0';
-    }
-  }
-
-  setTabMargin(dashboardTab);
-  setTabMargin(memberTab);
-  setTabMargin(trainerTab);
-  setTabMargin(settingsTab);
-  setTabMargin(attendanceTab);
-  setTabMargin(paymentTab);
-  setTabMargin(equipmentTab);
-  setTabMargin(supportReviewsTab);
-}
+// Note: Stat card initialization is now handled in the main DOMContentLoaded listener above
 
 // Dynamic sidebar menu highlight
 sidebarMenuLinks.forEach(link => {
@@ -3991,7 +4047,6 @@ sidebarMenuLinks.forEach(link => {
       // Show dashboard, hide others
       hideAllMainTabs();
       dashboardContent.style.display = 'block';
-      updateMainContentMargins();
       // Remove active from all, add to dashboard
       sidebarMenuLinks.forEach(l => l.classList.remove('active'));
       link.classList.add('active');
@@ -3999,7 +4054,6 @@ sidebarMenuLinks.forEach(link => {
       // Show members, hide others
       hideAllMainTabs();
       memberDisplayTab.style.display = 'block';
-      updateMainContentMargins();
       // Remove active from all, add to members
       sidebarMenuLinks.forEach(l => l.classList.remove('active'));
       link.classList.add('active');
@@ -4010,7 +4064,6 @@ sidebarMenuLinks.forEach(link => {
       hideAllMainTabs();
       const supportReviewsTab = document.getElementById('supportReviewsTab');
       if (supportReviewsTab) supportReviewsTab.style.display = 'block';
-      updateMainContentMargins();
       // Remove active from all, add to support & reviews
       sidebarMenuLinks.forEach(l => l.classList.remove('active'));
       link.classList.add('active');
@@ -4022,10 +4075,14 @@ sidebarMenuLinks.forEach(link => {
       // Show settings, hide others
       hideAllMainTabs();
       settingsTab.style.display = 'block';
-      updateMainContentMargins();
       // Remove active from all, add to settings
       sidebarMenuLinks.forEach(l => l.classList.remove('active'));
       link.classList.add('active');
+      
+      // Update passkey settings UI when settings tab is opened
+      if (window.paymentManager && typeof window.paymentManager.updatePasskeySettingsUI === 'function') {
+        window.paymentManager.updatePasskeySettingsUI();
+      }
     } else {
       // For other tabs, just highlight
       sidebarMenuLinks.forEach(l => l.classList.remove('active'));
@@ -4078,10 +4135,33 @@ async function fetchAndDisplayMembers() {
   const token = localStorage.getItem('gymAdminToken');
   if (!membersTableBody) return;
   membersTableBody.innerHTML = '<tr><td colspan="13" style="text-align:center;">Loading...</td></tr>';
+  
   try {
-    const res = await fetch('http://localhost:5000/api/members', {
+    // Get gym ID for API call
+    let gymId = null;
+    
+    // Try to get gym ID from currentGymProfile first
+    if (window.currentGymProfile && window.currentGymProfile._id) {
+      gymId = window.currentGymProfile._id;
+    } else {
+      // Fallback: extract from token
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        gymId = payload.admin?.gymId || payload.admin?.id;
+      } catch (e) {
+        console.warn('Could not extract gym ID from token');
+      }
+    }
+    
+    // Build API URL with gym ID parameter
+    const apiUrl = gymId ? 
+      `http://localhost:5000/api/members?gym=${gymId}` : 
+      'http://localhost:5000/api/members';
+    
+    const res = await fetch(apiUrl, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    
     if (!res.ok) throw new Error('Failed to fetch members');
     const members = await res.json();
     allMembersCache = Array.isArray(members) ? members : [];
@@ -4813,18 +4893,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (tabName === 'Dashboard') {
         hideAllMainTabs();
         if (dashboardContent) dashboardContent.style.display = 'block';
-        updateMainContentMargins();
+
       } else if (tabName === 'Members') {
         hideAllMainTabs();
         const memberTab = document.getElementById('memberDisplayTab');
         if (memberTab) memberTab.style.display = 'block';
-        updateMainContentMargins();
+
         if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
       } else if (tabName === 'Attendance') {
         hideAllMainTabs();
         const attendanceTab = document.getElementById('attendanceTab');
         if (attendanceTab) attendanceTab.style.display = 'block';
-        updateMainContentMargins();
+
         // Initialize attendance manager if it exists
         if (typeof window.attendanceManager !== 'undefined') {
           window.attendanceManager.loadData();
@@ -4834,7 +4914,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hideAllMainTabs();
         const paymentTab = document.getElementById('paymentTab');
         if (paymentTab) paymentTab.style.display = 'block';
-        updateMainContentMargins();
+
         // Initialize payment manager if it exists
         if (typeof window.paymentManager !== 'undefined') {
           window.paymentManager.loadPaymentData();
@@ -4843,7 +4923,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hideAllMainTabs();
         const equipmentTab = document.getElementById('equipmentTab');
         if (equipmentTab) equipmentTab.style.display = 'block';
-        updateMainContentMargins();
+
         // Initialize equipment manager if it exists
         if (typeof window.equipmentManager !== 'undefined') {
           window.equipmentManager.loadEquipmentData();
@@ -4852,23 +4932,21 @@ document.addEventListener('DOMContentLoaded', function() {
         hideAllMainTabs();
         const supportReviewsTab = document.getElementById('supportReviewsTab');
         if (supportReviewsTab) supportReviewsTab.style.display = 'block';
-        updateMainContentMargins();
+
       } else if (tabName === 'Settings') {
         hideAllMainTabs();
         const settingsTab = document.getElementById('settingsTab');
         if (settingsTab) settingsTab.style.display = 'block';
-        updateMainContentMargins();
+
       } else {
-        updateMainContentMargins();
+
       }
       // Close sidebar after click
       closeMobileSidebar();
     });
   });
 
-  // On load and on resize, always update margins
-  updateMainContentMargins();
-  window.addEventListener('resize', updateMainContentMargins);
+  // On load and on resize, no margin updates needed - CSS handles it
 });
 // === Dynamic New Members Section ===
 document.addEventListener('DOMContentLoaded', function () {
@@ -4928,5 +5006,453 @@ document.addEventListener('DOMContentLoaded', function () {
     .catch(err => {
       newMembersTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Failed to load members.</td></tr>';
     });
+});
+
+// === Enhanced Recent Activity System ===
+document.addEventListener('DOMContentLoaded', function() {
+  let activityLogData = [];
+  
+  // DOM Elements
+  const recentActivityList = document.getElementById('recentActivityList');
+  const refreshActivitiesBtn = document.getElementById('refreshActivitiesBtn');
+  const viewAllActivitiesBtn = document.getElementById('viewAllActivitiesBtn');
+  const dashboardEquipmentGallery = document.getElementById('dashboardEquipmentGallery');
+  
+  // Activity Types Configuration
+  const activityTypes = {
+    'member_added': {
+      icon: 'fa-user-plus',
+      iconBg: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+      badge: 'success',
+      category: 'Member Management'
+    },
+    'payment_received': {
+      icon: 'fa-credit-card',
+      iconBg: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+      badge: 'info',
+      category: 'Financial'
+    },
+    'equipment_added': {
+      icon: 'fa-dumbbell',
+      iconBg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      badge: 'warning',
+      category: 'Equipment'
+    },
+    'notification_sent': {
+      icon: 'fa-bell',
+      iconBg: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      badge: 'info',
+      category: 'Communication'
+    },
+    'trainer_added': {
+      icon: 'fa-user-tie',
+      iconBg: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+      badge: 'info',
+      category: 'Staff Management'
+    },
+    'membership_renewed': {
+      icon: 'fa-redo-alt',
+      iconBg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      badge: 'success',
+      category: 'Member Management'
+    },
+    'attendance_marked': {
+      icon: 'fa-calendar-check',
+      iconBg: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+      badge: 'info',
+      category: 'Attendance'
+    },
+    'equipment_maintenance': {
+      icon: 'fa-tools',
+      iconBg: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+      badge: 'error',
+      category: 'Maintenance'
+    },
+    'plan_updated': {
+      icon: 'fa-crown',
+      iconBg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      badge: 'warning',
+      category: 'Settings'
+    },
+    'biometric_enrolled': {
+      icon: 'fa-fingerprint',
+      iconBg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+      badge: 'info',
+      category: 'Security'
+    }
+  };
+
+  // Format relative time
+  function getRelativeTime(timestamp) {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffMs = now - activityTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return activityTime.toLocaleDateString();
+  }
+
+  // Generate sample activity data (in production, this would come from the server)
+  function generateSampleActivities() {
+    const sampleActivities = [
+      {
+        id: 1,
+        type: 'member_added',
+        title: 'New member registered - Rajesh Kumar',
+        description: 'Premium membership plan selected',
+        timestamp: new Date(Date.now() - 10 * 60000), // 10 minutes ago
+        userId: 'admin',
+        metadata: { memberId: 'MEM001', plan: 'Premium' }
+      },
+      {
+        id: 2,
+        type: 'payment_received',
+        title: 'Payment received from Priya Sharma',
+        description: '₹2,500 for monthly membership',
+        timestamp: new Date(Date.now() - 45 * 60000), // 45 minutes ago
+        userId: 'admin',
+        metadata: { amount: 2500, memberId: 'MEM002' }
+      },
+      {
+        id: 3,
+        type: 'equipment_added',
+        title: 'New equipment added - Treadmill Pro X300',
+        description: 'Cardio section updated with latest equipment',
+        timestamp: new Date(Date.now() - 2 * 3600000), // 2 hours ago
+        userId: 'admin',
+        metadata: { equipmentId: 'EQ001', category: 'Cardio' }
+      },
+      {
+        id: 4,
+        type: 'biometric_enrolled',
+        title: 'Biometric enrollment completed - Amit Singh',
+        description: 'Fingerprint successfully registered',
+        timestamp: new Date(Date.now() - 3 * 3600000), // 3 hours ago
+        userId: 'admin',
+        metadata: { memberId: 'MEM003', type: 'fingerprint' }
+      },
+      {
+        id: 5,
+        type: 'trainer_added',
+        title: 'New trainer onboarded - Fitness Expert Mohan',
+        description: 'Specialized in weight training and nutrition',
+        timestamp: new Date(Date.now() - 5 * 3600000), // 5 hours ago
+        userId: 'admin',
+        metadata: { trainerId: 'TR001', specialization: 'Weight Training' }
+      },
+      {
+        id: 6,
+        type: 'notification_sent',
+        title: 'Holiday schedule notification sent',
+        description: 'Sent to 150+ members regarding Diwali timings',
+        timestamp: new Date(Date.now() - 86400000), // 1 day ago
+        userId: 'admin',
+        metadata: { recipients: 152, type: 'holiday_schedule' }
+      }
+    ];
+    
+    return sampleActivities;
+  }
+
+  // Render activity item
+  function renderActivityItem(activity) {
+    const activityConfig = activityTypes[activity.type] || activityTypes['notification_sent'];
+    const relativeTime = getRelativeTime(activity.timestamp);
+    
+    return `
+      <li class="activity-item" data-activity-id="${activity.id}">
+        <div class="activity-icon" style="background: ${activityConfig.iconBg};">
+          <i class="fas ${activityConfig.icon}"></i>
+        </div>
+        <div class="activity-content">
+          <div class="activity-title">${activity.title}</div>
+          <div class="activity-time">
+            <i class="fas fa-clock"></i>
+            ${relativeTime}
+          </div>
+        </div>
+        <div class="activity-badge ${activityConfig.badge}">
+          ${activityConfig.category}
+        </div>
+      </li>
+    `;
+  }
+
+  // Load recent activities
+  function loadRecentActivities() {
+    // Show loading state
+    recentActivityList.innerHTML = `
+      <li class="activity-item">
+        <div class="activity-icon">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div class="activity-content">
+          <div class="activity-title">Loading recent activities...</div>
+          <div class="activity-time">
+            <i class="fas fa-clock"></i>
+            Please wait
+          </div>
+        </div>
+      </li>
+    `;
+
+    // Simulate API call
+    setTimeout(() => {
+      try {
+        activityLogData = generateSampleActivities();
+        
+        if (activityLogData.length === 0) {
+          recentActivityList.innerHTML = `
+            <li class="activity-item">
+              <div class="activity-icon" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">
+                <i class="fas fa-info-circle"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">No recent activities</div>
+                <div class="activity-time">
+                  <i class="fas fa-clock"></i>
+                  Start managing your gym to see activities here
+                </div>
+              </div>
+            </li>
+          `;
+          return;
+        }
+
+        const activitiesHTML = activityLogData
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+          .slice(0, 8) // Show latest 8 activities
+          .map(renderActivityItem)
+          .join('');
+        
+        recentActivityList.innerHTML = activitiesHTML;
+        
+        // Add click listeners for activity items
+        recentActivityList.querySelectorAll('.activity-item').forEach(item => {
+          item.addEventListener('click', function() {
+            const activityId = this.dataset.activityId;
+            const activity = activityLogData.find(a => a.id == activityId);
+            if (activity) {
+              showActivityDetails(activity);
+            }
+          });
+        });
+        
+      } catch (error) {
+        console.error('Error loading activities:', error);
+        recentActivityList.innerHTML = `
+          <li class="activity-item">
+            <div class="activity-icon" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Failed to load activities</div>
+              <div class="activity-time">
+                <i class="fas fa-sync-alt"></i>
+                Click refresh to try again
+              </div>
+            </div>
+          </li>
+        `;
+      }
+    }, 1000);
+  }
+
+  // Show activity details modal
+  function showActivityDetails(activity) {
+    const activityConfig = activityTypes[activity.type] || activityTypes['notification_sent'];
+    
+    // Create a simple modal for activity details
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.style.zIndex = '10005';
+    
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header-style">
+          <h3 class="modal-title-style">
+            <i class="fas ${activityConfig.icon}" style="color: var(--primary);"></i>
+            Activity Details
+          </h3>
+          <button class="modal-close" id="closeActivityModal">&times;</button>
+        </div>
+        <div style="padding: 20px;">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+            <div class="activity-icon" style="background: ${activityConfig.iconBg}; width: 60px; height: 60px; font-size: 1.5rem;">
+              <i class="fas ${activityConfig.icon}"></i>
+            </div>
+            <div>
+              <h4 style="margin: 0; color: #1e293b;">${activity.title}</h4>
+              <p style="margin: 4px 0 0; color: #64748b;">${activity.description}</p>
+            </div>
+          </div>
+          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.9rem;">
+              <div><strong>Time:</strong> ${getRelativeTime(activity.timestamp)}</div>
+              <div><strong>Category:</strong> ${activityConfig.category}</div>
+              <div><strong>Performed by:</strong> ${activity.userId}</div>
+              <div><strong>Activity ID:</strong> #${activity.id}</div>
+            </div>
+          </div>
+          ${activity.metadata ? `
+            <div style="margin-top: 16px;">
+              <h5 style="color: #1e293b; margin-bottom: 8px;">Additional Details:</h5>
+              <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; font-size: 0.85rem;">
+                ${Object.entries(activity.metadata).map(([key, value]) => 
+                  `<div><strong>${key.replace(/_/g, ' ')}:</strong> ${value}</div>`
+                ).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal functionality
+    const closeBtn = modal.querySelector('#closeActivityModal');
+    closeBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+    
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  // Load sample equipment for dashboard gallery
+  function loadDashboardEquipment() {
+    const sampleEquipment = [
+      {
+        id: 1,
+        name: 'Treadmill Pro X300',
+        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        category: 'Cardio'
+      },
+      {
+        id: 2,
+        name: 'Dumbbell Set',
+        image: 'https://images.unsplash.com/photo-1571019614245-c5f2ba9806b1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        category: 'Strength'
+      },
+      {
+        id: 3,
+        name: 'Bench Press Station',
+        image: 'https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        category: 'Strength'
+      },
+      {
+        id: 4,
+        name: 'Rowing Machine',
+        image: 'https://images.unsplash.com/photo-1576678927484-cc907957088c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        category: 'Cardio'
+      }
+    ];
+
+    setTimeout(() => {
+      const equipmentHTML = sampleEquipment.map(equipment => `
+        <div class="equipment-item" data-equipment-id="${equipment.id}">
+          <img src="${equipment.image}" alt="${equipment.name}" loading="lazy">
+          <div class="equipment-overlay">${equipment.name}</div>
+        </div>
+      `).join('');
+      
+      dashboardEquipmentGallery.innerHTML = equipmentHTML;
+      
+      // Add click listeners
+      dashboardEquipmentGallery.querySelectorAll('.equipment-item').forEach(item => {
+        item.addEventListener('click', function() {
+          const equipmentId = this.dataset.equipmentId;
+          // Navigate to equipment tab or show details
+          alert(`Equipment details for: ${this.querySelector('.equipment-overlay').textContent}`);
+        });
+      });
+    }, 800);
+  }
+
+  // Event Listeners
+  if (refreshActivitiesBtn) {
+    refreshActivitiesBtn.addEventListener('click', loadRecentActivities);
+  }
+
+  if (viewAllActivitiesBtn) {
+    viewAllActivitiesBtn.addEventListener('click', function() {
+      // TODO: Navigate to full activity log or open expanded modal
+      alert('View all activities functionality - to be implemented');
+    });
+  }
+
+  // Button functionality for enhanced cards
+  const viewAllEquipmentBtn = document.getElementById('viewAllEquipmentBtn');
+  const addEquipmentQuickBtn = document.getElementById('addEquipmentQuickBtn');
+  const refreshChartBtn = document.getElementById('refreshChartBtn');
+  const sendNotificationQuickBtn = document.getElementById('sendNotificationQuickBtn');
+
+  if (viewAllEquipmentBtn) {
+    viewAllEquipmentBtn.addEventListener('click', function() {
+      // Navigate to equipment tab
+      const equipmentTab = document.querySelector('[data-tab="equipmentTab"]') || 
+                          document.querySelector('.menu-link[href="#"]:nth-child(6)');
+      if (equipmentTab) {
+        equipmentTab.click();
+      }
+    });
+  }
+
+  if (addEquipmentQuickBtn) {
+    addEquipmentQuickBtn.addEventListener('click', function() {
+      // Open add equipment modal
+      const equipmentTab = document.querySelector('[data-tab="equipmentTab"]') || 
+                          document.querySelector('.menu-link[href="#"]:nth-child(6)');
+      if (equipmentTab) {
+        equipmentTab.click();
+        // Trigger add equipment modal after a short delay
+        setTimeout(() => {
+          const addEquipmentBtn = document.getElementById('addEquipmentBtn');
+          if (addEquipmentBtn) {
+            addEquipmentBtn.click();
+          }
+        }, 300);
+      }
+    });
+  }
+
+  if (refreshChartBtn) {
+    refreshChartBtn.addEventListener('click', function() {
+      // Refresh attendance chart
+      this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      setTimeout(() => {
+        this.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+        // TODO: Integrate with actual chart refresh functionality
+      }, 1500);
+    });
+  }
+
+  if (sendNotificationQuickBtn) {
+    sendNotificationQuickBtn.addEventListener('click', function() {
+      // Open notification modal
+      const notificationBtn = document.getElementById('openNotificationModalBtn');
+      if (notificationBtn) {
+        notificationBtn.click();
+      }
+    });
+  }
+
+  // Initialize dashboard enhancements
+  loadRecentActivities();
+  loadDashboardEquipment();
+  
+  // Auto-refresh activities every 2 minutes
+  setInterval(loadRecentActivities, 120000);
 });
 

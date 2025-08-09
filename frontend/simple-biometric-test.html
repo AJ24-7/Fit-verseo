@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Biometric Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+            background: #f0f8ff;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            border-left-color: #4CAF50;
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-fingerprint"></i> Simple Biometric Test</h1>
+        
+        <button class="btn" onclick="runSimpleTest()">
+            <i class="fas fa-play"></i> Run Test
+        </button>
+        <button class="btn" onclick="testBiometricFeedback()">
+            <i class="fas fa-comment"></i> Test Feedback
+        </button>
+        <button class="btn" onclick="testEnrollment()">
+            <i class="fas fa-user-plus"></i> Test Enrollment
+        </button>
+        <button class="btn" onclick="testDeviceSetup()">
+            <i class="fas fa-cogs"></i> Test Device Setup
+        </button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let results = document.getElementById('results');
+        
+        function addResult(message, type = 'test-result') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+        }
+        
+        function runSimpleTest() {
+            results.innerHTML = '';
+            addResult('Starting simple test...', 'test-result');
+            
+            // Test if essential functions exist
+            const functions = [
+                'showBiometricFeedback',
+                'openBiometricEnrollment',
+                'showDeviceConfigurationModal',
+                'testBiometricConnection'
+            ];
+            
+            functions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    addResult(`✅ ${funcName} is available`, 'success');
+                } else {
+                    addResult(`❌ ${funcName} is missing`, 'error');
+                }
+            });
+        }
+        
+        function testBiometricFeedback() {
+            if (typeof window.showBiometricFeedback === 'function') {
+                window.showBiometricFeedback('Test message from simple test!', 'success');
+                addResult('✅ Biometric feedback test called', 'success');
+            } else {
+                addResult('❌ showBiometricFeedback not available', 'error');
+            }
+        }
+        
+        function testEnrollment() {
+            if (typeof window.openBiometricEnrollment === 'function') {
+                try {
+                    window.openBiometricEnrollment();
+                    addResult('✅ Biometric enrollment function called', 'success');
+                } catch (error) {
+                    addResult(`❌ Error calling enrollment: ${error.message}`, 'error');
+                }
+            } else {
+                addResult('❌ openBiometricEnrollment not available', 'error');
+            }
+        }
+        
+        function testDeviceSetup() {
+            if (typeof window.showDeviceConfigurationModal === 'function') {
+                try {
+                    window.showDeviceConfigurationModal();
+                    addResult('✅ Device configuration function called', 'success');
+                } catch (error) {
+                    addResult(`❌ Error calling device setup: ${error.message}`, 'error');
+                }
+            } else {
+                addResult('❌ showDeviceConfigurationModal not available', 'error');
+            }
+        }
+        
+        // Define the functions directly if they're not available
+        if (typeof window.showBiometricFeedback !== 'function') {
+            window.showBiometricFeedback = function(message, type = 'info') {
+                const colors = {
+                    success: '#4CAF50',
+                    error: '#f44336',
+                    warning: '#ff9800',
+                    info: '#2196F3'
+                };
+                
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${colors[type] || colors.info};
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 10001;
+                    transform: translateX(100%);
+                    transition: transform 0.3s ease;
+                    max-width: 300px;
+                    font-weight: 500;
+                `;
+                
+                toast.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                        ${message}
+                    </div>
+                `;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => toast.style.transform = 'translateX(0)', 100);
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(100%)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            };
+            addResult('⚠️ showBiometricFeedback was missing - defined locally', 'error');
+        }
+        
+        if (typeof window.openBiometricEnrollment !== 'function') {
+            window.openBiometricEnrollment = function() {
+                window.location.href = '/frontend/biometric-enrollment.html';
+            };
+            addResult('⚠️ openBiometricEnrollment was missing - defined locally', 'error');
+        }
+        
+        if (typeof window.showDeviceConfigurationModal !== 'function') {
+            window.showDeviceConfigurationModal = function() {
+                alert('Device configuration modal would open here. This is a fallback implementation.');
+            };
+            addResult('⚠️ showDeviceConfigurationModal was missing - defined locally', 'error');
+        }
+        
+        if (typeof window.testBiometricConnection !== 'function') {
+            window.testBiometricConnection = function() {
+                alert('Testing biometric connection... This is a fallback implementation.');
+            };
+            addResult('⚠️ testBiometricConnection was missing - defined locally', 'error');
+        }
+        
+        // Auto-run test on load
+        setTimeout(runSimpleTest, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Cancelled - Gym Registration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 40px;
+        }
+
+        .cancel-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: shake 0.6s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 20%, 40%, 60%, 80%, 100% {
+                transform: translateX(0);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-10px);
+            }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .reason-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .reason-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .reason-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .reason-list li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+        }
+
+        .reason-list li i {
+            margin-right: 10px;
+            color: #ff6b6b;
+        }
+
+        .help-section {
+            background: #e8f4f8;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .help-section h3 {
+            color: #0c5460;
+            margin-bottom: 15px;
+        }
+
+        .help-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .help-option {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .help-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .help-option i {
+            font-size: 2rem;
+            color: #17a2b8;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .contact-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .contact-detail {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .contact-detail i {
+            margin-right: 15px;
+            width: 20px;
+            color: #17a2b8;
+        }
+
+        .retry-timer {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #155724;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .help-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="cancel-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <h1>Payment Cancelled</h1>
+            <p>Your payment was not completed</p>
+        </div>
+
+        <div class="content">
+            <div style="margin-bottom: 30px;">
+                <p style="font-size: 1.2rem; color: #495057; line-height: 1.6;">
+                    Don't worry! Your registration information has been saved. 
+                    You can complete your payment anytime to activate your membership.
+                </p>
+            </div>
+
+            <!-- Common Reasons -->
+            <div class="reason-section">
+                <h3><i class="fas fa-question-circle"></i> Why payments get cancelled:</h3>
+                <ul class="reason-list">
+                    <li>
+                        <i class="fas fa-user-times"></i>
+                        You chose to cancel the payment process
+                    </li>
+                    <li>
+                        <i class="fas fa-wifi"></i>
+                        Network connectivity issues during payment
+                    </li>
+                    <li>
+                        <i class="fas fa-credit-card"></i>
+                        Card details were incorrect or card was declined
+                    </li>
+                    <li>
+                        <i class="fas fa-clock"></i>
+                        Payment session timed out
+                    </li>
+                    <li>
+                        <i class="fas fa-ban"></i>
+                        Bank security restrictions or daily limits
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Retry Timer -->
+            <div class="retry-timer">
+                <h4 style="color: #155724; margin-bottom: 10px;">Ready to try again?</h4>
+                <div class="timer-display" id="retryTimer">You can retry immediately</div>
+                <p style="color: #155724; margin-top: 10px;">
+                    Your registration is saved. Just complete the payment to activate your membership.
+                </p>
+            </div>
+
+            <!-- Help Section -->
+            <div class="help-section">
+                <h3><i class="fas fa-life-ring"></i> Need Help?</h3>
+                <p>Our support team is here to assist you with your payment.</p>
+                
+                <div class="help-options">
+                    <div class="help-option">
+                        <i class="fas fa-phone"></i>
+                        <h4>Call Support</h4>
+                        <p>Speak with our team</p>
+                    </div>
+                    <div class="help-option">
+                        <i class="fas fa-comments"></i>
+                        <h4>Live Chat</h4>
+                        <p>Get instant help</p>
+                    </div>
+                    <div class="help-option">
+                        <i class="fas fa-envelope"></i>
+                        <h4>Email Us</h4>
+                        <p>Send us your query</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="contact-info">
+                <h4 style="margin-bottom: 20px; color: #495057;">
+                    <i class="fas fa-headset"></i> Contact Support
+                </h4>
+                <div class="contact-detail">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <strong>Phone:</strong> +91 98765 43210<br>
+                        <small>Mon-Sat: 9:00 AM - 9:00 PM</small>
+                    </div>
+                </div>
+                <div class="contact-detail">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <strong>Email:</strong> support@fitnessgym.com<br>
+                        <small>We respond within 2 hours</small>
+                    </div>
+                </div>
+                <div class="contact-detail">
+                    <i class="fas fa-comments"></i>
+                    <div>
+                        <strong>WhatsApp:</strong> +91 98765 43210<br>
+                        <small>Quick support via WhatsApp</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="margin-top: 30px;">
+                <button onclick="retryPayment()" class="btn">
+                    <i class="fas fa-redo"></i> Try Payment Again
+                </button>
+                <a href="/register" class="btn secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Registration
+                </a>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="contactSupport()" class="btn danger">
+                    <i class="fas fa-headset"></i> Contact Support
+                </button>
+                <a href="/" class="btn secondary">
+                    <i class="fas fa-home"></i> Go Home
+                </a>
+            </div>
+
+            <!-- Additional Information -->
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="color: #495057; margin-bottom: 15px;">💡 Payment Tips</h4>
+                <ul style="text-align: left; color: #6c757d; line-height: 1.8;">
+                    <li>Ensure your internet connection is stable</li>
+                    <li>Check your card has sufficient balance</li>
+                    <li>Make sure international transactions are enabled (if using international cards)</li>
+                    <li>Try using a different payment method if one fails</li>
+                    <li>Contact your bank if payments are being declined</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize cancel page
+        window.addEventListener('load', () => {
+            console.log('💔 Payment cancel page loaded');
+            
+            // Get URL parameters to understand cancellation context
+            const urlParams = new URLSearchParams(window.location.search);
+            const reason = urlParams.get('reason');
+            const paymentId = urlParams.get('payment');
+            
+            if (reason) {
+                console.log('Cancellation reason:', reason);
+                updateCancellationReason(reason);
+            }
+            
+            // Start retry timer
+            startRetryTimer();
+        });
+
+        function updateCancellationReason(reason) {
+            const reasonMap = {
+                'user_cancelled': 'You cancelled the payment',
+                'payment_failed': 'Payment processing failed',
+                'network_error': 'Network connectivity issue',
+                'timeout': 'Payment session timed out',
+                'card_declined': 'Card was declined by bank',
+                'insufficient_funds': 'Insufficient funds in account'
+            };
+
+            const displayReason = reasonMap[reason] || 'Payment was cancelled';
+            
+            // Update the header description
+            const headerDesc = document.querySelector('.header p');
+            if (headerDesc) {
+                headerDesc.textContent = displayReason;
+            }
+        }
+
+        function startRetryTimer() {
+            let seconds = 5;
+            const timerElement = document.getElementById('retryTimer');
+            
+            const updateTimer = () => {
+                if (seconds > 0) {
+                    timerElement.textContent = `You can retry in ${seconds} second${seconds > 1 ? 's' : ''}`;
+                    seconds--;
+                    setTimeout(updateTimer, 1000);
+                } else {
+                    timerElement.textContent = 'Ready to retry payment!';
+                    timerElement.style.color = '#28a745';
+                }
+            };
+            
+            updateTimer();
+        }
+
+        function retryPayment() {
+            // Get stored payment data from sessionStorage or URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const member = urlParams.get('member');
+            const plan = urlParams.get('plan');
+            const amount = urlParams.get('amount');
+            
+            if (member && plan && amount) {
+                // Redirect back to payment gateway with stored data
+                window.location.href = `/payment-gateway?member=${member}&plan=${plan}&amount=${amount}&retry=true`;
+            } else {
+                // Redirect to registration if no stored data
+                window.location.href = '/register';
+            }
+        }
+
+        function contactSupport() {
+            // Open support contact options
+            const supportOptions = `
+                <div style="text-align: center; padding: 20px;">
+                    <h3 style="margin-bottom: 20px;">Choose your preferred contact method:</h3>
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <a href="tel:+919876543210" class="btn" style="text-decoration: none;">
+                            <i class="fas fa-phone"></i> Call Now
+                        </a>
+                        <a href="mailto:support@fitnessgym.com?subject=Payment Issue&body=I need help with my payment. My issue is..." class="btn" style="text-decoration: none;">
+                            <i class="fas fa-envelope"></i> Send Email
+                        </a>
+                        <a href="https://wa.me/919876543210?text=Hi, I need help with my gym payment" target="_blank" class="btn" style="text-decoration: none;">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            // Create modal for support options
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            `;
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white;
+                border-radius: 15px;
+                padding: 20px;
+                max-width: 500px;
+                width: 90%;
+                position: relative;
+            `;
+            
+            modalContent.innerHTML = supportOptions + `
+                <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" 
+                        style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">
+                    ×
+                </button>
+            `;
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // Show helpful tips after some time
+        setTimeout(() => {
+            const tipsSection = document.querySelector('[style*="background: #f8f9fa"]');
+            if (tipsSection) {
+                tipsSection.style.animation = 'fadeIn 0.5s ease-in';
+                tipsSection.style.border = '2px solid #28a745';
+            }
+        }, 3000);
+
+        // Add fade-in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

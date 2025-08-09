@@ -1,0 +1,62 @@
+{
+  "name": "fitverse-biometric-agent-enhanced",
+  "version": "2.0.0",
+  "description": "Enhanced Fitverse Biometric Agent - Production-ready continuous biometric operations service with real hardware support",
+  "main": "enhanced-agent.js",
+  "scripts": {
+    "start": "node enhanced-agent.js",
+    "dev": "nodemon enhanced-agent.js",
+    "test": "node test-agent.js",
+    "install-service": "node enhanced-service-manager.js install",
+    "uninstall-service": "node enhanced-service-manager.js uninstall",
+    "restart-service": "node enhanced-service-manager.js restart",
+    "status": "node enhanced-service-manager.js status",
+    "check": "node enhanced-service-manager.js check",
+    "logs": "type logs\\*.log 2>nul || echo No logs found"
+  },
+  "keywords": [
+    "biometric",
+    "fingerprint",
+    "face-recognition",
+    "gym",
+    "fitness",
+    "attendance",
+    "windows-service",
+    "hardware-integration"
+  ],
+  "author": "Fitverse Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-windows": "^1.0.0-beta.8",
+    "axios": "^1.6.0",
+    "multer": "^1.4.5-lts.1",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fitverse/biometric-agent.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fitverse/biometric-agent/issues"
+  },
+  "homepage": "https://github.com/fitverse/biometric-agent#readme",
+  "os": [
+    "win32"
+  ],
+  "config": {
+    "port": 5001,
+    "logLevel": "INFO",
+    "maxLogSize": "10MB",
+    "maxRestarts": 5,
+    "restartDelay": 5000
+  }
+}
