@@ -173,8 +173,8 @@ const updateProfile = async (req, res) => {
     const {
       firstName, lastName, username, birthdate, phone, email,
       heightFeet, heightInches, weight, fitnessLevel, primaryGoal,
-      workoutPreferences, theme, measurementSystem, notifications,
-      twoFactorEnabled, currentPassword, newPassword, confirmPassword, removeProfileImage
+      workoutPreferences, removeProfileImage, confirmPassword
+     
     } = req.body;
 
     const user = await User.findById(userId);
@@ -185,45 +185,37 @@ const updateProfile = async (req, res) => {
       user.authProvider === 'google' ||
       (user.profileImage && user.profileImage.startsWith('http'));
 
-    // Only require password confirmation for local users
+    // Password confirmation for non-Google users
     if (!isGoogleUser) {
-      // Optional: Verify current password if newPassword is being set
-      if (newPassword && currentPassword) {
-        const isMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!isMatch) return res.status(401).json({ message: 'Incorrect current password' });
-        user.password = await bcrypt.hash(newPassword, 10);
-      }
       if (!confirmPassword) {
-        return res.status(400).json({ message: "Confirmation password is required." });
+        return res.status(400).json({ message: "Password confirmation is required." });
       }
       const isMatch = await bcrypt.compare(confirmPassword, user.password);
       if (!isMatch) {
-        return res.status(400).json({ message: "Incorrect confirmation password." });
+        return res.status(400).json({ message: "Incorrect password." });
       }
     }
-    // For Google users, skip password checks
 
-    // Update fields
+    // Update basic profile fields only
     user.firstName = firstName;
     user.lastName = lastName;
     user.username = username;
     user.birthdate = birthdate;
     user.phone = phone;
     user.email = email;
+    
+    // Update fitness details
     user.height = { feet: heightFeet, inches: heightInches };
     user.weight = weight;
     user.fitnessLevel = fitnessLevel;
     user.primaryGoal = primaryGoal;
     user.workoutPreferences = Array.isArray(workoutPreferences)
-  ? workoutPreferences
-  : workoutPreferences
-    ? [workoutPreferences]
-    : [];
-    user.theme = theme;
-    user.measurementSystem = measurementSystem;
-    user.notifications = notifications;
-    user.twoFactorEnabled = twoFactorEnabled === 'true' || twoFactorEnabled === true;
+      ? workoutPreferences
+      : workoutPreferences
+        ? [workoutPreferences]
+        : [];
 
+   
     // Remove profile image if requested
     if (removeProfileImage === "true") {
       if (user.profileImage && user.profileImage !== "/uploads/profile-pics/default.png") {
@@ -366,12 +358,54 @@ const getWorkoutSchedule = async (req, res) => {
   }
 };
 
+// === Change Password for authenticated users ===
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.userId;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+    }
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Check if user is Google user
+    if (user.authProvider === 'google' || (user.profileImage && user.profileImage.startsWith('http'))) {
+      return res.status(400).json({ message: 'Cannot change password for Google accounts' });
+    }
+    
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.findByIdAndUpdate(userId, { password: hashedPassword });
+    
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ message: 'Failed to change password' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
    updateProfile,
   requestPasswordResetOTP,
   verifyPasswordResetOTP,
+  changePassword,
   googleAuth,
   getUserProfile,
   saveWorkoutSchedule,

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym-Wale - Account Settings</title>
+    <link rel="stylesheet" href="settings.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        // Define BASE_URL globally before other scripts load
+        const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+    </script>
+    <script defer src="settings.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner">
+            <i class="fas fa-cog fa-spin"></i>
+            <p>Loading your settings...</p>
+        </div>
+    </div>
+
+    <header>
+        <nav class="navbar">
+            <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+                <img class="logo" src="public/Gym-Wale.png" alt="Gym-Wale Logo">
+                <h3 class="brand-title">Gym<span>-Wale</span></h3>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-item"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-item"><i class="fas fa-concierge-bell"></i> Services</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="personaltraining.html"><i class="fas fa-user-tie"></i> Personal Training</a></li>
+                        <li><a href="membership-plans.html"><i class="fas fa-id-card"></i> Membership Plans</a></li>
+                        <li><a href="dietplans.html"><i class="fas fa-apple-alt"></i> Diet Plans</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html" class="nav-item"><i class="fas fa-envelope"></i> Contact</a></li>
+                <!-- 👤 Shown only when user is logged in -->
+                <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                    <a href="/frontend/public/userprofile.html" class="nav-item">
+                        <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="edit-profile.html"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+                        <li><a href="settings.html" class="active"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </li>
+                
+                <!-- 🔐 Shown only when user is logged out -->
+                <li class="nav-item" id="login-signup-nav" style="display: none;">
+                    <a href="/frontend/public/login.html"><i class="fas fa-sign-in-alt"></i> Login / Signup</a>
+                </li>
+            </ul>
+            <div class="menu-toggle">&#9776;</div>
+        </nav>
+    </header>
+
+    <main class="settings-container">
+        <!-- Settings Header -->
+        <div class="settings-header">
+            <div class="header-content">
+                <div class="user-info">
+                    <img id="settings-profile-img" src="/uploads/profile-pics/default.png" alt="Profile Picture" class="settings-profile-img">
+                    <div class="user-details">
+                        <h1 id="user-name">Loading...</h1>
+                        <p id="user-email">Loading...</p>
+                        <span class="membership-status" id="membership-status">Free Account</span>
+                    </div>
+                </div>
+                <button class="quick-action-btn" onclick="window.location.href='edit-profile.html'">
+                    <i class="fas fa-user-edit"></i> Edit Profile
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings Navigation -->
+        <div class="settings-nav">
+            <button class="settings-tab-btn active" data-tab="bookings">
+                <i class="fas fa-calendar-alt"></i> My Bookings
+            </button>
+            <button class="settings-tab-btn" data-tab="memberships">
+                <i class="fas fa-id-card"></i> Memberships
+            </button>
+            <button class="settings-tab-btn" data-tab="payments">
+                <i class="fas fa-credit-card"></i> Payments
+            </button>
+            <button class="settings-tab-btn" data-tab="notifications">
+                <i class="fas fa-bell"></i> Notifications
+            </button>
+            <button class="settings-tab-btn" data-tab="privacy">
+                <i class="fas fa-shield-alt"></i> Privacy
+            </button>
+            <button class="settings-tab-btn" data-tab="account">
+                <i class="fas fa-user-cog"></i> Account
+            </button>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="settings-content">
+            <!-- My Bookings Tab -->
+            <div class="settings-tab-content active" id="bookings-tab">
+                <div class="tab-header">
+                    <h2><i class="fas fa-calendar-alt"></i> My Bookings</h2>
+                    <p>Manage your gym memberships, trainer sessions, and trial bookings</p>
+                </div>
+
+                <!-- Booking Categories -->
+                <div class="booking-categories">
+                    <div class="booking-category">
+                        <h3><i class="fas fa-dumbbell"></i> Gym Memberships</h3>
+                        <div id="gym-bookings" class="booking-list">
+                            <div class="loading-placeholder">Loading gym memberships...</div>
+                        </div>
+                        <button class="view-all-btn" onclick="viewAllBookings('gym')">View All Gym Bookings</button>
+                    </div>
+
+                    <div class="booking-category">
+                        <h3><i class="fas fa-user-tie"></i> Trainer Sessions</h3>
+                        <div id="trainer-bookings" class="booking-list">
+                            <div class="loading-placeholder">Loading trainer sessions...</div>
+                        </div>
+                        <button class="view-all-btn" onclick="viewAllBookings('trainer')">View All Trainer Bookings</button>
+                    </div>
+
+                    <div class="booking-category">
+                        <h3><i class="fas fa-clipboard-check"></i> Trial Bookings</h3>
+                        
+                        <!-- Trial Limits Status -->
+                        <div id="trial-limits-status" class="trial-limits-card">
+                            <div class="loading-placeholder">Loading trial status...</div>
+                        </div>
+                        
+                        <!-- Trial Bookings List -->
+                        <div id="trial-bookings" class="booking-list">
+                            <div class="loading-placeholder">Loading trial bookings...</div>
+                        </div>
+                        <button class="view-all-btn" onclick="viewAllBookings('trial')">View All Trial Bookings</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memberships Tab -->
+            <div class="settings-tab-content" id="memberships-tab">
+                <div class="tab-header">
+                    <h2><i class="fas fa-id-card"></i> Active Memberships</h2>
+                    <p>View and manage your current gym memberships</p>
+                </div>
+
+                <div id="active-memberships" class="memberships-grid">
+                    <div class="loading-placeholder">Loading memberships...</div>
+                </div>
+
+                <div class="membership-actions">
+                    <button class="action-btn primary" onclick="findNewMembership()">
+                        <i class="fas fa-plus"></i> Find New Gym
+                    </button>
+                    <button class="action-btn secondary" onclick="viewMembershipHistory()">
+                        <i class="fas fa-history"></i> Membership History
+                    </button>
+                </div>
+            </div>
+
+            <!-- Payments Tab -->
+            <div class="settings-tab-content" id="payments-tab">
+                <div class="tab-header">
+                    <h2><i class="fas fa-credit-card"></i> Payment Methods & History</h2>
+                    <p>Manage your payment methods and view transaction history</p>
+                </div>
+
+                <div class="payment-section">
+                    <div class="payment-methods">
+                        <h3>Saved Payment Methods</h3>
+                        <div id="payment-methods-list">
+                            <div class="loading-placeholder">Loading payment methods...</div>
+                        </div>
+                        <button class="action-btn primary" onclick="addPaymentMethod()">
+                            <i class="fas fa-plus"></i> Add Payment Method
+                        </button>
+                    </div>
+
+                    <div class="payment-history">
+                        <h3>Recent Transactions</h3>
+                        <div id="payment-history-list">
+                            <div class="loading-placeholder">Loading transaction history...</div>
+                        </div>
+                        <button class="view-all-btn" onclick="viewAllTransactions()">View All Transactions</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Tab -->
+            <div class="settings-tab-content" id="notifications-tab">
+                <div class="tab-header">
+                    <h2><i class="fas fa-bell"></i> Notification Preferences</h2>
+                    <p>Control how and when you receive notifications</p>
+                </div>
+
+                <div class="notification-settings">
+                    <div class="notification-group">
+                        <h3>Email Notifications</h3>
+                        <div class="notification-options">
+                            <label class="notification-toggle">
+                                <input type="checkbox" id="email-bookings" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Booking confirmations and updates</span>
+                            </label>
+                            <label class="notification-toggle">
+                                <input type="checkbox" id="email-promotions">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Promotional offers and deals</span>
+                            </label>
+                            <label class="notification-toggle">
+                                <input type="checkbox" id="email-reminders" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Workout reminders</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="notification-group">
+                        <h3>SMS Notifications</h3>
+                        <div class="notification-options">
+                            <label class="notification-toggle">
+                                <input type="checkbox" id="sms-bookings" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Booking confirmations</span>
+                            </label>
+                            <label class="notification-toggle">
+                                <input type="checkbox" id="sms-reminders">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Workout reminders</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="notification-group">
+                        <h3>Push Notifications</h3>
+                        <div class="notification-options">
+                            <label class="notification-toggle">
+                                <input type="checkbox" id="push-enabled" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Enable push notifications</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="action-btn primary" onclick="saveNotificationSettings()">
+                    <i class="fas fa-save"></i> Save Preferences
+                </button>
+            </div>
+
+            <!-- Privacy Tab -->
+            <div class="settings-tab-content" id="privacy-tab">
+                <div class="tab-header">
+                    <h2><i class="fas fa-shield-alt"></i> Privacy & Security</h2>
+                    <p>Manage your privacy settings and account security</p>
+                </div>
+
+                <div class="privacy-settings">
+                    <div class="privacy-group">
+                        <h3>Profile Visibility</h3>
+                        <div class="privacy-options">
+                            <label class="privacy-toggle">
+                                <input type="radio" name="profile-visibility" value="public" checked>
+                                <span class="radio-label">Public - Visible to all users</span>
+                            </label>
+                            <label class="privacy-toggle">
+                                <input type="radio" name="profile-visibility" value="friends">
+                                <span class="radio-label">Friends only</span>
+                            </label>
+                            <label class="privacy-toggle">
+                                <input type="radio" name="profile-visibility" value="private">
+                                <span class="radio-label">Private - Only visible to you</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="privacy-group">
+                        <h3>Data Sharing</h3>
+                        <div class="notification-options">
+                            <label class="notification-toggle">
+                                <input type="checkbox" id="share-workout-data">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Share workout data with gym partners</span>
+                            </label>
+                            <label class="notification-toggle">
+                                <input type="checkbox" id="share-progress">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Share progress with trainers</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="privacy-group">
+                        <h3>Security</h3>
+                        <div class="security-actions">
+                            <button class="action-btn secondary" onclick="changePassword()">
+                                <i class="fas fa-key"></i> Change Password
+                            </button>
+                            <button class="action-btn secondary" onclick="enableTwoFactor()">
+                                <i class="fas fa-shield-alt"></i> Enable 2FA
+                            </button>
+                            <button class="action-btn secondary" onclick="viewLoginHistory()">
+                                <i class="fas fa-history"></i> Login History
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="action-btn primary" onclick="savePrivacySettings()">
+                    <i class="fas fa-save"></i> Save Privacy Settings
+                </button>
+            </div>
+
+            <!-- Account Tab -->
+            <div class="settings-tab-content" id="account-tab">
+                <div class="tab-header">
+                    <h2><i class="fas fa-user-cog"></i> Account Settings</h2>
+                    <p>Manage your account preferences and data</p>
+                </div>
+
+                <div class="account-settings">
+                    <div class="account-group">
+                        <h3>Account Information</h3>
+                        <div class="account-info-grid">
+                            <div class="info-item">
+                                <label>Member Since</label>
+                                <span id="member-since">Loading...</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Account Type</label>
+                                <span id="account-type">Free</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Total Bookings</label>
+                                <span id="total-bookings">Loading...</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Active Memberships</label>
+                                <span id="active-memberships-count">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="account-group">
+                        <h3>Data Management</h3>
+                        <div class="data-actions">
+                            <button class="action-btn secondary" onclick="exportData()">
+                                <i class="fas fa-download"></i> Export My Data
+                            </button>
+                            <button class="action-btn secondary" onclick="requestDataDeletion()">
+                                <i class="fas fa-trash"></i> Request Data Deletion
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="account-group danger-zone">
+                        <h3>Danger Zone</h3>
+                        <p>These actions cannot be undone</p>
+                        <div class="danger-actions">
+                            <button class="action-btn danger" onclick="deactivateAccount()">
+                                <i class="fas fa-user-slash"></i> Deactivate Account
+                            </button>
+                            <button class="action-btn danger" onclick="deleteAccount()">
+                                <i class="fas fa-trash-alt"></i> Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Modal Title</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                Modal content goes here
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <button class="action-btn secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <!-- About Section -->
+                <div class="footer-section about">
+                    <h2>Gym-Wale</h2>
+                    <p>Manage your fitness journey with ease. Find the best gyms, membership plans, and exciting offers.</p>
+                </div>
+
+                <!-- Useful Links -->
+                <div class="footer-section links">
+                    <h2>Useful Links</h2>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="membership-plans.html">Membership Plans</a></li>
+                        <li><a href="personaltraining.html">Personal Training</a></li>
+                        <li><a href="dietplans.html">Diet Plans</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Social Media Links -->
+                <div class="footer-section social">
+                    <h2>Follow Us</h2>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Copyright Section -->
+            <div class="footer-bottom">
+                <p>&copy; 2025 Gym-Wale | Designed by Aayush & Team</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Shared Auth Functions -->
+    <script>
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+        
+        // User authentication check for navbar
+        document.addEventListener("DOMContentLoaded", () => {
+            const token = localStorage.getItem("token");
+            const userNav = document.getElementById("user-profile-nav");
+            const loginNav = document.getElementById("login-signup-nav");
+
+            // Default states
+            if (userNav) userNav.style.display = "none";
+            if (loginNav) loginNav.style.display = "none";
+
+            if (!token) {
+                if (loginNav) loginNav.style.display = "block";
+                return;
+            }
+
+            // Try to fetch user profile if token exists
+            fetch(`${BASE_URL}/api/users/profile`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': "application/json",
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`Server responded with ${res.status}: ${errText}`);
+                }
+                return res.json();
+            })
+            .then(user => {
+                let profilePicUrl;
+                if (user.profileImage) {
+                    if (user.profileImage.startsWith('http')) {
+                        profilePicUrl = user.profileImage;
+                    } else {
+                        profilePicUrl = `${BASE_URL}/${user.profileImage}`;
+                    }
+                } else {
+                    profilePicUrl = `${BASE_URL}/uploads/profile-pics/default.png`;
+                }
+
+                const userIconImage = document.getElementById("profile-icon-img");
+                if (userIconImage) userIconImage.src = profilePicUrl;
+
+                if (userNav) userNav.style.display = "block";
+                if (loginNav) loginNav.style.display = "none";
+            })
+            .catch(error => {
+                console.error("Error fetching user:", error.message);
+                if (loginNav) loginNav.style.display = "block";
+            });
+        });
+        
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navLinks = document.querySelector('.nav-links');
+
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', function () {
+                    navLinks.classList.toggle('nav-active');
+                });
+            }
+
+            // Dropdown handling for mobile
+            document.querySelectorAll('.dropdown > a').forEach(function(dropLink) {
+                dropLink.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 900) {
+                        e.preventDefault();
+                        const dropdown = this.parentElement;
+                        dropdown.classList.toggle('dropdown-active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

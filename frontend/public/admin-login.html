@@ -3,42 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login</title>
+  <meta name="description" content="Secure admin login for Gym-Wale management system">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin Login - Gym-Wale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin-login.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="../gymadmin/public/Gym-Wale.png">
 </head>
 <body>
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;">
-    <div class="brand-header" style="display:flex;align-items:center;justify-content:center;gap:12px;margin:40px 0 18px 0;">
-      <img src="../gymadmin/public/Gym-Wale.png" alt="Gym-Wale Logo" style="height:48px;width:48px;border-radius:10px;box-shadow:0 2px 8px rgba(67,97,238,0.10);">
-      <span style="font-size:2.4rem;font-weight:800;color:var(--primary-color);letter-spacing:1.5px;line-height:1;">Gym-Wale</span>
-    </div>
-    <div class="login-container">
-    <h2 style="margin-bottom:18px;">Gym Admin Login</h2>
-    <form id="adminLoginForm" autocomplete="off" onsubmit="return false;">
-      <div class="form-group">
-        <label for="email" style="font-weight:500;margin-bottom:4px;display:block;">Email Address</label>
-        <input type="email" name="email" id="email" placeholder="Admin Email" required autocomplete="username" />
-        <div class="error-message" id="email-error">Please enter a valid email address</div>
-      </div>
-      <div class="form-group">
-        <label for="password" style="font-weight:500;margin-bottom:4px;display:block;">Password</label>
-        <div class="password-container">
-          <input type="password" name="password" id="password" placeholder="Password" required autocomplete="current-password" />
-          <span class="toggle-password" id="togglePassword" tabindex="0" aria-label="Show/Hide Password" style="font-size:1.2em;">
-            <i class="fas fa-eye" id="togglePasswordIcon"></i>
-          </span>
+  <main class="login-wrapper">
+    <header class="brand-header" style="display:flex;align-items:center;justify-content:center;gap:12px;margin:40px 0 24px 0;">
+      <img src="../gymadmin/public/Gym-Wale.png" alt="Gym-Wale Logo" style="height:52px;width:52px;border-radius:12px;box-shadow:0 4px 12px rgba(79, 70, 229, 0.15);">
+      <h1 style="font-size:2.4rem;font-weight:800;color:rgb(15, 3, 185);letter-spacing:1.5px;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,0.1);">Gym-Wale</h1>
+    </header>
+    
+    <section class="login-container" role="main" aria-label="Admin Login Form">
+      <h2>Welcome Back</h2>
+      <p style="text-align:center;color:var(--text-secondary);margin-bottom:32px;font-weight:500;">Please sign in to your admin account</p>
+      
+      <form id="adminLoginForm" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+          <input 
+            type="email" 
+            name="email" 
+            id="email" 
+            class="form-control"
+            placeholder="Enter your admin email" 
+            required 
+            autocomplete="username"
+            aria-describedby="email-error"
+          />
+          <div class="error-message" id="email-error" role="alert">Please enter a valid email address</div>
         </div>
-        <div class="error-message" id="password-error">Password must be at least 8 characters</div>
-      </div>
-      <button type="button" id="loginButton">
-        <span id="buttonText">Login</span>
-        <div class="loading-spinner" id="spinner"></div>
-      </button>
-      <a href="#" class="forgot-password" id="forgotPassword">Forgot Password?</a>
-    </form>
-    <div id="login-feedback" style="margin-top:18px;text-align:center;font-size:1.05em;"></div>
-  </div>
+        
+        <div class="form-group">
+          <label for="password"><i class="fas fa-lock"></i> Password</label>
+          <div class="password-container">
+            <input 
+              type="password" 
+              name="password" 
+              id="password" 
+              class="form-control"
+              placeholder="Enter your password" 
+              required 
+              autocomplete="current-password"
+              aria-describedby="password-error"
+            />
+           
+          </div>
+          <div class="error-message" id="password-error" role="alert">Password must be at least 8 characters</div>
+        </div>
+        
+        <button type="submit" id="loginButton" aria-describedby="login-feedback">
+          <span id="buttonText">Sign In</span>
+          <div class="loading-spinner" id="spinner" aria-hidden="true"></div>
+        </button>
+        
+        <a href="#" class="forgot-password" id="forgotPassword">Forgot your password?</a>
+      </form>
+      
+      <div id="login-feedback" aria-live="polite" style="margin-top:20px;text-align:center;font-size:1.05em;"></div>
+      
+    </section>
+  </main>
   <div id="global-success-message" class="success-message" style="display:none;text-align:center;margin-top:20px;"></div>
   <div class="forgot-password-modal" id="forgotPasswordModal">
     <div class="modal-content">

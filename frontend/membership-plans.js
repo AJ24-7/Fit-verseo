@@ -63,20 +63,6 @@ function initializeNavigation() {
         });
     });
     
-    // Settings submenu for mobile
-    document.querySelectorAll('.settings-option > a').forEach(function(settingsLink) {
-        settingsLink.addEventListener('click', function(e) {
-            if (window.innerWidth <= 900) {
-                e.preventDefault();
-                const parentOption = this.parentElement;
-                parentOption.classList.toggle('open');
-                document.querySelectorAll('.settings-option').forEach(function(opt) {
-                    if (opt !== parentOption) opt.classList.remove('open');
-                });
-            }
-        });
-    });
-    
     // Check authentication and update nav
     checkAuthentication();
 }

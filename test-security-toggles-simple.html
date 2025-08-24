@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Toggles Test - Simple</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .test-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .toggle-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 30px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #007bff;
+        }
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+        .status {
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .status.enabled {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .test-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.success {
+            background: #28a745;
+        }
+        .btn.danger {
+            background: #dc3545;
+        }
+        .debug-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔐 Security Toggles Test - Simple Version</h1>
+        
+        <div class="test-info">
+            <h3>How to Test:</h3>
+            <ol>
+                <li>Click the toggles below to change their state</li>
+                <li>Check the browser console for debug logs</li>
+                <li>Reload the page to verify persistence</li>
+                <li>Compare with dashboard toggles behavior</li>
+            </ol>
+        </div>
+        
+        <div class="toggle-section">
+            <h3>📱 Two-Factor Authentication</h3>
+            <div class="toggle-container">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="twoFactorAuth">
+                    <span class="slider"></span>
+                </label>
+                <span>Enable Two-Factor Authentication</span>
+                <span id="twoFactorStatus" class="status disabled">Disabled</span>
+            </div>
+        </div>
+        
+        <div class="toggle-section">
+            <h3>🔔 Login Notifications</h3>
+            <div class="toggle-container">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="loginNotifications">
+                    <span class="slider"></span>
+                </label>
+                <span>Enable Login Notifications</span>
+                <span id="loginNotificationStatus" class="status enabled">Enabled</span>
+            </div>
+        </div>
+        
+        <div class="toggle-section">
+            <h3>🛠️ Test Controls</h3>
+            <button class="btn" onclick="testApiConnection()">Test API Connection</button>
+            <button class="btn" onclick="testSaveLoad()">Test Save/Load</button>
+            <button class="btn success" onclick="loadStates()">Reload States</button>
+            <button class="btn danger" onclick="clearAllSettings()">Clear All Settings</button>
+            <button class="btn" onclick="debugStorage()">Debug Storage</button>
+        </div>
+        
+        <div class="debug-output" id="debugOutput">
+Debug output will appear here...
+        </div>
+    </div>
+
+    <script>
+        // Simplified gym-specific settings functions (like dashboard)
+        function getGymId() {
+            // Simple fallback ID for testing
+            return '6808bc380d3a005a225fc891';
+        }
+        
+        function getGymSpecificSetting(key) {
+            return localStorage.getItem(key);
+        }
+        
+        function setGymSpecificSetting(key, value) {
+            localStorage.setItem(key, value);
+            debugLog(`💾 Saved ${key} = ${value} (type: ${typeof value})`);
+        }
+        
+        function debugLog(message) {
+            const output = document.getElementById('debugOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateToggleStatus(toggleId, statusId) {
+            const toggle = document.getElementById(toggleId);
+            const status = document.getElementById(statusId);
+            
+            if (toggle.checked) {
+                status.textContent = 'Enabled';
+                status.className = 'status enabled';
+            } else {
+                status.textContent = 'Disabled';
+                status.className = 'status disabled';
+            }
+        }
+        
+        function setupSecurityToggles() {
+            debugLog('🔧 Setting up security toggles - Simple Version');
+            
+            const gymId = getGymId();
+            debugLog(`🏢 Using gym ID: ${gymId}`);
+            
+            // 2FA Toggle Setup
+            const twoFactorToggle = document.getElementById('twoFactorAuth');
+            if (twoFactorToggle) {
+                // Load saved state
+                const saved2FAState = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+                const is2FAEnabled = saved2FAState === 'true' || saved2FAState === true;
+                twoFactorToggle.checked = is2FAEnabled;
+                updateToggleStatus('twoFactorAuth', 'twoFactorStatus');
+                debugLog(`📱 2FA loaded: ${is2FAEnabled} (saved: ${saved2FAState})`);
+                
+                // Add event listener
+                twoFactorToggle.addEventListener('change', function() {
+                    const isEnabled = this.checked;
+                    debugLog(`🔐 2FA toggle changed to: ${isEnabled}`);
+                    
+                    // Save immediately (like dashboard toggles)
+                    setGymSpecificSetting(`twoFactorEnabled_${gymId}`, isEnabled.toString());
+                    updateToggleStatus('twoFactorAuth', 'twoFactorStatus');
+                    debugLog(`✅ 2FA setting saved successfully`);
+                });
+            }
+            
+            // Login Notifications Toggle Setup
+            const loginNotificationsToggle = document.getElementById('loginNotifications');
+            if (loginNotificationsToggle) {
+                // Load saved state
+                const savedNotificationsState = getGymSpecificSetting(`loginNotifications_${gymId}`);
+                const isNotificationsEnabled = savedNotificationsState === 'true' || savedNotificationsState === true || 
+                                               savedNotificationsState === null || savedNotificationsState === undefined; // Default enabled
+                loginNotificationsToggle.checked = isNotificationsEnabled;
+                updateToggleStatus('loginNotifications', 'loginNotificationStatus');
+                debugLog(`🔔 Login notifications loaded: ${isNotificationsEnabled} (saved: ${savedNotificationsState})`);
+                
+                // Add event listener
+                loginNotificationsToggle.addEventListener('change', function() {
+                    const isEnabled = this.checked;
+                    debugLog(`🔔 Login notifications toggle changed to: ${isEnabled}`);
+                    
+                    // Save immediately (like dashboard toggles)
+                    setGymSpecificSetting(`loginNotifications_${gymId}`, isEnabled.toString());
+                    updateToggleStatus('loginNotifications', 'loginNotificationStatus');
+                    debugLog(`✅ Login notifications setting saved successfully`);
+                });
+            }
+            
+            debugLog('✅ Security toggles setup complete');
+        }
+        
+        function testApiConnection() {
+            debugLog('🔗 Testing API connection...');
+            
+            const token = localStorage.getItem('gymAdminToken');
+            if (!token) {
+                debugLog('❌ No auth token found. Please login first.');
+                return;
+            }
+            
+            // Test 2FA status API
+            fetch('/api/security/2fa-status', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                debugLog(`✅ 2FA API Response: ${JSON.stringify(result)}`);
+            })
+            .catch(error => {
+                debugLog(`❌ 2FA API Error: ${error.message}`);
+            });
+            
+            // Test login notifications status API
+            fetch('/api/security/notification-status', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                debugLog(`✅ Notifications API Response: ${JSON.stringify(result)}`);
+            })
+            .catch(error => {
+                debugLog(`❌ Notifications API Error: ${error.message}`);
+            });
+        }
+        
+        function testSaveLoad() {
+            debugLog('🧪 Testing save/load functionality...');
+            
+            const gymId = getGymId();
+            
+            // Test 2FA
+            const twoFactorToggle = document.getElementById('twoFactorAuth');
+            const currentState = twoFactorToggle.checked;
+            const newState = !currentState;
+            
+            debugLog(`🔄 Changing 2FA from ${currentState} to ${newState}`);
+            twoFactorToggle.checked = newState;
+            twoFactorToggle.dispatchEvent(new Event('change'));
+            
+            // Verify it was saved
+            const savedState = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+            debugLog(`🔍 Verification: saved state = ${savedState} (expected: ${newState.toString()})`);
+            
+            if (savedState === newState.toString()) {
+                debugLog('✅ Save/load test PASSED');
+            } else {
+                debugLog('❌ Save/load test FAILED');
+            }
+        }
+        
+        function loadStates() {
+            debugLog('🔄 Manually reloading all states...');
+            setupSecurityToggles();
+        }
+        
+        function clearAllSettings() {
+            debugLog('🗑️ Clearing all security settings...');
+            const gymId = getGymId();
+            
+            localStorage.removeItem(`twoFactorEnabled_${gymId}`);
+            localStorage.removeItem(`loginNotifications_${gymId}`);
+            
+            debugLog('✅ Settings cleared, reloading...');
+            setupSecurityToggles();
+        }
+        
+        function debugStorage() {
+            debugLog('🔍 Current localStorage contents:');
+            const gymId = getGymId();
+            
+            const allKeys = Object.keys(localStorage);
+            const relevantKeys = allKeys.filter(key => key.includes(gymId) || key.includes('twoFactor') || key.includes('loginNotifications'));
+            
+            debugLog(`📋 Found ${relevantKeys.length} relevant keys:`);
+            relevantKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                debugLog(`  ${key} = ${value} (${typeof value})`);
+            });
+            
+            if (relevantKeys.length === 0) {
+                debugLog('  (No relevant settings found)');
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🚀 Simple security toggles test loaded');
+            setupSecurityToggles();
+        });
+    </script>
+</body>
+</html>

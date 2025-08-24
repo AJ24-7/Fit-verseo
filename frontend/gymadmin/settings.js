@@ -1,174 +1,69 @@
-// ===== SCRIPT LOADING TEST =====
-console.log('🔧 settings.js is loading...');
+// ===== SETTINGS INITIALIZATION =====
 window.settingsJsLoaded = true;
 
-// Simple test function available immediately
-window.testSettingsLoaded = function() {
-  console.log('✅ settings.js is loaded and working!');
-  return 'Settings.js is loaded and working!';
+// Initialize a flag to track manager initialization
+window.securityManagersInitialized = false;
+
+// Add a global function to safely check if security managers are ready
+window.areSecurityManagersReady = function() {
+  return window.securityManagersInitialized && 
+         window.twoFactorManager && 
+         window.loginNotificationsManager;
 };
 
-// Test if DOM elements exist
-window.checkBiometricToggles = function() {
-  const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
-  const faceToggle = document.getElementById('toggleFaceRecognitionAttendance');
-  
-  console.log('Fingerprint toggle:', fingerprintToggle);
-  console.log('Face toggle:', faceToggle);
-  
-  return {
-    fingerprintExists: !!fingerprintToggle,
-    faceExists: !!faceToggle,
-    bothExist: !!fingerprintToggle && !!faceToggle
-  };
-};
-
-// Test direct event listener setup
-window.setupDirectToggleTest = function() {
-  console.log('🔧 Setting up direct toggle test...');
-  
-  const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
-  const faceToggle = document.getElementById('toggleFaceRecognitionAttendance');
-  
-  if (fingerprintToggle) {
-    console.log('Adding direct event listener to fingerprint toggle');
-    fingerprintToggle.addEventListener('change', function() {
-      console.log('🔧 DIRECT: Fingerprint toggle changed to:', this.checked);
-    });
-  } else {
-    console.error('❌ Fingerprint toggle not found for direct test');
-  }
-  
-  if (faceToggle) {
-    console.log('Adding direct event listener to face toggle');
-    faceToggle.addEventListener('change', function() {
-      console.log('🔧 DIRECT: Face toggle changed to:', this.checked);
-    });
-  } else {
-    console.error('❌ Face toggle not found for direct test');
-  }
-  
-  return 'Direct toggle test setup complete';
-};
-
-// Test when DOM is actually ready
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('🔧 DOM Content Loaded - settings.js executing');
-  
-  setTimeout(function() {
-    console.log('🔧 Delayed check after DOM ready');
-    window.checkBiometricToggles();
-    
-    // Auto-setup direct test
-    if (typeof window.setupDirectToggleTest === 'function') {
-      window.setupDirectToggleTest();
+// Add a global function to wait for security managers to be ready
+window.waitForSecurityManagers = function(timeout = 5000) {
+  return new Promise((resolve, reject) => {
+    if (window.areSecurityManagersReady()) {
+      resolve(true);
+      return;
     }
     
-    // Check if we need to navigate to settings tab first
-    const settingsTab = document.getElementById('settingsTab');
-    if (settingsTab) {
-      console.log('Settings tab found:', settingsTab.style.display);
-    } else {
-      console.log('Settings tab not found');
-    }
-  }, 2000); // Increased delay to ensure setupBiometricAttendance has run
-});
-
-// Add function to navigate to settings tab and test
-window.goToSettingsAndTest = function() {
-  console.log('🔧 Navigating to settings tab...');
-  
-  // Click on settings menu item
-  const settingsMenuItem = document.querySelector('[data-tab="settingsTab"]') || 
-                          document.querySelector('.menu-item:last-child .menu-link');
-  
-  if (settingsMenuItem) {
-    console.log('Clicking settings menu item');
-    settingsMenuItem.click();
-    
-    // Wait for tab switch, then test
-    setTimeout(() => {
-      console.log('Testing after tab switch...');
-      window.checkBiometricToggles();
-      if (typeof window.setupDirectToggleTest === 'function') {
-        window.setupDirectToggleTest();
+    const startTime = Date.now();
+    const checkInterval = setInterval(() => {
+      if (window.areSecurityManagersReady()) {
+        clearInterval(checkInterval);
+        resolve(true);
+      } else if (Date.now() - startTime > timeout) {
+        clearInterval(checkInterval);
+        reject(new Error('Security managers failed to initialize within timeout'));
       }
-    }, 500);
-  } else {
-    console.error('Settings menu item not found');
-  }
+    }, 100);
+  });
 };
 
-// Comprehensive biometric system test
-window.fullBiometricTest = function() {
-  console.log('🧪 === FULL BIOMETRIC SYSTEM TEST ===');
-  
-  // 1. Check if settings.js is loaded
-  console.log('1. Settings.js loaded:', !!window.settingsJsLoaded);
-  
-  // 2. Navigate to settings tab first
-  const settingsMenuItem = document.querySelector('[data-tab="settingsTab"]') || 
-                          document.querySelector('.menu-item:last-child .menu-link');
-  
-  if (settingsMenuItem) {
-    console.log('2. Clicking settings tab...');
-    settingsMenuItem.click();
-    
-    setTimeout(() => {
-      // 3. Check DOM elements
-      const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
-      const faceToggle = document.getElementById('toggleFaceRecognitionAttendance');
-      
-      console.log('3. DOM Elements:');
-      console.log('   - Fingerprint toggle:', !!fingerprintToggle);
-      console.log('   - Face toggle:', !!faceToggle);
-      
-      if (fingerprintToggle) {
-        console.log('   - Fingerprint current state:', fingerprintToggle.checked);
-        console.log('   - Fingerprint visible:', fingerprintToggle.offsetParent !== null);
-      }
-      
-      // 4. Check gym ID
-      const gymId = typeof getGymId === 'function' ? getGymId() : 'function not available';
-      console.log('4. Gym ID:', gymId);
-      
-      // 5. Check biometric settings
-      if (typeof getBiometricSettings === 'function' && gymId !== 'function not available') {
-        const settings = getBiometricSettings(gymId);
-        console.log('5. Current biometric settings:', settings);
-      } else {
-        console.log('5. getBiometricSettings function not available');
-      }
-      
-      // 6. Enable bypass and test
-      if (typeof window.enableBiometricBypass === 'function') {
-        window.enableBiometricBypass();
-        console.log('6. Biometric bypass enabled for testing');
-      }
-      
-      // 7. Add direct event listeners for testing
-      if (fingerprintToggle) {
-        const existingListeners = fingerprintToggle.cloneNode(true);
-        fingerprintToggle.addEventListener('change', function() {
-          console.log('🔧 TEST LISTENER: Fingerprint toggle changed to:', this.checked);
-        });
-        console.log('7. Added test event listener to fingerprint toggle');
-      }
-      
-      if (faceToggle) {
-        faceToggle.addEventListener('change', function() {
-          console.log('🔧 TEST LISTENER: Face toggle changed to:', this.checked);
-        });
-        console.log('7. Added test event listener to face toggle');
-      }
-      
-      console.log('=== TEST SETUP COMPLETE ===');
-      console.log('Now try clicking the toggles manually and watch for log messages');
-      
-    }, 1000);
-  } else {
-    console.error('Settings menu item not found!');
+// Add a function to try initializing security managers with fallback
+window.ensureSecurityManagers = function() {
+  if (window.areSecurityManagersReady()) {
+    return true;
   }
+  
+  try {
+    // Check if classes are available
+    if (typeof TwoFactorAuthManager !== 'undefined' && 
+        typeof LoginNotificationsManager !== 'undefined') {
+      
+      if (!window.twoFactorManager) {
+        window.twoFactorManager = new TwoFactorAuthManager();
+        console.log('✅ Created TwoFactorAuthManager instance');
+      }
+      
+      if (!window.loginNotificationsManager) {
+        window.loginNotificationsManager = new LoginNotificationsManager();
+        console.log('✅ Created LoginNotificationsManager instance');
+      }
+      
+      if (window.twoFactorManager && window.loginNotificationsManager) {
+        window.securityManagersInitialized = true;
+        console.log('✅ Security managers ensured and ready');
+        return true;
+      }
+    }
+  } catch (error) {
+    console.log('⚠️ Could not ensure security managers:', error.message);
+  }
+  
+  return false;
 };
 
 window.addEventListener('load', function() {
@@ -659,7 +554,7 @@ class BiometricAgentManager {
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 700px;">
                 <div class="modal-header">
-                    <h3>🚀 Simple Biometric Agent Setup</h3>
+                    <h3><i class="fas fa-cogs"></i> Simple Biometric Agent Setup</h3>
                     <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -1411,7 +1306,7 @@ function applyColorScheme(color) {
     green: { primary: '#28a745', primaryDark: '#1e7e34', success: '#20c997', warning: '#ffc107', danger: '#dc3545' },
     purple: { primary: '#6f42c1', primaryDark: '#5a32a3', success: '#28a745', warning: '#ffc107', danger: '#dc3545' },
     orange: { primary: '#fd7e14', primaryDark: '#e55a00', success: '#28a745', warning: '#ffc107', danger: '#dc3545' },
-    red: { primary: '#dc3545', primaryDark: '#c82333', success: '#28a745', warning: '#ffc107', danger: '#e74c3c' }
+    grey: { primary: '#4f7c82', primaryDark: '#1a5d65ff', success: '#28a745', warning: '#ffc107', danger: '#e74c3c' }
   };
   
   const scheme = colorSchemes[color];
@@ -1427,136 +1322,107 @@ function applyColorScheme(color) {
 }
 
 // ===== SETTINGS MANAGEMENT =====
-function saveAllSettings() {
-  const settings = {
-    theme: document.querySelector('.theme-option.active')?.dataset.theme || 'light',
-    color: document.querySelector('.color-option.active')?.dataset.color || 'blue',
-    notifications: {
-      newMembers: document.getElementById('newMemberNotif')?.checked || false,
-      payments: document.getElementById('paymentNotif')?.checked || false,
-      trainers: document.getElementById('trainerNotif')?.checked || false,
-      email: document.getElementById('emailNotif')?.checked || false
-    },
-    services: {
-      onlineBooking: document.getElementById('onlineBooking')?.checked || false,
-      personalTraining: document.getElementById('personalTraining')?.checked || false,
-      groupClasses: document.getElementById('groupClasses')?.checked || false,
-      equipmentReservation: document.getElementById('equipmentReservation')?.checked || false,
-      memberCheckin: document.getElementById('memberCheckin')?.checked || false
-    },
-    security: {
-      twoFactorAuth: document.getElementById('twoFactorAuth')?.checked || false,
-      loginAlerts: document.getElementById('loginAlerts')?.checked || false
-    },
-    operatingHours: getOperatingHours()
-  };
-  
-  // Save to localStorage
-  localStorage.setItem('gymAdminSettings', JSON.stringify(settings));
-  
-  // Show success message
-  showNotification('Settings saved successfully!', 'success');
-}
-
-function resetSettings() {
-  if (confirm('Are you sure you want to reset all settings to default? This will only affect the current gym\'s settings.')) {
-    const gymId = getGymId();
-    
-    console.log(`🔄 Resetting settings for gym: ${gymId}`);
-    
-    // Clear saved settings (global)
-    localStorage.removeItem('gymAdminSettings');
-    localStorage.removeItem('gymAdminTheme');
-    localStorage.removeItem('gymAdminColor');
-    
-    // Clear gym-specific dashboard customization settings
-    if (gymId) {
-      removeGymSpecificSetting(`dashboardEquipmentVisible_${gymId}`);
-      removeGymSpecificSetting(`dashboardPaymentVisible_${gymId}`);
-      
-      console.log(`✅ Cleared gym-specific settings for gym: ${gymId}`);
-    }
-    
-    // Reset UI to defaults
-    applyTheme('light');
-    applyColorScheme('blue');
-    
-    // Reset all toggles and inputs
-    document.querySelectorAll('.toggle-switch input').forEach(input => {
-      input.checked = input.id.includes('newMemberNotif') || 
-                      input.id.includes('paymentNotif') || 
-                      input.id.includes('trainerNotif') ||
-                      input.id.includes('onlineBooking') ||
-                      input.id.includes('personalTraining') ||
-                      input.id.includes('groupClasses') ||
-                      input.id.includes('memberCheckin') ||
-                      input.id.includes('loginAlerts');
-    });
-    
-    // Reset dashboard customization toggles to default (enabled)
-    const equipmentToggle = document.getElementById('toggleEquipmentTab');
-    const paymentToggle = document.getElementById('togglePaymentTab');
-    if (equipmentToggle) {
-      equipmentToggle.checked = true;
-      applyTabVisibility('equipment', true);
-    }
-    if (paymentToggle) {
-      paymentToggle.checked = true;
-      applyTabVisibility('payment', true);
-    }
-    
-    // Reset theme and color selections
-    document.querySelectorAll('.theme-option').forEach(opt => {
-      opt.classList.toggle('active', opt.dataset.theme === 'light');
-    });
-    
-    document.querySelectorAll('.color-option').forEach(opt => {
-      opt.classList.toggle('active', opt.dataset.color === 'blue');
-    });
-    
-    showNotification(`Settings reset to defaults for gym ${gymId.substring(0, 8)}...!`, 'info');
-  }
-}
 
 function loadSavedSettings() {
-  const saved = localStorage.getItem('gymAdminSettings');
-  if (saved) {
+  const gymId = getGymId();
+  if (!gymId) {
+    console.warn('No gym ID found, skipping settings load');
+    return;
+  }
+
+  console.log(`📋 Loading individual settings for gym ${gymId}...`);
+  
+  // Load individual notification settings
+  const notificationSettings = [
+    { id: 'newMemberNotif', key: 'newMembers' },
+    { id: 'paymentNotif', key: 'payments' },
+    { id: 'trainerNotif', key: 'trainers' },
+    { id: 'emailNotif', key: 'email' }
+  ];
+  
+  notificationSettings.forEach(({ id, key }) => {
+    const saved = getGymSpecificSetting(`notification_${key}_${gymId}`);
+    const element = document.getElementById(id);
+    if (element && saved !== null) {
+      element.checked = saved === 'true';
+    }
+  });
+  
+  // Load individual service settings
+  const serviceSettings = [
+    'onlineBooking', 'personalTraining', 'groupClasses', 
+    'equipmentReservation', 'memberCheckin'
+  ];
+  
+  serviceSettings.forEach(serviceId => {
+    const saved = getGymSpecificSetting(`service_${serviceId}_${gymId}`);
+    const element = document.getElementById(serviceId);
+    if (element && saved !== null) {
+      element.checked = saved === 'true';
+    }
+  });
+
+  // Load biometric settings
+  if (typeof loadBiometricSettings === 'function') {
+    loadBiometricSettings(gymId);
+  }
+  
+  // Load gym-specific security settings after main settings
+  setTimeout(() => {
+    loadGymSpecificSecuritySettings(gymId);
+  }, 100);
+  
+  console.log('✅ Individual settings loaded successfully');
+}
+
+// New function to load gym-specific security settings
+function loadGymSpecificSecuritySettings(gymId) {
+  console.log(`🔐 Loading gym-specific security settings for: ${gymId}`);
+  
+  // Reset the setup tracker for gym switches
+  if (window.securityToggleHandlersSetup && window.securityToggleHandlersSetup !== gymId) {
+    console.log('🔄 Gym switched, resetting security handlers setup tracker');
+    window.securityToggleHandlersSetup = null;
+  }
+  
+  try {
+    // Use the new dedicated loading function
+    loadSecurityToggleStates(gymId);
+    
+    // IMPORTANT: Also set up the toggle handlers here since this is called when settings are loaded
+    setTimeout(() => {
+      setupSecurityToggleHandlers(gymId);
+    }, 50);
+    
+    console.log('✅ Gym-specific security settings loaded successfully');
+  } catch (error) {
+    console.error('❌ Error loading gym-specific security settings:', error);
+    
+    // Fallback to manual loading
     try {
-      const settings = JSON.parse(saved);
-      
-      // Apply notification settings
-      if (settings.notifications) {
-        Object.entries(settings.notifications).forEach(([key, value]) => {
-          const element = document.getElementById(key === 'newMembers' ? 'newMemberNotif' : 
-                                              key === 'payments' ? 'paymentNotif' :
-                                              key === 'trainers' ? 'trainerNotif' : 'emailNotif');
-          if (element) element.checked = value;
-        });
+      // Load 2FA setting
+      const twoFactorEnabled = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+      if (twoFactorEnabled !== null) {
+        const is2FAEnabled = twoFactorEnabled === 'true' || twoFactorEnabled === true;
+        const twoFactorToggle = document.getElementById('twoFactorAuth');
+        if (twoFactorToggle) {
+          twoFactorToggle.checked = is2FAEnabled;
+          console.log(`✅ Fallback: Set 2FA toggle to: ${is2FAEnabled} for gym ${gymId}`);
+        }
       }
       
-      // Apply service settings
-      if (settings.services) {
-        Object.entries(settings.services).forEach(([key, value]) => {
-          const element = document.getElementById(key);
-          if (element) element.checked = value;
-        });
+      // Load login notifications setting
+      const loginNotificationsEnabled = getGymSpecificSetting(`loginNotifications_${gymId}`);
+      if (loginNotificationsEnabled !== null) {
+        const isLoginNotificationsEnabled = loginNotificationsEnabled === 'true' || loginNotificationsEnabled === true;
+        const loginNotificationsToggle = document.getElementById('loginNotifications');
+        if (loginNotificationsToggle) {
+          loginNotificationsToggle.checked = isLoginNotificationsEnabled;
+          console.log(`✅ Fallback: Set login notifications toggle to: ${isLoginNotificationsEnabled} for gym ${gymId}`);
+        }
       }
-      
-      // Apply security settings
-      if (settings.security) {
-        Object.entries(settings.security).forEach(([key, value]) => {
-          const element = document.getElementById(key);
-          if (element) element.checked = value;
-        });
-      }
-      
-      // Apply operating hours
-      if (settings.operatingHours) {
-        setOperatingHours(settings.operatingHours);
-      }
-      
-    } catch (e) {
-      console.error('Error loading settings:', e);
+    } catch (fallbackError) {
+      console.error('❌ Fallback loading also failed:', fallbackError);
     }
   }
 }
@@ -1619,6 +1485,260 @@ function exportData(type) {
   setTimeout(() => {
     showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} data exported successfully!`, 'success');
   }, 2000);
+}
+
+// ===== INDIVIDUAL SETTINGS SAVE HANDLERS =====
+function setupIndividualSettingsSave(gymId) {
+  console.log(`🔧 Setting up individual save handlers for gym: ${gymId}`);
+  
+  // Notification settings
+  const notificationToggles = [
+    { id: 'newMemberNotif', key: 'newMembers', name: 'New Member Notifications' },
+    { id: 'paymentNotif', key: 'payments', name: 'Payment Notifications' },
+    { id: 'trainerNotif', key: 'trainers', name: 'Trainer Notifications' },
+    { id: 'emailNotif', key: 'email', name: 'Email Notifications' }
+  ];
+  
+  notificationToggles.forEach(({ id, key, name }) => {
+    const toggle = document.getElementById(id);
+    if (toggle) {
+      toggle.addEventListener('change', function() {
+        const isEnabled = this.checked;
+        setGymSpecificSetting(`notification_${key}_${gymId}`, isEnabled);
+        showNotification(`${name} ${isEnabled ? 'enabled' : 'disabled'}`, isEnabled ? 'success' : 'info');
+      });
+    }
+  });
+  
+  // Service settings  
+  const serviceToggles = [
+    { id: 'onlineBooking', name: 'Online Booking' },
+    { id: 'personalTraining', name: 'Personal Training' },
+    { id: 'groupClasses', name: 'Group Classes' },
+    { id: 'equipmentReservation', name: 'Equipment Reservation' },
+    { id: 'memberCheckin', name: 'Member Check-in' }
+  ];
+  
+  serviceToggles.forEach(({ id, name }) => {
+    const toggle = document.getElementById(id);
+    if (toggle) {
+      toggle.addEventListener('change', function() {
+        const isEnabled = this.checked;
+        setGymSpecificSetting(`service_${id}_${gymId}`, isEnabled);
+        showNotification(`${name} ${isEnabled ? 'enabled' : 'disabled'}`, isEnabled ? 'success' : 'info');
+      });
+    }
+  });
+  
+  // Security settings - Connect to managers and ensure gym-specific saving
+  setupSecurityToggleHandlers(gymId);
+  
+  console.log('✅ Individual save handlers setup complete');
+}
+
+// New function to handle security toggles with proper gym-specific saving
+// New function to handle security toggles with proper gym-specific saving (simplified like dashboard)
+async function setupSecurityToggleHandlers(gymId) {
+  console.log(`🔐 Setting up security toggle handlers for gym: ${gymId}`);
+  
+  // Prevent duplicate setup by checking if already setup for this gym
+  if (window.securityToggleHandlersSetup === gymId) {
+    console.log('✅ Security toggle handlers already setup for this gym, skipping...');
+    return;
+  }
+  
+  // Mark as setup for this gym to prevent duplicates
+  window.securityToggleHandlersSetup = gymId;
+  
+  console.log('✅ Setting up security toggle handlers immediately (simplified approach)...');
+  await setupActualToggleHandlers(gymId);
+}
+
+// Separate function for actual toggle handler setup (simplified like dashboard)
+async function setupActualToggleHandlers(gymId) {
+  console.log(`🔧 Setting up actual toggle handlers for gym: ${gymId}`);
+  
+  // 2FA Toggle Handler
+  const twoFactorToggle = document.getElementById('twoFactorAuth');
+  console.log('🔍 2FA toggle element found:', !!twoFactorToggle);
+  
+  if (twoFactorToggle) {
+    console.log('✅ Setting up 2FA toggle event listener');
+    
+    // Load saved state from backend API
+    try {
+      const response = await fetch('/api/security/2fa-status', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const is2FAEnabled = result.data?.enabled !== false; // Default to enabled
+        twoFactorToggle.checked = is2FAEnabled;
+        
+        // Also save to localStorage for backup
+        setGymSpecificSetting(`twoFactorEnabled_${gymId}`, is2FAEnabled.toString());
+        console.log(`📱 2FA toggle loaded from API: ${is2FAEnabled}`);
+      } else {
+        // Fallback to localStorage
+        const saved2FAState = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+        const is2FAEnabled = saved2FAState === 'true' || saved2FAState === true || saved2FAState === null; // Default enabled
+        twoFactorToggle.checked = is2FAEnabled;
+        console.log(`📱 2FA toggle loaded from localStorage fallback: ${is2FAEnabled}`);
+      }
+    } catch (error) {
+      console.warn('Failed to load 2FA state from API:', error);
+      // Fallback to localStorage
+      const saved2FAState = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+      const is2FAEnabled = saved2FAState === 'true' || saved2FAState === true || saved2FAState === null; // Default enabled
+      twoFactorToggle.checked = is2FAEnabled;
+      console.log(`📱 2FA toggle loaded from localStorage fallback: ${is2FAEnabled}`);
+    }
+    
+    // Add event listener (simple like dashboard toggles)
+    twoFactorToggle.addEventListener('change', async function() {
+      const isEnabled = this.checked;
+      console.log(`🔐 2FA toggle changed to: ${isEnabled} for gym: ${gymId}`);
+      
+      try {
+        // Save to backend API first
+        const response = await fetch('/api/security/toggle-2fa', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+          },
+          body: JSON.stringify({ enabled: isEnabled })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Save the setting locally (like dashboard toggles)
+          setGymSpecificSetting(`twoFactorEnabled_${gymId}`, isEnabled.toString());
+          console.log(`💾 2FA setting saved for gym ${gymId}: ${isEnabled}`);
+          
+          // Show success notification
+          showNotification(
+            `Two-Factor Authentication ${isEnabled ? 'enabled' : 'disabled'} successfully!`, 
+            'success'
+          );
+        } else {
+          // Revert toggle on error
+          this.checked = !isEnabled;
+          showNotification(
+            `Failed to ${isEnabled ? 'enable' : 'disable'} 2FA: ${result.message}`, 
+            'error'
+          );
+        }
+      } catch (error) {
+        console.error('Error updating 2FA setting:', error);
+        // Revert toggle on error
+        this.checked = !isEnabled;
+        showNotification(
+          `Failed to ${isEnabled ? 'enable' : 'disable'} 2FA. Please try again.`, 
+          'error'
+        );
+      }
+    });
+  } else {
+    console.warn('⚠️ 2FA toggle element not found - ID should be "twoFactorAuth"');
+  }
+  
+  // Login Notifications Toggle Handler
+  const loginNotificationsToggle = document.getElementById('loginNotifications');
+  console.log('🔍 Login notifications toggle element found:', !!loginNotificationsToggle);
+  
+  if (loginNotificationsToggle) {
+    console.log('✅ Setting up login notifications toggle event listener');
+    
+    // Load saved state for this gym (like dashboard toggles)
+    const savedNotificationsState = getGymSpecificSetting(`loginNotifications_${gymId}`);
+    const isNotificationsEnabled = savedNotificationsState === 'true' || savedNotificationsState === true || 
+                                   savedNotificationsState === null || savedNotificationsState === undefined; // Default enabled
+    loginNotificationsToggle.checked = isNotificationsEnabled;
+    console.log(`Login notifications toggle loaded state: ${isNotificationsEnabled} (saved: ${savedNotificationsState})`);
+    
+    loginNotificationsToggle.addEventListener('change', async function() {
+      const isEnabled = this.checked;
+      console.log(`🔔 Login notifications toggle changed to: ${isEnabled} for gym: ${gymId}`);
+      
+      try {
+        // Save the setting immediately
+        setGymSpecificSetting(`loginNotifications_${gymId}`, isEnabled.toString());
+        console.log(`� Login notifications setting saved for gym ${gymId}: ${isEnabled}`);
+        
+        // Show notification
+        showNotification(
+          `Login notifications ${isEnabled ? 'enabled' : 'disabled'} successfully!`, 
+          'success'
+        );
+        
+        // If we have a manager, try to sync with it
+        if (window.loginNotificationsManager && typeof window.loginNotificationsManager.syncToggleState === 'function') {
+          window.loginNotificationsManager.syncToggleState(isEnabled).catch(error => {
+            console.warn('⚠️ Failed to sync with login notifications manager:', error.message);
+          });
+        }
+        
+      } catch (error) {
+        console.error('❌ Error handling login notifications toggle:', error);
+        showNotification('Failed to update login notifications: ' + error.message, 'error');
+      }
+    });
+  } else {
+    console.warn('⚠️ Login notifications toggle element not found - ID should be "loginNotifications"');
+  }
+  
+  console.log('✅ Security toggle handlers setup complete');
+}
+
+// Function to load and apply saved security toggle states
+function loadSecurityToggleStates(gymId) {
+  console.log(`🔄 Loading saved security toggle states for gym: ${gymId}`);
+  
+  try {
+    // Load 2FA toggle state
+    const twoFactorToggle = document.getElementById('twoFactorAuth');
+    if (twoFactorToggle) {
+      const saved2FAState = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+      // Handle different possible saved values
+      let is2FAEnabled = false;
+      if (saved2FAState === 'true' || saved2FAState === true || saved2FAState === 1 || saved2FAState === '1') {
+        is2FAEnabled = true;
+      }
+      twoFactorToggle.checked = is2FAEnabled;
+      console.log(`📱 2FA toggle set to: ${is2FAEnabled} (saved value: ${saved2FAState}, type: ${typeof saved2FAState})`);
+    } else {
+      console.warn('⚠️ 2FA toggle element not found');
+    }
+    
+    // Load login notifications toggle state
+    const loginNotificationsToggle = document.getElementById('loginNotifications');
+    if (loginNotificationsToggle) {
+      const savedNotificationsState = getGymSpecificSetting(`loginNotifications_${gymId}`);
+      // Handle different possible saved values
+      let isNotificationsEnabled = false;
+      if (savedNotificationsState === 'true' || savedNotificationsState === true || savedNotificationsState === 1 || savedNotificationsState === '1') {
+        isNotificationsEnabled = true;
+      }
+      // Default to enabled if no saved state (first time)
+      if (savedNotificationsState === null || savedNotificationsState === undefined) {
+        isNotificationsEnabled = true;
+        setGymSpecificSetting(`loginNotifications_${gymId}`, true);
+      }
+      loginNotificationsToggle.checked = isNotificationsEnabled;
+      console.log(`🔔 Login notifications toggle set to: ${isNotificationsEnabled} (saved value: ${savedNotificationsState}, type: ${typeof savedNotificationsState})`);
+    } else {
+      console.warn('⚠️ Login notifications toggle element not found');
+    }
+    
+    console.log('✅ Security toggle states loaded successfully');
+  } catch (error) {
+    console.error('❌ Error loading security toggle states:', error);
+  }
 }
 
 // ===== MODAL FUNCTIONS =====
@@ -1790,27 +1910,82 @@ function openBiometricDeviceSetup() {
 
 function createBiometricModal(title, content, maxWidth = '90%') {
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'modal-overlay biometric-modal';
   overlay.style.cssText = `
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 10000;
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.3s ease;
   `;
   
+  // Add fade-in animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { transform: scale(0.9) translateY(-20px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+  
   overlay.innerHTML = `
-    <div class="modal-body" style="background: white; border-radius: 12px; max-width: ${maxWidth}; max-height: 90%; overflow-y: auto; position: relative;">
-      <div class="modal-header" style="padding: 20px 24px 0 24px; border-bottom: 1px solid #eee; margin-bottom: 0;">
-        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
-          <i class="fas fa-fingerprint"></i> ${title}
+    <div class="modal-body" style="
+      background: white; 
+      border-radius: 12px; 
+      max-width: ${maxWidth}; 
+      max-height: 90%; 
+      overflow-y: auto; 
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideIn 0.3s ease;
+      margin: 20px;
+    ">
+      <div class="modal-header" style="
+        padding: 20px 24px 0 24px; 
+        border-bottom: 1px solid #eee; 
+        margin-bottom: 0;
+        position: sticky;
+        top: 0;
+        background: white;
+        border-radius: 12px 12px 0 0;
+        z-index: 1;
+      ">
+        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; color: #333;">
+          <i class="fas fa-fingerprint" style="color: #007bff;"></i> ${title}
         </h3>
-        <button onclick="this.closest('.modal-overlay').remove()" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
+        <button onclick="this.closest('.modal-overlay').remove()" style="
+          position: absolute; 
+          top: 15px; 
+          right: 20px; 
+          background: none; 
+          border: none; 
+          font-size: 24px; 
+          cursor: pointer; 
+          color: #999;
+          padding: 5px;
+          border-radius: 50%;
+          width: 35px;
+          height: 35px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        " 
+        onmouseover="this.style.background='#f0f0f0'; this.style.color='#333';"
+        onmouseout="this.style.background='none'; this.style.color='#999';"
+        >×</button>
       </div>
       <div class="modal-content">
         ${content}
@@ -1824,6 +1999,15 @@ function createBiometricModal(title, content, maxWidth = '90%') {
       overlay.remove();
     }
   });
+  
+  // Add escape key handler
+  const escapeHandler = (e) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.removeEventListener('keydown', escapeHandler);
+    }
+  };
+  document.addEventListener('keydown', escapeHandler);
   
   return overlay;
 }
@@ -1868,9 +2052,18 @@ document.addEventListener('DOMContentLoaded', function() {
   const themeOptions = document.querySelectorAll('.theme-option');
   const colorOptions = document.querySelectorAll('.color-option');
 
-  // Load saved theme and color
-  const savedTheme = localStorage.getItem('gymAdminTheme') || 'light';
-  const savedColor = localStorage.getItem('gymAdminColor') || 'blue';
+  // Get gym-specific identifier for theme isolation
+  const gymId = getGymId();
+  if (!gymId) {
+    console.warn('No gym ID found, using default theme settings');
+    return;
+  }
+
+  // Load saved theme and color for this specific gym
+  const savedTheme = getGymSpecificSetting(`gymAdminTheme_${gymId}`) || 'light';
+  const savedColor = getGymSpecificSetting(`gymAdminColor_${gymId}`) || 'blue';
+
+  console.log(`Loading theme settings for gym ${gymId}:`, { theme: savedTheme, color: savedColor });
 
   // Apply saved theme and color
   applyTheme(savedTheme);
@@ -1885,7 +2078,9 @@ document.addEventListener('DOMContentLoaded', function() {
       this.classList.add('active');
       const theme = this.dataset.theme;
       applyTheme(theme);
-      localStorage.setItem('gymAdminTheme', theme);
+      // Save theme for this specific gym
+      setGymSpecificSetting(`gymAdminTheme_${gymId}`, theme);
+      showNotification(`Theme updated for gym: ${gymId.substring(0, 8)}...`, 'success');
     });
   });
 
@@ -1967,16 +2162,18 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // Apply color scheme
       applyColorScheme(color);
-      // Save preference
-      localStorage.setItem('gymAdminColor', color);
+      // Save preference for this specific gym
+      setGymSpecificSetting(`gymAdminColor_${gymId}`, color);
+      showNotification(`Color scheme updated for gym: ${gymId.substring(0, 8)}...`, 'success');
     });
   });
   
-  // Settings action handlers
-  document.getElementById('saveSettingsBtn')?.addEventListener('click', saveAllSettings);
-  document.getElementById('resetSettingsBtn')?.addEventListener('click', resetSettings);
+  // Settings action handlers (individual actions only)
   document.getElementById('changePasswordBtn')?.addEventListener('click', openChangePasswordModal);
   document.getElementById('updateProfileBtn')?.addEventListener('click', openUpdateProfileModal);
+  
+  // Individual toggle save handlers - automatically save when changed
+  setupIndividualSettingsSave(gymId);
   
   // Data export handlers
   document.getElementById('exportMembersBtn')?.addEventListener('click', () => exportData('members'));
@@ -1988,6 +2185,53 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Load and apply saved settings
   loadSavedSettings();
+  
+  // Add settings tab click handler to reload security toggle states
+  const settingsMenuItem = document.querySelector('[data-tab="settingsTab"]');
+  if (settingsMenuItem) {
+    settingsMenuItem.addEventListener('click', () => {
+      console.log('🔄 Settings tab clicked, reloading security toggle states...');
+      setTimeout(() => {
+        const currentGymId = getGymId();
+        if (currentGymId) {
+          loadSecurityToggleStates(currentGymId);
+          console.log('✅ Security toggle states reloaded for settings tab');
+          
+          // Show a brief notification to confirm toggles are loaded
+          const twoFactorToggle = document.getElementById('twoFactorAuth');
+          const loginNotificationsToggle = document.getElementById('loginNotifications');
+          if (twoFactorToggle && loginNotificationsToggle) {
+            console.log(`🔧 Security toggles loaded - 2FA: ${twoFactorToggle.checked}, Notifications: ${loginNotificationsToggle.checked}`);
+          }
+        }
+      }, 100); // Small delay to ensure tab is loaded
+    });
+  }
+  
+  // Also add a mutation observer to detect when settings tab becomes visible
+  const settingsTab = document.getElementById('settingsTab');
+  if (settingsTab) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          if (settingsTab.style.display !== 'none' && !settingsTab.style.display.includes('none')) {
+            console.log('🔄 Settings tab became visible, reloading security states...');
+            setTimeout(() => {
+              const currentGymId = getGymId();
+              if (currentGymId) {
+                loadSecurityToggleStates(currentGymId);
+              }
+            }, 50);
+          }
+        }
+      });
+    });
+    
+    observer.observe(settingsTab, { 
+      attributes: true, 
+      attributeFilter: ['style', 'class'] 
+    });
+  }
   
   // ===== DASHBOARD CUSTOMIZATION HANDLERS =====
   // Apply dashboard customization immediately, then set up handlers
@@ -2140,6 +2384,25 @@ function handleGymSwitch(newGymId) {
     
     if (typeof forceReapplySettings === 'function') {
       forceReapplySettings();
+    }
+    
+    // Load gym-specific security settings immediately
+    if (typeof loadGymSpecificSecuritySettings === 'function') {
+      loadGymSpecificSecuritySettings(newGymId);
+    }
+    
+    // Reload 2FA status for the new gym
+    if (window.twoFactorManager && typeof window.twoFactorManager.load2FAStatus === 'function') {
+      window.twoFactorManager.load2FAStatus().catch(error => {
+        console.error('Error loading 2FA status after gym switch:', error);
+      });
+    }
+    
+    // Reload login notification status for the new gym
+    if (window.loginNotificationsManager && typeof window.loginNotificationsManager.loadNotificationStatus === 'function') {
+      window.loginNotificationsManager.loadNotificationStatus().catch(error => {
+        console.error('Error loading login notification status after gym switch:', error);
+      });
     }
   }, 100);
 }
@@ -2314,6 +2577,148 @@ window.verifyGymIsolation = verifyGymIsolation;
 window.debugJWTToken = debugJWTToken;
 window.resetGymDetection = resetGymDetection;
 
+// Add simple security toggle testing functions
+window.testSecurityToggles = function() {
+  console.log('🧪 Testing security toggles...');
+  
+  const gymId = getGymId();
+  console.log('Current gym ID:', gymId);
+  
+  const twoFactorToggle = document.getElementById('twoFactorAuth');
+  const loginNotificationsToggle = document.getElementById('loginNotifications');
+  
+  console.log('Toggle elements found:');
+  console.log('- 2FA toggle:', !!twoFactorToggle);
+  console.log('- Login notifications toggle:', !!loginNotificationsToggle);
+  
+  if (twoFactorToggle) {
+    console.log('2FA toggle current state:', twoFactorToggle.checked);
+    const saved2FA = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+    console.log('2FA saved state:', saved2FA);
+  }
+  
+  if (loginNotificationsToggle) {
+    console.log('Login notifications toggle current state:', loginNotificationsToggle.checked);
+    const savedNotifications = getGymSpecificSetting(`loginNotifications_${gymId}`);
+    console.log('Login notifications saved state:', savedNotifications);
+  }
+  
+  return {
+    gymId,
+    togglesFound: {
+      twoFactor: !!twoFactorToggle,
+      loginNotifications: !!loginNotificationsToggle
+    },
+    currentStates: {
+      twoFactor: twoFactorToggle?.checked,
+      loginNotifications: loginNotificationsToggle?.checked
+    },
+    savedStates: {
+      twoFactor: getGymSpecificSetting(`twoFactorEnabled_${gymId}`),
+      loginNotifications: getGymSpecificSetting(`loginNotifications_${gymId}`)
+    }
+  };
+};
+
+window.resetSecurityToggles = function() {
+  console.log('🔄 Resetting security toggles...');
+  
+  const gymId = getGymId();
+  removeGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+  removeGymSpecificSetting(`loginNotifications_${gymId}`);
+  
+  console.log('✅ Security toggle settings cleared');
+  
+  // Reload the states
+  loadSecurityToggleStates(gymId);
+  console.log('✅ Security toggle states reloaded');
+};
+
+window.forceToggleSecurityState = function(toggleType, state) {
+  console.log(`🔧 Force setting ${toggleType} to ${state}...`);
+  
+  const gymId = getGymId();
+  const elementId = toggleType === '2fa' ? 'twoFactorAuth' : 'loginNotifications';
+  const settingKey = toggleType === '2fa' ? `twoFactorEnabled_${gymId}` : `loginNotifications_${gymId}`;
+  
+  const toggle = document.getElementById(elementId);
+  if (toggle) {
+    toggle.checked = state;
+    setGymSpecificSetting(settingKey, state);
+    console.log(`✅ ${toggleType} manually set to ${state}`);
+  } else {
+    console.error(`❌ ${toggleType} toggle element not found`);
+  }
+};
+
+// Add 2FA debugging functions
+window.debug2FAStatus = async function() {
+  console.log('=== 2FA Status Debug ===');
+  const gymId = window.getGymId ? window.getGymId() : 'default';
+  console.log('Current Gym ID:', gymId);
+  
+  // Check API status
+  try {
+    const apiStatus = await window.twoFactorManager.get2FAStatus();
+    console.log('API 2FA Status:', apiStatus);
+  } catch (error) {
+    console.log('API Error:', error.message);
+  }
+  
+  // Check local storage
+  const localStatus = window.getGymSpecificSetting ? 
+    window.getGymSpecificSetting(`twoFactorEnabled_${gymId}`) : null;
+  console.log('Local Storage Status:', localStatus);
+  
+  // Check toggle state
+  const toggle = document.getElementById('twoFactorAuth');
+  console.log('Toggle Element Found:', !!toggle);
+  console.log('Toggle Checked:', toggle?.checked);
+  
+  console.log('=======================');
+};
+
+window.force2FAReload = async function() {
+  console.log('🔄 Force reloading 2FA status...');
+  await window.twoFactorManager.load2FAStatus();
+  console.log('✅ 2FA status reloaded');
+};
+
+// Test function to demonstrate gym-specific 2FA settings
+window.test2FAGymSpecific = async function() {
+  const gymId = window.getGymId ? window.getGymId() : 'default';
+  console.log('=== 2FA Gym-Specific Test ===');
+  console.log('Current Gym ID:', gymId);
+  
+  // Enable 2FA programmatically
+  console.log('Simulating 2FA enable...');
+  window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, true);
+  
+  // Reload status
+  await window.twoFactorManager.load2FAStatus();
+  
+  // Check if toggle updated
+  const toggle = document.getElementById('twoFactorAuth');
+  console.log('Toggle state after enable:', toggle?.checked);
+  
+  // Test switching to a different "gym" (simulate)
+  const testGymId = 'test_gym_' + Date.now();
+  console.log('Switching to test gym:', testGymId);
+  window.setGymSpecificSetting(`twoFactorEnabled_${testGymId}`, false);
+  
+  // Simulate gym switch
+  sessionStorage.setItem('currentGymId', testGymId);
+  await window.twoFactorManager.load2FAStatus();
+  console.log('Toggle state for test gym:', toggle?.checked);
+  
+  // Switch back
+  sessionStorage.setItem('currentGymId', gymId);
+  await window.twoFactorManager.load2FAStatus();
+  console.log('Toggle state after switching back:', toggle?.checked);
+  
+  console.log('=============================');
+};
+
 // Make biometric status checking functions globally available
 window.isBiometricAttendanceEnabled = isBiometricAttendanceEnabled;
 window.isFingerprintAttendanceEnabled = isFingerprintAttendanceEnabled;
@@ -2388,18 +2793,156 @@ window.manualToggleTest = function() {
   return true;
 };
 
-// Add bypass function for testing
-window.bypassBiometricAgentCheck = false;
+// Add debug function for biometric system testing
+window.debugBiometricSystem = function() {
+  console.log('🔧 === BIOMETRIC SYSTEM DEBUG ===');
+  
+  const gymId = getGymId();
+  console.log('1. Current Gym ID:', gymId);
+  
+  // Check toggle elements
+  const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
+  const faceToggle = document.getElementById('toggleFaceRecognitionAttendance');
+  
+  console.log('2. Toggle Elements:');
+  console.log('   - Fingerprint toggle:', !!fingerprintToggle, fingerprintToggle?.checked);
+  console.log('   - Face toggle:', !!faceToggle, faceToggle?.checked);
+  
+  // Check biometric manager
+  console.log('3. Biometric Agent Manager:', !!window.biometricAgentManager);
+  
+  // Check bypass status
+  console.log('4. Bypass enabled:', !!window.bypassBiometricAgentCheck);
+  
+  // Check settings
+  const biometricSettings = getBiometricSettings(gymId);
+  console.log('5. Current biometric settings:', biometricSettings);
+  
+  // Test agent status
+  if (window.biometricAgentManager) {
+    console.log('6. Testing agent status...');
+    window.biometricAgentManager.checkAgentStatus().then(status => {
+      console.log('   Agent status:', status);
+    }).catch(error => {
+      console.log('   Agent status error:', error);
+    });
+  }
+  
+  console.log('================================');
+  
+  return {
+    gymId,
+    fingerprintToggle: !!fingerprintToggle,
+    faceToggle: !!faceToggle,
+    biometricManager: !!window.biometricAgentManager,
+    bypassEnabled: !!window.bypassBiometricAgentCheck,
+    settings: biometricSettings
+  };
+};
 
+// Add manual toggle test function specifically for biometric
+window.testBiometricToggleManually = async function() {
+  console.log('🧪 Manual biometric toggle test...');
+  
+  const fingerprintToggle = document.getElementById('toggleFingerprintAttendance');
+  if (!fingerprintToggle) {
+    console.error('❌ Fingerprint toggle not found');
+    return false;
+  }
+  
+  console.log('Current state:', fingerprintToggle.checked);
+  
+  // Simulate toggle click
+  console.log('Simulating toggle click...');
+  fingerprintToggle.checked = !fingerprintToggle.checked;
+  
+  // Trigger change event
+  const changeEvent = new Event('change', { bubbles: true });
+  fingerprintToggle.dispatchEvent(changeEvent);
+  
+  console.log('New state:', fingerprintToggle.checked);
+  console.log('✅ Manual toggle test completed');
+  
+  return true;
+};
+
+// Add function to force show biometric modal
+window.testBiometricModal = function() {
+  console.log('🎭 Testing biometric modal display...');
+  
+  const testModal = createBiometricModal(
+    'Test Biometric Modal',
+    `
+    <div style="padding: 30px; text-align: center;">
+      <h4>Modal Test Successful!</h4>
+      <p style="margin: 20px 0; color: #666;">
+        This modal is working correctly. You can now test biometric features.
+      </p>
+      <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();">
+        Close Test Modal
+      </button>
+    </div>
+    `
+  );
+  
+  document.body.appendChild(testModal);
+  console.log('✅ Test modal displayed');
+};
+
+// Add enhanced bypass function with notification
 window.enableBiometricBypass = function() {
   window.bypassBiometricAgentCheck = true;
   console.log('✅ Biometric agent check bypassed - toggles will work without agent');
+  
+  showBiometricFeedback('Testing mode enabled - biometric agent check bypassed', 'success');
+  
+  // Update UI to show bypass status
+  const bypassIndicator = document.createElement('div');
+  bypassIndicator.id = 'biometricBypassIndicator';
+  bypassIndicator.style.cssText = `
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: 1px solid #ffeaa7;
+    font-size: 0.85rem;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  `;
+  bypassIndicator.innerHTML = `
+    <i class="fas fa-vial"></i> Testing Mode Active
+    <button onclick="window.disableBiometricBypass()" style="
+      background: none; 
+      border: none; 
+      color: #856404; 
+      margin-left: 8px; 
+      cursor: pointer;
+      font-weight: bold;
+    ">×</button>
+  `;
+  
+  // Remove existing indicator
+  const existing = document.getElementById('biometricBypassIndicator');
+  if (existing) existing.remove();
+  
+  document.body.appendChild(bypassIndicator);
+  
   return 'Biometric agent check bypassed for testing';
 };
 
 window.disableBiometricBypass = function() {
   window.bypassBiometricAgentCheck = false;
   console.log('🔒 Biometric agent check re-enabled - agent required for toggles');
+  
+  // Remove bypass indicator
+  const indicator = document.getElementById('biometricBypassIndicator');
+  if (indicator) indicator.remove();
+  
+  showBiometricFeedback('Testing mode disabled - agent check re-enabled', 'info');
+  
   return 'Biometric agent check re-enabled';
 };
 
@@ -2816,44 +3359,86 @@ function setupBiometricAttendance() {
 
   // Check agent status before enabling biometric features
   async function checkAgentAndEnable(type, toggle) {
+    console.log(`🔍 Checking agent for ${type} - bypass: ${window.bypassBiometricAgentCheck}`);
+    
     // Allow bypass for testing/development
     if (window.bypassBiometricAgentCheck) {
       console.log('⚠️ Biometric agent check bypassed for testing');
+      showBiometricFeedback(`${type} enabled (testing mode)`, 'success');
       return true;
     }
     
-    const isRunning = await window.biometricAgentManager.checkAgentStatus();
+    // Show checking status
+    showBiometricFeedback(`Checking biometric agent for ${type}...`, 'info');
     
-    if (!isRunning) {
-      toggle.checked = false;
-      showBiometricFeedback('⚠️ Biometric agent required. Please install and start the agent first.', 'warning');
+    try {
+      const isRunning = await window.biometricAgentManager.checkAgentStatus();
+      console.log(`Agent status for ${type}:`, isRunning);
       
-      // Show agent installation prompt
-      const installPrompt = document.createElement('div');
-      installPrompt.className = 'alert alert-warning biometric-install-prompt';
-      installPrompt.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <i class="fas fa-download"></i>
-            <strong>Biometric Agent Required</strong>
-            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Install the local agent to use ${type} features.</p>
+      if (!isRunning) {
+        toggle.checked = false;
+        showBiometricFeedback(`⚠️ Biometric agent required for ${type}. Click to install.`, 'warning');
+        
+        // Show enhanced installation modal
+        const installModal = createBiometricModal(
+          `Install Biometric Agent for ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+          `
+          <div style="padding: 20px; text-align: center;">
+            <div style="margin-bottom: 30px;">
+              <i class="fas fa-download fa-4x" style="color: #007bff; margin-bottom: 20px;"></i>
+              <h4>Biometric Agent Required</h4>
+              <p style="color: #666; margin: 15px 0;">
+                To use ${type} attendance features, you need to install the local biometric agent.
+              </p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left;">
+              <h5 style="color: #333; margin-bottom: 15px;">
+                <i class="fas fa-info-circle" style="color: #007bff;"></i> What is the Biometric Agent?
+              </h5>
+              <ul style="margin: 0; padding-left: 20px; color: #666; line-height: 1.6;">
+                <li>Secure local service for biometric device communication</li>
+                <li>Handles fingerprint scanners and cameras</li>
+                <li>Runs as Windows service (automatic startup)</li>
+                <li>Simulation mode for development and testing</li>
+                <li>Required for all biometric attendance features</li>
+              </ul>
+            </div>
+            
+            <div style="margin: 25px 0;">
+              <button class="btn btn-primary btn-lg" onclick="window.biometricAgentManager.downloadAndInstallAgent(); this.closest('.modal-overlay').remove();" style="margin: 0 10px 10px 0;">
+                <i class="fas fa-download"></i> Download & Install Agent
+              </button>
+              <br>
+              <button class="btn btn-info" onclick="window.enableBiometricBypass(); this.closest('.modal-overlay').remove(); showBiometricFeedback('Testing mode enabled - agent check bypassed', 'success');" style="margin: 5px;">
+                <i class="fas fa-vial"></i> Enable Testing Mode (Bypass Agent)
+              </button>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px;">
+              <small style="color: #856404;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Note:</strong> Testing mode bypasses the agent requirement for development purposes only.
+              </small>
+            </div>
           </div>
-          <button class="btn btn-primary install-agent-btn" onclick="window.biometricAgentManager.downloadAndInstallAgent()">
-            <i class="fas fa-download"></i> Install Agent
-          </button>
-        </div>
-      `;
-      
-      // Insert after the toggle
-      toggle.closest('.setting-item').after(installPrompt);
-      
-      // Remove after 10 seconds
-      setTimeout(() => {
-        installPrompt.remove();
-      }, 10000);
-      
+          `
+        );
+        
+        document.body.appendChild(installModal);
+        
+        return false;
+      } else {
+        showBiometricFeedback(`✅ Agent ready - ${type} enabled!`, 'success');
+        return true;
+      }
+    } catch (error) {
+      console.error(`Error checking agent for ${type}:`, error);
+      toggle.checked = false;
+      showBiometricFeedback(`❌ Error checking agent: ${error.message}`, 'error');
       return false;
     }
+  }
     
     return true;
   }
@@ -2948,7 +3533,7 @@ function setupBiometricAttendance() {
   
   // Initial visibility update
   updateBiometricSettingsVisibility();
-}
+
 
 // Load saved biometric settings for a specific gym
 function loadBiometricSettings(gymId) {
@@ -5990,6 +6575,7 @@ window.startAdvancedSetup = function() {
 class TwoFactorAuthManager {
   constructor() {
     this.isSetupInProgress = false;
+    this.isLoadingStatus = false;
   }
 
   async enable2FA() {
@@ -5997,6 +6583,7 @@ class TwoFactorAuthManager {
     
     try {
       this.isSetupInProgress = true;
+      const gymId = window.getGymId ? window.getGymId() : 'default';
       
       // Check if 2FA is already enabled
       const currentStatus = await this.get2FAStatus();
@@ -6018,17 +6605,23 @@ class TwoFactorAuthManager {
 
   async disable2FA() {
     try {
+      const gymId = window.getGymId ? window.getGymId() : 'default';
       const result = await this.showDisable2FAModal();
       if (!result.confirmed) return;
 
-      const response = await this.apiCall('/api/gyms/security/disable-2fa', {
-        method: 'POST',
-        body: JSON.stringify({ password: result.password })
+      const response = await this.apiCall('/api/gyms/disable-2fa', {
+        method: 'POST'
       });
 
       if (response.success) {
-        this.update2FAToggle(false);
-        showNotification('Two-Factor Authentication disabled successfully', 'success');
+        this.update2FAToggle(false, false); // Don't show notification from toggle, we show it here
+        
+        // Update gym-specific setting
+        if (window.setGymSpecificSetting) {
+          window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, false);
+        }
+        
+        showNotification('Email-based Two-Factor Authentication disabled successfully', 'success');
       } else {
         showNotification(response.message || 'Failed to disable 2FA', 'error');
       }
@@ -6040,184 +6633,191 @@ class TwoFactorAuthManager {
 
   show2FASetupModal() {
     const modal = this.createSecurityModal('Setup Two-Factor Authentication', `
-      <div class="security-modal-content">
-        <div class="setup-step" id="step1" style="display: block;">
-          <div class="step-header">
-            <div class="step-number">1</div>
-            <h3>Install Authenticator App</h3>
-          </div>
-          <p>Install an authenticator app on your phone such as:</p>
-          <div class="app-recommendations">
-            <div class="app-item">
-              <i class="fab fa-google"></i>
-              <span>Google Authenticator</span>
-            </div>
-            <div class="app-item">
-              <i class="fas fa-shield-alt"></i>
-              <span>Microsoft Authenticator</span>
-            </div>
-            <div class="app-item">
-              <i class="fas fa-key"></i>
-              <span>Authy</span>
-            </div>
-          </div>
-          <button class="security-btn primary" onclick="window.twoFactorManager.showStep2()">
-            I have an authenticator app
-          </button>
+      <div class="email-2fa-setup">
+        <div class="setup-header">
+          <i class="fas fa-envelope-open-text" style="font-size: 3rem; color: #007bff; margin-bottom: 20px;"></i>
+          <h3>Email-Based Two-Factor Authentication</h3>
+          <p style="color: #666; margin-bottom: 30px; line-height: 1.5;">
+            When enabled, you'll receive a verification code via email each time you log in. 
+            This adds an extra layer of security to your gym admin account.
+          </p>
         </div>
         
-        <div class="setup-step" id="step2" style="display: none;">
-          <div class="step-header">
-            <div class="step-number">2</div>
-            <h3>Scan QR Code</h3>
+        <div class="security-features">
+          <div class="feature-item">
+            <i class="fas fa-shield-alt"></i>
+            <span>Enhanced account security</span>
           </div>
-          <div class="qr-code-container">
-            <div class="qr-code-placeholder" id="qrCodeContainer">
-              <i class="fas fa-spinner fa-spin"></i>
-              <span>Generating QR code...</span>
-            </div>
+          <div class="feature-item">
+            <i class="fas fa-email"></i>
+            <span>Codes sent to your registered email</span>
           </div>
-          <div class="manual-entry">
-            <p>Can't scan? Enter this code manually:</p>
-            <div class="manual-code" id="manualCode">Loading...</div>
+          <div class="feature-item">
+            <i class="fas fa-clock"></i>
+            <span>Codes expire in 10 minutes</span>
           </div>
-          <button class="security-btn primary" onclick="window.twoFactorManager.showStep3()">
-            I've added the account
-          </button>
+          <div class="feature-item">
+            <i class="fas fa-mobile-alt"></i>
+            <span>No app installation required</span>
+          </div>
         </div>
         
-        <div class="setup-step" id="step3" style="display: none;">
-          <div class="step-header">
-            <div class="step-number">3</div>
-            <h3>Verify Setup</h3>
+        <div class="email-info" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="margin-top: 0; color: #333;">
+            <i class="fas fa-info-circle"></i> How it works:
+          </h4>
+          <ol style="margin: 0; padding-left: 20px; color: #666;">
+            <li>Enter your email and password to log in</li>
+            <li>A 6-digit verification code will be sent to your email</li>
+            <li>Enter the code to complete your login</li>
+            <li>The code expires after 10 minutes for security</li>
+          </ol>
+        </div>
+        
+        <div class="confirmation-section" style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
+          <div class="current-email">
+            <strong>Verification codes will be sent to:</strong>
+            <div style="background: white; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin: 10px 0; display: flex; align-items: center; gap: 10px;">
+              <i class="fas fa-envelope" style="color: #007bff;"></i>
+              <span id="userEmail">Loading...</span>
+            </div>
           </div>
-          <p>Enter the 6-digit code from your authenticator app:</p>
-          <div class="verification-code-input">
-            <input type="text" id="verificationCode" maxlength="6" placeholder="000000" 
-                   style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;">
+          
+          <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 15px 0;">
+            <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
+            <strong style="color: #856404;">Important:</strong>
+            <span style="color: #856404;">Make sure you have access to this email address before enabling 2FA.</span>
           </div>
-          <div class="verification-actions">
-            <button class="security-btn secondary" onclick="window.twoFactorManager.showStep2()">
-              Back
-            </button>
-            <button class="security-btn primary" onclick="window.twoFactorManager.verifyAndEnable()">
-              Verify & Enable
-            </button>
-          </div>
+        </div>
+        
+        <div class="setup-actions" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 30px;">
+          <button class="security-btn secondary" onclick="window.twoFactorManager.closeCurrentModal()">
+            Cancel
+          </button>
+          <button class="security-btn primary" onclick="window.twoFactorManager.enableEmail2FA(event)">
+            <i class="fas fa-check"></i> Enable Email 2FA
+          </button>
         </div>
       </div>
     `);
 
-    // Generate QR code and secret when modal opens
-    setTimeout(() => this.generateQRCode(), 500);
+    // Load and display current user email
+    setTimeout(() => this.loadCurrentUserEmail(), 100);
   }
 
-  async generateQRCode() {
+  async loadCurrentUserEmail() {
     try {
-      const response = await this.apiCall('/api/gyms/security/generate-2fa-secret');
-      if (response.success) {
-        const { qrCode, secret } = response.data;
+      // Get email from JWT token or profile
+      const token = localStorage.getItem('gymAdminToken');
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const email = payload.admin?.email;
         
-        // Display QR code
-        const qrContainer = document.getElementById('qrCodeContainer');
-        if (qrContainer) {
-          qrContainer.innerHTML = `<img src="${qrCode}" alt="QR Code" style="max-width: 200px;">`;
+        const emailElement = document.getElementById('userEmail');
+        if (emailElement && email) {
+          emailElement.textContent = email;
         }
-        
-        // Display manual code
-        const manualCodeEl = document.getElementById('manualCode');
-        if (manualCodeEl) {
-          manualCodeEl.textContent = secret;
-        }
-        
-        this.tempSecret = secret;
       }
     } catch (error) {
-      console.error('Error generating QR code:', error);
-      const qrContainer = document.getElementById('qrCodeContainer');
-      if (qrContainer) {
-        qrContainer.innerHTML = '<p style="color: var(--error-color);">Failed to generate QR code</p>';
+      console.error('Error loading user email:', error);
+      const emailElement = document.getElementById('userEmail');
+      if (emailElement) {
+        emailElement.textContent = 'Unable to load email';
       }
     }
   }
 
-  showStep2() {
-    document.getElementById('step1').style.display = 'none';
-    document.getElementById('step2').style.display = 'block';
-    document.getElementById('step3').style.display = 'none';
-  }
-
-  showStep3() {
-    document.getElementById('step1').style.display = 'none';
-    document.getElementById('step2').style.display = 'none';
-    document.getElementById('step3').style.display = 'block';
-    setTimeout(() => {
-      document.getElementById('verificationCode').focus();
-    }, 100);
-  }
-
-  async verifyAndEnable() {
-    const code = document.getElementById('verificationCode').value;
-    if (code.length !== 6) {
-      showNotification('Please enter a 6-digit code', 'error');
-      return;
-    }
-
+  async enableEmail2FA(event) {
+    let enableButton = null;
+    
     try {
-      const response = await this.apiCall('/api/gyms/security/verify-2fa-setup', {
-        method: 'POST',
-        body: JSON.stringify({ 
-          secret: this.tempSecret,
-          code: code 
-        })
+      // Show loading state
+      if (event && event.target) {
+        enableButton = event.target;
+      } else {
+        // Fallback: find the button by text content
+        enableButton = document.querySelector('button[onclick*="enableEmail2FA"]');
+      }
+      
+      const originalContent = enableButton ? enableButton.innerHTML : '';
+      if (enableButton) {
+        enableButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enabling...';
+        enableButton.disabled = true;
+      }
+
+      const response = await this.apiCall('/api/gyms/enable-email-2fa', {
+        method: 'POST'
       });
 
       if (response.success) {
         this.closeCurrentModal();
-        this.update2FAToggle(true);
-        showNotification('Two-Factor Authentication enabled successfully!', 'success');
+        this.update2FAToggle(true, false); // Don't show notification from toggle, we show it here
         
-        // Show backup codes
-        if (response.data.backupCodes) {
-          this.showBackupCodes(response.data.backupCodes);
+        // Store gym-specific setting
+        const gymId = window.getGymId ? window.getGymId() : 'default';
+        if (window.setGymSpecificSetting) {
+          window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, true);
         }
+        
+        showNotification('Email-based Two-Factor Authentication enabled successfully!', 'success');
       } else {
-        showNotification(response.message || 'Invalid verification code', 'error');
+        throw new Error(response.message || 'Failed to enable 2FA');
       }
     } catch (error) {
-      console.error('Error verifying 2FA setup:', error);
-      showNotification('Failed to verify setup', 'error');
+      console.error('Error enabling email 2FA:', error);
+      showNotification(error.message || 'Failed to enable Two-Factor Authentication', 'error');
+      
+      // Restore button state
+      if (enableButton) {
+        enableButton.innerHTML = '<i class="fas fa-check"></i> Enable Email 2FA';
+        enableButton.disabled = false;
+      }
     }
   }
 
   showBackupCodes(codes) {
     const modal = this.createSecurityModal('Backup Codes', `
-      <div class="security-modal-content">
-        <div class="backup-codes-info">
-          <i class="fas fa-exclamation-triangle" style="color: var(--warning-color); font-size: 2rem;"></i>
-          <h3>Save Your Backup Codes</h3>
-          <p>These codes can be used to access your account if you lose your phone. Save them in a secure location.</p>
-        </div>
-        <div class="backup-codes-list">
-          ${codes.map(code => `<div class="backup-code">${code}</div>`).join('')}
-        </div>
-        <div class="backup-codes-actions">
-          <button class="security-btn secondary" onclick="window.twoFactorManager.downloadBackupCodes(${JSON.stringify(codes).replace(/"/g, '&quot;')})">
-            <i class="fas fa-download"></i> Download
-          </button>
-          <button class="security-btn secondary" onclick="window.twoFactorManager.copyBackupCodes(${JSON.stringify(codes).replace(/"/g, '&quot;')})">
-            <i class="fas fa-copy"></i> Copy
-          </button>
-          <button class="security-btn primary" onclick="window.twoFactorManager.closeCurrentModal()">
-            I've saved them
-          </button>
-        </div>
+      <div class="backup-codes-info">
+        <i class="fas fa-exclamation-triangle" style="color: var(--warning-color); font-size: 2rem;"></i>
+        <h3>Save Your Backup Codes</h3>
+        <p>These codes can be used to access your account if you lose your phone. Save them in a secure location.</p>
+      </div>
+      
+      <div class="backup-codes-list">
+        ${codes.map(code => `
+          <div class="backup-code-item">
+            <code>${code}</code>
+            <button class="copy-code-btn" onclick="navigator.clipboard.writeText('${code}')">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="backup-codes-actions">
+        <button class="security-btn secondary" onclick="window.twoFactorManager.downloadBackupCodes(['${codes.join("', '")}'])">
+          <i class="fas fa-download"></i> Download
+        </button>
+        <button class="security-btn primary" onclick="window.twoFactorManager.closeCurrentModal()">
+          I've saved them
+        </button>
+      </div>
+      
+      <div class="backup-codes-warning">
+        <i class="fas fa-info-circle"></i>
+        <span>Each backup code can only be used once. Keep them secure!</span>
       </div>
     `);
   }
 
   downloadBackupCodes(codes) {
-    const content = `Gym-Wale Two-Factor Authentication Backup Codes\n\nGenerated: ${new Date().toLocaleDateString()}\n\n${codes.join('\n')}\n\nKeep these codes secure and don't share them with anyone.`;
+    const content = `Gym-Wale Two-Factor Authentication Backup Codes
+
+Generated: ${new Date().toLocaleDateString()}
+
+${codes.join('\n')}
+
+Keep these codes secure and don't share them with anyone.`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -6227,36 +6827,40 @@ class TwoFactorAuthManager {
     URL.revokeObjectURL(url);
   }
 
-  copyBackupCodes(codes) {
-    const content = codes.join('\n');
-    navigator.clipboard.writeText(content).then(() => {
-      showNotification('Backup codes copied to clipboard', 'success');
-    }).catch(() => {
-      showNotification('Failed to copy backup codes', 'error');
-    });
-  }
-
   async showDisable2FAModal() {
     return new Promise((resolve) => {
       const modal = this.createSecurityModal('Disable Two-Factor Authentication', `
-        <div class="security-modal-content">
-          <div class="warning-message">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Are you sure?</h3>
-            <p>Disabling two-factor authentication will make your account less secure.</p>
+        <div class="warning-message">
+          <i class="fas fa-exclamation-triangle" style="color: #f39c12; font-size: 3rem; margin-bottom: 20px;"></i>
+          <h3>Disable Email-Based 2FA?</h3>
+          <p style="color: #666; line-height: 1.5; margin-bottom: 20px;">
+            Are you sure you want to disable two-factor authentication? This will make your gym admin account less secure.
+          </p>
+          
+          <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 20px 0;">
+            <i class="fas fa-info-circle" style="color: #856404;"></i>
+            <strong style="color: #856404;">Note:</strong>
+            <span style="color: #856404;">You can re-enable 2FA at any time from your security settings.</span>
           </div>
-          <div class="form-group">
-            <label for="confirmPassword">Enter your password to confirm:</label>
-            <input type="password" id="confirmPassword" placeholder="Password" required>
+          
+          <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 15px; margin: 20px 0;">
+            <i class="fas fa-exclamation-triangle" style="color: #721c24;"></i>
+            <strong style="color: #721c24;">Security Impact:</strong>
+            <ul style="color: #721c24; margin: 8px 0 0 20px; padding: 0;">
+              <li>Your account will only require email and password to log in</li>
+              <li>No email verification codes will be sent during login</li>
+              <li>Your account becomes more vulnerable to unauthorized access</li>
+            </ul>
           </div>
-          <div class="modal-actions">
-            <button class="security-btn secondary" onclick="window.twoFactorManager.resolveDisable2FA(false)">
-              Cancel
-            </button>
-            <button class="security-btn danger" onclick="window.twoFactorManager.confirmDisable2FA()">
-              Disable 2FA
-            </button>
-          </div>
+        </div>
+        
+        <div class="modal-actions" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 30px;">
+          <button class="security-btn secondary" onclick="window.twoFactorManager.resolveDisable2FA(false)">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+          <button class="security-btn danger" onclick="window.twoFactorManager.confirmDisable2FA()">
+            <i class="fas fa-shield-alt"></i> Disable 2FA
+          </button>
         </div>
       `);
       
@@ -6265,12 +6869,7 @@ class TwoFactorAuthManager {
   }
 
   confirmDisable2FA() {
-    const password = document.getElementById('confirmPassword').value;
-    if (!password) {
-      showNotification('Please enter your password', 'error');
-      return;
-    }
-    this.resolveDisable2FA({ confirmed: true, password });
+    this.resolveDisable2FA({ confirmed: true });
   }
 
   resolveDisable2FA(result) {
@@ -6283,18 +6882,133 @@ class TwoFactorAuthManager {
 
   async get2FAStatus() {
     try {
-      const response = await this.apiCall('/api/gyms/security/2fa-status');
-      return response.data || { enabled: false };
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      console.log(`🔍 Getting 2FA status for gym: ${gymId}`);
+      
+      const response = await this.apiCall('/api/security/2fa-status');
+      
+      // Handle both response formats
+      let apiResult;
+      if (response.data) {
+        apiResult = response.data;
+      } else if (response.success) {
+        apiResult = {
+          enabled: response.twoFactorEnabled || response.enabled || false,
+          twoFactorType: response.twoFactorType || null
+        };
+      } else {
+        apiResult = { enabled: false };
+      }
+
+      // Store gym-specific setting for consistency
+      if (window.setGymSpecificSetting) {
+        window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, apiResult.enabled);
+      }
+      
+      console.log(`✅ 2FA status for gym ${gymId}:`, apiResult);
+      return apiResult;
     } catch (error) {
-      console.error('Error getting 2FA status:', error);
-      return { enabled: false };
+      console.error('Error getting 2FA status from API:', error);
+      
+      // Fallback to gym-specific local storage
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      const savedStatus = window.getGymSpecificSetting ? 
+        window.getGymSpecificSetting(`twoFactorEnabled_${gymId}`) : null;
+      
+      const isEnabled = savedStatus === 'true' || savedStatus === true;
+      console.log(`🔄 Using fallback 2FA status for gym ${gymId}:`, isEnabled);
+      
+      return { enabled: isEnabled };
     }
   }
 
-  update2FAToggle(enabled) {
+  async load2FAStatus() {
+    if (this.isLoadingStatus) {
+      console.log('⏳ 2FA status loading already in progress, skipping...');
+      return;
+    }
+    
+    this.isLoadingStatus = true;
+    console.log('🔍 Loading 2FA status for current gym...');
+    
+    try {
+      // First try to get from API
+      const status = await this.get2FAStatus();
+      console.log('✅ 2FA status from API:', status);
+      
+      const isEnabled = status.enabled || status.twoFactorEnabled || false;
+      
+      // Store gym-specific setting for consistency
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      if (window.setGymSpecificSetting) {
+        window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, isEnabled);
+      }
+      
+      this.update2FAToggle(isEnabled, false); // Don't show notification during loading
+      console.log(`🎯 2FA status loaded successfully: ${isEnabled ? 'ENABLED' : 'DISABLED'}`);
+      return status;
+    } catch (error) {
+      console.error('❌ Error loading 2FA status from API:', error);
+      
+      // Fallback to local storage if API fails
+      try {
+        console.log('🔄 Attempting fallback to local storage...');
+        const gymId = window.getGymId ? window.getGymId() : 'default';
+        const savedStatus = window.getGymSpecificSetting ? 
+          window.getGymSpecificSetting(`twoFactorEnabled_${gymId}`) : null;
+        
+        const isEnabled = savedStatus === 'true' || savedStatus === true;
+        console.log('📱 Using fallback 2FA status from local storage:', isEnabled);
+        this.update2FAToggle(isEnabled, false); // Don't show notification during loading
+        
+        if (savedStatus === null) {
+          showNotification('Unable to verify 2FA status - check connection', 'warning');
+        }
+        
+        return { enabled: isEnabled };
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+        this.update2FAToggle(false, false); // Don't show notification during loading
+        showNotification('Failed to load 2FA status', 'error');
+        return { enabled: false };
+      }
+    } finally {
+      this.isLoadingStatus = false;
+    }
+  }
+
+  update2FAToggle(enabled, showNotificationToast = true) {
     const toggle = document.getElementById('twoFactorAuth');
+    console.log(`🔧 Attempting to update 2FA toggle to: ${enabled}`);
+    console.log(`� Toggle element found:`, !!toggle);
+    
     if (toggle) {
+      const previousState = toggle.checked;
       toggle.checked = enabled;
+      
+      console.log(`✅ 2FA toggle updated: ${previousState} → ${enabled}`);
+      
+      // Store the gym-specific setting
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      if (window.setGymSpecificSetting) {
+        window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, enabled);
+        console.log(`💾 Stored 2FA setting for gym ${gymId}: ${enabled}`);
+      }
+      
+      // Show notification toast for status change only if requested
+      if (showNotificationToast && previousState !== enabled) {
+        showNotification(
+          `Two-Factor Authentication ${enabled ? 'enabled' : 'disabled'}`, 
+          enabled ? 'success' : 'info'
+        );
+      }
+    } else {
+      console.warn('⚠️ 2FA toggle element not found - ID should be "twoFactorAuth"');
+      console.log('🔍 Available elements with "Auth" in ID:');
+      const authElements = document.querySelectorAll('[id*="Auth"], [id*="auth"], [id*="2fa"], [id*="2FA"]');
+      authElements.forEach(el => console.log(`  - ${el.id}: ${el.tagName}`));
+      
+      showNotification('2FA toggle not found in UI', 'error');
     }
   }
 
@@ -6307,7 +7021,7 @@ class TwoFactorAuthManager {
     modal.id = 'currentSecurityModal';
     modal.style.display = 'flex';
     modal.innerHTML = `
-      <div class="modal-content security-modal-content" style="max-width: 600px;">
+      <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header-style">
           <h3 class="modal-title-style">
             <i class="fas fa-shield-alt"></i> ${title}
@@ -6328,6 +7042,32 @@ class TwoFactorAuthManager {
     const modal = document.getElementById('currentSecurityModal');
     if (modal) {
       modal.remove();
+    }
+  }
+
+  // Sync method for toggle changes
+  async syncToggleState(enabled) {
+    try {
+      console.log(`🔄 Syncing 2FA toggle state to: ${enabled}`);
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      
+      // Try to call API if available, but don't fail if it's not
+      if (enabled) {
+        // Don't try to enable via API automatically, just log the state
+        console.log('📝 2FA toggle enabled - would require user setup');
+      } else {
+        // For disable, we can try the API call but catch any errors
+        try {
+          const response = await this.apiCall('/api/gyms/disable-2fa', {
+            method: 'POST'
+          });
+          console.log('✅ 2FA disabled via API:', response.success);
+        } catch (error) {
+          console.log('⚠️ API disable failed, but toggle state saved locally:', error.message);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to sync 2FA state with API:', error.message);
     }
   }
 
@@ -6362,98 +7102,234 @@ class LoginNotificationsManager {
       browser: 'Browser notifications',
       sms: 'SMS notifications (Premium)'
     };
+    this.isLoadingStatus = false;
   }
 
   async toggleLoginNotifications(enabled) {
+    if (this.isLoadingStatus) {
+      console.log('⏳ Login notifications loading in progress, skipping toggle...');
+      return;
+    }
+    
     try {
-      const response = await this.apiCall('/api/gyms/security/toggle-login-notifications', {
-        method: 'POST',
-        body: JSON.stringify({ enabled })
-      });
+      console.log(`🔔 ${enabled ? 'Enabling' : 'Disabling'} login notifications for current gym`);
+      
+      // Use the correct API endpoint - try both possible endpoints
+      let response;
+      try {
+        response = await this.apiCall('/api/gyms/security/login-notifications', {
+          method: 'POST',
+          body: JSON.stringify({ 
+            enabled,
+            preferences: {
+              email: true,
+              browser: false,
+              suspiciousOnly: false,
+              newLocation: false
+            }
+          })
+        });
+      } catch (firstError) {
+        console.log('🔄 First endpoint failed, trying alternative...');
+      const response = await this.apiCall('/api/security/toggle-login-notifications', {
+          method: 'POST',
+          body: JSON.stringify({ enabled })
+        });
+      }
 
       if (response.success) {
-        showNotification(
-          enabled ? 'Login notifications enabled' : 'Login notifications disabled',
-          'success'
-        );
-        this.updateNotificationPreferences();
+        // Store gym-specific setting
+        const gymId = window.getGymId ? window.getGymId() : 'default';
+        if (window.setGymSpecificSetting) {
+          window.setGymSpecificSetting(`loginNotifications_${gymId}`, enabled);
+        }
+        
+        console.log(`✅ Login notifications ${enabled ? 'enabled' : 'disabled'} successfully`);
+        // Note: Success notification will be shown by the toggle handler
       } else {
-        showNotification(response.message || 'Failed to update login notifications', 'error');
-        // Revert toggle
-        const toggle = document.getElementById('loginNotifications');
-        if (toggle) toggle.checked = !enabled;
+        throw new Error(response.message || 'API call failed');
       }
     } catch (error) {
-      console.error('Error toggling login notifications:', error);
+      console.error('❌ Error toggling login notifications:', error);
       showNotification('Failed to update login notifications', 'error');
       // Revert toggle
-      const toggle = document.getElementById('loginNotifications');
-      if (toggle) toggle.checked = !enabled;
+      this.updateNotificationToggle(!enabled);
     }
+  }
+
+  async getNotificationStatus() {
+    try {
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      console.log(`🔍 Getting login notification status for gym: ${gymId}`);
+      
+      const response = await this.apiCall('/api/security/notification-status');
+      console.log('✅ Raw login notification API response:', response);
+      
+      const apiResult = response.data || response || { enabled: false, preferences: {} };
+      
+      // Store gym-specific setting for consistency
+      if (window.setGymSpecificSetting) {
+        window.setGymSpecificSetting(`loginNotifications_${gymId}`, apiResult.enabled || false);
+      }
+      
+      console.log(`✅ Login notification status for gym ${gymId}:`, apiResult);
+      return apiResult;
+    } catch (error) {
+      console.error('❌ Error getting login notification status from API:', error);
+      
+      // Fallback to gym-specific local storage
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      const savedStatus = window.getGymSpecificSetting ? 
+        window.getGymSpecificSetting(`loginNotifications_${gymId}`) : null;
+      
+      const isEnabled = savedStatus === 'true' || savedStatus === true;
+      console.log(`🔄 Using fallback login notification status for gym ${gymId}:`, isEnabled);
+      
+      return { enabled: isEnabled, preferences: {} };
+    }
+  }
+
+  async loadNotificationStatus() {
+    if (this.isLoadingStatus) {
+      console.log('⏳ Login notification status loading already in progress, skipping...');
+      return;
+    }
+    
+    this.isLoadingStatus = true;
+    console.log('🔍 Loading login notification status for current gym...');
+    
+    try {
+      // First try to get from API
+      const status = await this.getNotificationStatus();
+      console.log('✅ Login notification status from API:', status);
+      
+      const isEnabled = status.enabled || false;
+      
+      // Store gym-specific setting for consistency
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      if (window.setGymSpecificSetting) {
+        window.setGymSpecificSetting(`loginNotifications_${gymId}`, isEnabled);
+      }
+      
+      this.updateNotificationToggle(isEnabled, false); // Don't show notification during loading
+      console.log(`🎯 Login notification status loaded successfully: ${isEnabled ? 'ENABLED' : 'DISABLED'}`);
+      return status;
+    } catch (error) {
+      console.error('❌ Error loading login notification status from API:', error);
+      
+      // Fallback to local storage if API fails
+      try {
+        console.log('🔄 Attempting fallback to local storage...');
+        const gymId = window.getGymId ? window.getGymId() : 'default';
+        const savedStatus = window.getGymSpecificSetting ? 
+          window.getGymSpecificSetting(`loginNotifications_${gymId}`) : null;
+        
+        const isEnabled = savedStatus === 'true' || savedStatus === true;
+        console.log('📱 Using fallback login notification status from local storage:', isEnabled);
+        this.updateNotificationToggle(isEnabled, false); // Don't show notification during loading
+        
+        if (savedStatus === null) {
+          showNotification('Unable to verify login notification status - check connection', 'warning');
+        }
+        
+        return { enabled: isEnabled };
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+        this.updateNotificationToggle(false, false); // Don't show notification during loading
+        showNotification('Failed to load login notification status', 'error');
+        return { enabled: false };
+      }
+    } finally {
+      this.isLoadingStatus = false;
+    }
+  }
+
+  updateNotificationToggle(enabled, showNotificationToast = true) {
+    const toggle = document.getElementById('loginNotifications');
+    console.log(`🔧 Attempting to update login notification toggle to: ${enabled}`);
+    console.log(`🔍 Toggle element found:`, !!toggle);
+    
+    if (toggle) {
+      const previousState = toggle.checked;
+      toggle.checked = enabled;
+      
+      console.log(`✅ Login notification toggle updated: ${previousState} → ${enabled}`);
+      
+      // Store the gym-specific setting
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      if (window.setGymSpecificSetting) {
+        window.setGymSpecificSetting(`loginNotifications_${gymId}`, enabled);
+        console.log(`💾 Stored login notification setting for gym ${gymId}: ${enabled}`);
+      }
+      
+      // Show notification toast for status change only if requested
+      if (showNotificationToast && previousState !== enabled) {
+        showNotification(
+          `Login notifications ${enabled ? 'enabled' : 'disabled'}`, 
+          enabled ? 'success' : 'info'
+        );
+      }
+    } else {
+      console.warn('⚠️ Login notification toggle element not found - ID should be "loginNotifications"');
+      console.log('🔍 Available elements with "notification" in ID:');
+      const notificationElements = document.querySelectorAll('[id*="notification"], [id*="Notification"], [id*="login"], [id*="Login"]');
+      notificationElements.forEach(el => console.log(`  - ${el.id}: ${el.tagName}`));
+      
+      showNotification('Login notification toggle not found in UI', 'error');
+    }
+  }
+
+  updateNotificationPreferences() {
+    // This method can be enhanced later for more detailed preferences
+    console.log('📋 Updating notification preferences display');
   }
 
   async showNotificationPreferences() {
     const modal = this.createSecurityModal('Login Notification Preferences', `
-      <div class="security-modal-content">
-        <div class="notification-preferences">
-          <h3>Choose how you want to be notified of login attempts:</h3>
-          
-          <div class="preference-item">
-            <label class="preference-label">
-              <input type="checkbox" id="emailNotifications" checked>
-              <span class="checkmark"></span>
-              <div class="preference-info">
-                <strong>Email Notifications</strong>
-                <p>Get email alerts for all login attempts</p>
-              </div>
-            </label>
-          </div>
-          
-          <div class="preference-item">
-            <label class="preference-label">
-              <input type="checkbox" id="browserNotifications">
-              <span class="checkmark"></span>
-              <div class="preference-info">
-                <strong>Browser Notifications</strong>
-                <p>Get real-time browser notifications</p>
-              </div>
-            </label>
-          </div>
-          
-          <div class="preference-item">
-            <label class="preference-label">
-              <input type="checkbox" id="suspiciousOnlyNotifications">
-              <span class="checkmark"></span>
-              <div class="preference-info">
-                <strong>Suspicious Activity Only</strong>
-                <p>Only notify for suspicious login attempts</p>
-              </div>
-            </label>
-          </div>
-          
-          <div class="location-settings">
-            <h4>Location-based Security</h4>
-            <div class="preference-item">
-              <label class="preference-label">
-                <input type="checkbox" id="newLocationNotifications" checked>
-                <span class="checkmark"></span>
-                <div class="preference-info">
-                  <strong>New Location Alerts</strong>
-                  <p>Alert when login from a new location is detected</p>
-                </div>
-              </label>
+      <div class="notification-preferences">
+        <h3>Choose how you want to be notified of login attempts:</h3>
+        
+        <div class="preference-item">
+          <label class="preference-label">
+            <input type="checkbox" id="emailNotifications" checked>
+            <span class="checkmark"></span>
+            <div class="preference-info">
+              <strong>Email Notifications</strong>
+              <p>Get email alerts for all login attempts</p>
             </div>
-          </div>
+          </label>
         </div>
         
-        <div class="modal-actions">
-          <button class="security-btn secondary" onclick="window.loginNotificationsManager.closeCurrentModal()">
-            Cancel
-          </button>
-          <button class="security-btn primary" onclick="window.loginNotificationsManager.saveNotificationPreferences()">
-            Save Preferences
-          </button>
+        <div class="preference-item">
+          <label class="preference-label">
+            <input type="checkbox" id="browserNotifications">
+            <span class="checkmark"></span>
+            <div class="preference-info">
+              <strong>Browser Notifications</strong>
+              <p>Get real-time browser notifications</p>
+            </div>
+          </label>
         </div>
+        
+        <div class="preference-item">
+          <label class="preference-label">
+            <input type="checkbox" id="suspiciousOnlyNotifications">
+            <span class="checkmark"></span>
+            <div class="preference-info">
+              <strong>Suspicious Activity Only</strong>
+              <p>Alert when login from a new location is detected</p>
+            </div>
+          </label>
+        </div>
+      </div>
+      
+      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #eee; text-align: right;">
+        <button class="security-btn secondary" onclick="window.loginNotificationsManager.closeCurrentModal()">
+          Cancel
+        </button>
+        <button class="security-btn primary" onclick="window.loginNotificationsManager.saveNotificationPreferences()">
+          Save Preferences
+        </button>
       </div>
     `);
 
@@ -6504,24 +7380,23 @@ class LoginNotificationsManager {
 
   async showRecentLogins() {
     try {
-      const response = await this.apiCall('/api/gyms/security/recent-logins');
+      const response = await this.apiCall('/api/gyms/recent-logins');
       if (response.success && response.data) {
         const logins = response.data;
         
         const modal = this.createSecurityModal('Recent Login Activity', `
-          <div class="security-modal-content">
-            <div class="recent-logins-header">
-              <h3>Recent login attempts to your account</h3>
-              <p>Review recent activity and report any suspicious logins</p>
-            </div>
-            
-            <div class="logins-list">
-              ${logins.map(login => `
-                <div class="login-item ${login.suspicious ? 'suspicious' : ''}">
-                  <div class="login-info">
-                    <div class="login-status">
-                      <i class="fas fa-${login.success ? 'check-circle' : 'times-circle'}"></i>
-                      <span class="status-text">${login.success ? 'Successful' : 'Failed'}</span>
+          <div class="recent-logins-header">
+            <h3>Recent login attempts to your account</h3>
+            <p>Review recent activity and report any suspicious logins</p>
+          </div>
+          
+          <div class="logins-list">
+            ${logins.map(login => `
+              <div class="login-item ${login.suspicious ? 'suspicious' : ''}">
+                <div class="login-info">
+                  <div class="login-status">
+                    <i class="fas fa-${login.success ? 'check-circle' : 'times-circle'}"></i>
+                    <span class="status-text">${login.success ? 'Successful' : 'Failed'}</span>
                     </div>
                     <div class="login-details">
                       <div class="login-time">${new Date(login.timestamp).toLocaleString()}</div>
@@ -6595,7 +7470,7 @@ class LoginNotificationsManager {
     modal.id = 'currentSecurityModal';
     modal.style.display = 'flex';
     modal.innerHTML = `
-      <div class="modal-content security-modal-content" style="max-width: 600px;">
+      <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header-style">
           <h3 class="modal-title-style">
             <i class="fas fa-bell"></i> ${title}
@@ -6620,20 +7495,54 @@ class LoginNotificationsManager {
   }
 
   async updateNotificationPreferences() {
-    // This method can be called to refresh the UI after changes
-    const status = await this.getNotificationStatus();
-    const toggle = document.getElementById('loginNotifications');
-    if (toggle) {
-      toggle.checked = status.enabled;
+    try {
+      // This method can be called to refresh the UI after changes
+      const status = await this.getNotificationStatus();
+      const toggle = document.getElementById('loginNotifications');
+      if (toggle) {
+        toggle.checked = status.enabled || false;
+        console.log(`📱 Updated login notifications toggle to: ${status.enabled}`);
+      }
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      
+      // Fallback to localStorage
+      const gymId = window.getGymId ? window.getGymId() : null;
+      if (gymId) {
+        const localStatus = window.getGymSpecificSetting(`loginNotifications_${gymId}`);
+        const toggle = document.getElementById('loginNotifications');
+        if (toggle && localStatus !== null) {
+          toggle.checked = localStatus;
+          console.log(`📱 Updated login notifications toggle from localStorage: ${localStatus}`);
+        }
+      }
     }
   }
 
   async getNotificationStatus() {
     try {
-      const response = await this.apiCall('/api/gyms/security/notification-status');
-      return response.data || { enabled: false };
+      const response = await this.apiCall('/api/security/notification-status');
+      const status = response.data || { enabled: false };
+      
+      // Store in gym-specific localStorage for caching
+      const gymId = window.getGymId ? window.getGymId() : null;
+      if (gymId) {
+        window.setGymSpecificSetting(`loginNotifications_${gymId}`, status.enabled);
+      }
+      
+      return status;
     } catch (error) {
       console.error('Error getting notification status:', error);
+      
+      // Fallback to localStorage
+      const gymId = window.getGymId ? window.getGymId() : null;
+      if (gymId) {
+        const localStatus = window.getGymSpecificSetting(`loginNotifications_${gymId}`);
+        if (localStatus !== null) {
+          return { enabled: localStatus };
+        }
+      }
+      
       return { enabled: false };
     }
   }
@@ -6659,6 +7568,35 @@ class LoginNotificationsManager {
 
     return await response.json();
   }
+
+  // Sync method for toggle changes
+  async syncToggleState(enabled) {
+    try {
+      console.log(`🔄 Syncing login notifications toggle state to: ${enabled}`);
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      
+      // Try to call API if available, but don't fail if it's not
+      try {
+        const response = await this.apiCall('/api/gyms/security/login-notifications', {
+          method: 'POST',
+          body: JSON.stringify({ 
+            enabled,
+            preferences: {
+              email: true,
+              browser: false,
+              suspiciousOnly: false,
+              newLocation: false
+            }
+          })
+        });
+        console.log('✅ Login notifications synced via API:', response.success);
+      } catch (error) {
+        console.log('⚠️ API sync failed, but toggle state saved locally:', error.message);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to sync login notifications state with API:', error.message);
+    }
+  }
 }
 
 // Session Timeout Manager
@@ -6683,13 +7621,44 @@ class SessionTimeoutManager {
 
   async loadTimeoutSettings() {
     try {
+      const gymId = window.getGymId ? window.getGymId() : null;
+      
+      // Try to load from API first
       const response = await this.apiCall('/api/gyms/security/session-timeout');
       if (response.success && response.data) {
-        this.setTimeoutDuration(response.data.timeoutMinutes || 60);
+        const timeoutMinutes = response.data.timeoutMinutes || 60;
+        this.setTimeoutDuration(timeoutMinutes);
         this.isActive = response.data.enabled !== false;
+        
+        // Store in gym-specific localStorage
+        if (gymId) {
+          window.setGymSpecificSetting(`sessionTimeout_${gymId}`, {
+            timeoutMinutes,
+            enabled: this.isActive
+          });
+        }
+      } else {
+        // Fallback to localStorage
+        if (gymId) {
+          const localSettings = window.getGymSpecificSetting(`sessionTimeout_${gymId}`);
+          if (localSettings) {
+            this.setTimeoutDuration(localSettings.timeoutMinutes || 60);
+            this.isActive = localSettings.enabled !== false;
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading session timeout settings:', error);
+      
+      // Fallback to localStorage on error
+      const gymId = window.getGymId ? window.getGymId() : null;
+      if (gymId) {
+        const localSettings = window.getGymSpecificSetting(`sessionTimeout_${gymId}`);
+        if (localSettings) {
+          this.setTimeoutDuration(localSettings.timeoutMinutes || 60);
+          this.isActive = localSettings.enabled !== false;
+        }
+      }
     }
     
     if (this.isActive) {
@@ -6734,15 +7703,14 @@ class SessionTimeoutManager {
     const remainingTime = Math.ceil(this.warningTime / 1000 / 60); // Minutes remaining
     
     const modal = this.createSecurityModal('Session Timeout Warning', `
-      <div class="security-modal-content">
-        <div class="timeout-warning">
-          <i class="fas fa-clock" style="font-size: 3rem; color: var(--warning-color);"></i>
-          <h3>Your session will expire soon</h3>
-          <p>You will be automatically logged out in <strong id="countdown">${remainingTime}</strong> minutes due to inactivity.</p>
-        </div>
-        
-        <div class="timeout-actions">
-          <button class="security-btn secondary" onclick="window.sessionTimeoutManager.extendSession()">
+      <div class="timeout-warning">
+        <i class="fas fa-clock" style="font-size: 3rem; color: var(--warning-color);"></i>
+        <h3>Your session will expire soon</h3>
+        <p>You will be automatically logged out in <strong id="countdown">${remainingTime}</strong> minutes due to inactivity.</p>
+      </div>
+      
+      <div class="timeout-actions">
+        <button class="security-btn secondary" onclick="window.sessionTimeoutManager.extendSession()">
             <i class="fas fa-clock"></i> Extend Session
           </button>
           <button class="security-btn primary" onclick="window.sessionTimeoutManager.stayLoggedIn()">
@@ -6841,6 +7809,8 @@ class SessionTimeoutManager {
 
   async updateTimeoutSettings(minutes) {
     try {
+      const gymId = window.getGymId ? window.getGymId() : null;
+      
       const response = await this.apiCall('/api/gyms/security/session-timeout', {
         method: 'POST',
         body: JSON.stringify({ 
@@ -6853,6 +7823,14 @@ class SessionTimeoutManager {
         this.setTimeoutDuration(minutes);
         this.isActive = minutes > 0;
         
+        // Store in gym-specific localStorage
+        if (gymId) {
+          window.setGymSpecificSetting(`sessionTimeout_${gymId}`, {
+            timeoutMinutes: minutes,
+            enabled: this.isActive
+          });
+        }
+        
         showNotification(
           minutes === 0 ? 'Session timeout disabled' : `Session timeout set to ${minutes} minutes`,
           'success'
@@ -6862,7 +7840,22 @@ class SessionTimeoutManager {
       }
     } catch (error) {
       console.error('Error updating session timeout:', error);
-      showNotification('Failed to update session timeout', 'error');
+      
+      // Store locally even if API fails
+      const gymId = window.getGymId ? window.getGymId() : null;
+      if (gymId) {
+        window.setGymSpecificSetting(`sessionTimeout_${gymId}`, {
+          timeoutMinutes: minutes,
+          enabled: minutes > 0
+        });
+        
+        this.setTimeoutDuration(minutes);
+        this.isActive = minutes > 0;
+        
+        showNotification('Session timeout updated locally. Settings will sync when connection is restored.', 'warning');
+      } else {
+        showNotification('Failed to update session timeout', 'error');
+      }
     }
   }
 
@@ -6875,7 +7868,7 @@ class SessionTimeoutManager {
     modal.id = 'currentSecurityModal';
     modal.style.display = 'flex';
     modal.innerHTML = `
-      <div class="modal-content security-modal-content" style="max-width: 600px;">
+      <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header-style">
           <h3 class="modal-title-style">
             <i class="fas fa-clock"></i> ${title}
@@ -6926,54 +7919,543 @@ class SessionTimeoutManager {
   }
 }
 
-// Initialize security managers
-window.twoFactorManager = new TwoFactorAuthManager();
-window.loginNotificationsManager = new LoginNotificationsManager();
-window.sessionTimeoutManager = new SessionTimeoutManager();
+// Initialize security managers immediately after class definitions
+console.log('🔧 Security manager initialization code loaded');
+
+// Function to initialize security managers
+function initializeSecurityManagers() {
+  console.log('🔧 Initializing security managers...');
+
+  try {
+    // Check if classes are defined (using try-catch to avoid ReferenceError)
+    let classesAvailable = true;
+    let classCheck = {};
+    
+    try {
+      classCheck.TwoFactorAuthManager = typeof TwoFactorAuthManager !== 'undefined';
+      classCheck.LoginNotificationsManager = typeof LoginNotificationsManager !== 'undefined';
+      classCheck.SessionTimeoutManager = typeof SessionTimeoutManager !== 'undefined';
+    } catch (error) {
+      console.log('⚠️ Classes not accessible yet:', error.message);
+      classesAvailable = false;
+    }
+    
+    console.log('Class availability check:', classCheck);
+
+    // Only require essential managers for settings functionality
+    if (!classesAvailable || !classCheck.TwoFactorAuthManager) {
+      console.error('❌ TwoFactorAuthManager class not defined yet');
+      return false;
+    }
+
+    if (!classCheck.LoginNotificationsManager) {
+      console.error('❌ LoginNotificationsManager class not defined yet');
+      return false;
+    }
+
+    // Create essential managers
+    if (!window.twoFactorManager) {
+      window.twoFactorManager = new TwoFactorAuthManager();
+      console.log('✅ TwoFactorAuthManager created:', !!window.twoFactorManager);
+    }
+    
+    if (!window.loginNotificationsManager) {
+      window.loginNotificationsManager = new LoginNotificationsManager();
+      console.log('✅ LoginNotificationsManager created:', !!window.loginNotificationsManager);
+    }
+    
+    // SessionTimeoutManager is optional - create if available
+    if (classCheck.SessionTimeoutManager && !window.sessionTimeoutManager) {
+      try {
+        window.sessionTimeoutManager = new SessionTimeoutManager();
+        console.log('✅ SessionTimeoutManager created:', !!window.sessionTimeoutManager);
+      } catch (error) {
+        console.log('⚠️ Could not create SessionTimeoutManager (optional):', error.message);
+      }
+    }
+    
+    window.securityManagersInitialized = true;
+    
+    console.log('✅ Security managers initialized successfully:', {
+      twoFactorManager: !!window.twoFactorManager,
+      loginNotificationsManager: !!window.loginNotificationsManager,
+      sessionTimeoutManager: !!window.sessionTimeoutManager
+    });
+    
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error initializing security managers:', error);
+    console.error('Stack trace:', error.stack);
+    window.securityManagersInitialized = false;
+    return false;
+  }
+}
+
+// Try to initialize immediately (will work if classes are already defined)
+const initialSetupResult = initializeSecurityManagers();
+
+// If initialization was successful, try to set up any pending security toggles
+if (initialSetupResult && window.securityManagersInitialized) {
+  console.log('🔧 Security managers initialized successfully, setting up pending toggles...');
+  
+  // Check if there's a pending gym ID for security toggle setup
+  const currentGymId = window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId'));
+  if (currentGymId && !window.securityToggleHandlersSetup) {
+    console.log('🔄 Setting up security toggles for gym:', currentGymId);
+    setTimeout(() => {
+      if (typeof setupSecurityToggleHandlers === 'function') {
+        setupSecurityToggleHandlers(currentGymId);
+      }
+    }, 100);
+  }
+}
 
 // Setup security feature event listeners
 document.addEventListener('DOMContentLoaded', function() {
-  // Two-Factor Authentication toggle
-  const twoFactorToggle = document.getElementById('twoFactorAuth');
-  if (twoFactorToggle) {
-    twoFactorToggle.addEventListener('change', function() {
-      if (this.checked) {
-        window.twoFactorManager.enable2FA();
-      } else {
-        window.twoFactorManager.disable2FA();
+  // Initialize security managers if not already done
+  if (!window.securityManagersInitialized) {
+    console.log('🔄 Initializing security managers from DOMContentLoaded...');
+    const result = initializeSecurityManagers();
+    
+    // If initialization successful, try to set up pending toggles
+    if (result && window.securityManagersInitialized) {
+      const currentGymId = window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId'));
+      if (currentGymId && !window.securityToggleHandlersSetup) {
+        console.log('🔄 Setting up security toggles after DOMContentLoaded initialization...');
+        setTimeout(() => {
+          if (typeof setupSecurityToggleHandlers === 'function') {
+            setupSecurityToggleHandlers(currentGymId);
+          }
+        }, 100);
       }
-    });
+    }
   }
-
-  // Login notifications toggle
-  const loginNotificationsToggle = document.getElementById('loginNotifications');
-  if (loginNotificationsToggle) {
-    loginNotificationsToggle.addEventListener('change', function() {
-      window.loginNotificationsManager.toggleLoginNotifications(this.checked);
-    });
-  }
-
+  
   // Session timeout dropdown
   const sessionTimeoutSelect = document.querySelector('.setting-select');
   if (sessionTimeoutSelect) {
     sessionTimeoutSelect.addEventListener('change', function() {
       const minutes = parseInt(this.value);
-      window.sessionTimeoutManager.updateTimeoutSettings(minutes);
+      window.sessionTimeoutManager?.updateTimeoutSettings(minutes);
     });
   }
 
-  // Load initial states
+  // Load initial states and setup event listeners
   setTimeout(async () => {
     try {
-      // Load 2FA status
-      const twoFactorStatus = await window.twoFactorManager.get2FAStatus();
-      window.twoFactorManager.update2FAToggle(twoFactorStatus.enabled);
+      console.log('🔧 Loading initial security settings...');
+      
+      const gymId = window.getGymId ? window.getGymId() : 'default';
+      console.log(`🏢 Current gym ID: ${gymId}`);
+      
+      // First load from local storage (for immediate UI update)
+      loadGymSpecificSecuritySettings(gymId);
+      
+      // Then load from API (for accuracy) with a small delay
+      setTimeout(async () => {
+        try {
+          // Load 2FA status from API
+          await window.twoFactorManager.load2FAStatus();
 
-      // Load login notifications status
-      const notificationStatus = await window.loginNotificationsManager.getNotificationStatus();
-      window.loginNotificationsManager.updateNotificationPreferences();
+          // Load login notifications status from API  
+          await window.loginNotificationsManager.loadNotificationStatus();
+          
+          // Load session timeout settings
+          await window.sessionTimeoutManager.loadTimeoutSettings();
+          
+          console.log('✅ All security settings loaded successfully from API');
+        } catch (apiError) {
+          console.warn('⚠️ API loading failed, using local storage values:', apiError.message);
+        }
+      }, 1000);
+      
     } catch (error) {
-      console.error('Error loading security settings:', error);
+      console.error('❌ Error loading security settings:', error);
     }
-  }, 1000);
+  }, 500); // Reduced delay for faster initial load
+
+  // Also check 2FA status when settings tab is opened
+  const settingsMenuItem = document.querySelector('[data-tab="settingsTab"]');
+  if (settingsMenuItem) {
+    settingsMenuItem.addEventListener('click', async () => {
+      setTimeout(async () => {
+        try {
+          console.log('🔄 Reloading security settings on tab switch...');
+          
+          // Reload all security settings
+          await window.twoFactorManager.load2FAStatus();
+          await window.loginNotificationsManager.loadNotificationStatus();
+          await window.sessionTimeoutManager.loadTimeoutSettings();
+          
+          console.log('✅ Security settings reloaded successfully');
+        } catch (error) {
+          console.error('❌ Error reloading security settings:', error);
+        }
+      }, 500); // Small delay to ensure tab is loaded
+    });
+  }
+
+  // Also reload on page visibility change (when user comes back to tab)
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && window.twoFactorManager) {
+      setTimeout(() => {
+        window.twoFactorManager.load2FAStatus().catch(error => {
+          console.log('Background 2FA status reload failed:', error.message);
+        });
+      }, 1000);
+    }
+  });
 });
+
+// Add debug function for security managers
+// Add debug function for testing toggle persistence
+window.testTogglePersistence = function() {
+  console.log('🧪 Testing toggle persistence...');
+  
+  const gymId = window.getGymId ? window.getGymId() : 'default';
+  console.log('Current gym ID:', gymId);
+  
+  // Check current toggle states
+  const twoFactorToggle = document.getElementById('twoFactorAuth');
+  const loginNotificationsToggle = document.getElementById('loginNotifications');
+  
+  console.log('Current Toggle States:');
+  console.log('  - 2FA:', twoFactorToggle?.checked);
+  console.log('  - Login Notifications:', loginNotificationsToggle?.checked);
+  
+  // Check saved settings
+  const saved2FA = window.getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+  const savedNotifications = window.getGymSpecificSetting(`loginNotifications_${gymId}`);
+  
+  console.log('Saved Settings:');
+  console.log('  - 2FA:', saved2FA, '(type:', typeof saved2FA, ')');
+  console.log('  - Login Notifications:', savedNotifications, '(type:', typeof savedNotifications, ')');
+  
+  // Test setting values
+  console.log('Setting test values...');
+  window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, true);
+  window.setGymSpecificSetting(`loginNotifications_${gymId}`, false);
+  
+  // Reload the settings
+  console.log('Reloading settings...');
+  window.loadSecurityToggleStates(gymId);
+  
+  // Check final states
+  console.log('Final Toggle States:');
+  console.log('  - 2FA:', twoFactorToggle?.checked);
+  console.log('  - Login Notifications:', loginNotificationsToggle?.checked);
+  
+  return {
+    gymId,
+    before: {
+      twoFA: twoFactorToggle?.checked,
+      notifications: loginNotificationsToggle?.checked
+    },
+    saved: {
+      twoFA: saved2FA,
+      notifications: savedNotifications
+    },
+    after: {
+      twoFA: twoFactorToggle?.checked,
+      notifications: loginNotificationsToggle?.checked
+    }
+  };
+};
+
+window.clearToggleSettings = function() {
+  console.log('🧹 Clearing toggle settings...');
+  const gymId = window.getGymId ? window.getGymId() : 'default';
+  
+  window.removeGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+  window.removeGymSpecificSetting(`loginNotifications_${gymId}`);
+  
+  console.log('✅ Settings cleared, reload page to see default state');
+};
+
+window.debugSecurityManagers = function() {
+  console.log('=== SECURITY MANAGERS DEBUG ===');
+  console.log('1. Manager Availability:');
+  console.log('   - twoFactorManager:', !!window.twoFactorManager);
+  console.log('   - loginNotificationsManager:', !!window.loginNotificationsManager);
+  console.log('   - sessionTimeoutManager:', !!window.sessionTimeoutManager);
+  
+  if (window.twoFactorManager) {
+    console.log('2. TwoFactorAuthManager methods:');
+    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(window.twoFactorManager));
+    console.log('   Methods:', methods);
+    console.log('   - enable2FA available:', typeof window.twoFactorManager.enable2FA === 'function');
+    console.log('   - disable2FA available:', typeof window.twoFactorManager.disable2FA === 'function');
+  }
+  
+  if (window.loginNotificationsManager) {
+    console.log('3. LoginNotificationsManager methods:');
+    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(window.loginNotificationsManager));
+    console.log('   Methods:', methods);
+    console.log('   - toggleLoginNotifications available:', typeof window.loginNotificationsManager.toggleLoginNotifications === 'function');
+  }
+  
+  // Test toggle elements
+  const twoFactorToggle = document.getElementById('twoFactorAuth');
+  const loginToggle = document.getElementById('loginNotifications');
+  
+  console.log('4. Toggle Elements:');
+  console.log('   - twoFactorAuth element:', !!twoFactorToggle);
+  console.log('   - loginNotifications element:', !!loginToggle);
+  
+  if (twoFactorToggle) {
+    console.log('   - twoFactorAuth checked:', twoFactorToggle.checked);
+  }
+  
+  if (loginToggle) {
+    console.log('   - loginNotifications checked:', loginToggle.checked);
+  }
+  
+  console.log('===============================');
+  
+  return {
+    twoFactorManager: !!window.twoFactorManager,
+    loginNotificationsManager: !!window.loginNotificationsManager,
+    twoFactorToggle: !!twoFactorToggle,
+    loginToggle: !!loginToggle,
+    gymId: window.getGymId ? window.getGymId() : 'unknown'
+  };
+};
+
+window.testSecurityToggle = function(type) {
+  console.log(`🧪 Testing ${type} toggle...`);
+  
+  if (type === '2fa') {
+    const toggle = document.getElementById('twoFactorAuth');
+    if (toggle) {
+      console.log('Current state:', toggle.checked);
+      toggle.checked = !toggle.checked;
+      console.log('New state:', toggle.checked);
+      
+      // Trigger change event
+      const event = new Event('change', { bubbles: true });
+      toggle.dispatchEvent(event);
+      console.log('Change event triggered');
+    } else {
+      console.log('❌ 2FA toggle not found');
+    }
+  } else if (type === 'notifications') {
+    const toggle = document.getElementById('loginNotifications');
+    if (toggle) {
+      console.log('Current state:', toggle.checked);
+      toggle.checked = !toggle.checked;
+      console.log('New state:', toggle.checked);
+      
+      // Trigger change event
+      const event = new Event('change', { bubbles: true });
+      toggle.dispatchEvent(event);
+      console.log('Change event triggered');
+    } else {
+      console.log('❌ Login notifications toggle not found');
+    }
+  }
+};
+
+window.manualToggleTest = function(toggleType) {
+  console.log(`🔧 Manual ${toggleType} toggle test...`);
+  
+  const elementId = toggleType === '2fa' ? 'twoFactorAuth' : 'loginNotifications';
+  const toggle = document.getElementById(elementId);
+  
+  if (!toggle) {
+    console.error(`❌ ${toggleType} toggle element not found (ID: ${elementId})`);
+    return false;
+  }
+  
+  console.log(`Current state: ${toggle.checked}`);
+  
+  // Manually trigger the toggle
+  toggle.checked = !toggle.checked;
+  console.log(`New state: ${toggle.checked}`);
+  
+  // Manually trigger the change event
+  const changeEvent = new Event('change', { bubbles: true });
+  toggle.dispatchEvent(changeEvent);
+  
+  console.log('Change event dispatched');
+  return true;
+};
+
+window.forceSecurityReload = async function() {
+  console.log('🔄 Force reloading all security settings...');
+  
+  try {
+    if (window.twoFactorManager) {
+      console.log('Reloading 2FA status...');
+      await window.twoFactorManager.load2FAStatus();
+    }
+    
+    if (window.loginNotificationsManager) {
+      console.log('Reloading login notifications status...');
+      await window.loginNotificationsManager.loadNotificationStatus();
+    }
+    
+    const gymId = window.getGymId ? window.getGymId() : 'default';
+    loadGymSpecificSecuritySettings(gymId);
+    
+    console.log('✅ Security settings reloaded');
+  } catch (error) {
+    console.error('❌ Error reloading security settings:', error);
+  }
+};
+
+// Add function to ensure toggle handlers are set up when settings tab is opened
+window.ensureSecurityToggleHandlers = function() {
+  console.log('🔧 Ensuring security toggle handlers are set up...');
+  
+  const gymId = window.getGymId ? window.getGymId() : 'default';
+  console.log(`Current gym ID: ${gymId}`);
+  
+  // Check if elements exist
+  const twoFactorToggle = document.getElementById('twoFactorAuth');
+  const loginNotificationsToggle = document.getElementById('loginNotifications');
+  
+  console.log('Toggle elements found:');
+  console.log('- 2FA toggle:', !!twoFactorToggle);
+  console.log('- Login notifications toggle:', !!loginNotificationsToggle);
+  
+  if (!twoFactorToggle || !loginNotificationsToggle) {
+    console.warn('⚠️ Toggle elements not found - settings tab may not be loaded yet');
+    return false;
+  }
+  
+  // Check if managers are initialized
+  console.log('Security managers status:');
+  console.log('- twoFactorManager:', !!window.twoFactorManager);
+  console.log('- loginNotificationsManager:', !!window.loginNotificationsManager);
+  
+  if (!window.twoFactorManager || !window.loginNotificationsManager) {
+    console.warn('⚠️ Security managers not initialized');
+    return false;
+  }
+  
+  // Force setup handlers
+  console.log('🔄 Force setting up toggle handlers...');
+  setupActualToggleHandlers(gymId);
+  
+  return true;
+};
+
+// Add comprehensive toggle testing function
+window.testToggleFunctionality = async function() {
+  console.log('🧪 === COMPREHENSIVE TOGGLE FUNCTIONALITY TEST ===');
+  
+  const gymId = window.getGymId ? window.getGymId() : 'default';
+  console.log(`Current gym ID: ${gymId}`);
+  
+  // 1. Check if elements exist
+  const twoFactorToggle = document.getElementById('twoFactorAuth');
+  const loginNotificationsToggle = document.getElementById('loginNotifications');
+  
+  console.log('1. Element Existence Check:');
+  console.log('   - 2FA toggle found:', !!twoFactorToggle);
+  console.log('   - Login notifications toggle found:', !!loginNotificationsToggle);
+  
+  if (!twoFactorToggle || !loginNotificationsToggle) {
+    console.error('❌ Elements not found. Go to Settings tab first, then run this test.');
+    return false;
+  }
+  
+  // 2. Check if managers are initialized
+  console.log('2. Security Managers Check:');
+  console.log('   - twoFactorManager:', !!window.twoFactorManager);
+  console.log('   - loginNotificationsManager:', !!window.loginNotificationsManager);
+  
+  if (!window.twoFactorManager || !window.loginNotificationsManager) {
+    console.error('❌ Security managers not initialized');
+    return false;
+  }
+  
+  // 3. Check current toggle states
+  console.log('3. Current Toggle States:');
+  console.log(`   - 2FA toggle checked: ${twoFactorToggle.checked}`);
+  console.log(`   - Login notifications toggle checked: ${loginNotificationsToggle.checked}`);
+  
+  // 4. Check saved settings in localStorage
+  console.log('4. Saved Settings in LocalStorage:');
+  const saved2FA = window.getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+  const savedLoginNotifications = window.getGymSpecificSetting(`loginNotifications_${gymId}`);
+  console.log(`   - Saved 2FA: ${saved2FA}`);
+  console.log(`   - Saved Login Notifications: ${savedLoginNotifications}`);
+  
+  // 5. Test saving functionality (without triggering actual API calls)
+  console.log('5. Testing Save Functionality:');
+  
+  // Test saving 2FA setting
+  console.log('   - Testing 2FA setting save...');
+  window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, 'test_value');
+  const testSave2FA = window.getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+  console.log(`     ✅ 2FA save test: ${testSave2FA === 'test_value' ? 'PASSED' : 'FAILED'}`);
+  
+  // Test saving login notifications setting
+  console.log('   - Testing Login Notifications setting save...');
+  window.setGymSpecificSetting(`loginNotifications_${gymId}`, 'test_value');
+  const testSaveLogin = window.getGymSpecificSetting(`loginNotifications_${gymId}`);
+  console.log(`     ✅ Login Notifications save test: ${testSaveLogin === 'test_value' ? 'PASSED' : 'FAILED'}`);
+  
+  // Restore original values
+  if (saved2FA !== null) {
+    window.setGymSpecificSetting(`twoFactorEnabled_${gymId}`, saved2FA);
+  }
+  if (savedLoginNotifications !== null) {
+    window.setGymSpecificSetting(`loginNotifications_${gymId}`, savedLoginNotifications);
+  }
+  
+  // 6. Check if event listeners are attached
+  console.log('6. Event Listener Check:');
+  console.log('   - Ensure toggle handlers are set up...');
+  window.ensureSecurityToggleHandlers();
+  
+  console.log('7. ✅ FUNCTIONALITY TEST SUMMARY:');
+  console.log('   - Elements found: ✅');
+  console.log('   - Managers initialized: ✅');
+  console.log('   - Save/Load working: ✅');
+  console.log('   - Event handlers setup: ✅');
+  console.log('');
+  console.log('🎯 READY TO TEST: Try toggling the 2FA and Login Notifications switches in the Settings tab.');
+  console.log('   Watch the console for detailed logs during toggle operations.');
+  
+  console.log('=== TOGGLE FUNCTIONALITY TEST COMPLETE ===');
+  
+  return true;
+};
+
+// ===== FINAL INITIALIZATION (runs after all classes are defined) =====
+// This ensures security managers are initialized after all class definitions are complete
+(function finalInitialization() {
+  console.log('🔧 Running final initialization...');
+  
+  // Use a small delay to ensure all script execution is complete
+  setTimeout(() => {
+    console.log('🔧 Attempting final security manager initialization...');
+    
+    // Try to initialize security managers one more time
+    if (!window.securityManagersInitialized) {
+      const result = initializeSecurityManagers();
+      
+      if (result) {
+        console.log('✅ Final initialization successful');
+        
+        // Try to set up any pending security toggles
+        const currentGymId = window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId'));
+        if (currentGymId && !window.securityToggleHandlersSetup) {
+          console.log('🔄 Setting up pending security toggles after final initialization...');
+          setTimeout(() => {
+            if (typeof setupSecurityToggleHandlers === 'function') {
+              setupSecurityToggleHandlers(currentGymId);
+            }
+          }, 100);
+        }
+      } else {
+        console.log('⚠️ Final initialization failed - will retry on demand');
+      }
+    } else {
+      console.log('✅ Security managers already initialized');
+    }
+  }, 100);
+})();

@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Admin login script loaded successfully');
     
     // Form elements
     const loginForm = document.getElementById('adminLoginForm');
@@ -11,19 +10,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const buttonText = document.getElementById('buttonText');
     const spinner = document.getElementById('spinner');
     
-    console.log('🔍 Form elements found:', {
-        loginForm: !!loginForm,
-        emailInput: !!emailInput,
-        passwordInput: !!passwordInput,
-        loginButton: !!loginButton
-    });
+   
     
     if (!loginForm) {
         console.error('❌ Login form not found! Cannot attach event listener.');
         return;
     }
     
-    console.log('✅ Attaching form submit event listener...');
     
     // Forgot password elements
     const forgotPasswordLink = document.getElementById('forgotPassword');
@@ -289,16 +282,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Login function
     async function handleLogin(e) {
       if (e) {
-        console.log('🎯 Login event triggered from:', e.type);
         e.preventDefault();
       }
-      console.log('✋ Login process started');
 
       // Clear any previous tokens to avoid stale state
-      console.log('🧹 Clearing previous tokens');
       localStorage.removeItem('gymAdminToken');
       
-      console.log('📊 Current localStorage state before login:', Object.keys(localStorage));
 
       const isEmailValid = validateEmail();
       const isPasswordValid = validatePassword();
@@ -319,18 +308,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(loginForm);
         const loginPayload = Object.fromEntries(formData);
         
-        console.log('🚀 Sending login request to backend');
-        console.log('📧 Login email:', loginPayload.email);
-        
+       
         const response = await fetch('http://localhost:5000/api/gyms/login', {
           method: 'POST',
           body: JSON.stringify(loginPayload),
           headers: { 'Content-Type': 'application/json' }
         });
 
-        console.log('📡 Login response received:', response.status, response.statusText);
+
         const data = await response.json();
-        console.log('📦 Login response data:', { success: data.success, message: data.message, hasToken: !!data.token, gymId: data.gymId });
 
         if (response.ok && data.success) {
           // Check if 2FA is required
@@ -344,10 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (data.token && data.gymId) {
             // Successful login
             showAnimatedSuccess();
-            console.log('🔑 About to store token:', data.token.substring(0, 20) + '...');
-            console.log('🆔 About to store gymId:', data.gymId);
-            console.log('🌐 Current origin:', window.location.origin);
-            console.log('🌐 Current pathname:', window.location.pathname);
+           
             // Store JWT token and gymId in localStorage with verification
             try {
               // Clear ALL potential old tokens and gymId first
@@ -356,14 +339,12 @@ document.addEventListener('DOMContentLoaded', function() {
               
               oldTokenKeys.forEach(key => {
                 if (localStorage.getItem(key)) {
-                  console.log(`🧹 Removing old token: ${key}`);
                   localStorage.removeItem(key);
                 }
               });
               
               oldGymKeys.forEach(key => {
                 if (localStorage.getItem(key)) {
-                  console.log(`🧹 Removing old gymId: ${key}`);
                   localStorage.removeItem(key);
                 }
               });
@@ -399,16 +380,10 @@ document.addEventListener('DOMContentLoaded', function() {
               });
               
               if (storedToken === data.token && storedGymId === data.gymId) {
-                console.log('✅ Token and GymId successfully stored in localStorage');
-                console.log('📊 Final localStorage state:', Object.keys(localStorage).map(key => ({
-                  key, 
-                  value: key.includes('gymId') || key.includes('Id') ? localStorage.getItem(key) : localStorage.getItem(key)?.substring(0, 20) + '...',
-                  length: localStorage.getItem(key)?.length
-                })));
+               
                 
                 // Use a longer delay to ensure localStorage has fully committed
                 setTimeout(() => {
-                  console.log('🚀 Redirecting to dashboard...');
                   // Pass token and gymId as URL parameters as backup
                   const dashboardUrl = `http://localhost:5000/gymadmin/gymadmin.html?token=${encodeURIComponent(data.token)}&gymId=${encodeURIComponent(data.gymId)}`;
                   window.location.replace(dashboardUrl);
@@ -467,38 +442,100 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showAnimatedSuccess() {
-      // Create animated success checkmark
+      console.log('🎉 Showing animated success message...');
+      
+      // Create professional success message with checkmark and text
       const successDiv = document.createElement('div');
+      successDiv.className = 'success-container';
       successDiv.innerHTML = `
-        <div class="success-checkmark" style="text-align: center; margin: 20px 0;">
-          <div class="check-icon">
-            <span class="icon-line line-tip"></span>
-            <span class="icon-line line-long"></span>
-            <div class="icon-circle"></div>
-            <div class="icon-fix"></div>
+        <div class="success-animation" style="text-align: center; margin: 30px 0;">
+          <div class="success-checkmark">
+            <div class="check-icon">
+              <span class="icon-line line-tip"></span>
+              <span class="icon-line line-long"></span>
+              <div class="icon-circle"></div>
+              <div class="icon-fix"></div>
+            </div>
+          </div>
+          <div class="success-content">
+            <h3 class="success-title">Login Successful!</h3>
+            <p class="success-message">Welcome back! Redirecting to your dashboard...</p>
+            <div class="success-progress">
+              <div class="progress-bar"></div>
+            </div>
           </div>
         </div>
       `;
       
-      // Add CSS for the checkmark animation
+      // Add enhanced CSS for the success animation
       const style = document.createElement('style');
       style.textContent = `
-        .success-checkmark {
-          width: 80px;
-          height: 115px;
-          margin: 0 auto;
+        .success-container {
+          position: relative;
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          border-radius: 15px;
+          padding: 30px 20px;
+          box-shadow: 0 10px 30px rgba(76, 175, 80, 0.15);
+          border: 2px solid rgba(76, 175, 80, 0.2);
+          margin: 20px 0;
+          animation: slideInScale 0.6s ease-out;
         }
         
-        .success-checkmark .check-icon {
+        @keyframes slideInScale {
+          0% {
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        
+        .success-animation {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        .success-checkmark {
+          width: 80px;
+          height: 80px;
+          margin-bottom: 20px;
+          position: relative;
+        }
+        
+        .check-icon {
           width: 80px;
           height: 80px;
           position: relative;
           border-radius: 50%;
           box-sizing: content-box;
           border: 4px solid #4CAF50;
+          background: white;
+          box-shadow: 0 4px 20px rgba(76, 175, 80, 0.25);
+          animation: checkmark-appear 0.8s ease-out;
         }
         
-        .success-checkmark .check-icon::before {
+        @keyframes checkmark-appear {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+            border-color: #ddd;
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.1);
+            border-color: #4CAF50;
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+            border-color: #4CAF50;
+          }
+        }
+        
+        .check-icon::before {
           top: 3px;
           left: -2px;
           width: 30px;
@@ -506,16 +543,16 @@ document.addEventListener('DOMContentLoaded', function() {
           border-radius: 100px 0 0 100px;
         }
         
-        .success-checkmark .check-icon::after {
+        .check-icon::after {
           top: 0;
           left: 30px;
           width: 60px;
           transform-origin: 0 50%;
           border-radius: 0 100px 100px 0;
-          animation: rotate-circle 4.25s ease-in;
+          animation: rotate-circle 1.2s ease-in;
         }
         
-        .success-checkmark .check-icon::before, .success-checkmark .check-icon::after {
+        .check-icon::before, .check-icon::after {
           content: '';
           height: 100px;
           position: absolute;
@@ -523,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
           transform: rotate(-45deg);
         }
         
-        .success-checkmark .check-icon .icon-line {
+        .check-icon .icon-line {
           height: 5px;
           background-color: #4CAF50;
           display: block;
@@ -532,23 +569,23 @@ document.addEventListener('DOMContentLoaded', function() {
           z-index: 10;
         }
         
-        .success-checkmark .check-icon .icon-line.line-tip {
+        .check-icon .icon-line.line-tip {
           top: 46px;
           left: 14px;
           width: 25px;
           transform: rotate(45deg);
-          animation: icon-line-tip 0.75s;
+          animation: icon-line-tip 0.9s ease-out 0.3s both;
         }
         
-        .success-checkmark .check-icon .icon-line.line-long {
+        .check-icon .icon-line.line-long {
           top: 38px;
           right: 8px;
           width: 47px;
           transform: rotate(-45deg);
-          animation: icon-line-long 0.75s;
+          animation: icon-line-long 0.9s ease-out 0.3s both;
         }
         
-        .success-checkmark .check-icon .icon-circle {
+        .check-icon .icon-circle {
           top: -4px;
           left: -4px;
           z-index: 10;
@@ -560,7 +597,7 @@ document.addEventListener('DOMContentLoaded', function() {
           border: 4px solid rgba(76, 175, 80, .5);
         }
         
-        .success-checkmark .check-icon .icon-fix {
+        .check-icon .icon-fix {
           top: 8px;
           width: 5px;
           left: 26px;
@@ -569,6 +606,60 @@ document.addEventListener('DOMContentLoaded', function() {
           position: absolute;
           transform: rotate(-45deg);
           background-color: #FFFFFF;
+        }
+        
+        .success-content {
+          text-align: center;
+          animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+        
+        .success-title {
+          color: #2c5530;
+          font-size: 1.5em;
+          font-weight: 700;
+          margin: 0 0 8px 0;
+          letter-spacing: 0.5px;
+        }
+        
+        .success-message {
+          color: #5a6c57;
+          font-size: 1em;
+          margin: 0 0 20px 0;
+          font-weight: 500;
+          line-height: 1.4;
+        }
+        
+        .success-progress {
+          width: 200px;
+          height: 4px;
+          background: rgba(76, 175, 80, 0.2);
+          border-radius: 2px;
+          overflow: hidden;
+          margin: 0 auto;
+        }
+        
+        .progress-bar {
+          width: 0%;
+          height: 100%;
+          background: linear-gradient(90deg, #4CAF50, #66BB6A);
+          border-radius: 2px;
+          animation: progress-fill 2s ease-out 0.6s both;
+        }
+        
+        @keyframes fadeInUp {
+          0% {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes progress-fill {
+          0% { width: 0%; }
+          100% { width: 100%; }
         }
         
         @keyframes rotate-circle {
@@ -639,12 +730,27 @@ document.addEventListener('DOMContentLoaded', function() {
       `;
       
       document.head.appendChild(style);
-      loginForm.appendChild(successDiv);
+      
+      // Display the success message in the feedback area
+      const feedback = document.getElementById('login-feedback');
+      if (feedback) {
+        feedback.innerHTML = '';
+        feedback.appendChild(successDiv);
+        feedback.style.display = 'block';
+      } else {
+        // Fallback: append to form if feedback element not found
+        loginForm.appendChild(successDiv);
+      }
+      
+      // Also show a notification
+      if (window.showNotification) {
+        window.showNotification('success', 'Login Successful!', 'Welcome back! Redirecting to your dashboard...');
+      }
     }
     
     // 2FA Modal Functions
     function show2FAModal(tempToken, email) {
-      // Create 2FA modal HTML
+      // Create 2FA modal HTML for email OTP
       const modal2FA = document.createElement('div');
       modal2FA.id = 'twoFAModal';
       modal2FA.className = 'forgot-password-modal active';
@@ -652,8 +758,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="modal-content">
           <span class="close-modal" onclick="close2FAModal()">&times;</span>
           <h2><i class="fas fa-shield-alt"></i> Two-Factor Authentication</h2>
-          <p style="margin-bottom: 20px; color: #666;">Enter the 6-digit code from your authenticator app:</p>
+          <p style="margin-bottom: 20px; color: #666;">
+            We've sent a 6-digit verification code to your email: <strong>${email}</strong>
+          </p>
           <div class="form-group">
+            <label for="twoFACode" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+              Enter verification code:
+            </label>
             <input type="text" id="twoFACode" placeholder="000000" maxlength="6" 
                    style="text-align: center; font-size: 1.4em; letter-spacing: 0.5em; width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px;" />
             <div class="error-message" id="twoFA-error" style="margin-top: 10px;"></div>
@@ -661,6 +772,14 @@ document.addEventListener('DOMContentLoaded', function() {
           <button type="button" id="verify2FAButton" class="login-btn" style="width: 100%; margin-top: 15px;">
             <i class="fas fa-check-circle"></i> Verify Code
           </button>
+          <div style="text-align: center; margin-top: 15px;">
+            <button type="button" id="resend2FAButton" class="resend-btn" style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-size: 0.9em;">
+              <i class="fas fa-redo"></i> Resend Code
+            </button>
+          </div>
+          <p style="font-size: 0.85em; color: #888; margin-top: 15px; text-align: center;">
+            <i class="fas fa-clock"></i> Code expires in 10 minutes
+          </p>
         </div>
       `;
       
@@ -672,6 +791,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Add event listeners
       document.getElementById('verify2FAButton').addEventListener('click', () => verify2FA(tempToken, email));
+      document.getElementById('resend2FAButton').addEventListener('click', () => resend2FA(tempToken, email));
       
       // Allow Enter key to submit
       codeInput.addEventListener('keypress', (e) => {
@@ -680,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
       
-      // Auto-format input (add spaces for readability)
+      // Auto-format input (only allow digits)
       codeInput.addEventListener('input', (e) => {
         let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
         if (value.length > 6) value = value.slice(0, 6);
@@ -703,10 +823,13 @@ document.addEventListener('DOMContentLoaded', function() {
       verifyButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
       
       try {
-        const response = await fetch('http://localhost:5000/api/gyms/security/verify-2fa', {
+        const response = await fetch('http://localhost:5000/api/gyms/verify-login-2fa', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tempToken, code, email })
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tempToken}`
+          },
+          body: JSON.stringify({ otp: code })
         });
         
         const data = await response.json();
@@ -746,6 +869,59 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
+    async function resend2FA(tempToken, email) {
+      const resendButton = document.getElementById('resend2FAButton');
+      const originalText = resendButton.innerHTML;
+      
+      resendButton.disabled = true;
+      resendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+      
+      try {
+        const response = await fetch('http://localhost:5000/api/gyms/resend-2fa-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tempToken, email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          resendButton.innerHTML = '<i class="fas fa-check"></i> Code Sent!';
+          resendButton.style.color = '#28a745';
+          
+          // Show success message
+          const errorDiv = document.getElementById('twoFA-error');
+          errorDiv.textContent = 'New verification code sent to your email';
+          errorDiv.style.color = '#28a745';
+          errorDiv.style.display = 'block';
+          
+          setTimeout(() => {
+            resendButton.innerHTML = originalText;
+            resendButton.style.color = '#007bff';
+            resendButton.disabled = false;
+            errorDiv.style.display = 'none';
+          }, 3000);
+        } else {
+          resendButton.innerHTML = originalText;
+          resendButton.disabled = false;
+          
+          const errorDiv = document.getElementById('twoFA-error');
+          errorDiv.textContent = data.message || 'Failed to resend code. Please try again.';
+          errorDiv.style.color = '#dc3545';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        resendButton.innerHTML = originalText;
+        resendButton.disabled = false;
+        
+        const errorDiv = document.getElementById('twoFA-error');
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.color = '#dc3545';
+        errorDiv.style.display = 'block';
+        console.error('2FA resend error:', error);
+      }
+    }
+    
     function close2FAModal() {
       const modal = document.getElementById('twoFAModal');
       if (modal) {
@@ -759,4 +935,264 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make close2FAModal globally available
     window.close2FAModal = close2FAModal;
+    
+    // Initialize professional UI enhancements
+    console.log('🎨 Initializing professional UI enhancements...');
+    initializeInputEffects();
+    setupAccessibility();
+    initializeValidation();
+    setupPasswordToggle();
+    
+    console.log('✅ Professional UI enhancements initialized successfully');
+    
+    function initializeInputEffects() {
+        [emailInput, passwordInput].forEach(input => {
+            if (!input) return;
+            
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('input-focused');
+                clearFieldError(input);
+            });
+            
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('input-focused');
+                if (input.value.trim() === '') {
+                    input.parentElement.classList.remove('input-filled');
+                } else {
+                    input.parentElement.classList.add('input-filled');
+                }
+            });
+            
+            input.addEventListener('input', () => {
+                clearFieldError(input);
+                if (input.value.trim() !== '') {
+                    input.parentElement.classList.add('input-filled');
+                } else {
+                    input.parentElement.classList.remove('input-filled');
+                }
+            });
+        });
+    }
+    
+    function setupAccessibility() {
+        // Improve screen reader support
+        document.querySelectorAll('.error-message').forEach(error => {
+            error.setAttribute('aria-live', 'polite');
+        });
+    }
+    
+    function initializeValidation() {
+        if (emailInput) emailInput.addEventListener('blur', validateEmail);
+        if (passwordInput) passwordInput.addEventListener('blur', validatePassword);
+    }
+    
+    function setupPasswordToggle() {
+        const togglePassword = document.getElementById('togglePassword');
+        const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+        
+        if (!togglePassword || !togglePasswordIcon || !passwordInput) return;
+        
+        // Toggle password visibility with accessibility
+        togglePassword.addEventListener('click', togglePasswordVisibility);
+        togglePassword.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                togglePasswordVisibility();
+            }
+        });
+        
+        function togglePasswordVisibility() {
+            const isPasswordVisible = passwordInput.getAttribute('type') === 'text';
+            const newType = isPasswordVisible ? 'password' : 'text';
+            const newIcon = isPasswordVisible ? 'fa-eye' : 'fa-eye-slash';
+            const oldIcon = isPasswordVisible ? 'fa-eye-slash' : 'fa-eye';
+            const ariaLabel = isPasswordVisible ? 'Show password' : 'Hide password';
+            
+            passwordInput.setAttribute('type', newType);
+            togglePasswordIcon.classList.remove(oldIcon);
+            togglePasswordIcon.classList.add(newIcon);
+            togglePassword.setAttribute('aria-label', ariaLabel);
+        }
+    }
+    
+    function validateEmail() {
+        if (!emailInput) return false;
+        
+        const email = emailInput.value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (!email) {
+            showFieldError(emailInput, 'Email is required');
+            return false;
+        } else if (!emailRegex.test(email)) {
+            showFieldError(emailInput, 'Please enter a valid email address');
+            return false;
+        }
+        
+        clearFieldError(emailInput);
+        return true;
+    }
+    
+    function validatePassword() {
+        if (!passwordInput) return false;
+        
+        const password = passwordInput.value;
+        
+        if (!password) {
+            showFieldError(passwordInput, 'Password is required');
+            return false;
+        } else if (password.length < 8) {
+            showFieldError(passwordInput, 'Password must be at least 8 characters');
+            return false;
+        }
+        
+        clearFieldError(passwordInput);
+        return true;
+    }
+    
+    function showFieldError(field, message) {
+        const errorElement = field.parentElement.querySelector('.error-message');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            field.classList.add('error');
+            field.setAttribute('aria-invalid', 'true');
+        }
+    }
+    
+    function clearFieldError(field) {
+        const errorElement = field.parentElement.querySelector('.error-message');
+        if (errorElement) {
+            errorElement.style.display = 'none';
+            field.classList.remove('error');
+            field.removeAttribute('aria-invalid');
+        }
+    }
+    
+    // Professional Notification System
+    function showNotification(type, title, message, duration = 5000) {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => notification.remove());
+        
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.setAttribute('role', 'alert');
+        notification.setAttribute('aria-live', 'polite');
+        
+        const iconMap = {
+            success: 'fas fa-check-circle',
+            error: 'fas fa-exclamation-circle',
+            warning: 'fas fa-exclamation-triangle',
+            info: 'fas fa-info-circle'
+        };
+        
+        notification.innerHTML = `
+            <div class="notification-content">
+                <div class="notification-icon">
+                    <i class="${iconMap[type] || iconMap.info}" aria-hidden="true"></i>
+                </div>
+                <div class="notification-text">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Trigger animation
+        setTimeout(() => notification.classList.add('show'), 100);
+        
+        // Auto remove
+        const removeNotification = () => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 400);
+        };
+        
+        if (duration > 0) {
+            setTimeout(removeNotification, duration);
+        }
+        
+        return { notification, remove: removeNotification };
+    }
+    
+    // Enhanced success message with accessibility
+    function showProfessionalSuccess(message) {
+        console.log('🎯 Showing professional success:', message);
+        
+        const feedback = document.getElementById('login-feedback');
+        if (!feedback) {
+            console.error('❌ login-feedback element not found!');
+            return;
+        }
+        
+        feedback.innerHTML = `
+            <div style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                color: #10b981;
+                font-weight: 600;
+                font-size: 1.1rem;
+                padding: 16px;
+                background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 78, 59, 0.2) 100%);
+                border: 1px solid rgba(16, 185, 129, 0.3);
+                border-radius: 12px;
+                backdrop-filter: blur(10px);
+                animation: fadeInScale 0.5s ease-out;
+            " role="status" aria-live="polite">
+                <div style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: #10b981;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    animation: checkmark 0.6s ease-out 0.2s both;
+                ">
+                    <i class="fas fa-check" style="color: white; font-size: 12px;" aria-hidden="true"></i>
+                </div>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        feedback.style.display = 'block';
+        feedback.setAttribute('aria-live', 'polite');
+        
+        // Progress indicator
+        const progressBar = document.createElement('div');
+        progressBar.style.cssText = `
+            width: 100%;
+            height: 3px;
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 2px;
+            margin-top: 12px;
+            overflow: hidden;
+        `;
+        
+        const progress = document.createElement('div');
+        progress.style.cssText = `
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            border-radius: 2px;
+            width: 0%;
+            animation: progressFill 2s ease-out;
+        `;
+        
+        progressBar.appendChild(progress);
+        feedback.firstElementChild.appendChild(progressBar);
+        
+        return showNotification('success', 'Login Successful', message);
+    }
+    
+    // Make functions globally available
+    window.showNotification = showNotification;
+    window.showProfessionalSuccess = showProfessionalSuccess;
 });

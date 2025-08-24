@@ -1,4 +1,31 @@
 /* Equipment Tab Styles */
+
+/* CRITICAL: Fix dropdown z-index issues for equipment tab */
+.user-profile-dropdown,
+.notification-dropdown,
+#userProfileDropdown,
+#notificationDropdown,
+.dropdown-content {
+    position: fixed !important;
+    z-index: 999999 !important;
+    top: 70px !important;
+    right: 20px !important;
+}
+
+.notification-dropdown,
+#notificationDropdown {
+    right: 80px !important;
+}
+
+/* Ensure dropdowns appear above all equipment content including modals */
+.equipment-grid,
+.equipment-card,
+.equipment-detail-modal,
+.equipment-form-modal,
+.photo-gallery-modal {
+    z-index: 1 !important;
+}
+
 .equipment-header-actions {
   display: flex;
   gap: 12px;

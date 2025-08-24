@@ -1,0 +1,1304 @@
+// ===============================================
+// SETTINGS PAGE JAVASCRIPT
+// ===============================================
+
+console.log('Settings page script loaded!');
+
+// Global variables
+// BASE_URL is defined globally in the HTML file
+let currentUser = null;
+let userBookings = [];
+let userMemberships = [];
+let userTransactions = [];
+
+// DOM Elements
+const loadingScreen = document.getElementById('loading-screen');
+const tabButtons = document.querySelectorAll('.settings-tab-btn');
+const tabContents = document.querySelectorAll('.settings-tab-content');
+const modalOverlay = document.getElementById('modal-overlay');
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Settings Page');
+    
+    // Check authentication first
+    checkAuthentication();
+    
+    // Initialize UI components
+    initializeNavigation();
+    initializeTabSystem();
+    initializeNotificationToggles();
+    
+    // Load user data
+    loadUserData();
+});
+
+// Check user authentication
+function checkAuthentication() {
+    const token = localStorage.getItem('token');
+    const userProfileNav = document.getElementById('user-profile-nav');
+    const loginSignupNav = document.getElementById('login-signup-nav');
+    
+    if (!token) {
+        // Redirect to login if not authenticated
+        window.location.href = '/frontend/public/login.html';
+        return;
+    }
+    
+    // Show user profile nav
+    if (userProfileNav) userProfileNav.style.display = 'block';
+    if (loginSignupNav) loginSignupNav.style.display = 'none';
+}
+
+// Initialize navigation functionality
+function initializeNavigation() {
+    // Mobile menu toggle
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+    
+    if (menuToggle && navLinks) {
+        menuToggle.addEventListener('click', function() {
+            navLinks.classList.toggle('active');
+            console.log('Mobile menu toggled');
+        });
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!menuToggle.contains(e.target) && !navLinks.contains(e.target)) {
+                navLinks.classList.remove('active');
+            }
+        });
+    }
+    
+    // Dropdown functionality for mobile
+    document.querySelectorAll('.dropdown > a').forEach(function(dropLink) {
+        dropLink.addEventListener('click', function(e) {
+            if (window.innerWidth <= 900) {
+                e.preventDefault();
+                const parentDropdown = this.parentElement;
+                parentDropdown.classList.toggle('open');
+                document.querySelectorAll('.dropdown').forEach(function(dd) {
+                    if (dd !== parentDropdown) dd.classList.remove('open');
+                });
+            }
+        });
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 900) {
+            navLinks.classList.remove('active');
+            document.querySelectorAll('.dropdown').forEach(dd => dd.classList.remove('open'));
+        }
+    });
+}
+
+// Initialize tab system
+function initializeTabSystem() {
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+            switchTab(targetTab);
+        });
+    });
+}
+
+// Switch between tabs
+function switchTab(tabName) {
+    // Update button states
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update content visibility
+    tabContents.forEach(content => content.classList.remove('active'));
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // Load tab-specific data
+    loadTabData(tabName);
+}
+
+// Load tab-specific data
+function loadTabData(tabName) {
+    switch(tabName) {
+        case 'bookings':
+            loadBookingsData();
+            break;
+        case 'memberships':
+            loadMembershipsData();
+            break;
+        case 'payments':
+            loadPaymentsData();
+            break;
+        case 'notifications':
+            loadNotificationSettings();
+            break;
+        case 'privacy':
+            loadPrivacySettings();
+            break;
+        case 'account':
+            loadAccountData();
+            break;
+    }
+}
+
+// Load user data
+async function loadUserData() {
+    try {
+        showLoadingScreen();
+        
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/api/users/profile`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch user data');
+        }
+        
+        currentUser = await response.json();
+        updateUserDisplay();
+        
+        // Load initial bookings data
+        loadBookingsData();
+        
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        showError('Failed to load user data. Please refresh the page.');
+    } finally {
+        hideLoadingScreen();
+    }
+}
+
+// Update user display in header
+function updateUserDisplay() {
+    if (!currentUser) return;
+    
+    // Update profile image
+    const profileImg = document.getElementById('settings-profile-img');
+    const navProfileImg = document.getElementById('profile-icon-img');
+    
+    let profilePicUrl = '/uploads/profile-pics/default.png';
+    if (currentUser.profileImage) {
+        if (currentUser.profileImage.startsWith('http')) {
+            profilePicUrl = currentUser.profileImage;
+        } else {
+            profilePicUrl = `${BASE_URL}${currentUser.profileImage}`;
+        }
+    }
+    
+    if (profileImg) profileImg.src = profilePicUrl;
+    if (navProfileImg) navProfileImg.src = profilePicUrl;
+    
+    // Update user details
+    const userName = document.getElementById('user-name');
+    const userEmail = document.getElementById('user-email');
+    const membershipStatus = document.getElementById('membership-status');
+    
+    const fullName = currentUser.firstName && currentUser.lastName 
+        ? `${currentUser.firstName} ${currentUser.lastName}` 
+        : currentUser.username || currentUser.name || 'User';
+    
+    if (userName) userName.textContent = fullName;
+    if (userEmail) userEmail.textContent = currentUser.email || '';
+    if (membershipStatus) {
+        // This would be determined based on active memberships
+        membershipStatus.textContent = 'Premium Member'; // Default for now
+    }
+}
+
+// Load bookings data
+async function loadBookingsData() {
+    try {
+        const token = localStorage.getItem('token');
+        
+        // Load gym bookings
+        loadGymBookings(token);
+        
+        // Load trainer bookings
+        loadTrainerBookings(token);
+        
+        // Load trial bookings and limits
+        loadTrialBookingsAndLimits(token);
+        
+    } catch (error) {
+        console.error('Error loading bookings:', error);
+        showError('Failed to load bookings data.');
+    }
+}
+
+// Load gym bookings
+async function loadGymBookings(token) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/bookings/gym-memberships`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const gymBookingsContainer = document.getElementById('gym-bookings');
+        
+        if (response.ok) {
+            const bookings = await response.json();
+            displayGymBookings(bookings);
+        } else {
+            gymBookingsContainer.innerHTML = '<p class="no-data">No gym memberships found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading gym bookings:', error);
+        document.getElementById('gym-bookings').innerHTML = '<p class="error-message">Failed to load gym bookings.</p>';
+    }
+}
+
+// Load trainer bookings
+async function loadTrainerBookings(token) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/bookings/trainer-sessions`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const trainerBookingsContainer = document.getElementById('trainer-bookings');
+        
+        if (response.ok) {
+            const bookings = await response.json();
+            displayTrainerBookings(bookings);
+        } else {
+            trainerBookingsContainer.innerHTML = '<p class="no-data">No trainer sessions found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading trainer bookings:', error);
+        document.getElementById('trainer-bookings').innerHTML = '<p class="error-message">Failed to load trainer bookings.</p>';
+    }
+}
+
+// Load trial bookings
+// Load trial bookings and limits
+async function loadTrialBookingsAndLimits(token) {
+    try {
+        // Load trial limits status
+        const statusResponse = await fetch(`${BASE_URL}/api/trial-bookings/trial-status`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            displayTrialLimitsStatus(statusData.data);
+        } else {
+            displayTrialLimitsError();
+        }
+        
+        // Load trial booking history
+        const historyResponse = await fetch(`${BASE_URL}/api/trial-bookings/history`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const trialBookingsContainer = document.getElementById('trial-bookings');
+        
+        if (historyResponse.ok) {
+            const historyData = await historyResponse.json();
+            displayTrialBookings(historyData.data.bookings);
+        } else {
+            trialBookingsContainer.innerHTML = '<p class="no-data">No trial bookings found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading trial data:', error);
+        displayTrialLimitsError();
+        document.getElementById('trial-bookings').innerHTML = '<p class="error-message">Failed to load trial bookings.</p>';
+    }
+}
+
+// Display trial limits status
+function displayTrialLimitsStatus(trialLimits) {
+    const container = document.getElementById('trial-limits-status');
+    
+    const resetDate = new Date(trialLimits.nextResetDate);
+    const today = new Date();
+    const daysUntilReset = Math.ceil((resetDate - today) / (1000 * 60 * 60 * 24));
+    
+    const statusHtml = `
+        <div class="trial-limits-header">
+            <h4><i class="fas fa-ticket-alt"></i> Trial Usage Status</h4>
+            <div class="limits-summary">
+                <span class="used">${trialLimits.usedTrials}</span>/<span class="total">${trialLimits.totalTrials}</span> Used
+            </div>
+        </div>
+        
+        <div class="trial-limits-details">
+            <div class="limit-item">
+                <div class="limit-icon">
+                    <i class="fas fa-gift"></i>
+                </div>
+                <div class="limit-info">
+                    <h5>Remaining Trials</h5>
+                    <p>${trialLimits.remainingTrials} out of ${trialLimits.totalTrials} monthly trials remaining</p>
+                </div>
+            </div>
+            
+            <div class="limit-item">
+                <div class="limit-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="limit-info">
+                    <h5>Next Reset</h5>
+                    <p>${resetDate.toLocaleDateString()} (${daysUntilReset} days)</p>
+                </div>
+            </div>
+            
+            ${trialLimits.remainingTrials === 0 ? `
+                <div class="limit-item warning">
+                    <div class="limit-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="limit-info">
+                        <h5>Limit Reached</h5>
+                        <p>You've used all your free trials for this month</p>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+        
+        <div class="trial-limits-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${(trialLimits.usedTrials / trialLimits.totalTrials) * 100}%"></div>
+            </div>
+            <span class="progress-text">${trialLimits.usedTrials}/${trialLimits.totalTrials} trials used this month</span>
+        </div>
+    `;
+    
+    container.innerHTML = statusHtml;
+}
+
+// Display trial limits error
+function displayTrialLimitsError() {
+    const container = document.getElementById('trial-limits-status');
+    container.innerHTML = `
+        <div class="error-state">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Unable to load trial status</p>
+        </div>
+    `;
+}
+
+async function loadTrialBookings(token) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/bookings/trials`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const trialBookingsContainer = document.getElementById('trial-bookings');
+        
+        if (response.ok) {
+            const bookings = await response.json();
+            displayTrialBookings(bookings);
+        } else {
+            trialBookingsContainer.innerHTML = '<p class="no-data">No trial bookings found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading trial bookings:', error);
+        document.getElementById('trial-bookings').innerHTML = '<p class="error-message">Failed to load trial bookings.</p>';
+    }
+}
+
+// Display gym bookings
+function displayGymBookings(bookings) {
+    const container = document.getElementById('gym-bookings');
+    
+    if (!bookings || bookings.length === 0) {
+        container.innerHTML = '<p class="no-data">No gym memberships found.</p>';
+        return;
+    }
+    
+    const bookingsHTML = bookings.slice(0, 3).map(booking => {
+        const status = getBookingStatus(booking.startDate, booking.endDate);
+        return `
+            <div class="booking-item">
+                <div class="booking-info">
+                    <h4>${booking.gymName || 'Gym Membership'}</h4>
+                    <p>Plan: ${booking.planName || 'N/A'} | Duration: ${booking.duration || 'N/A'}</p>
+                    <p>Valid from ${formatDate(booking.startDate)} to ${formatDate(booking.endDate)}</p>
+                </div>
+                <span class="booking-status ${status.class}">${status.text}</span>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = bookingsHTML;
+}
+
+// Display trainer bookings
+function displayTrainerBookings(bookings) {
+    const container = document.getElementById('trainer-bookings');
+    
+    if (!bookings || bookings.length === 0) {
+        container.innerHTML = '<p class="no-data">No trainer sessions found.</p>';
+        return;
+    }
+    
+    const bookingsHTML = bookings.slice(0, 3).map(booking => {
+        const status = getSessionStatus(booking.sessionDate, booking.status);
+        return `
+            <div class="booking-item">
+                <div class="booking-info">
+                    <h4>${booking.trainerName || 'Personal Training Session'}</h4>
+                    <p>Type: ${booking.sessionType || 'General Training'}</p>
+                    <p>Date: ${formatDate(booking.sessionDate)} at ${booking.sessionTime || 'TBD'}</p>
+                </div>
+                <span class="booking-status ${status.class}">${status.text}</span>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = bookingsHTML;
+}
+
+// Display trial bookings
+function displayTrialBookings(bookings) {
+    const container = document.getElementById('trial-bookings');
+    
+    if (!bookings || bookings.length === 0) {
+        container.innerHTML = '<p class="no-data">No trial bookings found.</p>';
+        return;
+    }
+    
+    const bookingsHTML = bookings.slice(0, 3).map(booking => {
+        const status = getTrialStatus(booking.preferredDate, booking.status);
+        const gymName = booking.gymId?.name || 'Unknown Gym';
+        const gymLocation = booking.gymId?.location || '';
+        
+        return `
+            <div class="booking-item trial-booking">
+                <div class="booking-info">
+                    <div class="gym-details">
+                        <h4>${gymName}</h4>
+                        ${gymLocation ? `<p class="gym-location"><i class="fas fa-map-marker-alt"></i> ${gymLocation}</p>` : ''}
+                    </div>
+                    <div class="booking-details">
+                        <p><i class="fas fa-calendar"></i> ${formatDate(booking.preferredDate)}</p>
+                        <p><i class="fas fa-clock"></i> ${booking.preferredTime || 'Time TBD'}</p>
+                        <p><i class="fas fa-user"></i> ${booking.name}</p>
+                    </div>
+                </div>
+                <div class="booking-actions">
+                    <span class="booking-status ${status.class}">${status.text}</span>
+                    ${booking.status === 'pending' || booking.status === 'confirmed' ? `
+                        <button class="cancel-btn" onclick="cancelTrialBooking('${booking._id}')">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = bookingsHTML;
+}
+
+// Get booking status based on dates
+function getBookingStatus(startDate, endDate) {
+    const now = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (now < start) {
+        return { class: 'pending', text: 'Upcoming' };
+    } else if (now >= start && now <= end) {
+        return { class: 'active', text: 'Active' };
+    } else {
+        return { class: 'expired', text: 'Expired' };
+    }
+}
+
+// Get session status
+function getSessionStatus(sessionDate, status) {
+    const now = new Date();
+    const session = new Date(sessionDate);
+    
+    if (status === 'completed') {
+        return { class: 'expired', text: 'Completed' };
+    } else if (status === 'cancelled') {
+        return { class: 'expired', text: 'Cancelled' };
+    } else if (session < now) {
+        return { class: 'expired', text: 'Missed' };
+    } else {
+        return { class: 'active', text: 'Scheduled' };
+    }
+}
+
+// Get trial status
+function getTrialStatus(trialDate, status) {
+    const now = new Date();
+    const trial = new Date(trialDate);
+    
+    switch (status) {
+        case 'completed':
+            return { class: 'completed', text: 'Completed' };
+        case 'cancelled':
+            return { class: 'cancelled', text: 'Cancelled' };
+        case 'confirmed':
+            return trial < now 
+                ? { class: 'missed', text: 'Missed' }
+                : { class: 'confirmed', text: 'Confirmed' };
+        case 'pending':
+            return trial < now 
+                ? { class: 'missed', text: 'Missed' }
+                : { class: 'pending', text: 'Pending' };
+        case 'no-show':
+            return { class: 'missed', text: 'No Show' };
+        default:
+            return { class: 'pending', text: 'Pending' };
+    }
+}
+
+// Cancel trial booking
+async function cancelTrialBooking(bookingId) {
+    if (!confirm('Are you sure you want to cancel this trial booking? This action cannot be undone.')) {
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showError('Please log in to cancel bookings.');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${BASE_URL}/api/trial-bookings/cancel/${bookingId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showSuccess('Trial booking cancelled successfully. Your trial limit has been restored.');
+            // Reload trial data to reflect changes
+            loadTrialBookingsAndLimits(token);
+        } else {
+            showError(result.message || 'Failed to cancel booking.');
+        }
+    } catch (error) {
+        console.error('Error cancelling booking:', error);
+        showError('Failed to cancel booking. Please try again.');
+    }
+}
+
+// Load memberships data
+async function loadMembershipsData() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/api/bookings/active-memberships`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const container = document.getElementById('active-memberships');
+        
+        if (response.ok) {
+            const memberships = await response.json();
+            displayMemberships(memberships);
+        } else {
+            container.innerHTML = '<p class="no-data">No active memberships found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading memberships:', error);
+        document.getElementById('active-memberships').innerHTML = '<p class="error-message">Failed to load memberships.</p>';
+    }
+}
+
+// Display memberships
+function displayMemberships(memberships) {
+    const container = document.getElementById('active-memberships');
+    
+    if (!memberships || memberships.length === 0) {
+        container.innerHTML = '<p class="no-data">No active memberships found.</p>';
+        return;
+    }
+    
+    const membershipsHTML = memberships.map(membership => `
+        <div class="membership-card">
+            <h4>${membership.planName}</h4>
+            <div class="gym-name">${membership.gymName}</div>
+            <div class="validity">Valid until ${formatDate(membership.endDate)}</div>
+            <div class="membership-details">
+                <p>Price: ₹${membership.price}</p>
+                <p>Remaining Days: ${calculateRemainingDays(membership.endDate)}</p>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = membershipsHTML;
+}
+
+// Load payments data
+async function loadPaymentsData() {
+    try {
+        const token = localStorage.getItem('token');
+        
+        // Load payment methods
+        loadPaymentMethods(token);
+        
+        // Load payment history
+        loadPaymentHistory(token);
+        
+    } catch (error) {
+        console.error('Error loading payments data:', error);
+    }
+}
+
+// Load payment methods
+async function loadPaymentMethods(token) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/user-payments/methods`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const container = document.getElementById('payment-methods-list');
+        
+        if (response.ok) {
+            const methods = await response.json();
+            displayPaymentMethods(methods);
+        } else {
+            container.innerHTML = '<p class="no-data">No saved payment methods.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading payment methods:', error);
+        document.getElementById('payment-methods-list').innerHTML = '<p class="error-message">Failed to load payment methods.</p>';
+    }
+}
+
+// Load payment history
+async function loadPaymentHistory(token) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/user-payments/history`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const container = document.getElementById('payment-history-list');
+        
+        if (response.ok) {
+            const transactions = await response.json();
+            displayPaymentHistory(transactions);
+        } else {
+            container.innerHTML = '<p class="no-data">No transaction history found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading payment history:', error);
+        document.getElementById('payment-history-list').innerHTML = '<p class="error-message">Failed to load transaction history.</p>';
+    }
+}
+
+// Display payment methods
+function displayPaymentMethods(methods) {
+    const container = document.getElementById('payment-methods-list');
+    
+    if (!methods || methods.length === 0) {
+        container.innerHTML = '<p class="no-data">No saved payment methods.</p>';
+        return;
+    }
+    
+    const methodsHTML = methods.map(method => `
+        <div class="payment-method-item">
+            <div class="payment-method-info">
+                <h5>${method.type} ending in ${method.lastFour}</h5>
+                <p>Expires: ${method.expiryMonth}/${method.expiryYear}</p>
+            </div>
+            <button class="action-btn danger" onclick="removePaymentMethod('${method.id}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `).join('');
+    
+    container.innerHTML = methodsHTML;
+}
+
+// Display payment history
+function displayPaymentHistory(transactions) {
+    const container = document.getElementById('payment-history-list');
+    
+    if (!transactions || transactions.length === 0) {
+        container.innerHTML = '<p class="no-data">No transaction history found.</p>';
+        return;
+    }
+    
+    const transactionsHTML = transactions.slice(0, 5).map(transaction => `
+        <div class="transaction-item">
+            <div class="transaction-info">
+                <h5>₹${transaction.amount}</h5>
+                <p>${transaction.description} - ${formatDate(transaction.date)}</p>
+            </div>
+            <span class="booking-status ${transaction.status === 'success' ? 'active' : 'expired'}">
+                ${transaction.status}
+            </span>
+        </div>
+    `).join('');
+    
+    container.innerHTML = transactionsHTML;
+}
+
+// Initialize notification toggles
+function initializeNotificationToggles() {
+    const toggles = document.querySelectorAll('.notification-toggle input[type="checkbox"]');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            console.log(`${this.id} changed to ${this.checked}`);
+        });
+    });
+}
+
+// Load notification settings
+function loadNotificationSettings() {
+    // This would typically load from user preferences
+    console.log('Loading notification settings...');
+}
+
+// Load privacy settings
+function loadPrivacySettings() {
+    // This would typically load from user preferences
+    console.log('Loading privacy settings...');
+}
+
+// Load account data
+async function loadAccountData() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/api/bookings/account-stats`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const stats = await response.json();
+            updateAccountStats(stats);
+        }
+    } catch (error) {
+        console.error('Error loading account data:', error);
+    }
+}
+
+// Update account statistics
+function updateAccountStats(stats) {
+    const memberSince = document.getElementById('member-since');
+    const accountType = document.getElementById('account-type');
+    const totalBookings = document.getElementById('total-bookings');
+    const activeMembershipsCount = document.getElementById('active-memberships-count');
+    
+    if (memberSince) memberSince.textContent = formatDate(stats.memberSince || currentUser.createdAt);
+    if (accountType) accountType.textContent = stats.accountType || 'Free';
+    if (totalBookings) totalBookings.textContent = stats.totalBookings || '0';
+    if (activeMembershipsCount) activeMembershipsCount.textContent = stats.activeMemberships || '0';
+}
+
+// Booking action functions
+function viewAllBookings(type) {
+    console.log(`Viewing all ${type} bookings`);
+    showModal(`All ${type.charAt(0).toUpperCase() + type.slice(1)} Bookings`, `
+        <p>This feature will show all your ${type} bookings in a detailed view.</p>
+        <p>Implementation in progress...</p>
+    `);
+}
+
+// Membership action functions
+function findNewMembership() {
+    window.location.href = 'membership-plans.html';
+}
+
+function viewMembershipHistory() {
+    showModal('Membership History', `
+        <p>Your membership history will be displayed here.</p>
+        <p>Implementation in progress...</p>
+    `);
+}
+
+// Payment action functions
+function addPaymentMethod() {
+    showModal('Add Payment Method', `
+        <form id="payment-method-form">
+            <div style="margin-bottom: 1rem;">
+                <label for="card-type">Card Type:</label>
+                <select id="card-type" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+                    <option value="visa">Visa</option>
+                    <option value="mastercard">Mastercard</option>
+                    <option value="amex">American Express</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label for="card-number">Card Number:</label>
+                <input type="text" id="card-number" placeholder="1234 5678 9012 3456" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+            </div>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <div style="flex: 1;">
+                    <label for="expiry-month">Expiry Month:</label>
+                    <input type="text" id="expiry-month" placeholder="MM" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+                </div>
+                <div style="flex: 1;">
+                    <label for="expiry-year">Expiry Year:</label>
+                    <input type="text" id="expiry-year" placeholder="YY" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+                </div>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label for="cvv">CVV:</label>
+                <input type="text" id="cvv" placeholder="123" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+            </div>
+        </form>
+    `, `
+        <button class="action-btn primary" onclick="savePaymentMethod()">Save Payment Method</button>
+        <button class="action-btn secondary" onclick="closeModal()">Cancel</button>
+    `);
+}
+
+function savePaymentMethod() {
+    // Implementation for saving payment method
+    console.log('Saving payment method...');
+    closeModal();
+    showSuccess('Payment method added successfully!');
+}
+
+function removePaymentMethod(methodId) {
+    if (confirm('Are you sure you want to remove this payment method?')) {
+        console.log(`Removing payment method: ${methodId}`);
+        showSuccess('Payment method removed successfully!');
+        loadPaymentMethods(localStorage.getItem('token'));
+    }
+}
+
+function viewAllTransactions() {
+    showModal('All Transactions', `
+        <p>Your complete transaction history will be displayed here.</p>
+        <p>Implementation in progress...</p>
+    `);
+}
+
+// Notification functions
+async function saveNotificationSettings() {
+    try {
+        const settings = {
+            email: {
+                bookings: document.getElementById('email-bookings').checked,
+                promotions: document.getElementById('email-promotions').checked,
+                reminders: document.getElementById('email-reminders').checked
+            },
+            sms: {
+                bookings: document.getElementById('sms-bookings').checked,
+                reminders: document.getElementById('sms-reminders').checked
+            },
+            push: {
+                enabled: document.getElementById('push-enabled').checked
+            }
+        };
+        
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/api/user-preferences/notifications`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
+        });
+        
+        if (response.ok) {
+            showSuccess('Notification preferences saved successfully!');
+        } else {
+            showError('Failed to save notification preferences.');
+        }
+    } catch (error) {
+        console.error('Error saving notification settings:', error);
+        showError('Failed to save notification preferences.');
+    }
+}
+
+// Privacy functions
+async function savePrivacySettings() {
+    try {
+        const profileVisibility = document.querySelector('input[name="profile-visibility"]:checked').value;
+        const shareWorkoutData = document.getElementById('share-workout-data').checked;
+        const shareProgress = document.getElementById('share-progress').checked;
+        
+        const settings = {
+            profileVisibility,
+            shareWorkoutData,
+            shareProgress
+        };
+        
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/api/user-preferences/privacy`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
+        });
+        
+        if (response.ok) {
+            showSuccess('Privacy settings saved successfully!');
+        } else {
+            showError('Failed to save privacy settings.');
+        }
+    } catch (error) {
+        console.error('Error saving privacy settings:', error);
+        showError('Failed to save privacy settings.');
+    }
+}
+
+function changePassword() {
+    showModal('Change Password', `
+        <form id="password-form">
+            <div style="margin-bottom: 1rem;">
+                <label for="current-password">Current Password:</label>
+                <input type="password" id="current-password" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label for="new-password">New Password:</label>
+                <input type="password" id="new-password" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label for="confirm-password">Confirm New Password:</label>
+                <input type="password" id="confirm-password" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+            </div>
+        </form>
+    `, `
+        <button class="action-btn primary" onclick="updatePassword()">Update Password</button>
+        <button class="action-btn secondary" onclick="closeModal()">Cancel</button>
+    `);
+}
+
+async function updatePassword() {
+    try {
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            showError('Please fill in all password fields.');
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            showError('New passwords do not match.');
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            showError('Password must be at least 6 characters long.');
+            return;
+        }
+        
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/api/users/change-password`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                currentPassword,
+                newPassword
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            closeModal();
+            showSuccess('Password updated successfully!');
+        } else {
+            showError(result.message || 'Failed to update password.');
+        }
+    } catch (error) {
+        console.error('Error updating password:', error);
+        showError('Failed to update password.');
+    }
+}
+
+function enableTwoFactor() {
+    showModal('Enable Two-Factor Authentication', `
+        <p>Two-factor authentication adds an extra layer of security to your account.</p>
+        <p>You will need to install an authenticator app on your phone.</p>
+        <div style="text-align: center; margin: 2rem 0;">
+            <div style="background: #f0f0f0; padding: 2rem; border-radius: 8px; display: inline-block;">
+                <p>QR Code would appear here</p>
+                <div style="width: 150px; height: 150px; background: #ddd; margin: 1rem auto;"></div>
+            </div>
+        </div>
+        <p>Scan this QR code with your authenticator app, then enter the 6-digit code below:</p>
+        <input type="text" id="verification-code" placeholder="Enter 6-digit code" style="width: 100%; padding: 0.5rem; margin-top: 1rem;">
+    `, `
+        <button class="action-btn primary" onclick="confirmTwoFactor()">Enable 2FA</button>
+        <button class="action-btn secondary" onclick="closeModal()">Cancel</button>
+    `);
+}
+
+function confirmTwoFactor() {
+    console.log('Enabling 2FA...');
+    closeModal();
+    showSuccess('Two-factor authentication enabled successfully!');
+}
+
+function viewLoginHistory() {
+    showModal('Login History', `
+        <div style="max-height: 300px; overflow-y: auto;">
+            <div style="margin-bottom: 1rem; padding: 1rem; background: #f9f9f9; border-radius: 8px;">
+                <strong>Current Session</strong><br>
+                <small>Browser: Chrome on Windows<br>
+                Location: New Delhi, India<br>
+                Time: ${new Date().toLocaleString()}</small>
+            </div>
+            <div style="margin-bottom: 1rem; padding: 1rem; background: #f9f9f9; border-radius: 8px;">
+                <strong>Previous Session</strong><br>
+                <small>Browser: Chrome on Windows<br>
+                Location: New Delhi, India<br>
+                Time: ${new Date(Date.now() - 86400000).toLocaleString()}</small>
+            </div>
+        </div>
+    `);
+}
+
+// Account functions
+function exportData() {
+    if (confirm('Export all your data? This may take a few minutes.')) {
+        console.log('Exporting user data...');
+        showSuccess('Data export request submitted. You will receive an email when ready.');
+    }
+}
+
+function requestDataDeletion() {
+    showModal('Request Data Deletion', `
+        <div style="color: #e76f51; margin-bottom: 1rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Warning: This action cannot be undone</strong>
+        </div>
+        <p>Requesting data deletion will remove all your personal data from our servers. This includes:</p>
+        <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+            <li>Profile information</li>
+            <li>Booking history</li>
+            <li>Payment information</li>
+            <li>Preferences and settings</li>
+        </ul>
+        <p>Are you sure you want to proceed?</p>
+        <textarea placeholder="Please tell us why you're leaving (optional)" style="width: 100%; height: 80px; padding: 0.5rem; margin-top: 1rem;"></textarea>
+    `, `
+        <button class="action-btn danger" onclick="confirmDataDeletion()">Yes, Delete My Data</button>
+        <button class="action-btn secondary" onclick="closeModal()">Cancel</button>
+    `);
+}
+
+function confirmDataDeletion() {
+    console.log('Requesting data deletion...');
+    closeModal();
+    showSuccess('Data deletion request submitted. You will receive a confirmation email.');
+}
+
+function deactivateAccount() {
+    if (confirm('Are you sure you want to deactivate your account? You can reactivate it later by logging in.')) {
+        console.log('Deactivating account...');
+        showSuccess('Account deactivated successfully.');
+        setTimeout(() => {
+            logout();
+        }, 2000);
+    }
+}
+
+function deleteAccount() {
+    showModal('Delete Account', `
+        <div style="color: #e76f51; margin-bottom: 1rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Danger: This action cannot be undone</strong>
+        </div>
+        <p>Deleting your account will permanently remove:</p>
+        <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+            <li>Your profile and all personal data</li>
+            <li>All booking history</li>
+            <li>Saved payment methods</li>
+            <li>Any active memberships</li>
+        </ul>
+        <p>Type "DELETE" to confirm:</p>
+        <input type="text" id="delete-confirmation" placeholder="Type DELETE here" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+    `, `
+        <button class="action-btn danger" onclick="confirmAccountDeletion()">Delete Account</button>
+        <button class="action-btn secondary" onclick="closeModal()">Cancel</button>
+    `);
+}
+
+function confirmAccountDeletion() {
+    const confirmation = document.getElementById('delete-confirmation').value;
+    if (confirmation === 'DELETE') {
+        console.log('Deleting account...');
+        closeModal();
+        showSuccess('Account deletion initiated. You will receive a final confirmation email.');
+        setTimeout(() => {
+            logout();
+        }, 3000);
+    } else {
+        showError('Please type "DELETE" to confirm account deletion.');
+    }
+}
+
+// Utility functions
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function calculateRemainingDays(endDate) {
+    const end = new Date(endDate);
+    const now = new Date();
+    const diffTime = end - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+}
+
+// Modal functions
+function showModal(title, body, footer = '') {
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const modalFooter = document.getElementById('modal-footer');
+    
+    modalTitle.textContent = title;
+    modalBody.innerHTML = body;
+    
+    if (footer) {
+        modalFooter.innerHTML = footer;
+    } else {
+        modalFooter.innerHTML = '<button class="action-btn secondary" onclick="closeModal()">Close</button>';
+    }
+    
+    modalOverlay.classList.add('active');
+}
+
+function closeModal() {
+    modalOverlay.classList.remove('active');
+}
+
+// Click outside modal to close
+modalOverlay.addEventListener('click', function(e) {
+    if (e.target === modalOverlay) {
+        closeModal();
+    }
+});
+
+// Loading screen functions
+function showLoadingScreen() {
+    if (loadingScreen) {
+        loadingScreen.classList.remove('hidden');
+    }
+}
+
+function hideLoadingScreen() {
+    if (loadingScreen) {
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+        }, 500);
+    }
+}
+
+// Notification functions
+function showSuccess(message) {
+    // Create a temporary success message
+    const successDiv = document.createElement('div');
+    successDiv.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: var(--success-color);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        z-index: 10001;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+    document.body.appendChild(successDiv);
+    
+    setTimeout(() => {
+        successDiv.style.transform = 'translateX(0)';
+    }, 100);
+    
+    setTimeout(() => {
+        successDiv.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(successDiv);
+        }, 300);
+    }, 3000);
+}
+
+function showError(message) {
+    // Create a temporary error message
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: var(--danger-color);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        z-index: 10001;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+        errorDiv.style.transform = 'translateX(0)';
+    }, 100);
+    
+    setTimeout(() => {
+        errorDiv.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(errorDiv);
+        }, 300);
+    }, 4000);
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('token');
+    window.location.href = 'index.html';
+}

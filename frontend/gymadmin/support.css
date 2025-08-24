@@ -1,4 +1,92 @@
 /* ===== SUPPORT & REVIEWS TAB STYLES ===== */
+
+/* CRITICAL: Fix dropdown z-index issues for support tab */
+.user-profile-dropdown,
+.notification-dropdown,
+#userProfileDropdown,
+#notificationDropdown,
+.dropdown-content {
+    position: fixed !important;
+    z-index: 999999 !important;
+    top: 70px !important;
+    right: 20px !important;
+}
+
+.notification-dropdown,
+#notificationDropdown {
+    right: 80px !important;
+}
+
+/* CRITICAL: Fix support modal z-index to appear above sidebar */
+.support-modal,
+#sendNotificationModal,
+#raiseGrievanceModal,
+#grievanceDetailsModal,
+#chatModal {
+    position: fixed !important;
+    z-index: 999998 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+}
+
+.support-modal.active,
+#sendNotificationModal.active,
+#raiseGrievanceModal.active,
+#grievanceDetailsModal.active,
+#chatModal.active {
+    display: flex !important;
+}
+
+.support-modal-content {
+    position: relative !important;
+    z-index: 999999 !important;
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
+    max-width: 90vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+}
+
+.support-modal-close {
+    position: absolute !important;
+    top: 15px !important;
+    right: 15px !important;
+    background: none !important;
+    border: none !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    color: #666 !important;
+    z-index: 999999 !important;
+    width: 30px !important;
+    height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    transition: all 0.3s ease !important;
+}
+
+.support-modal-close:hover {
+    background: #f5f5f5 !important;
+    color: #333 !important;
+}
+
+/* Ensure dropdowns appear above all support tab content */
+.support-section,
+.support-content-container,
+.support-content-body {
+    z-index: 1 !important;
+}
+
 :root {
     --primary: #3a86ff;
     --primary-dark: #2a6bd6;

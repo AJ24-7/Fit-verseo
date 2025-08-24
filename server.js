@@ -12,6 +12,9 @@ connectDB();
 
 
 const userRoutes = require('./backend/routes/userRoutes');
+const userBookingRoutes = require('./backend/routes/userBookingRoutes');
+const userPaymentRoutes = require('./backend/routes/userPaymentRoutes');
+const userPreferenceRoutes = require('./backend/routes/userPreferenceRoutes');
 const trainerRoutes = require('./backend/routes/trainerRoutes');
 const adminRoutes = require('./backend/routes/adminRoutes');
 const gymRoutes = require('./backend/routes/gymRoutes');
@@ -30,6 +33,11 @@ const equipmentRoutes = require('./backend/routes/equipmentRoutes');
 const qrCodeRoutes = require('./backend/routes/qrCodeRoutes');
 const biometricRoutes = require('./backend/routes/biometricRoutes');
 const securityRoutes = require('./backend/routes/securityRoutes');
+const testRoutes = require('./backend/routes/testRoutes');
+console.log('[DEBUG] server.js: testRoutes type is:', typeof testRoutes);
+if (typeof testRoutes !== 'function') {
+  console.error('ERROR: testRoutes is not a function!', testRoutes);
+}
 const NotificationScheduler = require('./backend/services/notificationScheduler');
 const SubscriptionService = require('./backend/services/subscriptionService');  
 
@@ -373,16 +381,15 @@ app.get('/api/test-endpoint', (req, res) => {
   res.json({ message: 'Test endpoint working!', timestamp: new Date().toISOString() });
 });
 
-app.use(express.static(path.join(__dirname, 'frontend')));
-app.use('/public', express.static(path.join(__dirname, 'frontend/public')));
-app.use('/gymadmin', express.static(path.join(__dirname, 'frontend/gymadmin')));
-// ✅ Your API routes
+// ✅ API routes FIRST - these take priority
 app.use('/api/users', userRoutes);
+app.use('/api/bookings', userBookingRoutes);
+app.use('/api/user-payments', userPaymentRoutes);
+app.use('/api/user-preferences', userPreferenceRoutes);
 app.use('/api/trainers', trainerRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/gyms', gymRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/trial-bookings', trialBookingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/diet', dietRoutes);
@@ -422,8 +429,27 @@ app.use('/api/biometric', (req, res, next) => {
   next();
 }, biometricRoutes);
 
-// Security routes for gym dashboard
-app.use('/api/gyms/security', securityRoutes);
+// Security routes for admin settings
+app.use('/api/security', (req, res, next) => {
+  console.log(`🔐 Security route accessed: ${req.method} ${req.url}`);
+  next();
+}, securityRoutes);
+
+// Test routes for debugging (can be removed in production) - TEMPORARILY DISABLED
+console.log("[DEBUG] server.js: Mounting test routes at /api/test");
+// app.use('/api/test', testRoutes);
+
+// Simple test route directly in server.js
+app.get('/api/simple-test', (req, res) => {
+  console.log('🧪 Simple test route hit!');
+  res.json({ success: true, message: 'Simple test route working!', timestamp: new Date().toISOString() });
+});
+
+// ✅ Static file serving AFTER API routes
+app.use(express.static(path.join(__dirname, 'frontend')));
+app.use('/public', express.static(path.join(__dirname, 'frontend/public')));
+app.use('/gymadmin', express.static(path.join(__dirname, 'frontend/gymadmin')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Serve register.html for /register route (for QR code registration)
 app.get('/register', (req, res) => {

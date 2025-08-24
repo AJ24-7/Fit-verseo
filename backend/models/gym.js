@@ -11,7 +11,9 @@ const gymSchema = new mongoose.Schema({
   
   // Two-Factor Authentication fields
   twoFactorEnabled: { type: Boolean, default: false },
-  twoFactorSecret: { type: String },
+  twoFactorOTP: { type: String }, // Current OTP for email-based 2FA
+  twoFactorOTPExpiry: { type: Date }, // OTP expiry time
+  twoFactorSecret: { type: String }, // Keep for backward compatibility
   twoFactorTempSecret: { type: String }, // Temporary secret during setup
   twoFactorBackupCodes: [{ type: String }], // Hashed backup codes
    

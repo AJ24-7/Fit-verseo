@@ -10,6 +10,25 @@ const SecuritySettings = require('../models/SecuritySettings');
 const authenticateGymToken = require('../middleware/gymadminAuth');
 const router = express.Router();
 
+// ===== TEST ENDPOINTS =====
+
+// Test endpoint to check if routes are working
+router.get('/test', (req, res) => {
+  console.log('🧪 Security routes test endpoint hit');
+  res.json({ success: true, message: 'Security routes are working!' });
+});
+
+// Test endpoint with auth
+router.get('/test-auth', authenticateGymToken, (req, res) => {
+  console.log('🔐 Security routes authenticated test endpoint hit');
+  console.log('Admin ID:', req.admin?.id);
+  res.json({ 
+    success: true, 
+    message: 'Authenticated security routes are working!',
+    adminId: req.admin?.id 
+  });
+});
+
 // ===== TWO-FACTOR AUTHENTICATION ROUTES =====
 
 // Generate 2FA secret and QR code
@@ -49,65 +68,80 @@ router.post('/generate-2fa-secret', authenticateGymToken, async (req, res) => {
   }
 });
 
-// Verify 2FA setup and enable
-router.post('/verify-2fa-setup', authenticateGymToken, async (req, res) => {
+// Enable email-based 2FA
+router.post('/enable-email-2fa', authenticateGymToken, async (req, res) => {
+  console.log('📧 Enable email 2FA endpoint hit');
+  console.log('Admin ID:', req.admin?.id);
+  
   try {
-    const { secret, code } = req.body;
     const gymId = req.admin.id;
     const gym = await Gym.findById(gymId);
-    
+
     if (!gym) {
+      console.log('❌ Gym not found for ID:', gymId);
       return res.status(404).json({ success: false, message: 'Gym not found' });
     }
 
-    // Verify the code
-    const verified = speakeasy.totp.verify({
-      secret: secret,
-      encoding: 'base32',
-      token: code,
-      window: 2
-    });
-
-    if (!verified) {
-      return res.status(400).json({ success: false, message: 'Invalid verification code' });
-    }
+    console.log('🏋️ Found gym:', gym.gymName);
 
     // Enable 2FA
-    gym.twoFactorSecret = secret;
     gym.twoFactorEnabled = true;
+    
+    // Clear any old app-based 2FA data (if migrating from old system)
+    gym.twoFactorSecret = undefined;
     gym.twoFactorTempSecret = undefined;
+    gym.twoFactorBackupCodes = [];
+    
+    // Clear any existing OTP
+    gym.twoFactorOTP = undefined;
+    gym.twoFactorOTPExpiry = undefined;
 
-    // Generate backup codes
-    const backupCodes = [];
-    for (let i = 0; i < 8; i++) {
-      backupCodes.push(crypto.randomBytes(4).toString('hex').toUpperCase());
-    }
-    
-    // Hash backup codes before storing
-    const hashedBackupCodes = await Promise.all(
-      backupCodes.map(code => bcrypt.hash(code, 10))
-    );
-    
-    gym.twoFactorBackupCodes = hashedBackupCodes;
     await gym.save();
+    console.log('✅ Email 2FA enabled successfully for gym:', gym.gymName);
 
     res.json({
       success: true,
-      message: '2FA enabled successfully',
-      data: {
-        backupCodes: backupCodes
-      }
+      message: 'Email-based two-factor authentication enabled successfully'
     });
   } catch (error) {
-    console.error('Error verifying 2FA setup:', error);
-    res.status(500).json({ success: false, message: 'Failed to verify 2FA setup' });
+    console.error('❌ Error enabling email 2FA:', error);
+    res.status(500).json({ success: false, message: 'Failed to enable 2FA' });
   }
 });
 
 // Disable 2FA
 router.post('/disable-2fa', authenticateGymToken, async (req, res) => {
   try {
-    const { password } = req.body;
+    const gymId = req.admin.id;
+    const gym = await Gym.findById(gymId);
+
+    if (!gym) {
+      return res.status(404).json({ success: false, message: 'Gym not found' });
+    }
+
+    // Disable 2FA and clear all related data
+    gym.twoFactorEnabled = false;
+    gym.twoFactorSecret = undefined;
+    gym.twoFactorTempSecret = undefined;
+    gym.twoFactorBackupCodes = [];
+    gym.twoFactorOTP = undefined;
+    gym.twoFactorOTPExpiry = undefined;
+
+    await gym.save();
+
+    res.json({
+      success: true,
+      message: 'Two-factor authentication disabled successfully'
+    });
+  } catch (error) {
+    console.error('Error disabling 2FA:', error);
+    res.status(500).json({ success: false, message: 'Failed to disable 2FA' });
+  }
+});
+
+// Disable 2FA
+router.post('/disable-2fa', authenticateGymToken, async (req, res) => {
+  try {
     const gymId = req.admin.id;
     const gym = await Gym.findById(gymId);
     
@@ -115,26 +149,180 @@ router.post('/disable-2fa', authenticateGymToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Gym not found' });
     }
 
-    // Verify password
-    const isMatch = await bcrypt.compare(password, gym.password);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid password' });
-    }
-
-    // Disable 2FA
+    // Disable 2FA and clear all related data
     gym.twoFactorEnabled = false;
     gym.twoFactorSecret = undefined;
-    gym.twoFactorBackupCodes = undefined;
+    gym.twoFactorTempSecret = undefined;
+    gym.twoFactorBackupCodes = [];
+    gym.twoFactorOTP = undefined;
+    gym.twoFactorOTPExpiry = undefined;
+
     await gym.save();
 
-    res.json({ success: true, message: '2FA disabled successfully' });
+    res.json({
+      success: true,
+      message: 'Two-factor authentication disabled successfully'
+    });
   } catch (error) {
     console.error('Error disabling 2FA:', error);
     res.status(500).json({ success: false, message: 'Failed to disable 2FA' });
   }
 });
 
-// Verify 2FA code during login
+// Verify 2FA email OTP during login
+router.post('/verify-2fa-email', async (req, res) => {
+  try {
+    const { tempToken, code, email } = req.body;
+    
+    // Verify temporary token
+    const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    if (!decoded.admin.temp) {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+    
+    const gymId = decoded.admin.id;
+    const gym = await Gym.findById(gymId);
+    
+    if (!gym || gym.email !== email) {
+      return res.status(404).json({ success: false, message: 'Gym not found' });
+    }
+    
+    // Check if OTP exists and not expired
+    if (!gym.twoFactorOTP || !gym.twoFactorOTPExpiry) {
+      return res.status(401).json({ success: false, message: 'No verification code found. Please request a new one.' });
+    }
+    
+    if (new Date() > gym.twoFactorOTPExpiry) {
+      // Clear expired OTP
+      gym.twoFactorOTP = undefined;
+      gym.twoFactorOTPExpiry = undefined;
+      await gym.save();
+      return res.status(401).json({ success: false, message: 'Verification code has expired. Please request a new one.' });
+    }
+    
+    // Verify OTP
+    if (gym.twoFactorOTP !== code) {
+      return res.status(401).json({ success: false, message: 'Invalid verification code' });
+    }
+    
+    // Clear used OTP
+    gym.twoFactorOTP = undefined;
+    gym.twoFactorOTPExpiry = undefined;
+    
+    // Generate new permanent token
+    const payload = {
+      admin: {
+        id: gym.id,
+        email: gym.email
+      }
+    };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    
+    // Update lastLogin field
+    gym.lastLogin = new Date();
+    await gym.save();
+    
+    res.json({
+      success: true,
+      message: '2FA verification successful',
+      token,
+      gymId: gym.id
+    });
+  } catch (error) {
+    console.error('Error verifying 2FA email:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to verify 2FA' });
+  }
+});
+
+// Resend 2FA email OTP
+router.post('/resend-2fa-email', async (req, res) => {
+  try {
+    const { tempToken, email } = req.body;
+    
+    // Verify temporary token
+    const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    if (!decoded.admin.temp) {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+    
+    const gymId = decoded.admin.id;
+    const gym = await Gym.findById(gymId);
+    
+    if (!gym || gym.email !== email) {
+      return res.status(404).json({ success: false, message: 'Gym not found' });
+    }
+    
+    // Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+    
+    // Save new OTP to database
+    gym.twoFactorOTP = otp;
+    gym.twoFactorOTPExpiry = otpExpiry;
+    await gym.save();
+    
+    // Send OTP via email (use the same function from gymController)
+    const nodemailer = require('nodemailer');
+    
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+    
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Two-Factor Authentication Code - Gym Admin Login',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">🔐 Security Verification</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
+            <h2 style="color: #333; margin-top: 0;">Two-Factor Authentication</h2>
+            <p style="color: #666; font-size: 16px; line-height: 1.5;">
+              Hello from <strong>${gym.gymName || 'Gym Admin'}</strong>,
+            </p>
+            <p style="color: #666; font-size: 16px; line-height: 1.5;">
+              Here's your new verification code for login:
+            </p>
+            
+            <div style="background: white; border: 2px solid #007bff; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+              <p style="color: #666; margin: 0 0 10px 0; font-size: 14px;">Your verification code is:</p>
+              <h1 style="color: #007bff; font-size: 36px; letter-spacing: 5px; margin: 0; font-family: monospace;">${otp}</h1>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; line-height: 1.5;">
+              <strong>⏰ This code will expire in 10 minutes.</strong>
+            </p>
+          </div>
+        </div>
+      `
+    };
+    
+    await transporter.sendMail(mailOptions);
+    
+    res.json({
+      success: true,
+      message: 'New verification code sent to your email'
+    });
+  } catch (error) {
+    console.error('Error resending 2FA email:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to resend verification code' });
+  }
+});
+
+// Verify 2FA code during login (keep for backward compatibility)
 router.post('/verify-2fa', async (req, res) => {
   try {
     const { tempToken, code, email } = req.body;
@@ -152,7 +340,17 @@ router.post('/verify-2fa', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Gym not found' });
     }
     
-    // Verify 2FA code
+    // Check if this is email-based 2FA
+    if (gym.twoFactorOTP && gym.twoFactorOTPExpiry) {
+      // Redirect to email verification
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please use email verification for 2FA',
+        useEmailVerification: true 
+      });
+    }
+    
+    // Legacy app-based verification (kept for compatibility)
     const verified = speakeasy.totp.verify({
       secret: gym.twoFactorSecret,
       encoding: 'base32',
@@ -209,24 +407,59 @@ router.post('/verify-2fa', async (req, res) => {
   }
 });
 
-// Get 2FA status
+// ===== TWO-FACTOR AUTHENTICATION TOGGLE ROUTES =====
+
+// Toggle 2FA (enable/disable)
+router.post('/toggle-2fa', authenticateGymToken, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    const gymId = req.admin.id;
+    
+    let settings = await SecuritySettings.findOne({ gymId });
+    if (!settings) {
+      settings = new SecuritySettings({ gymId });
+    }
+    
+    // Set the twoFactorEnabled field
+    settings.twoFactorEnabled = enabled;
+    
+    await settings.save();
+
+    console.log(`🔐 2FA ${enabled ? 'enabled' : 'disabled'} for gym: ${gymId}`);
+
+    res.json({ 
+      success: true, 
+      message: `Two-Factor Authentication ${enabled ? 'enabled' : 'disabled'}`,
+      twoFactorEnabled: enabled
+    });
+  } catch (error) {
+    console.error('Error toggling 2FA:', error);
+    res.status(500).json({ success: false, message: 'Failed to update 2FA setting' });
+  }
+});
+
+// Get 2FA status from security settings
 router.get('/2fa-status', authenticateGymToken, async (req, res) => {
   try {
     const gymId = req.admin.id;
-    const gym = await Gym.findById(gymId);
+    let settings = await SecuritySettings.findOne({ gymId });
     
-    if (!gym) {
-      return res.status(404).json({ success: false, message: 'Gym not found' });
+    if (!settings) {
+      settings = new SecuritySettings({ gymId });
+      await settings.save();
     }
+
+    // Use the actual value from database, default to false if not set
+    const twoFactorEnabled = settings.twoFactorEnabled === true;
 
     res.json({
       success: true,
       data: {
-        enabled: gym.twoFactorEnabled || false
+        enabled: twoFactorEnabled
       }
     });
   } catch (error) {
-    console.error('Error getting 2FA status:', error);
+    console.error('Error getting 2FA status from security settings:', error);
     res.status(500).json({ success: false, message: 'Failed to get 2FA status' });
   }
 });

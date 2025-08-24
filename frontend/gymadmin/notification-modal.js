@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Ensure only one click handler is attached to the modal's send button
-        const sendBtn = document.getElementById('sendNotificationBtn');
+        const sendBtn = document.getElementById('dashboardSendNotificationBtn');
         if (sendBtn) {
             sendBtn.onclick = null;
             sendBtn.addEventListener('click', handleSendNotification);

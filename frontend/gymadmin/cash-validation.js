@@ -72,8 +72,11 @@ class CashValidationSystem {
             
             header.insertAdjacentHTML('beforeend', bellHTML);
             
-            // Add click event
-            document.getElementById('cashValidationBell').addEventListener('click', () => {
+            // Add click event with enhanced handling
+            document.getElementById('cashValidationBell').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Cash validation bell clicked');
                 this.showValidationModal();
             });
         }

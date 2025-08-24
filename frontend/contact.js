@@ -3,6 +3,34 @@ function logout() {
   window.location.href = 'index.html';
 }
 document.addEventListener('DOMContentLoaded', function () {
+  // === LOADING SCREEN ===
+  const loadingScreen = document.getElementById('loading-screen');
+  
+  // Show loading screen initially
+  showLoadingScreen();
+
+  // Hide loading screen after content is loaded
+  setTimeout(() => {
+    hideLoadingScreen();
+  }, 1500); // Show loading for 1.5 seconds
+
+  // Loading screen functions
+  function showLoadingScreen() {
+    if (loadingScreen) {
+      loadingScreen.classList.remove('hidden');
+      loadingScreen.style.display = 'flex';
+    }
+  }
+
+  function hideLoadingScreen() {
+    if (loadingScreen) {
+      loadingScreen.classList.add('hidden');
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+      }, 500);
+    }
+  }
+
   // === NAVIGATION BAR: Toggle & Active Link Highlight ===
   const menuToggle = document.querySelector('.menu-toggle');
   const navLinks = document.querySelector('.nav-links');

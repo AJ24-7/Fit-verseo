@@ -64,26 +64,47 @@ class SupportReviewsManager {
 
         // Header action buttons
         document.addEventListener('click', (e) => {
-            if (e.target.matches('#sendNotificationBtn') || e.target.closest('#sendNotificationBtn')) {
+            if (e.target.matches('#supportSendNotificationBtn') || e.target.closest('#supportSendNotificationBtn')) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.openSendNotificationModal();
             }
-            if (e.target.matches('#raiseGrievanceBtn') || e.target.closest('#raiseGrievanceBtn')) {
+            if (e.target.matches('#supportRaiseGrievanceBtn') || e.target.closest('#supportRaiseGrievanceBtn')) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.openRaiseGrievanceModal();
             }
             if (e.target.matches('#startCommunicationBtn') || e.target.closest('#startCommunicationBtn')) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.openStartCommunicationModal();
             }
         });
 
-        // Modal controls
+        // Modal controls with enhanced event handling
         document.addEventListener('click', (e) => {
-            if (e.target.matches('.support-modal-close') || e.target.matches('.support-modal')) {
-                if (e.target.matches('.support-modal') && e.target === e.currentTarget) {
-                    this.closeModal();
-                }
-                if (e.target.matches('.support-modal-close')) {
-                    this.closeModal();
-                }
+            // Check for modal close buttons
+            if (e.target.matches('.support-modal-close') || e.target.closest('.support-modal-close')) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.closeModal();
+                return;
+            }
+            
+            // Check for clicking outside modal content
+            if (e.target.matches('.support-modal') && !e.target.closest('.support-modal-content')) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.closeModal();
+                return;
+            }
+            
+            // Check for cancel buttons
+            if (e.target.matches('#cancelNotification') || e.target.matches('#cancelGrievance')) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.closeModal();
+                return;
             }
         });
 

@@ -693,13 +693,12 @@ function populateContactInfo(gym) {
     }
 }
 
-// Populate rush hours analysis
+// Enhanced rush hour analysis with professional bar chart
 async function populateRushHours(gymId) {
     try {
-        console.log('Fetching rush hour data for gym:', gymId);
+        console.log('Loading enhanced rush hour analysis for gym:', gymId);
         
-        // Fetch attendance data for the past 7 days
-        const response = await fetch(`${BASE_URL}/api/attendance/rush-analysis/${gymId}`);
+        const response = await fetch(`${BASE_URL}/api/attendance/rush-analysis/${gymId}?days=7`);
         
         if (!response.ok) {
             console.error('Failed to fetch rush hour data:', response.status);
@@ -708,18 +707,17 @@ async function populateRushHours(gymId) {
         }
         
         const result = await response.json();
-        console.log('Rush hour analysis result:', result);
+        console.log('Enhanced rush hour analysis result:', result);
         
-        if (result.success && result.data) {
-            // Use the data directly from the backend
+        if (result.success && result.data && result.data.hasData) {
             populateRushHoursDisplay(result.data);
         } else {
-            console.error('Invalid rush hour data received');
+            console.log('No rush hour data available, showing default');
             populateRushHoursDefault();
         }
         
     } catch (error) {
-        console.error('Error fetching rush hour data:', error);
+        console.error('Error loading rush hour data:', error);
         populateRushHoursDefault();
     }
 }
@@ -794,9 +792,9 @@ function findLeastBusyHour(hourlyStats) {
     return { hour: minHour, attendance: minAttendance };
 }
 
-// Populate rush hours display
+// Professional rush hours display with interactive bar chart
 function populateRushHoursDisplay(data) {
-    console.log('Populating rush hours display with data:', data);
+    console.log('Populating enhanced rush hours display with data:', data);
     
     // Hide loading and show content
     const loadingElement = document.getElementById('rush-hours-loading');
@@ -807,166 +805,229 @@ function populateRushHoursDisplay(data) {
     
     if (loadingElement) loadingElement.style.display = 'none';
     if (noDataElement) noDataElement.style.display = 'none';
+    if (hoursChart) hoursChart.style.display = 'block';
+    if (periodAnalysis) periodAnalysis.style.display = 'block';
+    if (rushStatistics) rushStatistics.style.display = 'block';
     
-    // Generate hours chart with today's information
+    // Generate professional bar chart
     if (hoursChart && data.hourlyData) {
-        // Calculate maximum attendance for scaling
-        const maxAttendance = Math.max(...Object.values(data.hourlyData).map(d => d.count));
+        const maxVisits = data.statistics.maxHourlyVisits || 1;
         
-        // Format today's date for display
-        const todayDisplay = data.todayDate ? new Date(data.todayDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        }) : 'Today';
+        let chartHTML = `
+            <div class="rush-hours-chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-bar"></i>
+                        <h3>Average Hourly Attendance</h3>
+                        <span class="chart-subtitle">Based on ${data.statistics.analyzedDays} days of data</span>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-color low"></div>
+                            <span>Low Activity</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color medium"></div>
+                            <span>Moderate Activity</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color high"></div>
+                            <span>Peak Activity</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bar-chart">
+                    <div class="y-axis">
+                        <div class="y-label">${maxVisits}</div>
+                        <div class="y-label">${Math.round(maxVisits * 0.75)}</div>
+                        <div class="y-label">${Math.round(maxVisits * 0.5)}</div>
+                        <div class="y-label">${Math.round(maxVisits * 0.25)}</div>
+                        <div class="y-label">0</div>
+                    </div>
+                    
+                    <div class="chart-area">
+                        <div class="grid-lines">
+                            <div class="grid-line"></div>
+                            <div class="grid-line"></div>
+                            <div class="grid-line"></div>
+                            <div class="grid-line"></div>
+                        </div>
+                        
+                        <div class="bars-container">
+        `;
         
-        // Weekly comparison badge
-        let trendBadge = '';
-        if (data.weeklyComparison) {
-            const trend = data.weeklyComparison.trend;
-            const trendIcon = trend === 'higher' ? '↗️' : trend === 'lower' ? '↘️' : '→';
-            const trendColor = trend === 'higher' ? '#4CAF50' : trend === 'lower' ? '#FF5722' : '#2196F3';
-            trendBadge = `
-                <div class="trend-badge" style="color: ${trendColor}">
-                    ${trendIcon} ${data.todayTotal} vs ${data.weeklyComparison.weeklyAverage} weekly avg
+        // Generate bars for each hour
+        for (let hour = 6; hour <= 22; hour++) {
+            const hourData = data.hourlyData[hour] || { totalVisits: 0, averageVisits: 0, rushLevel: 'low', formattedHour: formatHour(hour) };
+            const barHeight = maxVisits > 0 ? (hourData.totalVisits / maxVisits) * 100 : 0;
+            const isPeak = hour === data.statistics.peakHour;
+            const isLeastBusy = hour === data.statistics.leastBusyHour;
+            
+            chartHTML += `
+                <div class="bar-item ${isPeak ? 'peak' : ''} ${isLeastBusy ? 'least-busy' : ''}" 
+                     data-hour="${hour}" 
+                     data-visits="${hourData.totalVisits}"
+                     data-average="${hourData.averageVisits}">
+                    <div class="bar ${hourData.rushLevel}" 
+                         style="height: ${Math.max(barHeight, 2)}%"
+                         title="${hourData.formattedHour}: ${hourData.totalVisits} visits (${hourData.averageVisits} avg/day)">
+                        ${isPeak ? '<i class="fas fa-crown peak-icon"></i>' : ''}
+                        ${isLeastBusy && !isPeak ? '<i class="fas fa-leaf quiet-icon"></i>' : ''}
+                        <span class="bar-value">${hourData.totalVisits}</span>
+                    </div>
+                    <div class="hour-label">${hour}:00</div>
+                    <div class="hour-period">${hour < 12 ? 'AM' : 'PM'}</div>
                 </div>
             `;
         }
         
-        let hoursHTML = `
-            <div class="hours-chart-header">
-                <div class="hours-chart-title">
-                    <i class="fas fa-chart-bar"></i>
-                    Today's Rush Hour Analysis
-                </div>
-                <div class="today-info">
-                    <div class="today-date">${todayDisplay}</div>
-                    ${trendBadge}
-                    <div class="last-updated">Last updated: ${data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString() : 'Just now'}</div>
-                </div>
-                <div class="chart-legend">
-                    <div class="legend-item">
-                        <div class="legend-dot low"></div>
-                        <span>Low Activity</span>
+        chartHTML += `
+                        </div>
                     </div>
-                    <div class="legend-item">
-                        <div class="legend-dot medium"></div>
-                        <span>Moderate Activity</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot high"></div>
-                        <span>High Activity</span>
+                    
+                    <div class="x-axis-label">
+                        <span>Time of Day</span>
                     </div>
                 </div>
-            </div>
-            <div class="hours-grid">
-                <div class="hours-labels">
-        `;
-        
-        // Generate hour labels
-        for (let hour = 6; hour <= 22; hour++) {
-            hoursHTML += `<div class="hour-label">${formatHour(hour)}</div>`;
-        }
-        
-        hoursHTML += `
-                </div>
-                <div class="hours-bars">
-        `;
-        
-        // Generate hour bars with better styling
-        for (let hour = 6; hour <= 22; hour++) {
-            const hourData = data.hourlyData[hour] || { count: 0, rushLevel: 'low', percentage: 0 };
-            const width = maxAttendance > 0 ? (hourData.count / maxAttendance) * 100 : 0;
-            const barClass = hourData.count === 0 ? 'empty' : hourData.rushLevel;
-            const isPeakHour = hour == data.peakHour;
-            const isLeastBusy = hour == data.leastBusyHour;
-            
-            let specialClass = '';
-            let specialIcon = '';
-            if (isPeakHour && hourData.count > 0) {
-                specialClass = 'peak-hour';
-                specialIcon = '<i class="fas fa-crown peak-icon"></i>';
-            } else if (isLeastBusy && hourData.count === Math.min(...Object.values(data.hourlyData).map(d => d.count))) {
-                specialClass = 'least-busy';
-                specialIcon = '<i class="fas fa-leaf quiet-icon"></i>';
-            }
-            
-            hoursHTML += `
-                <div class="hour-bar-container ${specialClass}">
-                    <div class="hour-bar ${barClass}" style="width: ${Math.max(width, 5)}%">
-                        <span class="bar-count">${hourData.count > 0 ? hourData.count : ''}</span>
-                        ${specialIcon}
+                
+                <div class="chart-insights">
+                    <div class="insight-item peak">
+                        <i class="fas fa-crown"></i>
+                        <div>
+                            <strong>Peak Hour</strong>
+                            <span>${data.statistics.peakHourFormatted} (${data.statistics.peakHourVisits} visits)</span>
+                        </div>
                     </div>
-                    <div class="hour-tooltip">
-                        <strong>${formatHour(hour)}</strong><br>
-                        ${hourData.count} people<br>
-                        <span class="${hourData.rushLevel}">${hourData.rushLevel.toUpperCase()} activity</span>
-                        ${isPeakHour ? '<br>🏆 Peak Hour' : ''}
-                        ${isLeastBusy && hourData.count === Math.min(...Object.values(data.hourlyData).map(d => d.count)) ? '<br>🌿 Quietest Time' : ''}
+                    <div class="insight-item quiet">
+                        <i class="fas fa-leaf"></i>
+                        <div>
+                            <strong>Quietest Hour</strong>
+                            <span>${data.statistics.leastBusyHourFormatted}</span>
+                        </div>
                     </div>
-                </div>
-            `;
-        }
-        
-        hoursHTML += `
+                    <div class="insight-item average">
+                        <i class="fas fa-chart-line"></i>
+                        <div>
+                            <strong>Daily Average</strong>
+                            <span>${data.statistics.averageDailyVisits} visits/day</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
         
-        hoursChart.innerHTML = hoursHTML;
-        hoursChart.style.display = 'block';
+        hoursChart.innerHTML = chartHTML;
+        
+        // Add interactive hover effects
+        setTimeout(() => {
+            const barItems = document.querySelectorAll('.bar-item');
+            barItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    const hour = this.dataset.hour;
+                    const visits = this.dataset.visits;
+                    const average = this.dataset.average;
+                    
+                    // Show enhanced tooltip
+                    this.classList.add('hovered');
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    this.classList.remove('hovered');
+                });
+            });
+        }, 100);
     }
     
-    // Generate period analysis
+    // Generate period analysis with enhanced styling
     if (periodAnalysis && data.periodStats) {
+        let periodHTML = `
+            <h3><i class="fas fa-clock"></i> Best Times to Visit</h3>
+            <div class="time-periods-grid">
+        `;
+        
+        Object.keys(data.periodStats).forEach(periodKey => {
+            const period = data.periodStats[periodKey];
+            const rushClass = period.rushLevel;
+            const rushText = period.rushLevel === 'high' ? 'Very Busy' : 
+                           period.rushLevel === 'medium' ? 'Moderately Busy' : 'Less Crowded';
+            
+            periodHTML += `
+                <div class="period-card ${rushClass}">
+                    <div class="period-header">
+                        <i class="fas ${period.icon}"></i>
+                        <div>
+                            <h4>${period.name}</h4>
+                            <span class="period-time">${period.period}</span>
+                        </div>
+                    </div>
+                    <div class="period-stats">
+                        <div class="stat">
+                            <span class="stat-value">${period.totalVisits}</span>
+                            <span class="stat-label">Total Visits</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">${period.averageVisits}</span>
+                            <span class="stat-label">Avg/Day</span>
+                        </div>
+                    </div>
+                    <div class="period-indicator ${rushClass}">
+                        <i class="fas ${period.rushLevel === 'high' ? 'fa-fire' : period.rushLevel === 'medium' ? 'fa-users' : 'fa-leaf'}"></i>
+                        <span>${rushText}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        periodHTML += '</div>';
+        
         const timeRecommendations = document.getElementById('time-recommendations');
         if (timeRecommendations) {
-            let periodsHTML = '';
-            
-            const periodIcons = {
-                morning: 'fas fa-sun',
-                afternoon: 'fas fa-cloud-sun', 
-                evening: 'fas fa-moon'
-            };
-            
-            const periodColors = {
-                low: 'best',
-                medium: 'okay',
-                high: 'avoid'
-            };
-            
-            Object.keys(data.periodStats).forEach(periodKey => {
-                const period = data.periodStats[periodKey];
-                const colorClass = periodColors[period.rushLevel] || 'okay';
-                
-                periodsHTML += `
-                    <div class="time-card ${colorClass}">
-                        <i class="${periodIcons[periodKey]}"></i>
-                        <h4>${period.name}</h4>
-                        <p>${period.rushLevel.charAt(0).toUpperCase() + period.rushLevel.slice(1)} crowd</p>
-                        <span class="period-stats">Avg: ${period.averageAttendance} people</span>
-                        <span class="peak-hour">Peak: ${formatHour(period.peakHour)}</span>
-                    </div>
-                `;
-            });
-            
-            timeRecommendations.innerHTML = periodsHTML;
+            timeRecommendations.innerHTML = periodHTML;
         }
-        periodAnalysis.style.display = 'block';
     }
     
-    // Generate statistics
+    // Generate enhanced statistics
     if (rushStatistics && data.statistics) {
-        const avgDailyElement = document.getElementById('avg-daily-attendance');
-        const peakHourElement = document.getElementById('peak-hour-display');
-        const leastBusyElement = document.getElementById('least-busy-hour-display');
+        let statsHTML = `
+            <h3><i class="fas fa-chart-bar"></i> Attendance Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-calendar-alt"></i>
+                    <div class="stat-content">
+                        <span class="stat-number">${data.statistics.analyzedDays}</span>
+                        <span class="stat-text">Days Analyzed</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <div class="stat-content">
+                        <span class="stat-number">${data.statistics.totalRecords}</span>
+                        <span class="stat-text">Total Check-ins</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-chart-line"></i>
+                    <div class="stat-content">
+                        <span class="stat-number">${data.statistics.averageDailyVisits}</span>
+                        <span class="stat-text">Daily Average</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-crown"></i>
+                    <div class="stat-content">
+                        <span class="stat-number">${data.statistics.maxHourlyVisits}</span>
+                        <span class="stat-text">Peak Hour Max</span>
+                    </div>
+                </div>
+            </div>
+            <div class="date-range">
+                <i class="fas fa-info-circle"></i>
+                <span>Analysis period: ${new Date(data.statistics.dateRange.start).toLocaleDateString()} - ${new Date(data.statistics.dateRange.end).toLocaleDateString()}</span>
+            </div>
+        `;
         
-        if (avgDailyElement) avgDailyElement.textContent = data.averageDailyAttendance || '0';
-        if (peakHourElement) peakHourElement.textContent = formatHour(data.peakHour);
-        if (leastBusyElement) leastBusyElement.textContent = formatHour(data.leastBusyHour);
-        
-        rushStatistics.style.display = 'block';
+        rushStatistics.innerHTML = statsHTML;
     }
 }
 
@@ -1008,8 +1069,8 @@ function initializeEventListeners() {
     trialForm.addEventListener('submit', handleTrialBooking);
     
     // Quick action buttons
-    document.getElementById('trial-booking-btn').addEventListener('click', () => {
-        openModal('trial-booking-modal');
+    document.getElementById('trial-booking-btn').addEventListener('click', async () => {
+        await checkTrialLimitsAndOpenModal();
     });
     
     document.getElementById('contact-btn').addEventListener('click', () => {
@@ -1158,6 +1219,279 @@ function openModal(modalId) {
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
     document.body.style.overflow = 'auto';
+    
+    // Clear trial form data if closing trial booking modal
+    if (modalId === 'trial-booking-modal') {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            clearTrialFormData();
+        }
+    }
+}
+
+// Check trial limits before opening booking modal
+async function checkTrialLimitsAndOpenModal() {
+    const token = localStorage.getItem('token');
+    
+    // If user is not logged in, open modal directly (guest booking)
+    if (!token) {
+        openModal('trial-booking-modal');
+        return;
+    }
+    
+    // Load user profile data for auto-filling
+    try {
+        const userResponse = await fetch(`${BASE_URL}/api/users/profile`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (userResponse.ok) {
+            const userData = await userResponse.json();
+            prefillUserData(userData);
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+    }
+    
+    try {
+        // Check user trial status
+        const statusResponse = await fetch(`${BASE_URL}/api/trial-bookings/trial-status`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!statusResponse.ok) {
+            throw new Error('Failed to fetch trial status');
+        }
+        
+        const statusData = await statusResponse.json();
+        const trialLimits = statusData.data;
+        
+        // Check if user has remaining trials
+        if (trialLimits.remainingTrials <= 0) {
+            showTrialLimitAlert('Monthly Trial Limit Reached', 
+                `You have used all ${trialLimits.totalTrials} free trials for this month. Your trial limit will reset on ${new Date(trialLimits.nextResetDate).toLocaleDateString()}.`);
+            return;
+        }
+        
+        // Check availability for this specific gym and today's date
+        const today = new Date().toISOString().split('T')[0];
+        const gymId = getGymIdFromUrl();
+        
+        const availabilityResponse = await fetch(`${BASE_URL}/api/trial-bookings/check-availability?gymId=${gymId}&date=${today}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!availabilityResponse.ok) {
+            throw new Error('Failed to check availability');
+        }
+        
+        const availabilityData = await availabilityResponse.json();
+        
+        if (!availabilityData.data.canBook) {
+            showTrialLimitAlert('Trial Booking Restricted', availabilityData.data.message);
+            return;
+        }
+        
+        // Show trial status info and open modal
+        showTrialStatusInfo(trialLimits);
+        openModal('trial-booking-modal');
+        
+    } catch (error) {
+        console.error('Error checking trial limits:', error);
+        // If there's an error checking limits, allow booking but show warning
+        showError('Unable to verify trial limits. You may proceed with booking.');
+        openModal('trial-booking-modal');
+    }
+}
+
+// Prefill user data in trial booking form
+function prefillUserData(userData) {
+    const nameInput = document.getElementById('trial-name');
+    const emailInput = document.getElementById('trial-email');
+    const phoneInput = document.getElementById('trial-phone');
+    
+    // Combine firstName and lastName to create full name
+    // Handle cases where fields might be null, undefined, or empty strings
+    const firstName = (userData.firstName || '').trim();
+    const lastName = (userData.lastName || '').trim();
+    const username = (userData.username || '').trim();
+    
+    // Build full name with fallback to username
+    let fullName = '';
+    if (firstName || lastName) {
+        fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+    } else if (username) {
+        fullName = username;
+    }
+    
+    if (nameInput && fullName) {
+        nameInput.value = fullName;
+        nameInput.setAttribute('readonly', true);
+        nameInput.classList.add('readonly-field');
+    }
+    
+    if (emailInput && userData.email) {
+        emailInput.value = userData.email;
+        emailInput.setAttribute('readonly', true);
+        emailInput.classList.add('readonly-field');
+    }
+    
+    if (phoneInput && userData.phone) {
+        phoneInput.value = userData.phone;
+        phoneInput.setAttribute('readonly', true);
+        phoneInput.classList.add('readonly-field');
+    }
+    
+    // Add user info notice
+    const formElement = document.getElementById('trial-booking-form');
+    const existingNotice = formElement.querySelector('.user-info-notice');
+    if (existingNotice) {
+        existingNotice.remove();
+    }
+    
+    // Only show notice if we have a name to display
+    if (fullName) {
+        const userNotice = document.createElement('div');
+        userNotice.className = 'user-info-notice';
+        userNotice.innerHTML = `
+            <div class="notice-content">
+                <i class="fas fa-user-check"></i>
+                <p>Booking as <strong>${fullName}</strong></p>
+                <small>Your profile information has been automatically filled</small>
+            </div>
+        `;
+        
+        formElement.insertBefore(userNotice, formElement.firstChild);
+    } else {
+        // If no name is available, show a different notice
+        const userNotice = document.createElement('div');
+        userNotice.className = 'user-info-notice';
+        userNotice.innerHTML = `
+            <div class="notice-content">
+                <i class="fas fa-user"></i>
+                <p>Logged in user - please complete your name below</p>
+                <small>Your email and phone have been automatically filled</small>
+            </div>
+        `;
+        
+        formElement.insertBefore(userNotice, formElement.firstChild);
+    }
+}
+
+// Show trial limit alert dialog
+function showTrialLimitAlert(title, message) {
+    const alertHtml = `
+        <div id="trial-limit-alert" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-exclamation-triangle"></i> ${title}</h3>
+                    <span class="close" onclick="closeTrialLimitAlert()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>${message}</p>
+                    <div class="alert-buttons">
+                        <button class="btn-primary" onclick="closeTrialLimitAlert()">
+                            <i class="fas fa-check"></i> Understood
+                        </button>
+                        <button class="btn-secondary" onclick="closeTrialLimitAlert(); window.location.href='settings.html#trial-bookings'">
+                            <i class="fas fa-cog"></i> View Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
+    document.getElementById('trial-limit-alert').style.display = 'block';
+}
+
+// Close trial limit alert
+function closeTrialLimitAlert() {
+    const alert = document.getElementById('trial-limit-alert');
+    if (alert) {
+        alert.remove();
+    }
+}
+
+// Show trial status info
+function showTrialStatusInfo(trialLimits) {
+    const infoHtml = `
+        <div class="trial-status-info">
+            <div class="status-item">
+                <i class="fas fa-ticket-alt"></i>
+                <span>Remaining Trials: <strong>${trialLimits.remainingTrials}/${trialLimits.totalTrials}</strong></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Resets: ${new Date(trialLimits.nextResetDate).toLocaleDateString()}</span>
+            </div>
+        </div>
+    `;
+    
+    // Add after modal header instead of inside it to prevent layout issues
+    const modalContent = document.querySelector('#trial-booking-modal .modal-content');
+    const modalHeader = document.querySelector('#trial-booking-modal .modal-header');
+    const modalBody = document.querySelector('#trial-booking-modal .modal-body');
+    const existingInfo = modalContent.querySelector('.trial-status-info');
+    
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+    
+    // Insert the trial status info between header and body
+    modalHeader.insertAdjacentHTML('afterend', infoHtml);
+}
+
+// Clear user data when modal closes (for guest users)
+function clearTrialFormData() {
+    const nameInput = document.getElementById('trial-name');
+    const emailInput = document.getElementById('trial-email');
+    const phoneInput = document.getElementById('trial-phone');
+    
+    if (nameInput) {
+        nameInput.value = '';
+        nameInput.removeAttribute('readonly');
+        nameInput.classList.remove('readonly-field');
+    }
+    
+    if (emailInput) {
+        emailInput.value = '';
+        emailInput.removeAttribute('readonly');
+        emailInput.classList.remove('readonly-field');
+    }
+    
+    if (phoneInput) {
+        phoneInput.value = '';
+        phoneInput.removeAttribute('readonly');
+        phoneInput.classList.remove('readonly-field');
+    }
+    
+    // Remove user info notice
+    const formElement = document.getElementById('trial-booking-form');
+    const existingNotice = formElement.querySelector('.user-info-notice');
+    if (existingNotice) {
+        existingNotice.remove();
+    }
+    
+    // Clear trial status info
+    const modalContent = document.querySelector('#trial-booking-modal .modal-content');
+    const existingInfo = modalContent.querySelector('.trial-status-info');
+    if (existingInfo) {
+        existingInfo.remove();
+    }
 }
 
 // Trial booking handler
@@ -1165,33 +1499,59 @@ async function handleTrialBooking(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
+    const token = localStorage.getItem('token');
+    
     const trialData = {
         gymId: getGymIdFromUrl(),
-        gymName: currentGym.gymName,
         name: formData.get('name'),
         phone: formData.get('phone'),
         email: formData.get('email'),
-        date: formData.get('date'),
-        time: formData.get('time'),
-        activity: formData.get('activity') || 'General'
+        preferredDate: formData.get('date'),
+        preferredTime: formData.get('time'),
+        sessionType: 'trial',
+        fitnessGoals: formData.get('activity') || 'General fitness'
     };
     
     try {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Add authorization header if user is logged in
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
         const response = await fetch(`${BASE_URL}/api/trial-bookings/book-trial`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: headers,
             body: JSON.stringify(trialData)
         });
         
+        const result = await response.json();
+        
         if (response.ok) {
             closeModal('trial-booking-modal');
-            showSuccess('Trial booking submitted successfully! The gym will contact you soon.');
+            
+            // Clear any existing trial status info
+            const existingInfo = document.querySelector('#trial-booking-modal .trial-status-info');
+            if (existingInfo) {
+                existingInfo.remove();
+            }
+            
+            if (token) {
+                showSuccess('Trial booking submitted successfully! Your trial limit has been updated. The gym will contact you soon.');
+            } else {
+                showSuccess('Trial booking submitted successfully! The gym will contact you soon.');
+            }
+            
             e.target.reset();
         } else {
-            const error = await response.json();
-            showError(error.message || 'Failed to submit trial booking');
+            if (result.restrictions) {
+                showTrialLimitAlert('Booking Restriction', result.message);
+            } else {
+                showError(result.message || 'Failed to submit trial booking');
+            }
         }
     } catch (error) {
         console.error('Error submitting trial booking:', error);
@@ -1434,10 +1794,23 @@ async function checkUserLogin() {
         if (response.ok) {
             const user = await response.json();
             updateProfileIconImage(user); // <-- update profile icon
+            
+            // Create full name from firstName and lastName with robust handling
+            const firstName = (user.firstName || '').trim();
+            const lastName = (user.lastName || '').trim();
+            const username = (user.username || '').trim();
+            
+            let displayName = 'User'; // Default fallback
+            if (firstName || lastName) {
+                displayName = [firstName, lastName].filter(Boolean).join(' ').trim();
+            } else if (username) {
+                displayName = username;
+            }
+            
             return {
                 isLoggedIn: true,
                 user: user,
-                name: user.name || user.username || 'User'
+                name: displayName
             };
         } else {
             // Token might be invalid

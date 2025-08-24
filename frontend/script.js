@@ -1,3 +1,33 @@
+// === LOADING SCREEN ===
+document.addEventListener('DOMContentLoaded', function () {
+  const loadingScreen = document.getElementById('loading-screen');
+  
+  // Show loading screen initially
+  showLoadingScreen();
+
+  // Hide loading screen after content is loaded
+  setTimeout(() => {
+    hideLoadingScreen();
+  }, 1500); // Show loading for 1.5 seconds
+
+  // Loading screen functions
+  function showLoadingScreen() {
+    if (loadingScreen) {
+      loadingScreen.classList.remove('hidden');
+      loadingScreen.style.display = 'flex';
+    }
+  }
+
+  function hideLoadingScreen() {
+    if (loadingScreen) {
+      loadingScreen.classList.add('hidden');
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+      }, 500);
+    }
+  }
+});
+
 // === NEAR YOU BUTTON FUNCTIONALITY ===
 document.addEventListener('DOMContentLoaded', function () {
   const nearYouBtn = document.getElementById('nearYouBtn');
@@ -59,20 +89,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // Close other open dropdowns
         document.querySelectorAll('.dropdown').forEach(function(dd) {
           if (dd !== parentDropdown) dd.classList.remove('open');
-        });
-      }
-    });
-  });
-  // Settings submenu open/close for mobile
-  document.querySelectorAll('.settings-option > a').forEach(function(settingsLink) {
-    settingsLink.addEventListener('click', function(e) {
-      if (window.innerWidth <= 900) {
-        e.preventDefault();
-        const parentOption = this.parentElement;
-        parentOption.classList.toggle('open');
-        // Close other open settings
-        document.querySelectorAll('.settings-option').forEach(function(opt) {
-          if (opt !== parentOption) opt.classList.remove('open');
         });
       }
     });
@@ -586,31 +602,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (loginNav) loginNav.style.display = "block";
     });
 });
-// Fallback for touch devices
-document.addEventListener('DOMContentLoaded', function() {
-  const settingsOptions = document.querySelectorAll('.settings-option');
-  
-  settingsOptions.forEach(option => {
-    // For mouse users
-    option.addEventListener('mouseenter', function() {
-      this.querySelector('.settings-submenu').style.display = 'block';
-    });
-    
-    option.addEventListener('mouseleave', function() {
-      this.querySelector('.settings-submenu').style.display = 'none';
-    });
-    
-    // For touch devices
-    option.addEventListener('click', function(e) {
-      if (window.innerWidth <= 768) { // Mobile devices
-        e.preventDefault();
-        const submenu = this.querySelector('.settings-submenu');
-        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
-      }
-    });
-  });
-});
-
 // Helper for stars
 function generateStars(rating) {
   let stars = '';

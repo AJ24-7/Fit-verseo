@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym-Wale Admin Setup - First Time Configuration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-gray: #f9fafb;
+            --border-color: #d1d5db;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .setup-container {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 600px;
+            overflow: hidden;
+        }
+
+        .setup-header {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .setup-header .logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+        }
+
+        .setup-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .setup-header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .setup-content {
+            padding: 40px;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-gray);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .step.active {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .step.completed {
+            background: var(--success-color);
+            color: var(--white);
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 20px;
+            height: 2px;
+            background: var(--border-color);
+            transform: translateY(-50%);
+        }
+
+        .step:last-child::after {
+            display: none;
+        }
+
+        .step.completed::after {
+            background: var(--success-color);
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.2s;
+            background: var(--white);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-input.error {
+            border-color: var(--error-color);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+
+        .input-group .form-input {
+            padding-left: 56px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-gray);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f3f4f6;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fed7aa;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .password-requirements {
+            background: var(--bg-gray);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+
+        .password-requirements h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .requirement.valid {
+            color: var(--success-color);
+        }
+
+        .requirement .icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            background: var(--border-color);
+            color: var(--white);
+        }
+
+        .requirement.valid .icon {
+            background: var(--success-color);
+        }
+
+        .setup-complete {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--success-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 48px;
+            color: var(--white);
+        }
+
+        .setup-complete h2 {
+            font-size: 28px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .setup-complete p {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 640px) {
+            .setup-container {
+                margin: 10px;
+            }
+            
+            .setup-header, .setup-content {
+                padding: 24px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .step-indicator {
+                margin-bottom: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-header">
+            <div class="logo">
+                <i class="fas fa-dumbbell"></i>
+            </div>
+            <h1>Gym-Wale Admin Setup</h1>
+            <p>Configure your administrative account to get started</p>
+        </div>
+
+        <div class="setup-content">
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step" id="step2">2</div>
+                <div class="step" id="step3">3</div>
+                <div class="step" id="step4">4</div>
+            </div>
+
+            <!-- Step 1: Check System -->
+            <div class="form-step active" id="formStep1">
+                <h2 class="step-title">System Check</h2>
+                <p class="step-description">Verifying system requirements and database connectivity</p>
+                
+                <div id="systemCheckAlert" class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Running system diagnostics...</span>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="runSystemCheck()" id="systemCheckBtn">
+                        <span id="systemCheckBtnText">Start System Check</span>
+                        <div class="spinner hidden" id="systemCheckSpinner"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Admin Details -->
+            <div class="form-step" id="formStep2">
+                <h2 class="step-title">Administrator Details</h2>
+                <p class="step-description">Create your main administrator account</p>
+
+                <div id="adminDetailsAlert" class="alert alert-error hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="adminDetailsAlertText"></span>
+                </div>
+
+                <form id="adminDetailsForm">
+                    <div class="form-group">
+                        <label class="form-label" for="adminName">Full Name</label>
+                        <div class="input-group">
+                            <i class="input-icon fas fa-user"></i>
+                            <input type="text" id="adminName" class="form-input" placeholder="Enter your full name" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="adminEmail">Email Address</label>
+                        <div class="input-group">
+                            <i class="input-icon fas fa-envelope"></i>
+                            <input type="email" id="adminEmail" class="form-input" placeholder="admin@your-domain.com" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="adminPhone">Phone Number (Optional)</label>
+                        <div class="input-group">
+                            <i class="input-icon fas fa-phone"></i>
+                            <input type="tel" id="adminPhone" class="form-input" placeholder="+1 (555) 123-4567">
+                        </div>
+                    </div>
+                </form>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="prevStep()">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep()" id="adminDetailsNext">
+                        Next
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Security Setup -->
+            <div class="form-step" id="formStep3">
+                <h2 class="step-title">Security Configuration</h2>
+                <p class="step-description">Set up your password and security preferences</p>
+
+                <div id="securityAlert" class="alert alert-error hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="securityAlertText"></span>
+                </div>
+
+                <form id="securityForm">
+                    <div class="form-group">
+                        <label class="form-label" for="adminPassword">Password</label>
+                        <div class="input-group">
+                            <i class="input-icon fas fa-lock"></i>
+                            <input type="password" id="adminPassword" class="form-input" placeholder="Create a strong password" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('adminPassword', 'passwordToggleIcon1')">
+                                <i class="fas fa-eye" id="passwordToggleIcon1"></i>
+                            </button>
+                        </div>
+                        <div class="password-requirements">
+                            <h4>Password Requirements:</h4>
+                            <div class="requirement" id="req-length">
+                                <span class="icon">✗</span>
+                                At least 8 characters long
+                            </div>
+                            <div class="requirement" id="req-uppercase">
+                                <span class="icon">✗</span>
+                                Contains uppercase letter
+                            </div>
+                            <div class="requirement" id="req-lowercase">
+                                <span class="icon">✗</span>
+                                Contains lowercase letter
+                            </div>
+                            <div class="requirement" id="req-number">
+                                <span class="icon">✗</span>
+                                Contains number
+                            </div>
+                            <div class="requirement" id="req-special">
+                                <span class="icon">✗</span>
+                                Contains special character
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="confirmPassword">Confirm Password</label>
+                        <div class="input-group">
+                            <i class="input-icon fas fa-lock"></i>
+                            <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm your password" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', 'passwordToggleIcon2')">
+                                <i class="fas fa-eye" id="passwordToggleIcon2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="prevStep()">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep()" id="securityNext">
+                        Next
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Confirmation & Setup -->
+            <div class="form-step" id="formStep4">
+                <h2 class="step-title">Complete Setup</h2>
+                <p class="step-description">Review your configuration and complete the setup</p>
+
+                <div id="setupAlert" class="alert alert-error hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="setupAlertText"></span>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Please review your administrator details before completing the setup.</span>
+                </div>
+
+                <div style="background: var(--bg-gray); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 16px; color: var(--text-primary);">Administrator Details</h3>
+                    <div style="display: grid; gap: 12px;">
+                        <div><strong>Name:</strong> <span id="reviewName"></span></div>
+                        <div><strong>Email:</strong> <span id="reviewEmail"></span></div>
+                        <div><strong>Phone:</strong> <span id="reviewPhone"></span></div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="prevStep()">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </button>
+                    <button class="btn btn-primary" onclick="completeSetup()" id="completeSetupBtn">
+                        <span id="completeSetupBtnText">Complete Setup</span>
+                        <div class="spinner hidden" id="completeSetupSpinner"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Setup Complete -->
+            <div class="form-step" id="setupCompleteStep">
+                <div class="setup-complete">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2>Setup Complete!</h2>
+                    <p>Your Gym-Wale admin account has been successfully configured.</p>
+                    
+                    <div style="background: var(--bg-gray); border-radius: 12px; padding: 24px; margin-bottom: 24px; text-align: left;">
+                        <h3 style="margin-bottom: 16px; color: var(--text-primary); text-align: center;">Login Credentials</h3>
+                        <div style="display: grid; gap: 12px;">
+                            <div><strong>Email:</strong> <span id="finalEmail"></span></div>
+                            <div><strong>Password:</strong> <span style="font-family: monospace; background: #fff; padding: 4px 8px; border-radius: 4px;">The password you created</span></div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="redirectToLogin()">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Go to Admin Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin-setup.js"></script>
+</body>
+</html>

@@ -6,282 +6,220 @@ const Trainer = require('../models/trainerModel');
 const gymadminAuth = require('../middleware/gymadminAuth');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Rush hour analysis endpoint for gym details page
+// Enhanced rush hour analysis endpoint for gym details page with professional bar chart data
 router.get('/rush-analysis/:gymId', async (req, res) => {
     try {
         const { gymId } = req.params;
-        const today = new Date();
+        const { days = 7 } = req.query; // Default to 7 days analysis
         
-        // For today's rush hour, analyze just today's data for real-time insights
-        const todayStart = new Date(today);
-        todayStart.setHours(0, 0, 0, 0);
+        console.log(`📊 Enhanced rush hour analysis for gym ${gymId} over ${days} days`);
+
+        // Get attendance data for the specified period
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - parseInt(days));
         
-        const todayEnd = new Date(today);
-        todayEnd.setHours(23, 59, 59, 999);
+        // Normalize dates
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
 
-        console.log(`🔍 Fetching today's rush hour data for gym ${gymId} on ${todayStart.toISOString().split('T')[0]}`);
-        console.log(`📅 Date range: ${todayStart.toISOString()} to ${todayEnd.toISOString()}`);
-        console.log(`🏋️ Gym ID type: ${typeof gymId}, value: ${gymId}`);
-
-        // Get today's attendance data with present status
-        const todayAttendance = await Attendance.find({
+        const attendanceRecords = await Attendance.find({
             gymId: gymId,
-            date: {
-                $gte: todayStart,
-                $lte: todayEnd
-            },
+            date: { $gte: startDate, $lte: endDate },
+            checkInTime: { $exists: true, $ne: null },
             status: 'present'
-        }).select('checkInTime checkOutTime date gymId personId status');
+        }).select('checkInTime date');
 
-        console.log(`📊 Found ${todayAttendance.length} attendance records for today`);
-        console.log(`🔍 Sample attendance records:`, todayAttendance.slice(0, 3));
-        
-        // Also check all attendance records for debugging
-        const allTodayAttendance = await Attendance.find({
-            date: {
-                $gte: todayStart,
-                $lte: todayEnd
-            }
-        }).select('checkInTime checkOutTime date gymId personId status');
-        
-        console.log(`📈 Total attendance records for today (all gyms): ${allTodayAttendance.length}`);
-        console.log(`🔍 All today's records:`, allTodayAttendance.slice(0, 5));
+        console.log(`� Found ${attendanceRecords.length} attendance records for analysis`);
 
-        // Also get past 7 days for comparison and trends
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        
-        const weeklyAttendance = await Attendance.find({
-            gymId: gymId,
-            date: {
-                $gte: sevenDaysAgo,
-                $lte: today
-            },
-            status: 'present'
-        }).select('checkInTime checkOutTime date');
-
-        console.log(`� Found ${weeklyAttendance.length} attendance records for past 7 days`);
-
-        // Process today's data to calculate hourly attendance
-        const todayHourlyData = {};
-        const weeklyHourlyData = {};
-        
-        // Initialize all hours from 6 AM to 10 PM
+        // Initialize hourly data (6 AM to 10 PM - typical gym hours)
+        const hourlyData = {};
         for (let hour = 6; hour <= 22; hour++) {
-            todayHourlyData[hour] = 0;
-            weeklyHourlyData[hour] = 0;
-        }
-
-        // Process today's attendance
-        todayAttendance.forEach(record => {
-            if (record.checkInTime) {
-                let checkInHour;
-                
-                // Handle different time formats
-                if (record.checkInTime.includes('pm') || record.checkInTime.includes('am')) {
-                    // Format: "12:49:19 pm" or "1:19:25 pm"
-                    const timeStr = record.checkInTime.toLowerCase();
-                    const [time, period] = timeStr.split(' ');
-                    const [hour, minute] = time.split(':');
-                    let hourNum = parseInt(hour);
-                    
-                    // Convert to 24-hour format
-                    if (period === 'pm' && hourNum !== 12) {
-                        hourNum += 12;
-                    } else if (period === 'am' && hourNum === 12) {
-                        hourNum = 0;
-                    }
-                    
-                    checkInHour = hourNum;
-                } else {
-                    // Format: "14:30"
-                    const timeParts = record.checkInTime.split(':');
-                    checkInHour = parseInt(timeParts[0]);
-                }
-                
-                console.log(`⏰ Processing checkInTime: "${record.checkInTime}" -> hour: ${checkInHour}`);
-                
-                if (checkInHour >= 6 && checkInHour <= 22) {
-                    todayHourlyData[checkInHour]++;
-                }
-            }
-        });
-
-        // Process weekly attendance for comparison
-        weeklyAttendance.forEach(record => {
-            if (record.checkInTime) {
-                let checkInHour;
-                
-                // Handle different time formats
-                if (record.checkInTime.includes('pm') || record.checkInTime.includes('am')) {
-                    // Format: "12:49:19 pm" or "1:19:25 pm"
-                    const timeStr = record.checkInTime.toLowerCase();
-                    const [time, period] = timeStr.split(' ');
-                    const [hour, minute] = time.split(':');
-                    let hourNum = parseInt(hour);
-                    
-                    // Convert to 24-hour format
-                    if (period === 'pm' && hourNum !== 12) {
-                        hourNum += 12;
-                    } else if (period === 'am' && hourNum === 12) {
-                        hourNum = 0;
-                    }
-                    
-                    checkInHour = hourNum;
-                } else {
-                    // Format: "14:30"
-                    const timeParts = record.checkInTime.split(':');
-                    checkInHour = parseInt(timeParts[0]);
-                }
-                
-                if (checkInHour >= 6 && checkInHour <= 22) {
-                    weeklyHourlyData[checkInHour]++;
-                }
-            }
-        });
-
-        // Calculate statistics for today
-        const todayCounts = Object.values(todayHourlyData);
-        const todayTotal = todayCounts.reduce((sum, count) => sum + count, 0);
-        const todayMax = Math.max(...todayCounts);
-        const todayAvg = todayTotal / todayCounts.length;
-
-        // Calculate weekly averages for comparison
-        const weeklyCounts = Object.values(weeklyHourlyData);
-        const weeklyTotal = weeklyCounts.reduce((sum, count) => sum + count, 0);
-        const weeklyAvg = weeklyTotal / (7 * weeklyCounts.length); // Average per day
-
-        // Handle case when there's no data
-        if (todayTotal === 0 && weeklyTotal === 0) {
-            console.log('⚠️ No attendance data found for today or this week');
-            return res.json({
-                success: true,
-                data: {
-                    hourlyData: Object.keys(todayHourlyData).reduce((acc, hour) => {
-                        acc[hour] = { count: 0, rushLevel: 'low', percentage: 0 };
-                        return acc;
-                    }, {}),
-                    periodStats: {
-                        morning: { name: 'Morning (6 AM - 12 PM)', averageAttendance: 0, totalAttendance: 0, rushLevel: 'low', peakHour: 6 },
-                        afternoon: { name: 'Afternoon (12 PM - 6 PM)', averageAttendance: 0, totalAttendance: 0, rushLevel: 'low', peakHour: 12 },
-                        evening: { name: 'Evening (6 PM - 11 PM)', averageAttendance: 0, totalAttendance: 0, rushLevel: 'low', peakHour: 18 }
-                    },
-                    peakHour: 6,
-                    leastBusyHour: 6,
-                    totalDays: 1,
-                    averageDailyAttendance: 0,
-                    todayTotal: 0,
-                    statistics: { maxAttendance: 0, avgAttendance: 0, lowThreshold: 0, highThreshold: 0 },
-                    hasData: false,
-                    isToday: true
-                }
-            });
-        }
-
-        // Use today's data primarily, fall back to weekly average for thresholds
-        const baselineAvg = todayTotal > 0 ? todayAvg : weeklyAvg;
-        const baselineMax = todayTotal > 0 ? todayMax : Math.max(...weeklyCounts) / 7;
-
-        // Define dynamic thresholds based on data
-        const lowThreshold = baselineAvg * 0.5;
-        const highThreshold = baselineAvg * 1.5;
-
-        // Process hourly data with rush levels
-        const processedData = {};
-        Object.keys(todayHourlyData).forEach(hour => {
-            const count = todayHourlyData[hour];
-            let rushLevel = 'low';
-            
-            if (count >= highThreshold) {
-                rushLevel = 'high';
-            } else if (count >= lowThreshold) {
-                rushLevel = 'medium';
-            }
-
-            processedData[hour] = {
-                count,
-                rushLevel,
-                percentage: todayMax > 0 ? Math.round((count / todayMax) * 100) : 0
+            hourlyData[hour] = {
+                totalVisits: 0,
+                averageVisits: 0,
+                percentage: 0,
+                rushLevel: 'low',
+                formattedHour: formatHour(hour),
+                barHeight: 0
             };
+        }
+
+        // Process attendance data by hour
+        attendanceRecords.forEach(record => {
+            if (record.checkInTime) {
+                let checkInHour;
+                
+                // Handle different time formats
+                if (record.checkInTime.includes('pm') || record.checkInTime.includes('am')) {
+                    const timeStr = record.checkInTime.toLowerCase();
+                    const [time, period] = timeStr.split(' ');
+                    const [hour] = time.split(':');
+                    let hourNum = parseInt(hour);
+                    
+                    if (period === 'pm' && hourNum !== 12) {
+                        hourNum += 12;
+                    } else if (period === 'am' && hourNum === 12) {
+                        hourNum = 0;
+                    }
+                    
+                    checkInHour = hourNum;
+                } else {
+                    const timeParts = record.checkInTime.split(':');
+                    checkInHour = parseInt(timeParts[0]);
+                }
+                
+                // Only count hours within gym operating hours
+                if (checkInHour >= 6 && checkInHour <= 22) {
+                    hourlyData[checkInHour].totalVisits++;
+                }
+            }
         });
 
-        // Calculate period statistics using today's data
-        const periods = {
-            morning: { hours: [6, 7, 8, 9, 10, 11], name: 'Morning (6 AM - 12 PM)' },
-            afternoon: { hours: [12, 13, 14, 15, 16, 17], name: 'Afternoon (12 PM - 6 PM)' },
-            evening: { hours: [18, 19, 20, 21, 22], name: 'Evening (6 PM - 11 PM)' }
+        // Calculate averages and percentages
+        const totalDays = parseInt(days);
+        let maxVisits = 0;
+        let totalAllHours = 0;
+
+        Object.keys(hourlyData).forEach(hour => {
+            const visits = hourlyData[hour].totalVisits;
+            hourlyData[hour].averageVisits = Math.round((visits / totalDays) * 10) / 10; // Round to 1 decimal
+            totalAllHours += visits;
+            
+            if (visits > maxVisits) {
+                maxVisits = visits;
+            }
+        });
+
+        // Calculate percentages, rush levels, and bar heights
+        Object.keys(hourlyData).forEach(hour => {
+            const visits = hourlyData[hour].totalVisits;
+            hourlyData[hour].percentage = maxVisits > 0 ? Math.round((visits / maxVisits) * 100) : 0;
+            hourlyData[hour].barHeight = hourlyData[hour].percentage; // For CSS height
+            
+            // Determine rush level based on percentage of peak
+            if (hourlyData[hour].percentage >= 70) {
+                hourlyData[hour].rushLevel = 'high';
+            } else if (hourlyData[hour].percentage >= 40) {
+                hourlyData[hour].rushLevel = 'medium';
+            } else {
+                hourlyData[hour].rushLevel = 'low';
+            }
+        });
+
+        // Find peak and least busy hours
+        let peakHour = 6;
+        let leastBusyHour = 6;
+        
+        Object.keys(hourlyData).forEach(hour => {
+            if (hourlyData[hour].totalVisits > hourlyData[peakHour].totalVisits) {
+                peakHour = parseInt(hour);
+            }
+            if (hourlyData[hour].totalVisits < hourlyData[leastBusyHour].totalVisits) {
+                leastBusyHour = parseInt(hour);
+            }
+        });
+
+        // Calculate period statistics
+        const periodStats = {
+            morning: {
+                name: 'Morning',
+                period: '6 AM - 12 PM',
+                hours: [6, 7, 8, 9, 10, 11],
+                totalVisits: 0,
+                averageVisits: 0,
+                rushLevel: 'low',
+                icon: 'fa-sun'
+            },
+            afternoon: {
+                name: 'Afternoon',
+                period: '12 PM - 6 PM',
+                hours: [12, 13, 14, 15, 16, 17],
+                totalVisits: 0,
+                averageVisits: 0,
+                rushLevel: 'low',
+                icon: 'fa-cloud-sun'
+            },
+            evening: {
+                name: 'Evening',
+                period: '6 PM - 11 PM',
+                hours: [18, 19, 20, 21, 22],
+                totalVisits: 0,
+                averageVisits: 0,
+                rushLevel: 'low',
+                icon: 'fa-moon'
+            }
         };
 
-        const periodStats = {};
-        Object.keys(periods).forEach(periodKey => {
-            const period = periods[periodKey];
-            const periodCounts = period.hours.map(hour => todayHourlyData[hour] || 0);
-            const periodTotal = periodCounts.reduce((sum, count) => sum + count, 0);
-            const periodAvg = periodTotal / period.hours.length;
+        Object.keys(periodStats).forEach(periodKey => {
+            const period = periodStats[periodKey];
+            period.hours.forEach(hour => {
+                period.totalVisits += hourlyData[hour]?.totalVisits || 0;
+            });
+            period.averageVisits = Math.round((period.totalVisits / (period.hours.length * totalDays)) * 10) / 10;
             
-            let periodRushLevel = 'low';
-            if (periodAvg >= highThreshold) {
-                periodRushLevel = 'high';
-            } else if (periodAvg >= lowThreshold) {
-                periodRushLevel = 'medium';
+            // Determine rush level for period based on average percentage
+            const avgPercentage = period.hours.reduce((sum, hour) => 
+                sum + (hourlyData[hour]?.percentage || 0), 0) / period.hours.length;
+            
+            if (avgPercentage >= 60) {
+                period.rushLevel = 'high';
+            } else if (avgPercentage >= 35) {
+                period.rushLevel = 'medium';
+            } else {
+                period.rushLevel = 'low';
             }
-
-            periodStats[periodKey] = {
-                name: period.name,
-                averageAttendance: Math.round(periodAvg),
-                totalAttendance: periodTotal,
-                rushLevel: periodRushLevel,
-                peakHour: period.hours.reduce((peak, hour) => 
-                    (todayHourlyData[hour] || 0) > (todayHourlyData[peak] || 0) ? hour : peak
-                )
-            };
         });
 
-        // Find overall peak and least busy hours from today's data
-        const peakHour = Object.keys(todayHourlyData).reduce((peak, hour) => 
-            todayHourlyData[hour] > todayHourlyData[peak] ? hour : peak
-        );
-        
-        const leastBusyHour = Object.keys(todayHourlyData).reduce((least, hour) => 
-            todayHourlyData[hour] < todayHourlyData[least] ? hour : least
-        );
+        // Calculate overall statistics
+        const statistics = {
+            totalRecords: attendanceRecords.length,
+            analyzedDays: totalDays,
+            averageDailyVisits: Math.round(totalAllHours / totalDays),
+            peakHourVisits: hourlyData[peakHour].totalVisits,
+            peakHour: peakHour,
+            peakHourFormatted: formatHour(peakHour),
+            leastBusyHour: leastBusyHour,
+            leastBusyHourFormatted: formatHour(leastBusyHour),
+            maxHourlyVisits: maxVisits,
+            dateRange: {
+                start: startDate.toISOString().split('T')[0],
+                end: endDate.toISOString().split('T')[0]
+            }
+        };
 
-        // Get today's date for display
-        const todayDateString = today.toISOString().split('T')[0];
+        // Helper function to format hour for display
+        function formatHour(hour) {
+            if (hour === 0) return '12:00 AM';
+            if (hour < 12) return `${hour}:00 AM`;
+            if (hour === 12) return '12:00 PM';
+            return `${hour - 12}:00 PM`;
+        }
 
-        const analysisResult = {
+        const result = {
             success: true,
             data: {
-                hourlyData: processedData,
+                hourlyData,
                 periodStats,
-                peakHour: parseInt(peakHour),
-                leastBusyHour: parseInt(leastBusyHour),
-                totalDays: 1, // Today only
-                averageDailyAttendance: todayTotal,
-                todayTotal,
-                todayDate: todayDateString,
-                weeklyComparison: {
-                    todayTotal,
-                    weeklyAverage: Math.round(weeklyTotal / 7),
-                    trend: todayTotal > (weeklyTotal / 7) ? 'higher' : todayTotal < (weeklyTotal / 7) ? 'lower' : 'same'
-                },
-                statistics: {
-                    maxAttendance: todayMax,
-                    avgAttendance: Math.round(todayAvg),
-                    lowThreshold: Math.round(lowThreshold),
-                    highThreshold: Math.round(highThreshold)
-                },
-                hasData: true,
-                isToday: true,
-                lastUpdated: new Date().toISOString()
+                statistics,
+                hasData: attendanceRecords.length > 0,
+                lastUpdated: new Date().toISOString(),
+                chartConfig: {
+                    maxHeight: 100, // For bar chart scaling
+                    colors: {
+                        low: '#4CAF50',    // Green
+                        medium: '#FF9800', // Orange  
+                        high: '#F44336'    // Red
+                    }
+                }
             }
         };
 
-        console.log(`✅ Today's rush hour analysis complete for gym ${gymId} on ${todayDateString}. Peak: ${peakHour}:00, Today total: ${todayTotal}, Weekly avg: ${Math.round(weeklyTotal / 7)}`);
-        res.json(analysisResult);
+        console.log(`✅ Enhanced rush hour analysis complete. Peak: ${formatHour(peakHour)} (${maxVisits} visits), Records: ${attendanceRecords.length}`);
+        res.json(result);
 
     } catch (error) {
-        console.error('❌ Error in rush hour analysis:', error);
+        console.error('❌ Error in enhanced rush hour analysis:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Failed to analyze rush hours',
@@ -289,8 +227,6 @@ router.get('/rush-analysis/:gymId', async (req, res) => {
         });
     }
 });
-
-// Create sample attendance data for testing rush hour analysis
 router.post('/create-sample-data/:gymId', async (req, res) => {
     try {
         const { gymId } = req.params;

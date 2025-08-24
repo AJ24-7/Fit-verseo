@@ -2,11 +2,14 @@ function logout() {
   localStorage.removeItem('token'); 
   window.location.href = 'index.html';
 }
+
 let isGoogleUser = false;
+let pendingFormData = null; // Store form data for confirmation
+
 document.addEventListener("DOMContentLoaded", () => {
   let removeProfileImage = false;
   let currentStep = 1;
-  const totalSteps = 3;
+  const totalSteps = 2; // Changed from 3 to 2 steps (Basic Info + Fitness Details only)
   const token = localStorage.getItem('token');
   const prevBtn = document.getElementById("prev-btn");
   const nextBtn = document.getElementById("next-btn");
@@ -75,102 +78,381 @@ uploadPicInput.addEventListener("change", function () {
   document.querySelectorAll(".toggle-password").forEach(toggle => {
     toggle.addEventListener("click", () => {
       const input = toggle.previousElementSibling;
-      input.type = input.type === "password" ? "text" : "password";
-      toggle.innerHTML = input.type === "password"
-        ? '<i class="fas fa-eye"></i>'
-        : '<i class="fas fa-eye-slash"></i>';
+      if (input && input.type) {
+        input.type = input.type === "password" ? "text" : "password";
+        toggle.innerHTML = input.type === "password"
+          ? '<i class="fas fa-eye"></i>'
+          : '<i class="fas fa-eye-slash"></i>';
+      }
     });
   });
 
-  // Submit Form
+  // Initialize modal functionality
+  initializeModals();
+  initializeForgotPassword();
+
+  // Submit Form - Modified to show confirmation modal
   const editForm = document.getElementById("edit-profile-form");
 
   editForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
+    // Prepare form data
+    pendingFormData = new FormData();
 
     // Basic Info
-    formData.append("firstName", document.getElementById("first-name").value);
-    formData.append("lastName", document.getElementById("last-name").value);
-    formData.append("username", document.getElementById("username").value);
-    formData.append("birthdate", document.getElementById("birthdate").value);
-    formData.append("phone", document.getElementById("phone").value);
-    formData.append("email", document.getElementById("email").value);
+    pendingFormData.append("firstName", document.getElementById("first-name").value);
+    pendingFormData.append("lastName", document.getElementById("last-name").value);
+    pendingFormData.append("username", document.getElementById("username").value);
+    pendingFormData.append("birthdate", document.getElementById("birthdate").value);
+    pendingFormData.append("phone", document.getElementById("phone").value);
+    pendingFormData.append("email", document.getElementById("email").value);
     
-     // Profile Image: append the file if selected
-  const uploadPicInput = document.getElementById("upload-pic");
-  if (uploadPicInput.files && uploadPicInput.files[0]) {
-    formData.append("profileImage", uploadPicInput.files[0]);
-  }
+    // Profile Image: append the file if selected
+    const uploadPicInput = document.getElementById("upload-pic");
+    if (uploadPicInput.files && uploadPicInput.files[0]) {
+      pendingFormData.append("profileImage", uploadPicInput.files[0]);
+    }
     if (removeProfileImage) {
-  formData.append("removeProfileImage", "true");
-}
+      pendingFormData.append("removeProfileImage", "true");
+    }
+
     // Fitness Details
-    formData.append("heightFeet", document.getElementById("height-feet").value);
-    formData.append("heightInches", document.getElementById("height-inches").value);
-    formData.append("weight", document.getElementById("weight").value);
-    formData.append("fitnessLevel", document.getElementById("fitness-level").value);
-    formData.append("primaryGoal", document.getElementById("primary-goal").value);
+    pendingFormData.append("heightFeet", document.getElementById("height-feet").value);
+    pendingFormData.append("heightInches", document.getElementById("height-inches").value);
+    pendingFormData.append("weight", document.getElementById("weight").value);
+    pendingFormData.append("fitnessLevel", document.getElementById("fitness-level").value);
+    pendingFormData.append("primaryGoal", document.getElementById("primary-goal").value);
 
     const workoutPrefs = [];
     document.querySelectorAll('input[name="workout-pref"]:checked').forEach(checkbox => {
       workoutPrefs.push(checkbox.value);
     });
-    workoutPrefs.forEach(pref => formData.append("workoutPreferences", pref));
+    workoutPrefs.forEach(pref => pendingFormData.append("workoutPreferences", pref));
 
-    // Preferences
-    formData.append("theme", document.getElementById("theme").value);
-    formData.append("measurementSystem", document.getElementById("measurement-system").value);
-    formData.append("notifications", document.getElementById("notifications").value);
-    formData.append("twoFactorEnabled", document.getElementById("two-factor-toggle").checked);
+    // Show confirmation modal for non-Google users
+    if (!isGoogleUser) {
+      showModal('confirm-password-modal');
+      document.getElementById("confirm-password-input").focus();
+    } else {
+      // For Google users, save directly without password confirmation
+      await saveProfile();
+    }
+  });
 
-  if (!isGoogleUser) {
-  formData.append("confirmPassword", document.getElementById("confirm-password").value);
-  const newPassword = document.getElementById("new-password").value;
-  const confirmNewPassword = document.getElementById("confirm-new-password").value;
-  if (newPassword || confirmNewPassword) {
-      formData.append("newPassword", newPassword);
-      formData.append("confirmNewPassword", confirmNewPassword);
-  }
-}
+  // Save Profile Function
+  async function saveProfile() {
     try {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("User not authenticated. Please log in again.");
+        showErrorModal("You are not authenticated. Please log in again to save your profile changes.");
         return;
       }
-      for (let [key, value] of formData.entries()) {
-  console.log(key, value);
-}
-      const response = await fetch("http://localhost:5000/api/users/update-profile", {
+
+      showLoadingModal("Saving profile...");
+
+      const response = await fetch(`${BASE_URL}/api/users/update-profile`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`
           // No 'Content-Type' here; it will be set automatically by FormData
         },
-        body: formData
+        body: pendingFormData
       });
 
       const result = await response.json();
+      hideLoadingModal();
 
       if (response.ok) {
-        document.getElementById("success-modal").style.display = "block";
+        showModal('success-modal');
       } else {
-        alert(result.message || result.error || "Something went wrong while updating.");
+        showErrorModal(result.message || result.error || "Something went wrong while updating your profile.");
       }
 
     } catch (err) {
+      hideLoadingModal();
       console.error("Error updating profile:", err);
-      alert("Failed to update profile. Please try again.");
+      showErrorModal("Failed to update profile. Please check your connection and try again.");
     }
-  });
+  }
+
+  // Initialize Modal Functionality
+  function initializeModals() {
+    // Close buttons
+    document.querySelectorAll('.close').forEach(closeBtn => {
+      closeBtn.addEventListener('click', function() {
+        const modal = this.closest('.modal');
+        hideModal(modal.id);
+        clearPasswordFields();
+      });
+    });
+
+    // Cancel buttons
+    document.getElementById('cancel-confirm-btn').addEventListener('click', function() {
+      hideModal('confirm-password-modal');
+      clearPasswordFields();
+    });
+
+    // Confirm save button
+    document.getElementById('confirm-save-btn').addEventListener('click', async function() {
+      const password = document.getElementById('confirm-password-input').value;
+      
+      if (!password) {
+        showErrorModal('Please enter your password to confirm the changes.');
+        return;
+      }
+
+      // Add password to form data
+      pendingFormData.append("confirmPassword", password);
+      
+      // Hide modal and save profile
+      hideModal('confirm-password-modal');
+      clearPasswordFields();
+      await saveProfile();
+    });
+
+    // Forgot password link
+    document.getElementById('forgot-password-link').addEventListener('click', function(e) {
+      e.preventDefault();
+      hideModal('confirm-password-modal');
+      showModal('forgot-password-modal');
+      
+      // Pre-fill email if available
+      const emailField = document.getElementById('email');
+      if (emailField && emailField.value) {
+        document.getElementById('forgot-email').value = emailField.value;
+      }
+    });
+
+    // Click outside to close modals
+    window.addEventListener('click', function(e) {
+      if (e.target.classList.contains('modal')) {
+        hideModal(e.target.id);
+        clearPasswordFields();
+      }
+    });
+  }
+
+  // Clear password fields
+  function clearPasswordFields() {
+    document.getElementById('confirm-password-input').value = '';
+    document.getElementById('forgot-email').value = '';
+    document.getElementById('otp-input').value = '';
+    document.getElementById('new-password-forgot').value = '';
+    document.getElementById('confirm-new-password-forgot').value = '';
+  }
+
+  // Loading modal functions
+  function showLoadingModal(text = "Processing...") {
+    document.getElementById('loading-text').textContent = text;
+    showModal('loading-modal');
+  }
+
+  function hideLoadingModal() {
+    hideModal('loading-modal');
+  }
+
+  // Modal helper functions
+  function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('show');
+      console.log('Modal opened:', modalId); // Debug log
+    } else {
+      console.error('Modal not found:', modalId); // Debug log
+    }
+  }
+
+  function hideModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('show');
+      console.log('Modal closed:', modalId); // Debug log
+    } else {
+      console.error('Modal not found:', modalId); // Debug log
+    }
+  }
+
+  // Show error modal with message
+  function showErrorModal(message) {
+    document.getElementById('error-message').textContent = message;
+    showModal('error-modal');
+  }
+
+  // Show info modal with message
+  function showInfoModal(message) {
+    document.getElementById('info-message').textContent = message;
+    showModal('info-modal');
+  }
+
+  // Initialize Forgot Password Functionality
+  function initializeForgotPassword() {
+    // Send OTP button
+    document.getElementById('send-otp-btn').addEventListener('click', async function() {
+      const email = document.getElementById('forgot-email').value;
+      
+      if (!email) {
+        showErrorModal('Please enter your email address to receive the OTP.');
+        return;
+      }
+
+      try {
+        showLoadingModal("Sending OTP...");
+        
+        const response = await fetch(`${BASE_URL}/api/users/request-password-reset-otp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email })
+        });
+
+        const result = await response.json();
+        hideLoadingModal();
+
+        if (response.ok) {
+          // Switch to step 2
+          document.getElementById('forgot-step-1').style.display = 'none';
+          document.getElementById('forgot-step-2').style.display = 'block';
+          document.getElementById('otp-input').focus();
+          showInfoModal('OTP sent to your email address successfully!');
+        } else {
+          showErrorModal(result.message || 'Failed to send OTP. Please check your email address.');
+        }
+      } catch (error) {
+        hideLoadingModal();
+        console.error('Error sending OTP:', error);
+        showErrorModal('Failed to send OTP. Please check your connection and try again.');
+      }
+    });
+
+    // Reset password button
+    document.getElementById('reset-password-btn').addEventListener('click', async function() {
+      const email = document.getElementById('forgot-email').value;
+      const otp = document.getElementById('otp-input').value;
+      const newPassword = document.getElementById('new-password-forgot').value;
+      const confirmPassword = document.getElementById('confirm-new-password-forgot').value;
+
+      if (!otp || !newPassword || !confirmPassword) {
+        showErrorModal('Please fill in all fields to reset your password.');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showErrorModal('New passwords do not match. Please ensure both password fields are identical.');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showErrorModal('Password must be at least 6 characters long for security.');
+        return;
+      }
+
+      try {
+        showLoadingModal("Resetting password...");
+        
+        const response = await fetch(`${BASE_URL}/api/users/reset-password-with-otp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, otp, newPassword })
+        });
+
+        const result = await response.json();
+        hideLoadingModal();
+
+        if (response.ok) {
+          showInfoModal('Password reset successfully! You can now use your new password.');
+          hideModal('forgot-password-modal');
+          
+          // Reset forgot password form
+          document.getElementById('forgot-step-1').style.display = 'block';
+          document.getElementById('forgot-step-2').style.display = 'none';
+          clearPasswordFields();
+          
+          // Pre-fill the new password in confirm modal
+          document.getElementById('confirm-password-input').value = newPassword;
+          showModal('confirm-password-modal');
+        } else {
+          showErrorModal(result.message || 'Failed to reset password. Please check your OTP and try again.');
+        }
+      } catch (error) {
+        hideLoadingModal();
+        console.error('Error resetting password:', error);
+        showErrorModal('Failed to reset password. Please check your connection and try again.');
+      }
+    });
+
+    // Back to email button
+    document.getElementById('back-to-email-btn').addEventListener('click', function() {
+      document.getElementById('forgot-step-1').style.display = 'block';
+      document.getElementById('forgot-step-2').style.display = 'none';
+    });
+
+    // Resend OTP link
+    document.getElementById('resend-otp-link').addEventListener('click', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('forgot-email').value;
+      
+      if (!email) {
+        showErrorModal('Email address not found. Please go back and enter your email.');
+        return;
+      }
+
+      try {
+        showLoadingModal("Resending OTP...");
+        
+        const response = await fetch(`${BASE_URL}/api/users/request-password-reset-otp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email })
+        });
+
+        const result = await response.json();
+        hideLoadingModal();
+
+        if (response.ok) {
+          showInfoModal('OTP resent to your email address successfully!');
+        } else {
+          showErrorModal(result.message || 'Failed to resend OTP. Please try again.');
+        }
+      } catch (error) {
+        hideLoadingModal();
+        console.error('Error resending OTP:', error);
+        showErrorModal('Failed to resend OTP. Please check your connection and try again.');
+      }
+    });
+
+    // Cancel forgot password
+    document.getElementById('cancel-forgot-btn').addEventListener('click', function() {
+      hideModal('forgot-password-modal');
+      showModal('confirm-password-modal');
+      
+      // Reset forgot password form
+      document.getElementById('forgot-step-1').style.display = 'block';
+      document.getElementById('forgot-step-2').style.display = 'none';
+      clearPasswordFields();
+    });
+  }
 
   // Close success modal
   document.getElementById("modal-close-btn").addEventListener("click", function() {
     window.location.href = "/frontend/public/userprofile.html";
-});
+  });
+
+  // Close error modal
+  document.getElementById("error-modal-close-btn").addEventListener("click", function() {
+    hideModal('error-modal');
+  });
+
+  // Close info modal  
+  document.getElementById("info-modal-close-btn").addEventListener("click", function() {
+    hideModal('info-modal');
+  });
 
   // Optional: Remove picture logic
  document.getElementById("remove-pic").addEventListener("click", () => {
@@ -181,7 +463,7 @@ uploadPicInput.addEventListener("change", function () {
 
   // Optional: Take photo feature placeholder
   document.getElementById("take-pic").addEventListener("click", () => {
-    alert("Camera capture not implemented yet!");
+    showInfoModal("Camera capture feature is coming soon! For now, please use the upload option to add your profile picture.");
   });
  
   // === Navigation Bar Logic ===
@@ -251,7 +533,7 @@ uploadPicInput.addEventListener("change", function () {
     return;
   }
    // Try to fetch user profile if token exists
-  fetch('http://localhost:5000/api/users/profile', {
+  fetch(`${BASE_URL}/api/users/profile`, {
     method: 'GET',
     headers: {
       'Content-Type': "application/json",
@@ -267,8 +549,8 @@ uploadPicInput.addEventListener("change", function () {
     })
     .then(user => {
      const profilePicUrl = user.profileImage
-         ? (user.profileImage.startsWith('http') ? user.profileImage : `http://localhost:5000${user.profileImage}`)
-        : `http://localhost:5000/uploads/profile-pics/default.png`;
+         ? (user.profileImage.startsWith('http') ? user.profileImage : `${BASE_URL}${user.profileImage}`)
+        : `${BASE_URL}/uploads/profile-pics/default.png`;
 
       // Set profile images
       const userIconImage = document.getElementById("profile-icon-img");
@@ -280,22 +562,12 @@ uploadPicInput.addEventListener("change", function () {
       const feetVal = (user.height && user.height.feet) ? user.height.feet : "";
       const inchesVal = (user.height && user.height.inches) ? user.height.inches : "";
       
-      // Hide confirm password and change password fields for Google users
-isGoogleUser =
-  (user.authProvider && user.authProvider === "google") ||
-  (user.profileImage && user.profileImage.startsWith("http"));
-  if (isGoogleUser) {
-  // Hide the entire input-group containing confirm password
-  const confirmPasswordInput = document.getElementById("confirm-password");
-  if (confirmPasswordInput) {
-    const confirmPasswordGroup = confirmPasswordInput.closest(".input-group");
-    if (confirmPasswordGroup) confirmPasswordGroup.style.display = "none";
-    confirmPasswordInput.disabled = true; // <-- Add this line
-  }
-  // Hide the entire change password section
-  const changePasswordSection = document.querySelector(".password-section");
-  if (changePasswordSection) changePasswordSection.style.display = "none";
-}
+      // Detect Google user for password requirements
+      isGoogleUser =
+        (user.authProvider && user.authProvider === "google") ||
+        (user.profileImage && user.profileImage.startsWith("http"));
+      
+      console.log('Is Google User:', isGoogleUser); // Debug log
       // === Set form fields with user data ===
       document.getElementById("first-name").value = user.firstName || "";
       document.getElementById("last-name").value = user.lastName || "";
@@ -321,11 +593,7 @@ isGoogleUser =
         });
       }
 
-      // Preferences
-      document.getElementById("theme").value = user.theme || "light";
-      document.getElementById("measurement-system").value = user.measurementSystem || "imperial";
-      document.getElementById("notifications").value = user.notifications || "all";
-      document.getElementById("two-factor-toggle").checked = !!user.twoFactorEnabled;
+     
 
       // Show profile dropdown, hide login
       if (userNav) userNav.style.display = "block";
@@ -362,12 +630,8 @@ isGoogleUser =
         }
       }
     });
+  });
   
-});
-
-document.getElementById("toggle-change-password").addEventListener("click", function() {
-    const fields = document.getElementById("change-password-fields");
-    fields.style.display = fields.style.display === "none" ? "block" : "none";
-});
+  
  
 });

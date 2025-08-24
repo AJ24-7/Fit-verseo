@@ -12,6 +12,13 @@
    
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner">
+            <img src="public/Gym-Wale.png" alt="Gym-Wale Logo" class="loading-logo">
+            <p>Welcome to <span>Gym</span>-Wale</p>
+        </div>
+    </div>
 
     <!-- Navbar -->
     <header>
@@ -21,40 +28,32 @@
               <h3 class="brand-title">Gym<span>-Wale</span></h3>
             </a>
             <ul class="nav-links">
-                <li><a href="index.html" class="active">Home</a></li>
-                <li><a href="#" class="nav-item">About</a></li>
+                <li><a href="index.html" class="active"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
                 <li class="dropdown">
-                    <a href="#" class="nav-item">Services ⬇</a>
+                    <a href="#" class="nav-item"><i class="fas fa-concierge-bell"></i> Services ⬇</a>
                     <ul class="dropdown-menu">
-                        <li><a href="personaltraining.html">Personal Training</a></li>
-                        <li><a href="membership-plans.html">Membership Plans</a></li>
-                        <li><a href="dietplans.html">Diet Plans</a></li>
+                        <li><a href="personaltraining.html"><i class="fas fa-user-tie"></i> Personal Training</a></li>
+                        <li><a href="membership-plans.html"><i class="fas fa-id-card"></i> Membership Plans</a></li>
+                        <li><a href="dietplans.html"><i class="fas fa-apple-alt"></i> Diet Plans</a></li>
                     </ul>
                 </li>
-                <li><a href="contact.html" class="nav-item">Contact</a></li>
+                <li><a href="contact.html" class="nav-item"><i class="fas fa-envelope"></i> Contact</a></li>
                 <!-- 👤 Shown only when user is logged in -->
                 <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
                     <a href="/frontend/public/userprofile.html" class="nav-item">
                         <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="edit-profile.html">Edit Profile</a></li>
-                        <li class="settings-option">
-                            <a href="#">Settings</a>
-                            <ul class="settings-submenu">
-                                <li><a href="#">Account Settings</a></li>
-                                <li><a href="#">Privacy</a></li>
-                                <li><a href="#">Notifications</a></li>
-                                <li><a href="#">Theme</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="#" onclick="logout()">Logout</a></li>
+                        <li><a href="edit-profile.html"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+                        <li><a href="settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </li>
                 
                 <!-- 🔐 Shown only when user is logged out -->
                 <li class="nav-item" id="login-signup-nav" style="display: none;">
-                    <a href="/frontend/public/login.html">Login / Signup</a>
+                    <a href="/frontend/public/login.html"><i class="fas fa-sign-in-alt"></i> Login / Signup</a>
                 </li>
             </ul>
             <div class="menu-toggle">&#9776;</div>

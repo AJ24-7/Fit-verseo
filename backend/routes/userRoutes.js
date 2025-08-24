@@ -9,7 +9,7 @@ const { saveWorkoutSchedule, getWorkoutSchedule } = require('../controllers/user
 
 const User = require('../models/User');
 const authMiddleware = require('../middleware/authMiddleware');
-const { registerUser, loginUser, updateProfile, requestPasswordResetOTP, verifyPasswordResetOTP } = require('../controllers/userController');
+const { registerUser, loginUser, updateProfile, requestPasswordResetOTP, verifyPasswordResetOTP, changePassword } = require('../controllers/userController');
 // ======================
 // ✅ Upload Config for Profile Images
 // ======================
@@ -35,6 +35,7 @@ router.get('/workout-schedule', authMiddleware, getWorkoutSchedule);
 // ======================
 router.post('/request-password-reset-otp', requestPasswordResetOTP);
 router.post('/verify-password-reset-otp', verifyPasswordResetOTP);
+router.post('/reset-password-with-otp', verifyPasswordResetOTP); // Alias for backward compatibility
 
 // ======================
 // ✅ Profile Routes
@@ -53,5 +54,10 @@ router.get('/profile', authMiddleware, async (req, res) => { // Use authMiddlewa
 // ✅ Update Profile Route with controller
 // ======================
 router.put('/update-profile', authMiddleware, upload.single('profileImage'), updateProfile);
+
+// ======================
+// ✅ Change Password Route
+// ======================
+router.put('/change-password', authMiddleware, changePassword);
 
 module.exports = router;

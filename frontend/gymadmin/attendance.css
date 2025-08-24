@@ -1,4 +1,30 @@
 /* Attendance Stats Modal Styles */
+
+/* CRITICAL: Fix dropdown z-index issues for attendance tab */
+.user-profile-dropdown,
+.notification-dropdown,
+#userProfileDropdown,
+#notificationDropdown,
+.dropdown-content {
+    position: fixed !important;
+    z-index: 999999 !important;
+    top: 70px !important;
+    right: 20px !important;
+}
+
+.notification-dropdown,
+#notificationDropdown {
+    right: 80px !important;
+}
+
+/* Ensure dropdowns appear above all attendance content including modals */
+.attendance-stats-modal,
+.attendance-modal,
+.biometric-modal,
+.modal-overlay {
+    z-index: 1000 !important;
+}
+
 .attendance-stats-modal {
   position: fixed;
   top: 0;

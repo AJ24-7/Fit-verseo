@@ -484,15 +484,51 @@ const getRecentPayments = async (req, res) => {
     const gymId = req.admin.id;
     const { limit = 10 } = req.query;
 
-    // Only show completed payments in Recent Payments section
-    // Exclude ALL pending payments which should only appear in Dues section
-    const payments = await Payment.find({ 
-      gymId,
-      status: 'completed' // Only completed payments in Recent Payments
-    })
-      .populate('memberId', 'name email')
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit));
+    // Use aggregation to properly sort by the most recent activity date
+    const payments = await Payment.aggregate([
+      {
+        $match: {
+          $or: [
+            { gymId: new mongoose.Types.ObjectId(gymId) },
+            { gymId: gymId }
+          ],
+          status: 'completed' // Only completed payments in Recent Payments
+        }
+      },
+      {
+        $addFields: {
+          // Use paidDate if available, otherwise use createdAt
+          // This ensures recently marked as paid items appear at the top
+          activityDate: {
+            $ifNull: ['$paidDate', '$createdAt']
+          }
+        }
+      },
+      {
+        $sort: { activityDate: -1 }
+      },
+      {
+        $limit: parseInt(limit)
+      },
+      {
+        $lookup: {
+          from: 'members',
+          localField: 'memberId',
+          foreignField: '_id',
+          as: 'memberData'
+        }
+      },
+      {
+        $addFields: {
+          memberName: {
+            $ifNull: [
+              { $arrayElemAt: ['$memberData.name', 0] },
+              '$memberName'
+            ]
+          }
+        }
+      }
+    ]);
 
     res.json({
       success: true,

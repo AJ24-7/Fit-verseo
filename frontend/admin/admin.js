@@ -645,8 +645,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) {
                 if (response.status === 401) {
                     // Token might be expired or invalid
-                    localStorage.removeItem('token');
-                    window.location.href = '/login.html'; // Redirect to login
+                    localStorage.removeItem('adminToken');
+                    localStorage.removeItem('adminInfo');
+                    localStorage.removeItem('loginTimestamp');
+                    window.location.reload(); // Reload to show login form
                     return;
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);

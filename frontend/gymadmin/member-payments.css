@@ -1,5 +1,29 @@
 /* Member Pending Payments Section Styles */
 
+/* CRITICAL: Fix dropdown z-index issues for member payments tab */
+.user-profile-dropdown,
+.notification-dropdown,
+#userProfileDropdown,
+#notificationDropdown,
+.dropdown-content {
+    position: fixed !important;
+    z-index: 999999 !important;
+    top: 70px !important;
+    right: 20px !important;
+}
+
+.notification-dropdown,
+#notificationDropdown {
+    right: 80px !important;
+}
+
+/* Ensure dropdowns appear above all member payments content */
+.member-pending-payments-section,
+.member-payments-modal,
+.modal-overlay {
+    z-index: 1 !important;
+}
+
 .member-pending-payments-section {
   background: #fff;
   border-radius: 12px;

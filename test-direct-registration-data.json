@@ -1,9 +1,0 @@
-{
-  "memberName": "Test User",
-  "memberEmail": "test@example.com",
-  "memberPhone": "1234567890",
-  "memberAge": 25,
-  "memberGender": "male",
-  "activityPreference": "fitness",
-  "planSelected": "basic"
-}

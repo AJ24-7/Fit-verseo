@@ -2,16 +2,52 @@
 document.addEventListener('DOMContentLoaded', function() {
   const userProfileToggle = document.getElementById('userProfileToggle');
   const profileDropdownMenu = document.getElementById('profileDropdownMenu');
+  
   if (userProfileToggle && profileDropdownMenu) {
+    // Force correct positioning and z-index
+    function ensureDropdownVisibility() {
+      profileDropdownMenu.style.position = 'fixed';
+      profileDropdownMenu.style.zIndex = '2147483647';
+      profileDropdownMenu.style.top = '70px';
+      profileDropdownMenu.style.right = '20px';
+      profileDropdownMenu.style.pointerEvents = 'auto';
+    }
+    
     userProfileToggle.addEventListener('click', function(e) {
       e.stopPropagation();
+      ensureDropdownVisibility();
       profileDropdownMenu.classList.toggle('open');
+      
+      // Ensure visibility after toggle
+      if (profileDropdownMenu.classList.contains('open')) {
+        profileDropdownMenu.style.visibility = 'visible';
+        profileDropdownMenu.style.display = 'block';
+      }
     });
+    
     // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
       if (!profileDropdownMenu.contains(e.target) && !userProfileToggle.contains(e.target)) {
         profileDropdownMenu.classList.remove('open');
       }
+    });
+    
+    // Ensure dropdown is properly positioned on page load
+    ensureDropdownVisibility();
+    
+    // Watch for tab changes and ensure dropdown stays visible
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          ensureDropdownVisibility();
+        }
+      });
+    });
+    
+    // Observe the dropdown for any style changes
+    observer.observe(profileDropdownMenu, { 
+      attributes: true, 
+      attributeFilter: ['style', 'class'] 
     });
   }
 });
@@ -2864,8 +2900,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p style="margin:0 0 6px 0;color:#666;font-size:0.95em;">${description || 'No description'}</p>
                 <div style="font-size:0.95em;color:#1976d2;margin-bottom:6px;">${category ? `<i class='fas fa-tag'></i> ${category}` : ''}</div>
                 <div style="display:flex;gap:8px;justify-content:center;">
-                    <button class="edit-photo-btn" data-photo-id="${id}" style="padding:4px 10px;border:none;background:#1976d2;color:#fff;border-radius:4px;cursor:pointer;">Edit</button>
-                    <button class="remove-photo-btn" data-photo-id="${id}" style="padding:4px 10px;border:none;background:#e53935;color:#fff;border-radius:4px;cursor:pointer;">Remove</button>
+                    <button class="edit-photo-btn" data-photo-id="${id}" style="padding:4px 10px;border:none;background:var(--primary);color:#fff;border-radius:4px;cursor:pointer;">Edit</button>
+                    <button class="remove-photo-btn" data-photo-id="${id}" style="padding:4px 10px;border:none;background:var(--danger);color:#fff;border-radius:4px;cursor:pointer;">Remove</button>
                 </div>
             `;
             // Click to open modal preview
@@ -3124,10 +3160,29 @@ function clearUploadPhotoMsgAndCloseModal() {
         const logoutLink = document.getElementById('logoutLink');
 
         if (userProfileToggle && profileDropdownMenu) {
+            // Force correct positioning and z-index
+            function ensureDropdownVisibility() {
+                profileDropdownMenu.style.position = 'fixed';
+                profileDropdownMenu.style.zIndex = '2147483647';
+                profileDropdownMenu.style.top = '70px';
+                profileDropdownMenu.style.right = '20px';
+                profileDropdownMenu.style.pointerEvents = 'auto';
+            }
+            
             userProfileToggle.addEventListener('click', function(event) {
                 event.stopPropagation(); // Prevent click from closing menu immediately
+                ensureDropdownVisibility();
                 profileDropdownMenu.classList.toggle('show');
+                
+                // Ensure visibility after toggle
+                if (profileDropdownMenu.classList.contains('show')) {
+                    profileDropdownMenu.style.visibility = 'visible';
+                    profileDropdownMenu.style.display = 'block';
+                }
             });
+            
+            // Ensure dropdown is properly positioned
+            ensureDropdownVisibility();
         }
 
         window.addEventListener('click', function(event) {

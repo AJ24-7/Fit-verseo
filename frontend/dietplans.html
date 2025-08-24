@@ -5,54 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diet Plans | FIT-verse</title>
   <link rel="stylesheet" href="dietplans.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+        // Define BASE_URL globally before other scripts load
+        const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+    </script>
   <script defer src="dietplans.js"></script>
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner">
+            <i class="fas fa-apple-alt fa-spin"></i>
+            <p>Loading personalized diet plans...</p>
+        </div>
+    </div>
   <!-- Navbar -->
   <header>
     <nav class="navbar">
-  <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
-              <img class="logo" src="public/Gym-Wale.png" alt="Gym-Wale Logo">
-              <h3 class="brand-title">Gym<span>-Wale</span></h3>
-            </a>
-      <ul class="nav-links">
-        <li><a href="/frontend/index.html" class="nav-item">Home</a></li>
-        <li><a href="#" class="nav-item">About</a></li>
-        <li class="dropdown">
-          <a href="#" class="active">Services ⬇</a>
-          <ul class="dropdown-menu">
-            <li><a href="personaltraining.html">Personal Training</a></li>
-            <li><a href="membership-plans.html">Membership Plans</a></li>
-            <li><a href="diet-plans.html" class="active">Diet Plans</a></li>
-          </ul>
-        </li>
-        <li><a href="contact.html" class="nav-item">Contact</a></li>
-        <!-- 👤 Shown only when user is logged in -->
-        <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
-          <a href="/frontend/public/userprofile.html" class="nav-item">
-              <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
-          </a>
-          <ul class="dropdown-menu">
-              <li><a href="edit-profile.html">Edit Profile</a></li>
-              <li class="settings-option">
-                  <a href="#">Settings</a>
-                  <ul class="settings-submenu">
-                      <li><a href="#">Account Settings</a></li>
-                      <li><a href="#">Privacy</a></li>
-                      <li><a href="#">Notifications</a></li>
-                      <li><a href="#">Theme</a></li>
-                  </ul>
-              </li>
-              <li><a href="#" onclick="logout()">Logout</a></li>
-          </ul>
-      </li>
-      
-      <!-- 🔐 Shown only when user is logged out -->
-      <li class="nav-item" id="login-signup-nav" style="display: none;">
-          <a href="/frontend/public/login.html">Login / Signup</a>
-      </li>
-  </ul>
-  <div class="menu-toggle">&#9776;</div>
+        <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+            <img class="logo" src="public/Gym-Wale.png" alt="Gym-Wale Logo">
+            <h3 class="brand-title">Gym<span>-Wale</span></h3>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html" class="nav-item"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="#" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
+            <li class="dropdown">
+                <a href="#" class="nav-item active"><i class="fas fa-concierge-bell"></i> Services ⬇</a>
+                <ul class="dropdown-menu">
+                    <li><a href="personaltraining.html"><i class="fas fa-user-tie"></i> Personal Training</a></li>
+                    <li><a href="membership-plans.html"><i class="fas fa-id-card"></i> Membership Plans</a></li>
+                    <li><a href="dietplans.html" class="active"><i class="fas fa-apple-alt"></i> Diet Plans</a></li>
+                </ul>
+            </li>
+            <li><a href="contact.html" class="nav-item"><i class="fas fa-envelope"></i> Contact</a></li>
+            <!-- 👤 Shown only when user is logged in -->
+            <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                <a href="/frontend/public/userprofile.html" class="nav-item">
+                    <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="edit-profile.html"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+                    <li><a href="settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                    <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
+            </li>
+            
+            <!-- 🔐 Shown only when user is logged out -->
+            <li class="nav-item" id="login-signup-nav" style="display: none;">
+                <a href="/frontend/public/login.html"><i class="fas fa-sign-in-alt"></i> Login / Signup</a>
+            </li>
+        </ul>
+        <div class="menu-toggle">&#9776;</div>
     </nav>
   </header>
 
@@ -66,7 +70,7 @@
     <!-- Goal Selection Section -->
     <div class="section">
       <div class="section-title">
-        <i>🏆</i> Select Your Goal
+        <i class="fas fa-bullseye"></i> Select Your Goal
       </div>
       <div class="goal-options">
         <div class="goal-card active" data-goal="weight-loss">
@@ -87,7 +91,7 @@
     <!-- Calculator Section -->
     <div class="section">
       <div class="section-title">
-        <i>🧮</i> Nutrition Calculator
+        <i class="fas fa-calculator"></i> Nutrition Calculator
       </div>
       <form id="diet-calculator" class="calculator-form">
         <div>
@@ -210,7 +214,7 @@
     <!-- Women's Health Section -->
     <div id="womens-health" class="section womens-health" style="display: none;">
       <div class="section-title">
-        <i>🌸</i> Women's Health Nutrition
+        <i class="fas fa-female"></i> Women's Health Nutrition
       </div>
       <p>Your nutritional needs change throughout your menstrual cycle. Here are tailored recommendations:</p>
       
@@ -253,7 +257,7 @@
     <!-- Supplement Guide Section -->
     <div class="section">
       <div class="section-title">
-        <i>💊</i> Supplement Recommendations
+        <i class="fas fa-capsules"></i> Supplement Recommendations
       </div>
       <p>Based on your goals and metrics, these supplements may help optimize your results:</p>
       <ul style="margin-top: 1rem; padding-left: 1.5rem;">

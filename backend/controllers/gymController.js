@@ -67,6 +67,67 @@ const sendOTPEmail = async (email, otp) => {
     await transporter.sendMail(mailOptions);
 };
 
+// Send 2FA OTP via email
+const send2FAEmail = async (email, otp, gymName) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+        
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Two-Factor Authentication Code - Gym Admin Login',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #2c4ee8ff 0%, #871df2ff 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;"><i class="fas fa-lock"></i> Security Verification</h1>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
+                        <h2 style="color: #333; margin-top: 0;">Two-Factor Authentication</h2>
+                        <p style="color: #666; font-size: 16px; line-height: 1.5;">
+                            Hello from <strong>${gymName || 'Gym Admin'}</strong>,
+                        </p>
+                        <p style="color: #666; font-size: 16px; line-height: 1.5;">
+                            Someone is trying to log in to your gym admin account. To complete the login process, please enter the verification code below:
+                        </p>
+                        
+                        <div style="background: white; border: 2px solid #007bff; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+                            <p style="color: #666; margin: 0 0 10px 0; font-size: 14px;">Your verification code is:</p>
+                            <h1 style="color: #007bff; font-size: 36px; letter-spacing: 5px; margin: 0; font-family: monospace;">${otp}</h1>
+                        </div>
+                        
+                        <p style="color: #666; font-size: 14px; line-height: 1.5;">
+                            <strong><i class="fas fa-clock"></i> This code will expire in 10 minutes.</strong>
+                        </p>
+                        
+                        <p style="color: #666; font-size: 14px; line-height: 1.5;">
+                            If you didn't request this login, please ignore this email and consider changing your password.
+                        </p>
+                        
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center;">
+                            <p style="color: #999; font-size: 12px; margin: 0;">
+                                This is an automated message. Please do not reply to this email.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+        
+        await transporter.sendMail(mailOptions);
+        return { success: true };
+    } catch (error) {
+        console.error('Error sending 2FA email:', error);
+        return { success: false, error: error.message };
+    }
+};
+
 
 // Unified Gym/Admin Login (use for both gym and admin dashboard)
 exports.login = async (req, res) => {
@@ -90,8 +151,23 @@ exports.login = async (req, res) => {
       });
       await loginAttempt.save();
       
-      // Send notification if enabled
-      if (success || (gymId && await shouldNotifyFailedLogin(gymId))) {
+      // Send notification if enabled (only if SecuritySettings exist and are configured)
+      if (success && gymId) {
+        const settings = await SecuritySettings.findOne({ gymId });
+        console.log(`🔍 Login notification check for gym ID: ${gymId}`, {
+          hasSettings: !!settings,
+          loginNotificationsEnabled: settings?.loginNotifications?.enabled,
+          fullSettings: settings?.loginNotifications
+        });
+        
+        if (settings && settings.loginNotifications && settings.loginNotifications.enabled) {
+          console.log(`📧 Sending successful login notification for gym ID: ${gymId}`);
+          await sendLoginNotification(gymId, loginAttempt);
+        } else {
+          console.log(`🔕 Login notifications disabled for gym ID: ${gymId} (settings: ${settings ? 'exist but disabled' : 'not found'})`);
+        }
+      } else if (!success && gymId && await shouldNotifyFailedLogin(gymId)) {
+        console.log(`📧 Sending failed login notification for gym ID: ${gymId}`);
         await sendLoginNotification(gymId, loginAttempt);
       }
     } catch (error) {
@@ -114,9 +190,51 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials or gym not found.' });
     }
     
-    // Check if 2FA is enabled
-    if (gym.twoFactorEnabled) {
+    // Check if 2FA is enabled via SecuritySettings
+    let securitySettings = await SecuritySettings.findOne({ gymId: gym._id });
+    if (!securitySettings) {
+      // Create default settings if they don't exist
+      securitySettings = new SecuritySettings({ 
+        gymId: gym._id,
+        twoFactorEnabled: false, // Default to disabled
+        loginNotifications: { enabled: false }
+      });
+      await securitySettings.save();
+    }
+
+    // Use SecuritySettings to determine 2FA requirement
+    const twoFactorRequired = securitySettings.twoFactorEnabled;
+    
+    if (twoFactorRequired) {
       if (!twoFactorCode) {
+        // Generate OTP and send via email
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+        
+        // Save OTP to database
+        gym.twoFactorOTP = otp;
+        gym.twoFactorOTPExpiry = otpExpiry;
+        await gym.save();
+        
+        // Send OTP via email
+        try {
+          const emailResult = await send2FAEmail(email, otp, gym.gymName);
+          if (!emailResult.success) {
+            await recordLoginAttempt(gym._id, false, '2FA email send failed');
+            return res.status(500).json({ 
+              success: false, 
+              message: 'Failed to send verification code. Please try again.' 
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending 2FA email:', emailError);
+          await recordLoginAttempt(gym._id, false, '2FA email send failed');
+          return res.status(500).json({ 
+            success: false, 
+            message: 'Failed to send verification code. Please try again.' 
+          });
+        }
+        
         // Generate temporary token for 2FA verification
         const tempPayload = {
           admin: {
@@ -125,31 +243,24 @@ exports.login = async (req, res) => {
             temp: true
           }
         };
-        const tempToken = jwt.sign(tempPayload, process.env.JWT_SECRET, { expiresIn: '10m' });
+        const tempToken = jwt.sign(tempPayload, process.env.JWT_SECRET, { expiresIn: '15m' });
         
         return res.status(200).json({ 
           success: true, 
           requires2FA: true,
           tempToken,
-          message: 'Two-factor authentication code required' 
+          message: 'Verification code sent to your email' 
         });
       }
       
-      // Verify 2FA code
-      const verified = speakeasy.totp.verify({
-        secret: gym.twoFactorSecret,
-        encoding: 'base32',
-        token: twoFactorCode,
-        window: 2
-      });
-      
-      if (!verified) {
-        // Check if it's a backup code
-        const isBackupCode = await verifyBackupCode(gym, twoFactorCode);
-        if (!isBackupCode) {
-          await recordLoginAttempt(gym._id, false, 'Invalid 2FA code');
-          return res.status(401).json({ success: false, message: 'Invalid two-factor authentication code.' });
-        }
+      // This is for direct verification (when twoFactorCode is provided)
+      // For email OTP, we'll handle this in a separate endpoint
+      if (twoFactorCode) {
+        await recordLoginAttempt(gym._id, false, 'Direct 2FA verification not supported');
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Please use the email verification process' 
+        });
       }
     }
         
@@ -1350,7 +1461,8 @@ const getLocationFromIP = async (ipAddress) => {
 const shouldNotifyFailedLogin = async (gymId) => {
   try {
     const settings = await SecuritySettings.findOne({ gymId });
-    return settings && settings.loginNotifications.enabled;
+    // Only return true if settings exist AND notifications are enabled
+    return settings && settings.loginNotifications && settings.loginNotifications.enabled;
   } catch (error) {
     console.error('Error checking notification settings:', error);
     return false;
@@ -1363,12 +1475,17 @@ const sendLoginNotification = async (gymId, loginAttempt) => {
     const gym = await Gym.findById(gymId);
     const settings = await SecuritySettings.findOne({ gymId });
     
-    if (!gym || !settings || !settings.loginNotifications.enabled) return;
+    // Only send notifications if SecuritySettings exist AND notifications are enabled
+    if (!gym || !settings || !settings.loginNotifications || !settings.loginNotifications.enabled) {
+      return;
+    }
     
     const preferences = settings.loginNotifications.preferences;
     
     // Only send notification if preferences allow it
-    if (preferences.suspiciousOnly && !loginAttempt.suspicious) return;
+    if (preferences.suspiciousOnly && !loginAttempt.suspicious) {
+      return;
+    }
     
     const subject = loginAttempt.success ? 
       'Successful Login to Your Gym Account' : 
@@ -1390,7 +1507,20 @@ const sendLoginNotification = async (gymId, loginAttempt) => {
     `;
     
     if (preferences.email) {
-      await sendEmail(gym.email, subject, message);
+      console.log(`📤 Attempting to send email notification to: ${gym.email}`, {
+        subject,
+        hasEmailFunction: typeof sendEmail === 'function',
+        preferences
+      });
+      
+      try {
+        await sendEmail(gym.email, subject, message);
+        console.log(`✅ Email notification sent successfully to: ${gym.email}`);
+      } catch (emailError) {
+        console.error(`❌ Failed to send email notification to: ${gym.email}`, emailError);
+      }
+    } else {
+      console.log(`🔕 Email notifications disabled in preferences for gym ID: ${gymId}`);
     }
     
     // You can add browser notification logic here if needed
@@ -1424,4 +1554,7 @@ const verifyBackupCode = async (gym, code) => {
     return false;
   }
 };
+
+// Export the send2FAEmail function for use in routes
+module.exports.send2FAEmail = send2FAEmail;
 

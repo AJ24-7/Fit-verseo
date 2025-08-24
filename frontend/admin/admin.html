@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="admin-support.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script defer src="admin-auth-guard.js"></script>
     <script defer src="admin.js"></script>
     <script defer src="admin-notification-system.js"></script>
     <script defer src="admin-support.js"></script>
@@ -37,6 +38,7 @@
                 <li><a href="#" id="attendance-tab"><i class="fas fa-calendar-check"></i> <span>Attendance</span></a></li>
                 <li><a href="#" id="users-tab"><i class="fas fa-users"></i> <span>Users</span></a></li>
                 <li><a href="#" id="support-tab"><i class="fas fa-headset"></i> <span>Support</span></a></li>
+                <li><a href="#" id="profile-tab"><i class="fas fa-user-circle"></i> <span>My Profile</span></a></li>
                 <li><a href="#" id="settings-tab"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
             </ul>
         </div>
@@ -74,7 +76,7 @@
         <div class="admin-menu" id="adminMenu" style="display: none;">
           <a href="/admin/profile">Profile</a>
           <a href="/admin/settings">Settings</a>
-          <a href="/admin/logout">Logout</a>
+          <a href="#" onclick="adminLogout(); return false;">Logout</a>
         </div>
       </div>
     </div>
@@ -646,6 +648,130 @@
                         <div class="support-tickets-container">
                             <div class="support-tickets-list" id="trainerTicketsList">
                                 <!-- Dynamic content will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Content -->
+            <div id="profile-content" class="tab-content">
+                <div class="page-header">
+                    <h2>My Profile</h2>
+                    <div>
+                        <button class="btn btn-primary" id="editProfileBtn"><i class="fas fa-edit"></i> Edit Profile</button>
+                    </div>
+                </div>
+
+                <div class="profile-container">
+                    <!-- Profile Overview -->
+                    <div class="profile-overview">
+                        <div class="profile-card">
+                            <div class="profile-header">
+                                <div class="profile-avatar">
+                                    <img id="profileAvatar" src="/assets/admin-avatar.png" alt="Admin Avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iNDAiIGN5PSI0MCIgcj0iNDAiIGZpbGw9IiMzNzQxNTEiLz4KPHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDI0QzI4LjQxODMgMjQgMzIgMjAuNDE4MyAzMiAxNkMzMiAxMS41ODE3IDI4LjQxODMgOCAyNCA4QzE5LjU4MTcgOCAxNiAxMS41ODE3IDE2IDE2QzE2IDIwLjQxODMgMTkuNTgxNyAyNCAyNCAyNFpNMjQgMjRWMjRaIiBmaWxsPSIjRjlGQUZCIi8+CjxwYXRoIGQ9Ik0yNCAyOEMxNi4yNjggMjggMTAgMzQuMjY4IDEwIDQySDM4QzM4IDM0LjI2OCAzMS43MzIgMjggMjQgMjhaIiBmaWxsPSIjRjlGQUZCIi8+Cjwvc3ZnPgo8L3N2Zz4K'">
+                                    <button class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()">
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                    <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                                </div>
+                                <div class="profile-info">
+                                    <h3 id="profileName">Loading...</h3>
+                                    <p id="profileEmail">Loading...</p>
+                                    <div class="profile-badges">
+                                        <span class="badge badge-primary" id="profileRole">Super Admin</span>
+                                        <span class="badge badge-success">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="profile-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="loginCount">0</span>
+                                    <span class="stat-label">Total Logins</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="lastLoginDate">Never</span>
+                                    <span class="stat-label">Last Login</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="accountAge">0 days</span>
+                                    <span class="stat-label">Account Age</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Details -->
+                    <div class="profile-details">
+                        <div class="profile-section">
+                            <h4>Personal Information</h4>
+                            <div class="profile-field">
+                                <label>Full Name</label>
+                                <span id="profileFullName">Loading...</span>
+                            </div>
+                            <div class="profile-field">
+                                <label>Email Address</label>
+                                <span id="profileEmailAddress">Loading...</span>
+                            </div>
+                            <div class="profile-field">
+                                <label>Phone Number</label>
+                                <span id="profilePhone">Not provided</span>
+                            </div>
+                            <div class="profile-field">
+                                <label>Role</label>
+                                <span id="profileUserRole">Super Admin</span>
+                            </div>
+                            <div class="profile-field">
+                                <label>Account Created</label>
+                                <span id="profileCreatedDate">Loading...</span>
+                            </div>
+                        </div>
+
+                        <div class="profile-section">
+                            <h4>Security Settings</h4>
+                            <div class="security-setting">
+                                <div class="setting-info">
+                                    <label>Two-Factor Authentication</label>
+                                    <p>Add an extra layer of security to your account</p>
+                                </div>
+                                <div class="setting-action">
+                                    <button class="btn btn-secondary" id="toggle2FABtn">Enable 2FA</button>
+                                </div>
+                            </div>
+                            <div class="security-setting">
+                                <div class="setting-info">
+                                    <label>Password</label>
+                                    <p>Last changed: <span id="passwordLastChanged">Never</span></p>
+                                </div>
+                                <div class="setting-action">
+                                    <button class="btn btn-secondary" id="changePasswordBtn">Change Password</button>
+                                </div>
+                            </div>
+                            <div class="security-setting">
+                                <div class="setting-info">
+                                    <label>Login Sessions</label>
+                                    <p>Manage your active login sessions</p>
+                                </div>
+                                <div class="setting-action">
+                                    <button class="btn btn-secondary" id="viewSessionsBtn">View Sessions</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-section">
+                            <h4>Activity Log</h4>
+                            <div class="activity-log" id="activityLog">
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-sign-in-alt"></i>
+                                    </div>
+                                    <div class="activity-details">
+                                        <span class="activity-action">Logged in</span>
+                                        <span class="activity-time">2 hours ago</span>
+                                        <span class="activity-location">IP: 192.168.1.100</span>
+                                    </div>
+                                </div>
+                                <!-- More activity items will be loaded dynamically -->
                             </div>
                         </div>
                     </div>

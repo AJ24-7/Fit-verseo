@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profile | FIT-verse</title>
+    <title>Gym-Wale | Edit Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="edit-profile.css">
+    <script>
+        // Define BASE_URL globally before other scripts load
+        const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+    </script>
 </head>
 <body>
     <!-- Navbar -->
@@ -16,40 +20,32 @@
               <h3 class="brand-title">Gym<span>-Wale</span></h3>
             </a>
             <ul class="nav-links">
-                <li><a href="index.html" class="nav-item">Home</a></li>
-                <li><a href="#" class="nav-item">About</a></li>
+                <li><a href="index.html" class="nav-item"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
                 <li class="dropdown">
-                    <a href="#" class="nav-item">Services</a>
+                    <a href="#" class="nav-item"><i class="fas fa-concierge-bell"></i> Services</a>
                     <ul class="dropdown-menu">
-                        <li><a href="personaltraining.html">Personal Training</a></li>
-                        <li><a href="membership-plans.html">Membership Plans</a></li>
-                        <li><a href="dietplans.html">Diet Plans</a></li>
+                        <li><a href="personaltraining.html"><i class="fas fa-user-tie"></i> Personal Training</a></li>
+                        <li><a href="membership-plans.html"><i class="fas fa-id-card"></i> Membership Plans</a></li>
+                        <li><a href="dietplans.html"><i class="fas fa-apple-alt"></i> Diet Plans</a></li>
                     </ul>
                 </li>
-                <li><a href="contact.html" class="nav-item">Contact</a></li>
+                <li><a href="contact.html" class="nav-item"><i class="fas fa-envelope"></i> Contact</a></li>
                 <!-- 👤 Shown only when user is logged in -->
                 <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
                     <a href="/frontend/public/userprofile.html" class="active">
                         <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="edit-profile.html" class="active">Edit Profile</a></li>
-                        <li class="settings-option">
-                            <a href="#">Settings</a>
-                            <ul class="settings-submenu">
-                                <li><a href="#">Account Settings</a></li>
-                                <li><a href="#">Privacy</a></li>
-                                <li><a href="#">Notifications</a></li>
-                                <li><a href="#">Theme</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="#" onclick="logout()">Logout</a></li>
+                        <li><a href="edit-profile.html" class="active"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+                        <li><a href="settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </li>
                 
                 <!-- 🔐 Shown only when user is logged out -->
                 <li class="nav-item" id="login-signup-nav" style="display: none;">
-                    <a href="/frontend/public/login.html">Login / Signup</a>
+                    <a href="/frontend/public/login.html"><i class="fas fa-sign-in-alt"></i> Login / Signup</a>
                 </li>
             </ul>
             <div class="menu-toggle">&#9776;</div>
@@ -66,16 +62,17 @@
                 <div class="step-circle">2</div>
                 <div class="step-label">Fitness Details</div>
             </div>
-            <div class="step" data-step="3">
+            <!-- Step 3 removed - preferences managed by settings page -->
+            <!-- <div class="step" data-step="3">
                 <div class="step-circle">3</div>
                 <div class="step-label">Preferences</div>
-            </div>
+            </div> -->
         </div>
 
         <!-- Multi-step Form -->
         <form id="edit-profile-form">
             <!-- Step 1: Basic Info -->
-            <div class="form-section" data-step="1"></div>
+            <div class="form-section" data-step="1">
                 <h2><i class="fas fa-user-edit"></i> Basic Information</h2>
                 
                 <div class="profile-pic-container">
@@ -223,92 +220,8 @@
                 </div>
             </div>
 
-            <!-- Step 3: Preferences & Security -->
-<div class="form-section" data-step="3" style="display:none;">
-    <h2><i class="fas fa-cog"></i> Preferences & Security</h2>
-    
-    <div class="form-grid">
-        <div class="input-group">
-            <label for="theme">Theme Preference</label>
-            <select id="theme">
-                <option value="light">Light Mode</option>
-                <option value="dark">Dark Mode</option>
-                <option value="system">System Default</option>
-            </select>
-        </div>
-
-        <div class="input-group">
-            <label for="measurement-system">Measurement System</label>
-            <select id="measurement-system">
-                <option value="imperial">Imperial (lbs, feet)</option>
-                <option value="metric">Metric (kg, cm)</option>
-            </select>
-        </div>
-
-        <div class="input-group">
-            <label for="notifications">Notification Preferences</label>
-            <select id="notifications">
-                <option value="all">All Notifications</option>
-                <option value="important">Important Only</option>
-                <option value="none">None</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="password-section">
-        <h3><i class="fas fa-lock"></i> Change Password</h3>
-        
-        <!-- Confirmation Password (always required for any update) -->
-        <div class="input-group">
-            <label for="confirm-password">Confirm Password <span style="color:red">*</span></label>
-            <div class="input-with-icon password-field">
-                <input type="password" id="confirm-password" placeholder="Enter your password to confirm changes" required>
-                <span class="input-icon-right toggle-password"><i class="fas fa-eye"></i></span>
-            </div>
-        </div>
-
-        <!-- Change Password Dropdown -->
-        <div class="change-password-section">
-            <button type="button" class="btn-secondary" id="toggle-change-password">
-                <i class="fas fa-lock"></i> Change Password
-            </button>
-            <div id="change-password-fields" style="display:none; margin-top:1rem;">
-                <div class="input-group">
-                    <label for="new-password">New Password</label>
-                    <div class="input-with-icon password-field">
-                        <input type="password" id="new-password" placeholder="Enter new password">
-                        <span class="input-icon-right toggle-password"><i class="fas fa-eye"></i></span>
-                    </div>
-                    <div class="password-strength">
-                        <div class="strength-bar"></div>
-                        <div class="strength-text">Password strength: <span>Weak</span></div>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label for="confirm-new-password">Confirm New Password</label>
-                    <div class="input-with-icon password-field">
-                        <input type="password" id="confirm-new-password" placeholder="Confirm new password">
-                        <span class="input-icon-right toggle-password"><i class="fas fa-eye"></i></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="two-factor-auth">
-            <h3><i class="fas fa-shield-alt"></i> Two-Factor Authentication</h3>
-            <div class="auth-toggle">
-                <label class="switch">
-                    <input type="checkbox" id="two-factor-toggle">
-                    <span class="slider round"></span>
-                </label>
-                <span class="toggle-label">Enable Two-Factor Authentication</span>
-            </div>
-            <p class="info-text">Add an extra layer of security to your account</p>
-        </div>
-    </div>
-</div> <!-- <-- This closes the Step 3 .form-section -->
-
-<!-- Form Navigation (should be OUTSIDE all .form-section divs, but INSIDE the form) -->
+            
+<!-- Form Navigation (updated for 2 steps instead of 3) -->
 <div class="form-navigation">
     <button type="button" class="btn-secondary" id="prev-btn" disabled>
         <i class="fas fa-arrow-left"></i> Previous
@@ -317,7 +230,7 @@
         Next <i class="fas fa-arrow-right"></i>
     </button>
     <button type="submit" class="btn-success" id="submit-btn">
-        <i class="fas fa-save"></i> Save All Changes
+        <i class="fas fa-save"></i> Save Profile
     </button>
 </div>
 </form>
@@ -325,12 +238,169 @@
         <!-- Success Modal -->
         <div class="modal" id="success-modal">
             <div class="modal-content">
-                <div class="modal-icon success">
-                    <i class="fas fa-check-circle"></i>
+                <div class="modal-header">
+                    <h3><i class="fas fa-check-circle"></i> Profile Updated Successfully!</h3>
+                    <span class="close" id="close-success-modal">&times;</span>
                 </div>
-                <h3>Profile Updated Successfully!</h3>
-                <p>Your changes have been saved. You can continue using FIT-verse.</p>
-                <button class="btn-primary" id="modal-close-btn">Continue</button>
+                <div class="modal-body">
+                    <div class="modal-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <p>Your changes have been saved successfully. You can continue using Gym-Wale.</p>
+                    <div class="modal-buttons">
+                        <button class="btn-primary" id="modal-close-btn">
+                            <i class="fas fa-arrow-right"></i> Continue
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Modal -->
+        <div class="modal" id="error-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Error</h3>
+                    <span class="close" id="close-error-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-icon error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <p id="error-message">An error occurred. Please try again.</p>
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" id="error-modal-close-btn">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Modal -->
+        <div class="modal" id="info-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-info-circle"></i> Information</h3>
+                    <span class="close" id="close-info-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-icon info">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <p id="info-message">Information message.</p>
+                    <div class="modal-buttons">
+                        <button class="btn-primary" id="info-modal-close-btn">
+                            <i class="fas fa-check"></i> OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Password Modal -->
+        <div class="modal" id="confirm-password-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-lock"></i> Confirm Your Password</h3>
+                    <span class="close" id="close-confirm-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>Please enter your password to save the profile changes:</p>
+                    <div class="input-group">
+                        <label for="confirm-password-input">Current Password</label>
+                        <div class="input-with-icon password-field">
+                            <input type="password" id="confirm-password-input" placeholder="Enter your current password" required>
+                            <span class="input-icon-right toggle-password" id="toggle-confirm-password">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="forgot-password-link">
+                        <a href="#" id="forgot-password-link">
+                            <i class="fas fa-key"></i> Forgot your password?
+                        </a>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" class="btn-secondary" id="cancel-confirm-btn">Cancel</button>
+                        <button type="button" class="btn-primary" id="confirm-save-btn">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div class="modal" id="forgot-password-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-key"></i> Reset Password</h3>
+                    <span class="close" id="close-forgot-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="forgot-step-1">
+                        <p>Enter your email address to receive a password reset OTP:</p>
+                        <div class="input-group">
+                            <label for="forgot-email">Email Address</label>
+                            <div class="input-with-icon">
+                                <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                                <input type="email" id="forgot-email" placeholder="your.email@example.com" required>
+                            </div>
+                        </div>
+                        <div class="modal-buttons">
+                            <button type="button" class="btn-secondary" id="cancel-forgot-btn">Cancel</button>
+                            <button type="button" class="btn-primary" id="send-otp-btn">
+                                <i class="fas fa-paper-plane"></i> Send OTP
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="forgot-step-2" style="display:none;">
+                        <p>Enter the 6-digit OTP sent to your email:</p>
+                        <div class="input-group">
+                            <label for="otp-input">OTP Code</label>
+                            <input type="text" id="otp-input" placeholder="Enter 6-digit OTP" maxlength="6" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="new-password-forgot">New Password</label>
+                            <div class="input-with-icon password-field">
+                                <input type="password" id="new-password-forgot" placeholder="Enter new password" required>
+                                <span class="input-icon-right toggle-password" id="toggle-new-password">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="confirm-new-password-forgot">Confirm New Password</label>
+                            <div class="input-with-icon password-field">
+                                <input type="password" id="confirm-new-password-forgot" placeholder="Confirm new password" required>
+                                <span class="input-icon-right toggle-password" id="toggle-confirm-new-password">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="modal-buttons">
+                            <button type="button" class="btn-secondary" id="back-to-email-btn">Back</button>
+                            <button type="button" class="btn-primary" id="reset-password-btn">
+                                <i class="fas fa-check"></i> Reset Password
+                            </button>
+                        </div>
+                        <div class="resend-otp">
+                            <p>Didn't receive OTP? <a href="#" id="resend-otp-link">Resend OTP</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Modal -->
+        <div class="modal" id="loading-modal">
+            <div class="modal-content loading-content">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p id="loading-text">Processing...</p>
             </div>
         </div>
     </div>

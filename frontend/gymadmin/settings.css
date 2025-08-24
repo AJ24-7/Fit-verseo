@@ -1,4 +1,32 @@
 /* ===== SETTINGS TAB STYLES ===== */
+
+/* CRITICAL: Fix dropdown z-index issues for settings tab */
+.user-profile-dropdown,
+.notification-dropdown,
+#userProfileDropdown,
+#notificationDropdown,
+.dropdown-content {
+    position: fixed !important;
+    z-index: 999999 !important;
+    top: 70px !important;
+    right: 20px !important;
+}
+
+.notification-dropdown,
+#notificationDropdown {
+    right: 80px !important;
+}
+
+/* Ensure dropdowns appear above all settings content including modals */
+.settings-container,
+.settings-section,
+.settings-card,
+.modal-overlay,
+.security-modal-content,
+.info-modal-content {
+    z-index: 1 !important;
+}
+
 .settings-container {
   display: grid;
   gap: 30px;

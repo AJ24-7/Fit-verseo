@@ -1,3 +1,29 @@
+/* CRITICAL: Fix dropdown z-index issues for member tab */
+.user-profile-dropdown,
+.notification-dropdown,
+#userProfileDropdown,
+#notificationDropdown,
+.dropdown-content {
+    position: fixed !important;
+    z-index: 999999 !important;
+    top: 70px !important;
+    right: 20px !important;
+}
+
+.notification-dropdown,
+#notificationDropdown {
+    right: 80px !important;
+}
+
+/* Ensure dropdowns appear above all member content */
+#memberDisplayTab,
+#membersTableContainer,
+#membersTable,
+.member-modal,
+.modal-overlay {
+    z-index: 1 !important;
+}
+
 #memberDisplayTab {
   /* Remove conflicting positioning - handled by main CSS */
   background: transparent !important;

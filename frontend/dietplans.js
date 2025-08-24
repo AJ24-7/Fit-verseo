@@ -1,9 +1,35 @@
  document.addEventListener("DOMContentLoaded", function() {
     // === NAVIGATION BAR: Toggle & Active Link Highlight ===
+  const loadingScreen = document.getElementById('loading-screen');
   const menuToggle = document.querySelector('.menu-toggle');
   const navLinks = document.querySelector('.nav-links');
   const links = document.querySelectorAll('.nav-link');
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+
+  // Show loading screen initially
+  showLoadingScreen();
+
+  // Hide loading screen after content is loaded
+  setTimeout(() => {
+    hideLoadingScreen();
+  }, 1500); // Show loading for 1.5 seconds
+
+  // Loading screen functions
+  function showLoadingScreen() {
+    if (loadingScreen) {
+      loadingScreen.classList.remove('hidden');
+      loadingScreen.style.display = 'flex';
+    }
+  }
+
+  function hideLoadingScreen() {
+    if (loadingScreen) {
+      loadingScreen.classList.add('hidden');
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+      }, 500);
+    }
+  }
 
   // Mobile menu toggle (copied from personaltraining.js)
   if (menuToggle && navLinks) {
@@ -491,7 +517,7 @@ document.querySelectorAll('.meal-header').forEach(header => {
   }
 
   try {
-    const res = await fetch("http://localhost:5000/api/diet/user-meals", {
+    const res = await fetch(`${BASE_URL}/api/diet/user-meals`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -547,7 +573,7 @@ document.querySelectorAll('.meal-header').forEach(header => {
       return;
     }
 
-    fetch('http://localhost:5000/api/users/profile', {
+    fetch(`${BASE_URL}/api/users/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': "application/json",
@@ -563,8 +589,8 @@ document.querySelectorAll('.meal-header').forEach(header => {
       })
       .then(user => {
        const profilePicUrl = user.profileImage
-         ? (user.profileImage.startsWith('http') ? user.profileImage : `http://localhost:5000${user.profileImage}`)
-        : `http://localhost:5000/uploads/profile-pics/default.png`;
+         ? (user.profileImage.startsWith('http') ? user.profileImage : `${BASE_URL}${user.profileImage}`)
+        : `${BASE_URL}/uploads/profile-pics/default.png`;
 
         const userIconImage = document.getElementById("profile-icon-img");
         if (userIconImage) {
@@ -596,7 +622,7 @@ document.querySelectorAll('.meal-header').forEach(header => {
   }
 
   // ✅ Try to fetch user profile if token exists
-  fetch('http://localhost:5000/api/users/profile', {
+  fetch(`${BASE_URL}/api/users/profile`, {
     method: 'GET',
     headers: {
       'Content-Type': "application/json",
@@ -612,8 +638,8 @@ document.querySelectorAll('.meal-header').forEach(header => {
     })
     .then(user => {
      const profilePicUrl = user.profileImage
-         ? (user.profileImage.startsWith('http') ? user.profileImage : `http://localhost:5000${user.profileImage}`)
-        : `http://localhost:5000/uploads/profile-pics/default.png`;
+         ? (user.profileImage.startsWith('http') ? user.profileImage : `${BASE_URL}${user.profileImage}`)
+        : `${BASE_URL}/uploads/profile-pics/default.png`;
 
       const userIconImage = document.getElementById("profile-icon-img");
       if (userIconImage) userIconImage.src = profilePicUrl;

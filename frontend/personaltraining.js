@@ -11,10 +11,36 @@ window.onerror = function(message, source, lineno, colno, error) {
 
 // === NAVIGATION BAR: Toggle & Active Link Highlight ===
 document.addEventListener('DOMContentLoaded', function () {
+  const loadingScreen = document.getElementById('loading-screen');
   const menuToggle = document.querySelector('.menu-toggle');
   const navLinks = document.querySelector('.nav-links');
   const links = document.querySelectorAll('.nav-link');
   const currentPage = window.location.pathname.split('/').pop() || 'index.html'; // Default to index.html if path is empty
+
+  // Show loading screen initially
+  showLoadingScreen();
+
+  // Hide loading screen after content is loaded
+  setTimeout(() => {
+    hideLoadingScreen();
+  }, 1500); // Show loading for 1.5 seconds
+
+  // Loading screen functions
+  function showLoadingScreen() {
+    if (loadingScreen) {
+      loadingScreen.classList.remove('hidden');
+      loadingScreen.style.display = 'flex';
+    }
+  }
+
+  function hideLoadingScreen() {
+    if (loadingScreen) {
+      loadingScreen.classList.add('hidden');
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+      }, 500);
+    }
+  }
 
   // Mobile menu toggle
   if (menuToggle && navLinks) {

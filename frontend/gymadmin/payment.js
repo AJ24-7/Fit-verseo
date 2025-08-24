@@ -1241,7 +1241,7 @@ class PaymentManager {
                 <div class="payment-detail-subtitle">
                   <span><i class="fas fa-tag"></i> ${info.label}</span>
                   <span><i class="fas fa-credit-card"></i> ${payment.paymentMethod || 'N/A'}</span>
-                  <span><i class="fas fa-calendar"></i> ${payment.createdAt ? this.formatDate(payment.createdAt) : 'N/A'}</span>
+                  <span><i class="fas fa-calendar"></i> ${payment.paidDate ? this.formatDate(payment.paidDate) : (payment.createdAt ? this.formatDate(payment.createdAt) : 'N/A')}</span>
                   ${payment.memberName ? `<span><i class="fas fa-user"></i> ${payment.memberName}</span>` : ''}
                 </div>
               </div>
@@ -1708,10 +1708,14 @@ class PaymentManager {
   }
 
   setupEventListeners() {
-    // Add payment button
+    // Add payment button with enhanced event handling
     document.addEventListener('click', (e) => {
-      if (e.target.id === 'addPaymentBtn') {
+      if (e.target.id === 'addPaymentBtn' || e.target.closest('#addPaymentBtn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Add Payment button clicked');
         this.showAddPaymentModal();
+        return;
       }
     });
 
@@ -1781,6 +1785,20 @@ class PaymentManager {
           // Handle regular payment actions
           this.handlePaymentAction(action, paymentId);
         }
+      }
+    });
+
+    // Payment History button
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'paymentHistoryBtn' || e.target.closest('#paymentHistoryBtn')) {
+        this.showPaymentHistoryModal();
+      }
+    });
+
+    // Payment History Modal close
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'closePaymentHistoryModal' || e.target.closest('#closePaymentHistoryModal')) {
+        this.hidePaymentHistoryModal();
       }
     });
 
@@ -2087,7 +2105,15 @@ class PaymentManager {
       return;
     }
 
-    container.innerHTML = payments.map(payment => {
+    // Sort payments by activity date on frontend as well for extra safety
+    // Use paidDate if available (for recently marked as paid), otherwise use createdAt
+    const sortedPayments = payments.sort((a, b) => {
+      const dateA = new Date(a.paidDate || a.activityDate || a.createdAt);
+      const dateB = new Date(b.paidDate || b.activityDate || b.createdAt);
+      return dateB - dateA; // Most recent first
+    });
+
+    container.innerHTML = sortedPayments.map(payment => {
       // Determine icon, color, and amount sign based on payment type
       let icon = 'plus', iconColor = '', amountClass = '', amountPrefix = '', iconHtml = '';
       if (payment.type === 'received') {
@@ -2109,6 +2135,10 @@ class PaymentManager {
         amountPrefix = '';
         iconHtml = `<i class="fas fa-clock"></i>`;
       }
+      
+      // Use paidDate if available (for payments marked as paid), otherwise use activityDate or createdAt
+      const displayDate = payment.paidDate || payment.activityDate || payment.createdAt;
+      
       return `
         <div class="recent-payment-item">
           <div class="recent-payment-icon ${payment.type}" style="${payment.type === 'pending' ? 'background:#fbbf24;color:#fff;' : ''}">
@@ -2126,7 +2156,7 @@ class PaymentManager {
             ${amountPrefix}₹${this.formatAmount(payment.amount)}
           </div>
           <div class="recent-payment-time">
-            ${this.formatTime(payment.createdAt)}
+            ${this.formatTime(displayDate)}
           </div>
         </div>
       `;
@@ -2595,13 +2625,17 @@ class PaymentManager {
           button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         }
 
-        // Mark payment as paid in backend
+        // Mark payment as paid in backend with current date as paid date
         const response = await fetch(`http://localhost:5000/api/payments/${paymentId}/mark-paid`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
             'Content-Type': 'application/json'
-          }
+          },
+          body: JSON.stringify({
+            paidDate: new Date().toISOString(), // Set current date as paid date
+            status: 'paid'
+          })
         });
 
         if (!response.ok) {
@@ -2610,8 +2644,22 @@ class PaymentManager {
 
         const result = await response.json();
         
-        // Show success message
-        this.showSuccess('Payment marked as paid successfully!');
+        // Determine appropriate success message based on context
+        let successMessage = 'Payment marked as paid and updated in paid section!';
+        
+        // Check if this was from dues/pending section
+        const isDuesSection = button.closest('.pending-payments-section') || 
+                             button.closest('#pendingPaymentsList') ||
+                             button.getAttribute('data-source') === 'dues';
+        
+        if (isDuesSection) {
+          successMessage = 'Payment marked as paid and updated in paid section!';
+        } else {
+          successMessage = 'Payment marked as paid successfully!';
+        }
+        
+        // Show enhanced success message
+        this.showSuccess(successMessage);
 
         // Refresh payment data to update stats and lists instantly
         await Promise.all([
@@ -2694,7 +2742,8 @@ class PaymentManager {
             membershipStartDate: startDate.toISOString(),
             pendingPaymentAmount: 0,
             paymentAmount: this.calculateMemberPendingAmount(member),
-            lastPaymentDate: new Date().toISOString()
+            lastPaymentDate: new Date().toISOString(), // Set current date as payment date
+            paidDate: new Date().toISOString() // Set current date as paid date
           })
         });
 
@@ -2726,10 +2775,23 @@ class PaymentManager {
           // Don't fail the whole operation if email fails
         }
 
-        // Show success message
-        this.showSuccess(
-          `Membership renewed successfully! New expiry: ${endDate.toLocaleDateString()}`
+        // Show enhanced success message based on context
+        let successMessage = `Payment marked as paid and updated in received payments! New expiry: ${endDate.toLocaleDateString()}`;
+        
+        // Check if this was from pending payments section
+        const isPendingSection = button && (
+          button.closest('.pending-payments-section') || 
+          button.closest('#pendingPaymentsList') ||
+          button.getAttribute('data-source') === 'pending'
         );
+        
+        if (isPendingSection) {
+          successMessage = `Payment marked as paid and updated in received payments! New expiry: ${endDate.toLocaleDateString()}`;
+        } else {
+          successMessage = `Membership renewed successfully! New expiry: ${endDate.toLocaleDateString()}`;
+        }
+        
+        this.showSuccess(successMessage);
 
         // Refresh payment data to update stats and lists
         await Promise.all([
@@ -3420,6 +3482,7 @@ class PaymentManager {
       // Force refresh stats and data to reflect changes immediately
       await Promise.all([
         this.forceRefreshStats(),
+        this.loadRecentPayments(), // Refresh recent payments to show newly paid items
         this.loadRecurringPayments(), // Refresh recurring payments list
         this.loadAllPendingPayments() // Refresh pending payments list
       ]);
@@ -5040,6 +5103,157 @@ class PaymentManager {
       confirmBtn.innerHTML = originalContent;
       confirmBtn.disabled = false;
     }
+  }
+
+  // Payment History Modal Functions
+  async showPaymentHistoryModal() {
+    const modal = document.getElementById('paymentHistoryModal');
+    const container = document.getElementById('paymentHistoryContainer');
+    
+    if (!modal || !container) return;
+    
+    modal.style.display = 'flex';
+    container.innerHTML = '<div class="payment-loading"><i class="fas fa-spinner fa-spin"></i> Loading payment history...</div>';
+    
+    try {
+      // Fetch complete payment history for the specific gym
+      const response = await fetch('http://localhost:5000/api/payments/history?limit=500', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch payment history');
+      }
+      
+      const data = await response.json();
+      const payments = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+      
+      this.renderPaymentHistory(container, payments);
+      
+    } catch (error) {
+      console.error('Error loading payment history:', error);
+      container.innerHTML = `
+        <div class="payment-empty-state">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Error Loading History</h3>
+          <p>Failed to load payment history: ${error.message}</p>
+        </div>
+      `;
+    }
+  }
+
+  hidePaymentHistoryModal() {
+    const modal = document.getElementById('paymentHistoryModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  renderPaymentHistory(container, payments) {
+    if (!payments || payments.length === 0) {
+      container.innerHTML = `
+        <div class="payment-empty-state">
+          <i class="fas fa-file-alt"></i>
+          <h3>No Payment History</h3>
+          <p>No payment records found for this gym</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Group payments by month for better organization
+    const paymentsByMonth = this.groupPaymentsByMonth(payments, 'paidDate');
+    const months = Object.keys(paymentsByMonth).sort().reverse(); // Latest first
+
+    // Calculate totals
+    const totalReceived = payments.filter(p => p.type === 'received' || p.status === 'paid').reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalPaid = payments.filter(p => p.type === 'paid' || p.type === 'expense').reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalTransactions = payments.length;
+
+    let html = `
+      <!-- Summary Stats -->
+      <div class="payment-history-summary">
+        <div class="payment-summary-card">
+          <div class="payment-summary-value">₹${this.formatAmount(totalReceived)}</div>
+          <div class="payment-summary-label">Total Received</div>
+        </div>
+        <div class="payment-summary-card">
+          <div class="payment-summary-value">₹${this.formatAmount(totalPaid)}</div>
+          <div class="payment-summary-label">Total Paid</div>
+        </div>
+        <div class="payment-summary-card">
+          <div class="payment-summary-value">${totalTransactions}</div>
+          <div class="payment-summary-label">Total Transactions</div>
+        </div>
+        <div class="payment-summary-card">
+          <div class="payment-summary-value">₹${this.formatAmount(totalReceived - totalPaid)}</div>
+          <div class="payment-summary-label">Net Income</div>
+        </div>
+      </div>
+
+      <!-- Monthly Breakdown -->
+      <div class="payment-history-months">
+    `;
+
+    months.forEach(month => {
+      const monthPayments = paymentsByMonth[month];
+      const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const monthTotal = monthPayments.reduce((sum, p) => {
+        if (p.type === 'received' || p.status === 'paid') return sum + (p.amount || 0);
+        if (p.type === 'paid' || p.type === 'expense') return sum - (p.amount || 0);
+        return sum;
+      }, 0);
+
+      html += `
+        <div class="payment-history-month">
+          <div class="payment-month-header">
+            <h4>${monthName}</h4>
+            <div class="payment-month-stats">
+              ${monthPayments.length} transactions • ₹${this.formatAmount(Math.abs(monthTotal))} ${monthTotal >= 0 ? 'net income' : 'net expense'}
+            </div>
+          </div>
+          <div class="payment-month-items">
+      `;
+
+      // Sort payments within month by date (most recent first)
+      monthPayments.sort((a, b) => new Date(b.paidDate || b.createdAt) - new Date(a.paidDate || a.createdAt));
+
+      monthPayments.forEach(payment => {
+        const isIncome = payment.type === 'received' || payment.status === 'paid';
+        const paidDate = payment.paidDate || payment.createdAt;
+        
+        html += `
+          <div class="payment-history-item ${isIncome ? 'income' : 'expense'}">
+            <div class="payment-history-icon">
+              <i class="fas fa-${isIncome ? 'plus' : 'minus'}"></i>
+            </div>
+            <div class="payment-history-info">
+              <div class="payment-history-title">${payment.description || 'No Description'}</div>
+              <div class="payment-history-details">
+                <span><i class="fas fa-tag"></i> ${this.getCategoryDisplayName(payment.category)}</span>
+                <span><i class="fas fa-credit-card"></i> ${payment.paymentMethod || 'N/A'}</span>
+                <span><i class="fas fa-calendar"></i> ${paidDate ? this.formatDate(paidDate) : 'N/A'}</span>
+                ${payment.memberName ? `<span><i class="fas fa-user"></i> ${payment.memberName}</span>` : ''}
+              </div>
+            </div>
+            <div class="payment-history-amount ${isIncome ? 'positive' : 'negative'}">
+              ${isIncome ? '+' : '-'}₹${this.formatAmount(payment.amount)}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+          </div>
+        </div>
+      `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
   }
 
 }

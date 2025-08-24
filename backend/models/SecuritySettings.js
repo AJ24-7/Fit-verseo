@@ -7,10 +7,14 @@ const securitySettingsSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
   loginNotifications: {
     enabled: {
       type: Boolean,
-      default: true
+      default: false
     },
     preferences: {
       email: {
