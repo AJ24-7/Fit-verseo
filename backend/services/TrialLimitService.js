@@ -19,9 +19,8 @@ class TrialLimitService {
             const needsReset = lastReset < firstOfCurrentMonth;
             
             if (needsReset) {
-                // Reset trial limits for the new month
-                user.trialLimits.usedTrials = 0;
-                user.trialLimits.remainingTrials = user.trialLimits.totalTrials;
+                // Reset trial limits for the new month - only update lastResetDate
+                // usedTrials and remainingTrials are calculated dynamically
                 user.trialLimits.lastResetDate = firstOfCurrentMonth;
                 await user.save();
                 
@@ -47,30 +46,101 @@ class TrialLimitService {
             // Get updated user data
             const updatedUser = await User.findById(userId);
             
-            // Get trial bookings for this month
+            // Get trial bookings for this month (with proper timezone handling)
             const currentMonth = new Date();
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            startOfMonth.setHours(0, 0, 0, 0);
             
+            const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            endOfMonth.setHours(23, 59, 59, 999);
+            
+            console.log(`[TrialLimitService] Checking trial status for user ${userId}`);
+            console.log(`[TrialLimitService] User ID type: ${typeof userId}`);
+            console.log(`[TrialLimitService] Current time: ${new Date().toISOString()}`);
+            console.log(`[TrialLimitService] Date range: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
+            
+            // Convert userId to ObjectId for database queries
+            const mongoose = require('mongoose');
+            const userObjectId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+            
+            console.log(`[TrialLimitService] Converting userId ${userId} to ObjectId: ${userObjectId}`);
+            
+            // First, find ALL trial bookings for this user to debug
+            const allUserTrials = await TrialBooking.find({ userId: userObjectId });
+            console.log(`[TrialLimitService] ALL trial bookings for user ${userObjectId}:`, allUserTrials.map(trial => ({
+                id: trial._id,
+                userId: trial.userId,
+                userIdType: typeof trial.userId,
+                bookingDate: trial.bookingDate,
+                trialDate: trial.trialDate,
+                gymName: trial.gymName,
+                status: trial.status,
+                isTrialUsed: trial.isTrialUsed
+            })));
+            
+            // Also check for trial bookings by email (in case user booked as guest)
+            const currentUser = updatedUser; // Use existing user data
+            if (currentUser && currentUser.email) {
+                const emailTrials = await TrialBooking.find({ 
+                    email: currentUser.email,
+                    userId: { $ne: userObjectId } // Different userId but same email
+                });
+                console.log(`[TrialLimitService] Trial bookings with same email but different userId:`, emailTrials.map(trial => ({
+                    id: trial._id,
+                    email: trial.email,
+                    userId: trial.userId,
+                    bookingDate: trial.bookingDate,
+                    isTrialUsed: trial.isTrialUsed
+                })));
+                
+                // Update guest bookings to be associated with the user account
+                if (emailTrials.length > 0) {
+                    console.log(`[TrialLimitService] Updating ${emailTrials.length} guest bookings to be associated with user account`);
+                    await TrialBooking.updateMany(
+                        { email: currentUser.email, userId: { $ne: userObjectId } },
+                        { userId: userObjectId, isTrialUsed: true }
+                    );
+                }
+            }
+            
+            // Now find monthly trials with our query
             const monthlyTrials = await TrialBooking.find({
-                userId: userId,
+                userId: userObjectId,
                 bookingDate: { $gte: startOfMonth, $lte: endOfMonth },
-                isTrialUsed: true,
                 status: { $ne: 'cancelled' }
             });
+            
+            console.log(`[TrialLimitService] Found ${monthlyTrials.length} trial bookings this month (including isTrialUsed=false)`);
+            
+            // Filter for trials that should count against limits
+            const countableTrials = monthlyTrials.filter(trial => trial.isTrialUsed === true);
+            console.log(`[TrialLimitService] Found ${countableTrials.length} countable trial bookings (isTrialUsed=true)`);
+            
+            console.log(`[TrialLimitService] Trial booking details:`, monthlyTrials.map(trial => ({
+                id: trial._id,
+                bookingDate: trial.bookingDate,
+                trialDate: trial.trialDate,
+                gymName: trial.gymName,
+                status: trial.status,
+                isTrialUsed: trial.isTrialUsed
+            })));
+            console.log(`[TrialLimitService] Total trials allowed: ${updatedUser.trialLimits.totalTrials}`);
             
             // Calculate next reset date (1st of next month)
             const now = new Date();
             const nextResetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
             
-            return {
+            const result = {
                 totalTrials: updatedUser.trialLimits.totalTrials,
-                usedTrials: monthlyTrials.length,
-                remainingTrials: Math.max(0, updatedUser.trialLimits.totalTrials - monthlyTrials.length),
+                usedTrials: countableTrials.length,
+                remainingTrials: Math.max(0, updatedUser.trialLimits.totalTrials - countableTrials.length),
                 lastResetDate: updatedUser.trialLimits.lastResetDate,
                 nextResetDate: nextResetDate,
-                monthlyTrials: monthlyTrials
+                monthlyTrials: countableTrials
             };
+            
+            console.log(`[TrialLimitService] Calculated result:`, result);
+            return result;
         } catch (error) {
             console.error('Error getting trial status:', error);
             throw error;
@@ -91,13 +161,17 @@ class TrialLimitService {
                 };
             }
             
+            // Convert userId to ObjectId for database queries
+            const mongoose = require('mongoose');
+            const userObjectId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+            
             // Check if user already has a trial on the same date
             const sameDate = new Date(trialDate);
             const startOfDay = new Date(sameDate.setHours(0, 0, 0, 0));
             const endOfDay = new Date(sameDate.setHours(23, 59, 59, 999));
             
             const existingTrialOnDate = await TrialBooking.findOne({
-                userId: userId,
+                userId: userObjectId,
                 trialDate: { $gte: startOfDay, $lte: endOfDay },
                 status: { $ne: 'cancelled' }
             });
@@ -115,7 +189,7 @@ class TrialLimitService {
             twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
             
             const recentGymTrial = await TrialBooking.findOne({
-                userId: userId,
+                userId: userObjectId,
                 gymId: gymId,
                 trialDate: { $gte: twoDaysAgo },
                 status: { $ne: 'cancelled' }
@@ -150,10 +224,14 @@ class TrialLimitService {
                 throw new Error(canBook.message);
             }
             
+            // Convert userId to ObjectId for database storage
+            const mongoose = require('mongoose');
+            const userObjectId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+            
             // Create trial booking
             const trialBooking = new TrialBooking({
                 ...trialData,
-                userId: userId,
+                userId: userObjectId,
                 isTrialUsed: true,
                 trialType: 'free',
                 status: 'scheduled'
@@ -189,9 +267,13 @@ class TrialLimitService {
     // Cancel a trial booking
     static async cancelTrial(userId, trialBookingId) {
         try {
+            // Convert userId to ObjectId for database queries
+            const mongoose = require('mongoose');
+            const userObjectId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+            
             const trialBooking = await TrialBooking.findOne({
                 _id: trialBookingId,
-                userId: userId
+                userId: userObjectId
             });
             
             if (!trialBooking) {
@@ -234,7 +316,11 @@ class TrialLimitService {
         try {
             const { page = 1, limit = 10, status } = options;
             
-            const query = { userId: userId };
+            // Convert userId to ObjectId for database queries
+            const mongoose = require('mongoose');
+            const userObjectId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+            
+            const query = { userId: userObjectId };
             if (status) query.status = status;
             
             const trialBookings = await TrialBooking.find(query)
@@ -270,8 +356,6 @@ class TrialLimitService {
                 {},
                 {
                     $set: {
-                        'trialLimits.usedTrials': 0,
-                        'trialLimits.remainingTrials': 3,
                         'trialLimits.lastResetDate': firstOfCurrentMonth
                     }
                 }

@@ -1565,6 +1565,16 @@ async function setupActualToggleHandlers(gymId) {
   if (twoFactorToggle) {
     console.log('✅ Setting up 2FA toggle event listener');
     
+    // Ensure enhanced toggle slider functionality
+    const twoFactorSlider = twoFactorToggle.nextElementSibling;
+    if (twoFactorSlider && twoFactorSlider.classList.contains('enhanced-toggle-slider')) {
+      twoFactorSlider.addEventListener('click', function(e) {
+        e.preventDefault();
+        twoFactorToggle.checked = !twoFactorToggle.checked;
+        twoFactorToggle.dispatchEvent(new Event('change'));
+      });
+    }
+    
     // Load saved state from backend API
     try {
       const response = await fetch('/api/security/2fa-status', {
@@ -1654,6 +1664,16 @@ async function setupActualToggleHandlers(gymId) {
   if (loginNotificationsToggle) {
     console.log('✅ Setting up login notifications toggle event listener');
     
+    // Ensure enhanced toggle slider functionality
+    const notificationsSlider = loginNotificationsToggle.nextElementSibling;
+    if (notificationsSlider && notificationsSlider.classList.contains('enhanced-toggle-slider')) {
+      notificationsSlider.addEventListener('click', function(e) {
+        e.preventDefault();
+        loginNotificationsToggle.checked = !loginNotificationsToggle.checked;
+        loginNotificationsToggle.dispatchEvent(new Event('change'));
+      });
+    }
+    
     // Load saved state for this gym (like dashboard toggles)
     const savedNotificationsState = getGymSpecificSetting(`loginNotifications_${gymId}`);
     const isNotificationsEnabled = savedNotificationsState === 'true' || savedNotificationsState === true || 
@@ -1666,15 +1686,44 @@ async function setupActualToggleHandlers(gymId) {
       console.log(`🔔 Login notifications toggle changed to: ${isEnabled} for gym: ${gymId}`);
       
       try {
-        // Save the setting immediately
-        setGymSpecificSetting(`loginNotifications_${gymId}`, isEnabled.toString());
-        console.log(`� Login notifications setting saved for gym ${gymId}: ${isEnabled}`);
+        // First save the API call to backend
+        const response = await fetch('/api/security/toggle-login-notifications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+          },
+          body: JSON.stringify({ 
+            enabled: isEnabled,
+            preferences: {
+              email: true,          // Enable email notifications
+              browser: true,        // Enable browser notifications
+              suspiciousOnly: false // Send all login notifications, not just suspicious ones
+            }
+          })
+        });
         
-        // Show notification
-        showNotification(
-          `Login notifications ${isEnabled ? 'enabled' : 'disabled'} successfully!`, 
-          'success'
-        );
+        const result = await response.json();
+        console.log('🔔 Login notifications API response:', result);
+        
+        if (result.success) {
+          // Save the setting locally after successful API call
+          setGymSpecificSetting(`loginNotifications_${gymId}`, isEnabled.toString());
+          console.log(`💾 Login notifications setting saved for gym ${gymId}: ${isEnabled}`);
+          
+          // Show success notification
+          showNotification(
+            `Login notifications ${isEnabled ? 'enabled' : 'disabled'} successfully! ${isEnabled ? 'You will receive email alerts for login attempts.' : ''}`, 
+            'success'
+          );
+        } else {
+          // Revert toggle on API error
+          this.checked = !isEnabled;
+          showNotification(
+            `Failed to ${isEnabled ? 'enable' : 'disable'} login notifications: ${result.message || 'Server error'}`, 
+            'error'
+          );
+        }
         
         // If we have a manager, try to sync with it
         if (window.loginNotificationsManager && typeof window.loginNotificationsManager.syncToggleState === 'function') {
@@ -1685,7 +1734,12 @@ async function setupActualToggleHandlers(gymId) {
         
       } catch (error) {
         console.error('❌ Error handling login notifications toggle:', error);
-        showNotification('Failed to update login notifications: ' + error.message, 'error');
+        // Revert toggle on error
+        this.checked = !isEnabled;
+        showNotification(
+          'Failed to update login notifications. Please check your connection and try again.', 
+          'error'
+        );
       }
     });
   } else {
@@ -3196,9 +3250,29 @@ function setupDashboardCustomization() {
   // Set initial toggle states
   if (equipmentToggle) {
     equipmentToggle.checked = savedEquipmentVisible;
+    
+    // Ensure enhanced toggle slider functionality
+    const equipmentSlider = equipmentToggle.nextElementSibling;
+    if (equipmentSlider && equipmentSlider.classList.contains('enhanced-toggle-slider')) {
+      equipmentSlider.addEventListener('click', function(e) {
+        e.preventDefault();
+        equipmentToggle.checked = !equipmentToggle.checked;
+        equipmentToggle.dispatchEvent(new Event('change'));
+      });
+    }
   }
   if (paymentToggle) {
     paymentToggle.checked = savedPaymentVisible;
+    
+    // Ensure enhanced toggle slider functionality
+    const paymentSlider = paymentToggle.nextElementSibling;
+    if (paymentSlider && paymentSlider.classList.contains('enhanced-toggle-slider')) {
+      paymentSlider.addEventListener('click', function(e) {
+        e.preventDefault();
+        paymentToggle.checked = !paymentToggle.checked;
+        paymentToggle.dispatchEvent(new Event('change'));
+      });
+    }
   }
   
   // Apply visibility immediately and forcefully
@@ -8802,7 +8876,7 @@ window.fixAllTogglesAfterMerge = function() {
   
   console.log('🎯 Current gym ID:', gymId);
   
-  // 1. Fix passkey disable button
+  // 1. Fix passkey disable button - delegate to PaymentManager if available
   const disablePasskeyBtn = document.getElementById('disablePasskeyBtn');
   console.log('🔍 Disable passkey button found:', !!disablePasskeyBtn);
   
@@ -8814,101 +8888,111 @@ window.fixAllTogglesAfterMerge = function() {
     newBtn.addEventListener('click', function() {
       console.log('🎯 Disable passkey clicked!');
       
-      const storedPasskey = localStorage.getItem(`gymAdminPasskey_${gymId}`);
-      console.log('🔍 Stored passkey check:', storedPasskey ? 'Exists' : 'Not found');
-      
-      // Show styled confirmation dialog
-      const existingDialog = document.querySelector('.disable-passkey-dialog');
-      if (existingDialog) {
-        existingDialog.remove();
-      }
-      
-      const dialog = document.createElement('div');
-      dialog.className = 'disable-passkey-dialog';
-      dialog.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        backdrop-filter: blur(2px);
-      `;
-      
-      const content = document.createElement('div');
-      content.style.cssText = `
-        background: white;
-        border-radius: 12px;
-        padding: 30px;
-        max-width: 400px;
-        text-align: center;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      `;
-      
-      const title = storedPasskey ? 'Disable Admin Passkey' : 'Enable Admin Passkey';
-      const message = storedPasskey ? 
-        'Are you sure you want to disable the admin passkey? This will remove payment security protection.' :
-        'Do you want to set up an admin passkey for enhanced payment security?';
-      
-      content.innerHTML = `
-        <div style="margin-bottom: 20px;">
-          <i class="fas fa-${storedPasskey ? 'lock-open' : 'lock'}" style="font-size: 48px; color: ${storedPasskey ? '#ef4444' : '#059669'}; margin-bottom: 15px;"></i>
-          <h3 style="margin: 0 0 10px 0; color: #333;">${title}</h3>
-          <p style="margin: 0; color: #666; line-height: 1.5;">${message}</p>
-        </div>
-        <div style="display: flex; gap: 12px; justify-content: center;">
-          <button class="cancel-btn" style="
-            padding: 10px 20px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-          ">Cancel</button>
-          <button class="confirm-btn" style="
-            padding: 10px 20px;
-            border: none;
-            background: ${storedPasskey ? '#ef4444' : '#059669'};
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-          ">${storedPasskey ? 'Disable' : 'Set Up'}</button>
-        </div>
-      `;
-      
-      dialog.appendChild(content);
-      document.body.appendChild(dialog);
-      
-      // Handle button clicks
-      content.querySelector('.cancel-btn').addEventListener('click', () => {
-        dialog.remove();
-      });
-      
-      content.querySelector('.confirm-btn').addEventListener('click', () => {
-        if (storedPasskey) {
-          // Disable passkey
-          localStorage.removeItem(`gymAdminPasskey_${gymId}`);
-          console.log('✅ Passkey disabled');
-          showNotification('Admin passkey disabled successfully', 'success');
-        } else {
-          // Enable passkey - redirect to setup
-          console.log('🔧 Redirecting to passkey setup');
-          showNotification('Please set up your admin passkey in the payment settings', 'info');
+      // Check if PaymentManager exists and use its method
+      if (window.paymentManager && typeof window.paymentManager.disablePasskey === 'function') {
+        console.log('🔧 Using PaymentManager.disablePasskey()');
+        window.paymentManager.disablePasskey();
+      } else {
+        console.log('🔧 PaymentManager not available, using fallback');
+        
+        const gymId = getGymId();
+        const storedPasskey = localStorage.getItem(`gymAdminPasskey_${gymId}`);
+        console.log('🔍 Stored passkey check:', storedPasskey ? 'Exists' : 'Not found');
+        
+        // Show styled confirmation dialog as fallback
+        const existingDialog = document.querySelector('.disable-passkey-dialog');
+        if (existingDialog) {
+          existingDialog.remove();
         }
-        dialog.remove();
-      });
-      
-      // Close on backdrop click
-      dialog.addEventListener('click', (e) => {
-        if (e.target === dialog) {
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'disable-passkey-dialog';
+        dialog.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000;
+          backdrop-filter: blur(2px);
+        `;
+        
+        const content = document.createElement('div');
+        content.style.cssText = `
+          background: white;
+          border-radius: 12px;
+          padding: 30px;
+          max-width: 400px;
+          text-align: center;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        `;
+        
+        const title = storedPasskey ? 'Disable Admin Passkey' : 'Enable Admin Passkey';
+        const message = storedPasskey ? 
+          'Are you sure you want to disable the admin passkey? This will remove payment security protection.' :
+          'Do you want to set up an admin passkey for enhanced payment security?';
+        
+        content.innerHTML = `
+          <div style="margin-bottom: 20px;">
+            <i class="fas fa-${storedPasskey ? 'lock-open' : 'lock'}" style="font-size: 48px; color: ${storedPasskey ? '#ef4444' : '#059669'}; margin-bottom: 15px;"></i>
+            <h3 style="margin: 0 0 10px 0; color: #333;">${title}</h3>
+            <p style="margin: 0; color: #666; line-height: 1.5;">${message}</p>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button class="cancel-btn" style="
+              padding: 10px 20px;
+              border: 1px solid #ddd;
+              background: white;
+              border-radius: 6px;
+              cursor: pointer;
+              font-weight: 500;
+            ">Cancel</button>
+            <button class="confirm-btn" style="
+              padding: 10px 20px;
+              border: none;
+              background: ${storedPasskey ? '#ef4444' : '#059669'};
+              color: white;
+              border-radius: 6px;
+              cursor: pointer;
+              font-weight: 500;
+            ">${storedPasskey ? 'Disable' : 'Set Up'}</button>
+          </div>
+        `;
+        
+        dialog.appendChild(content);
+        document.body.appendChild(dialog);
+        
+        // Handle button clicks
+        content.querySelector('.cancel-btn').addEventListener('click', () => {
           dialog.remove();
-        }
-      });
+        });
+        
+        content.querySelector('.confirm-btn').addEventListener('click', () => {
+          if (storedPasskey) {
+            // Disable passkey
+            localStorage.removeItem(`gymAdminPasskey_${gymId}`);
+            localStorage.removeItem(`passkeySetupSkipped_${gymId}`);
+            console.log('✅ Passkey disabled');
+            showNotification('Admin passkey disabled successfully', 'success');
+          } else {
+            // Enable passkey - redirect to setup
+            console.log('🔧 Redirecting to passkey setup');
+            showNotification('Please set up your admin passkey in the payment settings', 'info');
+          }
+          dialog.remove();
+        });
+        
+        // Close on backdrop click
+        dialog.addEventListener('click', (e) => {
+          if (e.target === dialog) {
+            dialog.remove();
+          }
+        });
+      }
     });
     
     console.log('✅ Passkey disable button fixed');
@@ -9032,6 +9116,371 @@ setTimeout(() => {
   }
 }, 3000);
 
+// Add a comprehensive function to initialize ALL toggles properly
+window.initializeAllToggles = function() {
+  console.log('🔧 Initializing ALL toggles...');
+  
+  const gymId = getGymId();
+  if (!gymId) {
+    console.error('❌ No gym ID found');
+    return false;
+  }
+  
+  console.log('🎯 Current gym ID:', gymId);
+  
+  // FIRST: Fix all enhanced toggle switches
+  if (typeof window.fixAllEnhancedToggleSwitches === 'function') {
+    window.fixAllEnhancedToggleSwitches();
+  }
+  
+  // 1. Dashboard Customization Toggles
+  console.log('🔧 Setting up dashboard customization toggles...');
+  
+  // Equipment Tab Toggle
+  const equipmentTabToggle = document.getElementById('toggleEquipmentTab');
+  if (equipmentTabToggle) {
+    console.log('✅ Equipment tab toggle found');
+    
+    // Remove existing listeners
+    const newEquipmentToggle = equipmentTabToggle.cloneNode(true);
+    equipmentTabToggle.parentNode.replaceChild(newEquipmentToggle, equipmentTabToggle);
+    
+    newEquipmentToggle.addEventListener('change', function() {
+      const isEnabled = this.checked;
+      console.log('🎯 Equipment tab toggle changed to:', isEnabled);
+      
+      // Save setting
+      setGymSpecificSetting(`dashboardEquipmentVisible_${gymId}`, isEnabled.toString());
+      
+      // Apply visibility
+      applyTabVisibility('equipment', isEnabled);
+      
+      // Show feedback
+      showNotification(`Equipment tab ${isEnabled ? 'enabled' : 'disabled'}`, 'success');
+      
+      console.log('✅ Equipment tab setting saved:', isEnabled);
+    });
+    
+    // Load saved state
+    const savedEquipment = getGymSpecificSetting(`dashboardEquipmentVisible_${gymId}`);
+    if (savedEquipment !== null) {
+      newEquipmentToggle.checked = savedEquipment !== 'false';
+    } else {
+      newEquipmentToggle.checked = true; // Default enabled
+      setGymSpecificSetting(`dashboardEquipmentVisible_${gymId}`, 'true');
+    }
+    console.log('🔄 Equipment tab state loaded:', newEquipmentToggle.checked);
+  } else {
+    console.warn('❌ Equipment tab toggle not found');
+  }
+  
+  // Payment Tab Toggle
+  const paymentTabToggle = document.getElementById('togglePaymentTab');
+  if (paymentTabToggle) {
+    console.log('✅ Payment tab toggle found');
+    
+    // Remove existing listeners
+    const newPaymentToggle = paymentTabToggle.cloneNode(true);
+    paymentTabToggle.parentNode.replaceChild(newPaymentToggle, paymentTabToggle);
+    
+    newPaymentToggle.addEventListener('change', function() {
+      const isEnabled = this.checked;
+      console.log('🎯 Payment tab toggle changed to:', isEnabled);
+      
+      // Save setting
+      setGymSpecificSetting(`dashboardPaymentVisible_${gymId}`, isEnabled.toString());
+      
+      // Apply visibility
+      applyTabVisibility('payment', isEnabled);
+      
+      // Show feedback
+      showNotification(`Payment tab ${isEnabled ? 'enabled' : 'disabled'}`, 'success');
+      
+      console.log('✅ Payment tab setting saved:', isEnabled);
+    });
+    
+    // Load saved state
+    const savedPayment = getGymSpecificSetting(`dashboardPaymentVisible_${gymId}`);
+    if (savedPayment !== null) {
+      newPaymentToggle.checked = savedPayment !== 'false';
+    } else {
+      newPaymentToggle.checked = true; // Default enabled
+      setGymSpecificSetting(`dashboardPaymentVisible_${gymId}`, 'true');
+    }
+    console.log('🔄 Payment tab state loaded:', newPaymentToggle.checked);
+  } else {
+    console.warn('❌ Payment tab toggle not found');
+  }
+  
+  // 2. Security & Privacy Toggles
+  console.log('🔧 Setting up security toggles...');
+  
+  // Disable Passkey Button
+  const disablePasskeyBtn = document.getElementById('disablePasskeyBtn');
+  if (disablePasskeyBtn) {
+    console.log('✅ Disable passkey button found');
+    
+    // Remove existing listeners
+    const newDisableBtn = disablePasskeyBtn.cloneNode(true);
+    disablePasskeyBtn.parentNode.replaceChild(newDisableBtn, disablePasskeyBtn);
+    
+    newDisableBtn.addEventListener('click', function() {
+      console.log('🎯 Disable passkey clicked!');
+      
+      const storedPasskey = localStorage.getItem(`gymAdminPasskey_${gymId}`);
+      console.log('🔍 Stored passkey check:', storedPasskey ? 'Exists' : 'Not found');
+      
+      // Show styled confirmation dialog
+      const existingDialog = document.querySelector('.disable-passkey-dialog');
+      if (existingDialog) {
+        existingDialog.remove();
+      }
+      
+      const dialog = document.createElement('div');
+      dialog.className = 'disable-passkey-dialog';
+      dialog.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(2px);
+      `;
+      
+      const content = document.createElement('div');
+      content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      `;
+      
+      const title = storedPasskey ? 'Disable Admin Passkey' : 'Enable Admin Passkey';
+      const message = storedPasskey ? 
+        'Are you sure you want to disable the admin passkey? This will remove payment security protection.' :
+        'Do you want to set up an admin passkey for enhanced payment security?';
+      
+      content.innerHTML = `
+        <div style="margin-bottom: 20px;">
+          <i class="fas fa-${storedPasskey ? 'lock-open' : 'lock'}" style="font-size: 48px; color: ${storedPasskey ? '#ef4444' : '#059669'}; margin-bottom: 15px;"></i>
+          <h3 style="margin: 0 0 10px 0; color: #333;">${title}</h3>
+          <p style="margin: 0; color: #666; line-height: 1.5;">${message}</p>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="cancel-btn" style="
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+          ">Cancel</button>
+          <button class="confirm-btn" style="
+            padding: 10px 20px;
+            border: none;
+            background: ${storedPasskey ? '#ef4444' : '#059669'};
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+          ">${storedPasskey ? 'Disable' : 'Set Up'}</button>
+        </div>
+      `;
+      
+      dialog.appendChild(content);
+      document.body.appendChild(dialog);
+      
+      // Handle button clicks
+      content.querySelector('.cancel-btn').addEventListener('click', () => {
+        dialog.remove();
+      });
+      
+      content.querySelector('.confirm-btn').addEventListener('click', () => {
+        if (storedPasskey) {
+          // Disable passkey
+          localStorage.removeItem(`gymAdminPasskey_${gymId}`);
+          console.log('✅ Passkey disabled');
+          showNotification('Admin passkey disabled successfully', 'success');
+        } else {
+          // Enable passkey - redirect to setup
+          console.log('🔧 Redirecting to passkey setup');
+          showNotification('Please set up your admin passkey in the payment settings', 'info');
+        }
+        dialog.remove();
+      });
+      
+      // Close on backdrop click
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+          dialog.remove();
+        }
+      });
+    });
+  } else {
+    console.warn('❌ Disable passkey button not found');
+  }
+  
+  // Two-Factor Authentication Toggle
+  const twoFactorToggle = document.getElementById('twoFactorAuth');
+  if (twoFactorToggle) {
+    console.log('✅ 2FA toggle found');
+    
+    // Remove existing listeners
+    const newTwoFactorToggle = twoFactorToggle.cloneNode(true);
+    twoFactorToggle.parentNode.replaceChild(newTwoFactorToggle, twoFactorToggle);
+    
+    newTwoFactorToggle.addEventListener('change', function() {
+      const isEnabled = this.checked;
+      console.log('🎯 2FA toggle changed to:', isEnabled);
+      
+      // Save to localStorage immediately
+      setGymSpecificSetting(`twoFactorEnabled_${gymId}`, isEnabled.toString());
+      
+      // Show feedback
+      showNotification(`Two-Factor Authentication ${isEnabled ? 'enabled' : 'disabled'}`, 'success');
+      
+      console.log('✅ 2FA setting saved:', isEnabled);
+    });
+    
+    // Load saved state
+    const saved2FA = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
+    if (saved2FA !== null) {
+      newTwoFactorToggle.checked = saved2FA === 'true';
+    } else {
+      newTwoFactorToggle.checked = false; // Default disabled
+      setGymSpecificSetting(`twoFactorEnabled_${gymId}`, 'false');
+    }
+    console.log('🔄 2FA state loaded:', newTwoFactorToggle.checked);
+  } else {
+    console.warn('❌ 2FA toggle not found');
+  }
+  
+  // Login Notifications Toggle
+  const loginNotificationsToggle = document.getElementById('loginNotifications');
+  if (loginNotificationsToggle) {
+    console.log('✅ Login notifications toggle found');
+    
+    // Remove existing listeners
+    const newLoginToggle = loginNotificationsToggle.cloneNode(true);
+    loginNotificationsToggle.parentNode.replaceChild(newLoginToggle, loginNotificationsToggle);
+    
+    newLoginToggle.addEventListener('change', function() {
+      const isEnabled = this.checked;
+      console.log('🎯 Login notifications toggle changed to:', isEnabled);
+      
+      // Save to localStorage immediately
+      setGymSpecificSetting(`loginNotifications_${gymId}`, isEnabled.toString());
+      
+      // Show feedback
+      showNotification(`Login notifications ${isEnabled ? 'enabled' : 'disabled'}`, 'success');
+      
+      console.log('✅ Login notifications setting saved:', isEnabled);
+    });
+    
+    // Load saved state
+    const savedLoginNotif = getGymSpecificSetting(`loginNotifications_${gymId}`);
+    if (savedLoginNotif !== null) {
+      newLoginToggle.checked = savedLoginNotif === 'true';
+    } else {
+      newLoginToggle.checked = true; // Default enabled
+      setGymSpecificSetting(`loginNotifications_${gymId}`, 'true');
+    }
+    console.log('🔄 Login notifications state loaded:', newLoginToggle.checked);
+  } else {
+    console.warn('❌ Login notifications toggle not found');
+  }
+  
+  console.log('✅ ALL toggles initialized successfully!');
+  return true;
+};
+
+// Add settings tab visibility change listener
+let settingsTabObserver;
+window.addEventListener('DOMContentLoaded', function() {
+  const settingsTab = document.getElementById('settingsTab');
+  if (settingsTab) {
+    settingsTabObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          const isVisible = settingsTab.style.display !== 'none';
+          if (isVisible) {
+            console.log('🔍 Settings tab became visible, initializing toggles...');
+            setTimeout(window.initializeAllToggles, 500);
+          }
+        }
+      });
+    });
+    
+    settingsTabObserver.observe(settingsTab, {
+      attributes: true,
+      attributeFilter: ['style']
+    });
+  }
+});
+
+// Run initialization when page loads
+setTimeout(() => {
+  console.log('🔄 Auto-initializing all toggles after page load...');
+  if (typeof window.initializeAllToggles === 'function') {
+    window.initializeAllToggles();
+  }
+}, 3000);
+
+// Add manual test function for immediate testing
+window.testAllTogglesFinal = function() {
+  console.log('🧪 Testing ALL toggles immediately...');
+  
+  const elements = {
+    equipmentTab: document.getElementById('toggleEquipmentTab'),
+    paymentTab: document.getElementById('togglePaymentTab'),
+    disablePasskey: document.getElementById('disablePasskeyBtn'),
+    twoFactor: document.getElementById('twoFactorAuth'),
+    loginNotifications: document.getElementById('loginNotifications')
+  };
+  
+  console.log('🔍 Element availability:');
+  Object.entries(elements).forEach(([name, element]) => {
+    console.log(`- ${name}:`, !!element);
+  });
+  
+  // Test each toggle
+  console.log('🎯 Testing toggle clicks...');
+  
+  if (elements.equipmentTab) {
+    console.log('Testing equipment tab toggle...');
+    elements.equipmentTab.click();
+  }
+  
+  if (elements.paymentTab) {
+    console.log('Testing payment tab toggle...');
+    elements.paymentTab.click();
+  }
+  
+  if (elements.twoFactor) {
+    console.log('Testing 2FA toggle...');
+    elements.twoFactor.click();
+  }
+  
+  if (elements.loginNotifications) {
+    console.log('Testing login notifications toggle...');
+    elements.loginNotifications.click();
+  }
+  
+  if (elements.disablePasskey) {
+    console.log('Testing disable passkey button...');
+    elements.disablePasskey.click();
+  }
+  
+  return elements;
+};
+
 // ===== COMPREHENSIVE FIX SUMMARY =====
 /*
 FIXES IMPLEMENTED:
@@ -9050,6 +9499,161 @@ FIXES IMPLEMENTED:
 3. DEBUGGING UTILITIES:
    - Added testSecurityToggles() for manual testing
    - Added fixSecurityTogglesAndPasskey() for comprehensive fixes
+
+4. ENHANCED TOGGLE SWITCH UNIVERSAL FIX:
+   - Added fixAllEnhancedToggleSwitches() to fix clicking on slider elements
+   - Ensures all enhanced-toggle-switch elements respond to clicks properly
+   - Handles both slider clicks and wrapper clicks
+*/
+
+// ===== ENHANCED TOGGLE SWITCH UNIVERSAL FIX =====
+function fixAllEnhancedToggleSwitches() {
+  console.log('🔧 Fixing all enhanced toggle switches...');
+  
+  // Find all enhanced toggle switches in the document
+  const enhancedToggleSwitches = document.querySelectorAll('.enhanced-toggle-switch');
+  
+  enhancedToggleSwitches.forEach((toggleSwitch, index) => {
+    const checkbox = toggleSwitch.querySelector('input[type="checkbox"]');
+    const slider = toggleSwitch.querySelector('.enhanced-toggle-slider');
+    
+    if (!checkbox || !slider) {
+      console.warn(`⚠️ Enhanced toggle switch ${index} missing checkbox or slider`);
+      return;
+    }
+    
+    // Remove any existing click handlers on the slider to avoid duplicates
+    const newSlider = slider.cloneNode(true);
+    slider.parentNode.replaceChild(newSlider, slider);
+    
+    // Add click handler to the new slider
+    newSlider.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log(`🎯 Enhanced toggle clicked: ${checkbox.id || 'unknown'}, current: ${checkbox.checked}`);
+      
+      // Toggle the checkbox state
+      checkbox.checked = !checkbox.checked;
+      
+      // Dispatch change event to trigger any existing handlers
+      const changeEvent = new Event('change', { bubbles: true });
+      checkbox.dispatchEvent(changeEvent);
+      
+      console.log(`✅ Enhanced toggle toggled: ${checkbox.id || 'unknown'}, new: ${checkbox.checked}`);
+    });
+    
+    // Also ensure the wrapper div is clickable
+    toggleSwitch.style.cursor = 'pointer';
+    toggleSwitch.addEventListener('click', function(e) {
+      // Only trigger if the click was on the wrapper, not the slider
+      if (e.target === toggleSwitch) {
+        e.preventDefault();
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+    
+    console.log(`✅ Enhanced toggle switch fixed: ${checkbox.id || `toggle-${index}`}`);
+  });
+  
+  console.log(`🎉 Fixed ${enhancedToggleSwitches.length} enhanced toggle switches`);
+}
+
+// Make it globally available
+window.fixAllEnhancedToggleSwitches = fixAllEnhancedToggleSwitches;
+
+// Quick test function for enhanced toggles
+window.testEnhancedToggles = function() {
+  console.log('🧪 Testing enhanced toggles...');
+  
+  const toggles = [
+    'toggleEquipmentTab',
+    'togglePaymentTab', 
+    'twoFactorAuth',
+    'loginNotifications'
+  ];
+  
+  toggles.forEach(toggleId => {
+    const toggle = document.getElementById(toggleId);
+    if (toggle) {
+      console.log(`✅ ${toggleId}: found, checked=${toggle.checked}`);
+      const slider = toggle.nextElementSibling;
+      if (slider && slider.classList.contains('enhanced-toggle-slider')) {
+        console.log(`  ↳ Slider found and has correct class`);
+      } else {
+        console.warn(`  ↳ Slider NOT found or wrong class`);
+      }
+    } else {
+      console.error(`❌ ${toggleId}: NOT found`);
+    }
+  });
+  
+  console.log('🧪 Test complete. Try clicking the toggles now.');
+};
+
+// Test login notification email functionality
+window.testLoginNotificationEmail = async function() {
+  console.log('🧪 Testing login notification email...');
+  
+  try {
+    const response = await fetch('/api/security/test-login-notification', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+      }
+    });
+    
+    const result = await response.json();
+    console.log('🧪 Test email result:', result);
+    
+    if (result.success) {
+      showNotification(`Test email sent successfully! Check your inbox at the registered email.`, 'success');
+    } else {
+      showNotification(`Test email failed: ${result.message}`, 'error');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Error testing login notification email:', error);
+    showNotification('Failed to send test email. Please check your connection.', 'error');
+    return { success: false, error: error.message };
+  }
+};
+
+// Check email configuration
+window.checkEmailConfig = async function() {
+  console.log('🔍 Checking email configuration...');
+  
+  try {
+    const response = await fetch('/api/security/check-email-config', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+      }
+    });
+    
+    const result = await response.json();
+    console.log('📧 Email config check:', result);
+    
+    if (result.configured) {
+      showNotification('Email is properly configured for notifications', 'success');
+    } else {
+      showNotification('Email configuration is missing. Please set EMAIL_USER and EMAIL_PASS environment variables.', 'warning');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Error checking email config:', error);
+    showNotification('Failed to check email configuration', 'error');
+    return { configured: false, error: error.message };
+  }
+};
+
+/*
+ENHANCED TOGGLE SWITCHES IMPLEMENTATION:
+
    - Created test page at /test-security-toggles.html
    - Auto-initialization after page load
 

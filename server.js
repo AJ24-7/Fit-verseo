@@ -54,6 +54,21 @@ app.get('/test-route', (req, res) => {
 // <<<< END TEMPORARY TEST ROUTE >>>>
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Simple request logger for debugging
+app.use((req, res, next) => {
+    if (req.path.includes('/api/')) {
+        console.log(`[API] ${req.method} ${req.path}`);
+        if (req.path.includes('/api/trial-bookings')) {
+            console.log(`[TRIAL-BOOKING] ${req.method} ${req.path}`, {
+                headers: req.headers,
+                body: req.body,
+                query: req.query
+            });
+        }
+    }
+    next();
+});
 app.use('/uploads/gymImages', express.static(path.join(__dirname, 'uploads/gymImages')));
 app.use('/uploads/gymPhotos', express.static(path.join(__dirname, 'uploads/gymPhotos')));
 app.use('/uploads/gym-logos', express.static(path.join(__dirname, 'uploads/gym-logos')));

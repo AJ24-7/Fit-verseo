@@ -469,21 +469,202 @@ router.get('/2fa-status', authenticateGymToken, async (req, res) => {
 // Toggle login notifications
 router.post('/toggle-login-notifications', authenticateGymToken, async (req, res) => {
   try {
-    const { enabled } = req.body;
+    const { enabled, preferences = {} } = req.body;
     const gymId = req.admin.id;
+    
+    console.log('🔔 Toggle login notifications request:', { gymId, enabled, preferences });
     
     let settings = await SecuritySettings.findOne({ gymId });
     if (!settings) {
-      settings = new SecuritySettings({ gymId });
+      console.log('🔔 Creating new SecuritySettings for gym:', gymId);
+      settings = new SecuritySettings({ 
+        gymId,
+        loginNotifications: {
+          enabled: false,
+          preferences: {
+            email: true,
+            browser: true,
+            suspiciousOnly: false
+          }
+        }
+      });
     }
     
+    // Update login notifications settings
     settings.loginNotifications.enabled = enabled;
+    
+    // Update preferences if provided
+    if (preferences.email !== undefined) {
+      settings.loginNotifications.preferences.email = preferences.email;
+    }
+    if (preferences.browser !== undefined) {
+      settings.loginNotifications.preferences.browser = preferences.browser;
+    }
+    if (preferences.suspiciousOnly !== undefined) {
+      settings.loginNotifications.preferences.suspiciousOnly = preferences.suspiciousOnly;
+    }
+    
     await settings.save();
+    
+    console.log('🔔 Login notifications updated:', {
+      gymId,
+      enabled,
+      preferences: settings.loginNotifications.preferences
+    });
 
-    res.json({ success: true, message: `Login notifications ${enabled ? 'enabled' : 'disabled'}` });
+    res.json({ 
+      success: true, 
+      message: `Login notifications ${enabled ? 'enabled' : 'disabled'}`,
+      settings: {
+        enabled: settings.loginNotifications.enabled,
+        preferences: settings.loginNotifications.preferences
+      }
+    });
   } catch (error) {
     console.error('Error toggling login notifications:', error);
     res.status(500).json({ success: false, message: 'Failed to update login notifications' });
+  }
+});
+
+// Get/Set notification preferences
+router.get('/login-notification-status', authenticateGymToken, async (req, res) => {
+  try {
+    const gymId = req.admin.id;
+    const settings = await SecuritySettings.findOne({ gymId });
+    
+    if (!settings) {
+      return res.json({ 
+        success: true, 
+        enabled: false,
+        preferences: {
+          email: true,
+          browser: true,
+          suspiciousOnly: false
+        }
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      enabled: settings.loginNotifications.enabled,
+      preferences: settings.loginNotifications.preferences
+    });
+  } catch (error) {
+    console.error('Error getting login notification status:', error);
+    res.status(500).json({ success: false, message: 'Failed to get login notification status' });
+  }
+});
+
+// Test login notification email (debugging route)
+router.post('/test-login-notification', authenticateGymToken, async (req, res) => {
+  try {
+    const gymId = req.admin.id;
+    const gym = await Gym.findById(gymId);
+    
+    if (!gym) {
+      return res.status(404).json({ success: false, message: 'Gym not found' });
+    }
+    
+    console.log('🧪 Testing login notification email for gym:', gym.gymName);
+    
+    // Check if SecuritySettings exist and notifications are enabled
+    const settings = await SecuritySettings.findOne({ gymId });
+    
+    if (!settings || !settings.loginNotifications.enabled) {
+      return res.json({ 
+        success: false, 
+        message: 'Login notifications are not enabled for this gym',
+        currentSettings: settings ? settings.loginNotifications : null
+      });
+    }
+    
+    // Create a test login attempt
+    const testLoginAttempt = {
+      success: true,
+      timestamp: new Date(),
+      ipAddress: req.ip || '127.0.0.1',
+      device: 'Test Device',
+      browser: 'Test Browser',
+      location: {
+        city: 'Test City',
+        region: 'Test Region',
+        country: 'Test Country'
+      },
+      suspicious: false
+    };
+    
+    // Import sendLoginNotification function (we need to make it available)
+    const sendEmail = require('../utils/sendEmail');
+    
+    // Send test email
+    const subject = 'Test: Successful Login to Your Gym Account';
+    const message = `
+      TEST LOGIN NOTIFICATION for ${gym.gymName}
+      
+      Time: ${testLoginAttempt.timestamp.toLocaleString()}
+      IP Address: ${testLoginAttempt.ipAddress}
+      Device: ${testLoginAttempt.device}
+      Browser: ${testLoginAttempt.browser}
+      Location: ${testLoginAttempt.location.city}, ${testLoginAttempt.location.region}, ${testLoginAttempt.location.country}
+      
+      This is a test email to verify login notifications are working.
+    `;
+    
+    if (settings.loginNotifications.preferences.email) {
+      await sendEmail(gym.email, subject, message);
+      console.log('✅ Test login notification email sent to:', gym.email);
+      
+      res.json({ 
+        success: true, 
+        message: `Test login notification sent to ${gym.email}`,
+        emailSent: true,
+        settings: settings.loginNotifications
+      });
+    } else {
+      res.json({ 
+        success: false, 
+        message: 'Email notifications are disabled in preferences',
+        emailSent: false,
+        settings: settings.loginNotifications
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error testing login notification:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to send test notification',
+      error: error.message
+    });
+  }
+});
+
+// Check email configuration
+router.get('/check-email-config', authenticateGymToken, async (req, res) => {
+  try {
+    const hasEmailUser = !!process.env.EMAIL_USER;
+    const hasEmailPass = !!process.env.EMAIL_PASS;
+    const configured = hasEmailUser && hasEmailPass;
+    
+    console.log('📧 Email configuration check:', {
+      hasEmailUser,
+      hasEmailPass,
+      configured,
+      emailUser: process.env.EMAIL_USER
+    });
+    
+    res.json({
+      success: true,
+      configured,
+      details: {
+        hasEmailUser,
+        hasEmailPass,
+        emailUser: process.env.EMAIL_USER || 'Not set'
+      }
+    });
+  } catch (error) {
+    console.error('Error checking email configuration:', error);
+    res.status(500).json({ success: false, message: 'Failed to check email configuration' });
   }
 });
 

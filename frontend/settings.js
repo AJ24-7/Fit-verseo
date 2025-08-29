@@ -295,8 +295,11 @@ async function loadTrialBookingsAndLimits(token) {
         
         if (statusResponse.ok) {
             const statusData = await statusResponse.json();
+            console.log('DEBUG: Trial status data received:', statusData);
+            console.log('DEBUG: Trial limits object:', statusData.data);
             displayTrialLimitsStatus(statusData.data);
         } else {
+            console.log('DEBUG: Failed to fetch trial status, response:', statusResponse.status);
             displayTrialLimitsError();
         }
         
@@ -1301,4 +1304,13 @@ function showError(message) {
 function logout() {
     localStorage.removeItem('token');
     window.location.href = 'index.html';
+}
+
+// Function to manually refresh trial limits
+function refreshTrialLimits() {
+    const token = localStorage.getItem('token');
+    if (token) {
+        console.log('Manually refreshing trial limits...');
+        loadTrialBookingsAndLimits(token);
+    }
 }

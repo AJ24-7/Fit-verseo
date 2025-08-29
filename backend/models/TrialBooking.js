@@ -11,7 +11,11 @@ const trialBookingSchema = new mongoose.Schema({
   gymId: { type: String, required: true },
   gymName: { type: String, required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Link to user account
-  status: { type: String, default: 'scheduled', enum: ['scheduled', 'completed', 'cancelled', 'no-show'] },
+  status: { 
+    type: String, 
+    default: 'pending', 
+    enum: ['pending', 'confirmed', 'contacted', 'completed', 'cancelled', 'no-show'] 
+  },
   bookingDate: { type: Date, default: Date.now }, // When the booking was made
   isTrialUsed: { type: Boolean, default: false }, // Whether this counts against trial limit
   trialType: { type: String, default: 'free', enum: ['free', 'paid'] }, // Type of trial

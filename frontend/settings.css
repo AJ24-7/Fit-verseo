@@ -804,6 +804,33 @@ header {
     transform: translateY(-2px);
 }
 
+.refresh-btn {
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-btn:hover {
+    background: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.refresh-btn i {
+    transition: transform 0.3s ease;
+}
+
+.refresh-btn:hover i {
+    transform: rotate(180deg);
+}
+
 /* Modal Styles */
 .modal-overlay {
     position: fixed;

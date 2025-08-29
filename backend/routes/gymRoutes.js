@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+const sendEmail = require('../utils/sendEmail');
 
 // Import controllers
 const gymController = require('../controllers/gymController');
@@ -760,36 +761,403 @@ router.post('/security/session-timeout', gymadminAuth, async (req, res) => {
   }
 });
 
-// 🐛 Debug route to test login notification settings
-router.get('/debug/login-notification-status', gymadminAuth, async (req, res) => {
+
+
+// === TRIAL BOOKING ROUTES FOR GYM ADMIN ===
+
+// Import trial booking controller functions
+const TrialBooking = require('../models/TrialBooking');
+
+
+// Get trial bookings for a specific gym
+router.get('/trial-bookings/:gymId', gymadminAuth, async (req, res) => {
   try {
-    const gymId = req.admin?.id;
-    const SecuritySettings = require('../models/SecuritySettings');
-    const Gym = require('../models/gym');
+    const { gymId } = req.params;
+    const requestingGymId = req.admin?.id;
     
-    const gym = await Gym.findById(gymId);
-    const settings = await SecuritySettings.findOne({ gymId });
+    // Ensure gym admin can only access their own gym's trial bookings
+    if (gymId !== requestingGymId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You can only view your own gym\'s trial bookings.'
+      });
+    }
+
+    const { page = 1, limit = 50, status, dateFilter, search } = req.query;
     
-    const debugInfo = {
-      gymId,
-      gymEmail: gym?.email,
-      has2FA: gym?.twoFactorEnabled || false,
-      hasSecuritySettings: !!settings,
-      loginNotificationsConfig: settings?.loginNotifications || null,
-      loginNotificationsEnabled: settings?.loginNotifications?.enabled || false,
-      emailPreference: settings?.loginNotifications?.preferences?.email || false,
-      suspiciousOnlyPreference: settings?.loginNotifications?.preferences?.suspiciousOnly || false
-    };
+    // Build filter for trial bookings
+    let filter = { gymId };
     
-    console.log('🐛 Debug info for login notifications:', debugInfo);
+    if (status && status !== '') {
+      filter.status = status;
+    }
     
-    res.json({
+    // Date filtering
+    if (dateFilter && dateFilter !== '') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      switch (dateFilter) {
+        case 'today':
+          const todayEnd = new Date(today);
+          todayEnd.setHours(23, 59, 59, 999);
+          filter.trialDate = { $gte: today, $lte: todayEnd };
+          break;
+        case 'tomorrow':
+          const tomorrow = new Date(today);
+          tomorrow.setDate(today.getDate() + 1);
+          const tomorrowEnd = new Date(tomorrow);
+          tomorrowEnd.setHours(23, 59, 59, 999);
+          filter.trialDate = { $gte: tomorrow, $lte: tomorrowEnd };
+          break;
+        case 'this-week':
+          const startOfWeek = new Date(today);
+          startOfWeek.setDate(today.getDate() - today.getDay());
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          endOfWeek.setHours(23, 59, 59, 999);
+          filter.trialDate = { $gte: startOfWeek, $lte: endOfWeek };
+          break;
+        case 'next-week':
+          const startOfNextWeek = new Date(today);
+          startOfNextWeek.setDate(today.getDate() - today.getDay() + 7);
+          const endOfNextWeek = new Date(startOfNextWeek);
+          endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
+          endOfNextWeek.setHours(23, 59, 59, 999);
+          filter.trialDate = { $gte: startOfNextWeek, $lte: endOfNextWeek };
+          break;
+        case 'this-month':
+          const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          endOfMonth.setHours(23, 59, 59, 999);
+          filter.trialDate = { $gte: startOfMonth, $lte: endOfMonth };
+          break;
+      }
+    }
+    
+    // Search filtering
+    if (search && search.trim() !== '') {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      filter.$or = [
+        { name: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex },
+        { preferredActivity: searchRegex }
+      ];
+    }
+
+    const bookings = await TrialBooking.find(filter)
+      .populate('userId', 'firstName lastName profileImage email phone')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .select('name email phone trialDate trialTime preferredActivity status createdAt message bookingDate userId');
+
+    const total = await TrialBooking.countDocuments(filter);
+
+    // Map the data to match frontend expectations with user profile data
+    const formattedBookings = bookings.map(booking => {
+      const user = booking.userId;
+      return {
+        _id: booking._id,
+        customerName: booking.name,
+        email: booking.email,
+        phone: booking.phone,
+        preferredDate: booking.trialDate,
+        preferredTime: booking.trialTime,
+        fitnessGoal: booking.preferredActivity,
+        status: booking.status,
+        createdAt: booking.createdAt,
+        message: booking.message,
+        bookingDate: booking.bookingDate,
+        // Add user profile data if available
+        userProfile: user ? {
+          profilePicture: user.profileImage,
+          fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          email: user.email,
+          phone: user.phone
+        } : null
+      };
+    });
+
+    res.status(200).json({
       success: true,
-      debugInfo
+      bookings: formattedBookings,
+      totalPages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+      total
     });
   } catch (error) {
-    console.error('Error in debug endpoint:', error);
-    res.status(500).json({ success: false, message: 'Debug failed', error: error.message });
+    console.error('Error fetching trial bookings for gym:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching trial bookings',
+      error: error.message
+    });
+  }
+});
+
+// Update trial booking status for gym admin
+router.put('/trial-bookings/:bookingId/status', gymadminAuth, async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { status } = req.body;
+    const gymId = req.admin?.id;
+
+    const validStatuses = ['pending', 'confirmed', 'contacted', 'completed', 'cancelled', 'no-show'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status value'
+      });
+    }
+
+    const booking = await TrialBooking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    // Ensure gym admin can only update their own gym's bookings
+    if (booking.gymId.toString() !== gymId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You can only update your own gym\'s bookings.'
+      });
+    }
+
+    booking.status = status;
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Booking status updated successfully',
+      booking: {
+        _id: booking._id,
+        customerName: booking.name,
+        email: booking.email,
+        phone: booking.phone,
+        preferredDate: booking.preferredDate,
+        preferredTime: booking.preferredTime,
+        fitnessGoal: booking.fitnessGoals,
+        status: booking.status,
+        createdAt: booking.createdAt,
+        message: booking.message,
+        age: booking.age
+      }
+    });
+  } catch (error) {
+    console.error('Error updating trial booking status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating booking status',
+      error: error.message
+    });
+  }
+});
+
+// Confirm trial booking and send email
+router.put('/trial-bookings/:bookingId/confirm', gymadminAuth, async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const gymId = req.admin?.id;
+
+    const booking = await TrialBooking.findById(bookingId).populate('userId', 'firstName lastName email');
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    // Ensure gym admin can only confirm their own gym's bookings
+    if (booking.gymId.toString() !== gymId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You can only confirm your own gym\'s bookings.'
+      });
+    }
+
+    // Get gym details for email
+    const gym = await Gym.findById(gymId).select('gymName address phone email');
+    if (!gym) {
+      return res.status(404).json({
+        success: false,
+        message: 'Gym not found'
+      });
+    }
+
+    // Update booking status
+    booking.status = 'confirmed';
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    // Send confirmation email
+    const customerEmail = booking.email;
+    const customerName = booking.name;
+    
+    const emailSubject = `Trial Booking Confirmed - ${gym.gymName}`;
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">Trial Booking Confirmed!</h1>
+        </div>
+        
+        <div style="padding: 30px; background-color: #f9fafb;">
+          <h2 style="color: #1f2937; margin-bottom: 20px;">Dear ${customerName},</h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+            Great news! Your trial booking at <strong>${gym.gymName}</strong> has been confirmed.
+          </p>
+          
+          <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #667eea;">
+            <h3 style="color: #1f2937; margin-top: 0;">Booking Details:</h3>
+            <p style="margin: 8px 0; color: #4b5563;"><strong>Date:</strong> ${new Date(booking.trialDate).toLocaleDateString()}</p>
+            <p style="margin: 8px 0; color: #4b5563;"><strong>Time:</strong> ${booking.trialTime || 'Flexible'}</p>
+            <p style="margin: 8px 0; color: #4b5563;"><strong>Activity:</strong> ${booking.preferredActivity || 'General Fitness'}</p>
+            <p style="margin: 8px 0; color: #4b5563;"><strong>Status:</strong> <span style="color: #059669; font-weight: bold;">Confirmed</span></p>
+          </div>
+          
+          <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin-top: 0;">Gym Information:</h3>
+            <p style="margin: 8px 0; color: #4b5563;"><strong>Name:</strong> ${gym.gymName}</p>
+            <p style="margin: 8px 0; color: #4b5563;"><strong>Address:</strong> ${gym.address || 'Contact gym for address'}</p>
+            <p style="margin: 8px 0; color: #4b5563;"><strong>Phone:</strong> ${gym.phone || 'Contact through website'}</p>
+          </div>
+          
+          <div style="background: #eff6ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1e40af; margin-top: 0;">What to Bring:</h3>
+            <ul style="color: #4b5563; padding-left: 20px;">
+              <li>Comfortable workout clothes</li>
+              <li>Water bottle</li>
+              <li>Towel</li>
+              <li>Positive attitude!</li>
+            </ul>
+          </div>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+            We're excited to have you visit our gym! If you have any questions or need to make changes to your booking, 
+            please contact us directly.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #6b7280; font-size: 14px;">
+              Thank you for choosing ${gym.gymName}!<br>
+              We look forward to seeing you soon.
+            </p>
+          </div>
+        </div>
+        
+        <div style="background: #374151; color: #d1d5db; padding: 20px; text-align: center; font-size: 12px;">
+          <p style="margin: 0;">This is an automated message from FIT-verse gym management system.</p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sendEmail(customerEmail, emailSubject, emailContent);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Booking confirmed and confirmation email sent successfully!',
+        booking: {
+          _id: booking._id,
+          customerName: booking.name,
+          email: booking.email,
+          phone: booking.phone,
+          preferredDate: booking.trialDate,
+          preferredTime: booking.trialTime,
+          fitnessGoal: booking.preferredActivity,
+          status: booking.status,
+          createdAt: booking.createdAt,
+          message: booking.message
+        }
+      });
+    } catch (emailError) {
+      console.error('Error sending confirmation email:', emailError);
+      
+      // Even if email fails, booking was confirmed
+      res.status(200).json({
+        success: true,
+        message: 'Booking confirmed successfully, but there was an issue sending the confirmation email.',
+        booking: {
+          _id: booking._id,
+          customerName: booking.name,
+          email: booking.email,
+          phone: booking.phone,
+          preferredDate: booking.trialDate,
+          preferredTime: booking.trialTime,
+          fitnessGoal: booking.preferredActivity,
+          status: booking.status,
+          createdAt: booking.createdAt,
+          message: booking.message
+        },
+        emailError: 'Failed to send confirmation email'
+      });
+    }
+
+  } catch (error) {
+    console.error('Error confirming trial booking:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error confirming booking',
+      error: error.message
+    });
+  }
+});
+
+// Get trial booking statistics for gym admin dashboard
+router.get('/trial-bookings/:gymId/stats', gymadminAuth, async (req, res) => {
+  try {
+    const { gymId } = req.params;
+    const requestingGymId = req.admin?.id;
+    
+    // Ensure gym admin can only access their own gym's statistics
+    if (gymId !== requestingGymId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You can only view your own gym\'s statistics.'
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Get various statistics
+    const totalBookings = await TrialBooking.countDocuments({ gymId });
+    const pendingBookings = await TrialBooking.countDocuments({ gymId, status: 'pending' });
+    const confirmedBookings = await TrialBooking.countDocuments({ gymId, status: 'confirmed' });
+    const thisWeekBookings = await TrialBooking.countDocuments({ 
+      gymId, 
+      createdAt: { $gte: startOfWeek, $lte: endOfWeek }
+    });
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        total: totalBookings,
+        pending: pendingBookings,
+        confirmed: confirmedBookings,
+        thisWeek: thisWeekBookings
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching trial booking statistics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching statistics',
+      error: error.message
+    });
   }
 });
 

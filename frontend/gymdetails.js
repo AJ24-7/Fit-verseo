@@ -1068,9 +1068,18 @@ function initializeEventListeners() {
     const trialForm = document.getElementById('trial-booking-form');
     trialForm.addEventListener('submit', handleTrialBooking);
     
-    // Quick action buttons
+    // Trial booking cancel button
+    const cancelTrialBtn = document.getElementById('cancel-trial-booking');
+    if (cancelTrialBtn) {
+        cancelTrialBtn.addEventListener('click', () => {
+            closeModal('trial-booking-modal');
+        });
+    }
+    
+    // Quick action buttons - Remove multiple event listeners and consolidate
     document.getElementById('trial-booking-btn').addEventListener('click', async () => {
         await checkTrialLimitsAndOpenModal();
+        // Auto-fill will be called from checkTrialLimitsAndOpenModal
     });
     
     document.getElementById('contact-btn').addEventListener('click', () => {
@@ -1080,6 +1089,237 @@ function initializeEventListeners() {
     // Set minimum date for trial booking to today
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('trial-date').setAttribute('min', today);
+}
+
+// Function to auto-fill user information
+async function autoFillUserInfo() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('No token found, skipping auto-fill');
+        return; // User not logged in, can't auto-fill
+    }
+    
+    try {
+        const response = await fetch(`${BASE_URL}/api/users/profile`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            console.log('Could not fetch user profile for auto-fill, status:', response.status);
+            return;
+        }
+        
+        const user = await response.json();
+        console.log('User data for auto-fill:', user); // Debug log
+        
+        // Fill basic information
+        if (user.name) {
+            const nameInput = document.getElementById('trial-name');
+            if (nameInput) {
+                nameInput.value = user.name;
+                console.log('Name auto-filled:', user.name);
+            }
+        }
+        if (user.email) {
+            const emailInput = document.getElementById('trial-email');
+            if (emailInput) {
+                emailInput.value = user.email;
+                console.log('Email auto-filled:', user.email);
+            }
+        }
+        if (user.phone) {
+            const phoneInput = document.getElementById('trial-phone');
+            if (phoneInput) {
+                phoneInput.value = user.phone;
+                console.log('Phone auto-filled:', user.phone);
+            }
+        }
+        
+        // Fill date of birth - try both field names
+        const dobField = user.dateOfBirth || user.birthdate;
+        if (dobField) {
+            const dobInput = document.getElementById('trial-dob');
+            if (dobInput) {
+                try {
+                    const dob = new Date(dobField);
+                    if (!isNaN(dob.getTime())) {
+                        const formattedDob = dob.toISOString().split('T')[0];
+                        dobInput.value = formattedDob;
+                        console.log('DOB auto-filled:', formattedDob);
+                    }
+                } catch (error) {
+                    console.warn('Could not parse DOB:', dobField, error);
+                }
+            }
+        }
+        
+        // Fill fitness goal - try multiple field names
+        const fitnessGoalSelect = document.getElementById('trial-fitness-goal');
+        if (fitnessGoalSelect) {
+            let userGoals = [];
+            
+            // Check different possible field names for fitness goals
+            if (user.fitnessGoals && Array.isArray(user.fitnessGoals)) {
+                userGoals = user.fitnessGoals;
+            } else if (user.fitnessGoal) {
+                userGoals = [user.fitnessGoal];
+            } else if (user.goals && Array.isArray(user.goals)) {
+                userGoals = user.goals;
+            } else if (user.primaryGoal) {
+                userGoals = [user.primaryGoal];
+            }
+            
+            if (userGoals.length > 0) {
+                const userPrimaryGoal = userGoals[0];
+                console.log('Trying to match fitness goal:', userPrimaryGoal);
+                
+                // Enhanced matching logic
+                const options = fitnessGoalSelect.options;
+                let matched = false;
+                
+                for (let i = 0; i < options.length; i++) {
+                    if (!options[i].value) continue; // Skip empty option
+                    
+                    const optionValue = options[i].value.toLowerCase();
+                    const userGoalLower = userPrimaryGoal.toLowerCase();
+                    
+                    // Check for exact match or partial match
+                    if (optionValue === userGoalLower || 
+                        optionValue.includes(userGoalLower) || 
+                        userGoalLower.includes(optionValue) ||
+                        (userGoalLower.includes('weight') && optionValue.includes('weight')) ||
+                        (userGoalLower.includes('muscle') && optionValue.includes('muscle')) ||
+                        (userGoalLower.includes('cardio') && optionValue.includes('cardio')) ||
+                        (userGoalLower.includes('strength') && optionValue.includes('strength')) ||
+                        (userGoalLower.includes('fitness') && optionValue.includes('fitness')) ||
+                        (userGoalLower.includes('flexibility') && optionValue.includes('flexibility')) ||
+                        (userGoalLower.includes('sports') && optionValue.includes('sports')) ||
+                        (userGoalLower.includes('rehab') && optionValue.includes('rehabilitation'))) {
+                        fitnessGoalSelect.value = options[i].value;
+                        console.log('Matched fitness goal:', options[i].value);
+                        matched = true;
+                        break;
+                    }
+                }
+                
+                if (!matched) {
+                    console.log('No fitness goal match found for:', userPrimaryGoal);
+                }
+            }
+        }
+        
+        // Fill activity preferences
+        const activitySelect = document.getElementById('trial-activity');
+        if (activitySelect) {
+            let userActivities = [];
+            
+            // Check different possible field names for activities
+            if (user.activityPreferences && Array.isArray(user.activityPreferences)) {
+                userActivities = user.activityPreferences;
+            } else if (user.activities && Array.isArray(user.activities)) {
+                userActivities = user.activities;
+            } else if (user.preferredActivities && Array.isArray(user.preferredActivities)) {
+                userActivities = user.preferredActivities;
+            } else if (user.workoutPreferences && Array.isArray(user.workoutPreferences)) {
+                userActivities = user.workoutPreferences;
+            } else if (user.activity) {
+                userActivities = [user.activity];
+            }
+            
+            if (userActivities.length > 0) {
+                const userActivity = userActivities[0];
+                console.log('Trying to match activity:', userActivity);
+                
+                // Enhanced matching logic for activities
+                const options = activitySelect.options;
+                let matched = false;
+                
+                for (let i = 0; i < options.length; i++) {
+                    if (!options[i].value) continue; // Skip empty option
+                    
+                    const optionValue = options[i].value.toLowerCase();
+                    const userActivityLower = userActivity.toLowerCase();
+                    
+                    if (optionValue === userActivityLower || 
+                        optionValue.includes(userActivityLower) || 
+                        userActivityLower.includes(optionValue) ||
+                        (userActivityLower.includes('cardio') && optionValue.includes('cardio')) ||
+                        (userActivityLower.includes('strength') && optionValue.includes('strength')) ||
+                        (userActivityLower.includes('yoga') && optionValue.includes('yoga')) ||
+                        (userActivityLower.includes('hiit') && optionValue.includes('hiit')) ||
+                        (userActivityLower.includes('crossfit') && optionValue.includes('crossfit')) ||
+                        (userActivityLower.includes('zumba') && optionValue.includes('zumba'))) {
+                        activitySelect.value = options[i].value;
+                        console.log('Matched activity:', options[i].value);
+                        matched = true;
+                        break;
+                    }
+                }
+                
+                if (!matched) {
+                    console.log('No activity match found for:', userActivity);
+                }
+            }
+        }
+        
+        // Fill fitness experience
+        const experienceSelect = document.getElementById('trial-experience');
+        if (experienceSelect) {
+            let userExperience = user.fitnessExperience || user.experience || user.experienceLevel || user.fitnessLevel;
+            
+            if (userExperience) {
+                console.log('Trying to match experience:', userExperience);
+                
+                const userExp = userExperience.toLowerCase();
+                const options = experienceSelect.options;
+                let matched = false;
+                
+                for (let i = 0; i < options.length; i++) {
+                    if (!options[i].value) continue; // Skip empty option
+                    
+                    const optionValue = options[i].value.toLowerCase();
+                    
+                    if (optionValue.includes(userExp) || 
+                        userExp.includes(optionValue.split('(')[0].trim().toLowerCase()) ||
+                        (userExp.includes('beginner') && optionValue.includes('beginner')) ||
+                        (userExp.includes('intermediate') && optionValue.includes('intermediate')) ||
+                        (userExp.includes('advanced') && optionValue.includes('advanced')) ||
+                        (userExp.includes('novice') && optionValue.includes('beginner')) ||
+                        (userExp.includes('expert') && optionValue.includes('advanced'))) {
+                        experienceSelect.value = options[i].value;
+                        console.log('Matched experience:', options[i].value);
+                        matched = true;
+                        break;
+                    }
+                }
+                
+                if (!matched) {
+                    console.log('No experience match found for:', userExperience);
+                }
+            }
+        }
+        
+        console.log('User information auto-filled successfully');
+        
+        // Set minimum date to tomorrow for trial booking
+        const trialDateInput = document.getElementById('trial-date');
+        if (trialDateInput) {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const formattedDate = tomorrow.toISOString().split('T')[0];
+            trialDateInput.min = formattedDate;
+            trialDateInput.value = formattedDate; // Default to tomorrow
+        }
+        
+    } catch (error) {
+        console.error('Error auto-filling user information:', error);
+        // Don't show error to user, just fail silently
+    }
 }
 
 // Setup modal event listeners
@@ -1239,24 +1479,6 @@ async function checkTrialLimitsAndOpenModal() {
         return;
     }
     
-    // Load user profile data for auto-filling
-    try {
-        const userResponse = await fetch(`${BASE_URL}/api/users/profile`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (userResponse.ok) {
-            const userData = await userResponse.json();
-            prefillUserData(userData);
-        }
-    } catch (error) {
-        console.error('Error loading user data:', error);
-    }
-    
     try {
         // Check user trial status
         const statusResponse = await fetch(`${BASE_URL}/api/trial-bookings/trial-status`, {
@@ -1308,11 +1530,17 @@ async function checkTrialLimitsAndOpenModal() {
         showTrialStatusInfo(trialLimits);
         openModal('trial-booking-modal');
         
+        // Auto-fill user information after modal is opened
+        setTimeout(autoFillUserInfo, 100);
+        
     } catch (error) {
         console.error('Error checking trial limits:', error);
         // If there's an error checking limits, allow booking but show warning
         showError('Unable to verify trial limits. You may proceed with booking.');
         openModal('trial-booking-modal');
+        
+        // Auto-fill user information after modal is opened
+        setTimeout(autoFillUserInfo, 100);
     }
 }
 
@@ -1506,13 +1734,73 @@ async function handleTrialBooking(e) {
         name: formData.get('name'),
         phone: formData.get('phone'),
         email: formData.get('email'),
+        dateOfBirth: formData.get('dob'),
         preferredDate: formData.get('date'),
         preferredTime: formData.get('time'),
-        sessionType: 'trial',
-        fitnessGoals: formData.get('activity') || 'General fitness'
+        fitnessGoals: formData.get('fitnessGoal') || 'General Fitness',
+        activityPreference: formData.get('activity') || '',
+        experience: formData.get('experience') || '',
+        message: formData.get('message') || '',
+        termsAccepted: formData.get('terms') === 'on',
+        whatsappConsent: formData.get('whatsappConsent') === 'on',
+        sessionType: 'trial'
     };
+
+    // Validate required fields
+    if (!trialData.name || !trialData.phone || !trialData.email || 
+        !trialData.dateOfBirth || !trialData.preferredDate || !trialData.preferredTime || 
+        !trialData.fitnessGoals || !trialData.termsAccepted) {
+        showError('Please fill in all required fields and accept the terms and conditions');
+        return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trialData.email)) {
+        showError('Please enter a valid email address');
+        return;
+    }
+
+    // Validate phone format (basic validation)
+    const phoneRegex = /^[+]?[\d\s\-\(\)]{10,}$/;
+    if (!phoneRegex.test(trialData.phone)) {
+        showError('Please enter a valid phone number');
+        return;
+    }
+
+    // Validate future date
+    const selectedDate = new Date(trialData.preferredDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
+    if (selectedDate < today) {
+        showError('Please select a future date for your trial session');
+        return;
+    }
+
+    // Validate age (must be at least 16 years old)
+    const birthDate = new Date(trialData.dateOfBirth);
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+    
+    if (actualAge < 16) {
+        showError('You must be at least 16 years old to book a trial session');
+        return;
+    }
+    
+    if (actualAge > 100) {
+        showError('Please enter a valid date of birth');
+        return;
+    }
+
     try {
+        // Show loading state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
+        submitBtn.disabled = true;
+
         const headers = {
             'Content-Type': 'application/json'
         };
@@ -1521,14 +1809,30 @@ async function handleTrialBooking(e) {
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
+        console.log('Submitting trial booking with data:', trialData);
+        console.log('Using BASE_URL:', BASE_URL);
+        console.log('Full URL:', `${BASE_URL}/api/trial-bookings/book-trial`);
+
         const response = await fetch(`${BASE_URL}/api/trial-bookings/book-trial`, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify(trialData)
         });
         
+        console.log('Response received:', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok,
+            headers: Object.fromEntries(response.headers.entries())
+        });
+        
         const result = await response.json();
+        console.log('Response data:', result);
+        
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
         
         if (response.ok) {
             closeModal('trial-booking-modal');
@@ -1539,13 +1843,25 @@ async function handleTrialBooking(e) {
                 existingInfo.remove();
             }
             
-            if (token) {
-                showSuccess('Trial booking submitted successfully! Your trial limit has been updated. The gym will contact you soon.');
-            } else {
-                showSuccess('Trial booking submitted successfully! The gym will contact you soon.');
-            }
+            // Show success message with additional info
+            showDialog({
+                title: 'Trial Booking Successful! 🎉',
+                message: `Thank you ${trialData.name}! Your trial session has been booked successfully.\n\nThe gym admin will contact you soon to confirm your session on ${new Date(trialData.preferredDate).toLocaleDateString()} at ${trialData.preferredTime}.\n\nPlease keep your phone available for confirmation calls.`,
+                confirmText: 'Got it!',
+                iconHtml: '<i class="fas fa-check-circle" style="color: #059669; font-size: 3rem;"></i>'
+            });
             
             e.target.reset();
+            
+            // If user is logged in, refresh trial limits for future bookings
+            if (token) {
+                console.log('Refreshing trial limits after successful booking');
+                await refreshTrialLimitsAfterBooking();
+            }
+            
+            // Send notification to gym admin (this will be handled by the backend)
+            console.log('Trial booking notification sent to gym admin');
+            
         } else {
             if (result.restrictions) {
                 showTrialLimitAlert('Booking Restriction', result.message);
@@ -1555,7 +1871,25 @@ async function handleTrialBooking(e) {
         }
     } catch (error) {
         console.error('Error submitting trial booking:', error);
-        showError('Failed to submit trial booking. Please try again.');
+        console.error('Error type:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        // Reset button state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = '<i class="fas fa-paper-plane"></i> Book Trial Session';
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        // Show more specific error message based on error type
+        let errorMessage = 'Failed to submit trial booking. Please try again.';
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            errorMessage = 'Network error: Unable to connect to server. Please check your internet connection.';
+        } else if (error.name === 'SyntaxError') {
+            errorMessage = 'Server response error. Please try again or contact support.';
+        }
+        
+        showError(errorMessage);
     }
 }
 
@@ -2368,5 +2702,25 @@ function updateProfileIconImage(user) {
     if (userIconImage) {
         let profilePicUrl = getProfileImageUrl(user.profileImage);
         userIconImage.src = profilePicUrl;
+    }
+}
+
+// Function to refresh trial limits after booking
+async function refreshTrialLimitsAfterBooking() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        console.log('Refreshing trial limits data...');
+        
+        // Clear any cached trial status info from the modal
+        const existingInfo = document.querySelector('#trial-booking-modal .trial-status-info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+        
+        console.log('Trial limits refresh completed');
+    } catch (error) {
+        console.error('Error refreshing trial limits:', error);
     }
 }

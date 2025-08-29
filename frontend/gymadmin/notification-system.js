@@ -46,7 +46,8 @@ class NotificationSystem {
       trainerNotif: true,
       emailNotif: false,
       membershipExpiryNotif: true,
-      adminUpdateNotif: true
+      adminUpdateNotif: true,
+      trialBookingNotif: true
     };
     
     const saved = localStorage.getItem('notificationSettings');
@@ -1309,7 +1310,9 @@ class NotificationSystem {
       'membership-expiry': 'membershipExpiryNotif',
       'system': 'adminUpdateNotif',
       'admin-reply': 'adminUpdateNotif',
-      'grievance-reply': 'adminUpdateNotif'
+      'grievance-reply': 'adminUpdateNotif',
+      'trial_booking': 'trialBookingNotif',
+      'trial-booking': 'trialBookingNotif'
     };
 
     const settingKey = typeMap[type];
@@ -1582,6 +1585,86 @@ class NotificationSystem {
   // Show notification details
   async showNotificationDetails(notification) {
     let content = '';
+    
+    // Handle trial booking notifications with detailed information
+    if (notification.type === 'trial_booking' || notification.type === 'trial-booking') {
+      const trialData = notification.data || notification.metadata || {};
+      
+      content += `<div style="text-align: left;">`;
+      content += `<p style="margin-bottom: 16px; color: #555;">${notification.message}</p>`;
+      
+      if (trialData.customerName || trialData.clientName) {
+        content += `<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">`;
+        content += `<h4 style="margin: 0 0 12px 0; color: #1976d2;">📋 Trial Booking Details</h4>`;
+        
+        if (trialData.customerName || trialData.clientName) {
+          content += `<p><strong>👤 Customer:</strong> ${trialData.customerName || trialData.clientName}</p>`;
+        }
+        
+        if (trialData.email || trialData.clientEmail) {
+          content += `<p><strong>📧 Email:</strong> <a href="mailto:${trialData.email || trialData.clientEmail}" style="color: #1976d2;">${trialData.email || trialData.clientEmail}</a></p>`;
+        }
+        
+        if (trialData.phone) {
+          content += `<p><strong>📱 Phone:</strong> <a href="tel:${trialData.phone}" style="color: #1976d2;">${trialData.phone}</a></p>`;
+        }
+        
+        if (trialData.preferredDate) {
+          const date = new Date(trialData.preferredDate);
+          content += `<p><strong>📅 Preferred Date:</strong> ${date.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>`;
+        }
+        
+        if (trialData.preferredTime) {
+          const time = trialData.preferredTime;
+          const formattedTime = time.length === 5 ? time : time.substring(0, 5);
+          content += `<p><strong>⏰ Preferred Time:</strong> ${formattedTime}</p>`;
+        }
+        
+        if (trialData.fitnessGoals) {
+          content += `<p><strong>🎯 Interest:</strong> ${trialData.fitnessGoals}</p>`;
+        }
+        
+        content += `</div>`;
+        
+        // Add action buttons
+        content += `<div style="margin-top: 20px;">`;
+        content += `<h4 style="margin: 0 0 12px 0; color: #1976d2;">🔧 Quick Actions</h4>`;
+        content += `<div style="display: flex; gap: 10px; flex-wrap: wrap;">`;
+        
+        if (trialData.phone) {
+          content += `<button onclick="window.open('tel:${trialData.phone}', '_self')" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">📞 Call Customer</button>`;
+        }
+        
+        if (trialData.email || trialData.clientEmail) {
+          const email = trialData.email || trialData.clientEmail;
+          const subject = `Trial Session Confirmation - ${window.currentGymProfile?.gymName || 'Your Gym'}`;
+          const body = `Hi ${trialData.customerName || trialData.clientName},\n\nThank you for booking a trial session with us. We're excited to help you on your fitness journey!\n\nYour booking details:\nDate: ${trialData.preferredDate ? new Date(trialData.preferredDate).toLocaleDateString() : 'TBD'}\nTime: ${trialData.preferredTime || 'TBD'}\n\nWe look forward to seeing you soon!\n\nBest regards,\n${window.currentGymProfile?.gymName || 'Gym'} Team`;
+          content += `<button onclick="window.open('mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}', '_self')" style="background: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">📧 Send Email</button>`;
+        }
+        
+        content += `<button onclick="window.notificationSystem.markTrialAsContacted('${trialData.bookingId || notification.relatedId || ''}')" style="background: #ff9800; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">✅ Mark as Contacted</button>`;
+        content += `</div>`;
+        content += `</div>`;
+      }
+      
+      content += `</div>`;
+      
+      showDialog({
+        title: notification.title,
+        message: content,
+        confirmText: 'OK',
+        iconHtml: `<i class="fas fa-calendar-check" style="color: #3b82f6; font-size: 2rem;"></i>`,
+        onConfirm: () => {
+          // Mark notification as read when OK is clicked
+          if (this.isValidDatabaseNotification(notification.id || notification._id)) {
+            this.markNotificationRead(notification.id || notification._id);
+          }
+        }
+      });
+      
+      return;
+    }
+    
     // For admin/grievance replies, fetch and show full admin reply if ticketId is present
     if ((notification.type === 'admin-reply' || notification.type === 'grievance-reply') && notification.ticketId) {
       content = `<div class="dialog-message" style="min-height:40px;">Loading full reply...</div>`;
@@ -2106,6 +2189,66 @@ class NotificationSystem {
     };
 
     this.addNotification(notification);
+  }
+
+  // Mark trial as contacted
+  async markTrialAsContacted(bookingId) {
+    if (!bookingId) {
+      console.warn('No booking ID provided for trial contact marking');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('gymAdminToken');
+      if (!token) {
+        console.warn('No gym admin token found');
+        return;
+      }
+      
+      // Make API call to update trial booking status
+      const response = await fetch(`http://localhost:5000/api/trial-bookings/booking/${bookingId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'contacted',
+          adminNotes: 'Customer contacted via gym admin panel'
+        })
+      });
+      
+      if (response.ok) {
+        // Show success notification
+        if (window.showNotification) {
+          window.showNotification('Trial booking marked as contacted successfully!', 'success');
+        }
+        
+        // Remove the notification from the list
+        this.notifications = this.notifications.filter(n => 
+          !(n.relatedId === bookingId || (n.data && n.data.bookingId === bookingId))
+        );
+        
+        // Update notification display
+        this.updateNotificationDisplay();
+        
+        // Close any open dialogs
+        const dialog = document.querySelector('.dialog-overlay');
+        if (dialog) {
+          dialog.remove();
+        }
+      } else {
+        console.error('Failed to mark trial as contacted');
+        if (window.showNotification) {
+          window.showNotification('Failed to update trial booking status', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Error marking trial as contacted:', error);
+      if (window.showNotification) {
+        window.showNotification('Error updating trial booking status', 'error');
+      }
+    }
   }
 
   notifyPaymentReceived(paymentData) {

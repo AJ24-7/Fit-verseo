@@ -427,44 +427,120 @@
             </div>
             <div class="modal-body">
                 <form id="trial-booking-form">
-                    <div class="form-group">
-                        <label for="trial-name">Full Name</label>
-                        <input type="text" id="trial-name" name="name" required>
+                    <!-- Personal Information -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-user"></i> Personal Information</h4>
+                        <div class="form-group">
+                            <label for="trial-name">Full Name *</label>
+                            <input type="text" id="trial-name" name="name" required placeholder="Enter your full name">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="trial-phone">Phone Number *</label>
+                                <input type="tel" id="trial-phone" name="phone" required placeholder="Your phone number">
+                            </div>
+                            <div class="form-group">
+                                <label for="trial-email">Email Address *</label>
+                                <input type="email" id="trial-email" name="email" required placeholder="your.email@example.com">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="trial-dob">Date of Birth *</label>
+                            <input type="date" id="trial-dob" name="dob" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="trial-phone">Phone Number</label>
-                        <input type="tel" id="trial-phone" name="phone" required>
+
+                    <!-- Session Preferences -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-calendar"></i> Session Preferences</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="trial-date">Preferred Date *</label>
+                                <input type="date" id="trial-date" name="date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="trial-time">Preferred Time *</label>
+                                <select id="trial-time" name="time" required>
+                                    <option value="">Select time</option>
+                                    <option value="06:00">6:00 AM</option>
+                                    <option value="07:00">7:00 AM</option>
+                                    <option value="08:00">8:00 AM</option>
+                                    <option value="09:00">9:00 AM</option>
+                                    <option value="10:00">10:00 AM</option>
+                                    <option value="11:00">11:00 AM</option>
+                                    <option value="12:00">12:00 PM</option>
+                                    <option value="17:00">5:00 PM</option>
+                                    <option value="18:00">6:00 PM</option>
+                                    <option value="19:00">7:00 PM</option>
+                                    <option value="20:00">8:00 PM</option>
+                                    <option value="21:00">9:00 PM</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="trial-email">Email</label>
-                        <input type="email" id="trial-email" name="email" required>
+
+                    <!-- Fitness Information -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-dumbbell"></i> Fitness Information</h4>
+                        <div class="form-group">
+                            <label for="trial-fitness-goal">Primary Fitness Goal *</label>
+                            <select id="trial-fitness-goal" name="fitnessGoal" required>
+                                <option value="">Select your primary goal</option>
+                                <option value="Weight Loss">Weight Loss</option>
+                                <option value="Muscle Gain">Muscle Gain</option>
+                                <option value="General Fitness">General Fitness</option>
+                                <option value="Strength Training">Strength Training</option>
+                                <option value="Cardio Fitness">Cardio Fitness</option>
+                                <option value="Flexibility">Flexibility & Mobility</option>
+                                <option value="Sports Training">Sports Training</option>
+                                <option value="Rehabilitation">Rehabilitation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="trial-activity">Interested Activity</label>
+                            <select id="trial-activity" name="activity">
+                                <option value="">Select activity (optional)</option>
+                                <!-- Activities will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="trial-experience">Fitness Experience</label>
+                            <select id="trial-experience" name="experience">
+                                <option value="">Select your experience level</option>
+                                <option value="Beginner">Beginner (0-6 months)</option>
+                                <option value="Intermediate">Intermediate (6 months - 2 years)</option>
+                                <option value="Advanced">Advanced (2+ years)</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="trial-date">Preferred Date</label>
-                        <input type="date" id="trial-date" name="date" required>
+
+                    <!-- Additional Information -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-info-circle"></i> Additional Information</h4>
+                        <div class="form-group">
+                            <label for="trial-message">Special Requirements or Messages</label>
+                            <textarea id="trial-message" name="message" rows="3" placeholder="Any specific requirements, health concerns, or questions? (Optional)"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin-bottom: 15px;">
+                                <input type="checkbox" id="trial-terms" name="terms" required style="margin-top: 3px; width: 18px; height: 18px; accent-color: #4CAF50;">
+                                <span style="font-size: 14px; line-height: 1.4;">I agree to the <a href="#" style="color: #4CAF50; text-decoration: underline;">terms and conditions</a> and <a href="#" style="color: #4CAF50; text-decoration: underline;">privacy policy</a> *</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin-bottom: 15px;">
+                                <input type="checkbox" id="trial-whatsapp" name="whatsappConsent" style="margin-top: 3px; width: 18px; height: 18px; accent-color: #4CAF50;">
+                                <span style="font-size: 14px; line-height: 1.4;">I consent to receive updates and notifications via WhatsApp</span>
+                            </label>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="trial-time">Preferred Time</label>
-                        <select id="trial-time" name="time" required>
-                            <option value="">Select time</option>
-                            <option value="06:00">6:00 AM</option>
-                            <option value="07:00">7:00 AM</option>
-                            <option value="08:00">8:00 AM</option>
-                            <option value="09:00">9:00 AM</option>
-                            <option value="10:00">10:00 AM</option>
-                            <option value="11:00">11:00 AM</option>
-                            <option value="18:00">6:00 PM</option>
-                            <option value="19:00">7:00 PM</option>
-                            <option value="20:00">8:00 PM</option>
-                        </select>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancel-trial-booking">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-paper-plane"></i> Book Trial Session
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="trial-activity">Interested Activity</label>
-                        <select id="trial-activity" name="activity">
-                            <option value="">Select activity (optional)</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-primary">Book Trial</button>
                 </form>
             </div>
         </div>

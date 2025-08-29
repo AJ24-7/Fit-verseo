@@ -338,7 +338,8 @@ function integrateNotificationSettings() {
         'trainerNotif',
         'emailNotif',
         'membershipExpiryNotif',
-        'adminUpdateNotif'
+        'adminUpdateNotif',
+        'trialBookingNotif'
       ];
       
       notificationSettings.forEach(settingId => {

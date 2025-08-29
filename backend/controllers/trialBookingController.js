@@ -22,103 +22,275 @@ const createBooking = async (req, res) => {
       previousExperience
     } = req.body;
 
-    // Validate required fields
-    if (!name || !email || !phone || !gymId || !sessionType || !preferredDate || !preferredTime) {
+    // Validate required fields with detailed feedback
+    const missingFields = [];
+    if (!name || name.trim() === '') missingFields.push('name');
+    if (!email || email.trim() === '') missingFields.push('email');
+    if (!phone || phone.trim() === '') missingFields.push('phone');
+    if (!gymId || gymId.trim() === '') missingFields.push('gymId');
+    if (!sessionType || sessionType.trim() === '') missingFields.push('sessionType');
+    if (!preferredDate || preferredDate.trim() === '') missingFields.push('preferredDate');
+    if (!preferredTime || preferredTime.trim() === '') missingFields.push('preferredTime');
+
+    if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'All required fields must be provided'
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        missingFields
       });
     }
 
-    // Check if gym exists
-    const gym = await Gym.findById(gymId);
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address'
+      });
+    }
+
+    // Validate phone format
+    const phoneRegex = /^[+]?[\d\s\-\(\)]{10,}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid phone number'
+      });
+    }
+
+    // Validate future date
+    const trialDate = new Date(preferredDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (trialDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trial date must be in the future'
+      });
+    }
+
+    console.log('Trial booking request data:', { gymId, name, email, sessionType, preferredDate });
+
+    // Check if gym exists - handle both ObjectId and string-based IDs
+    let gym;
+    try {
+      // First try to find by MongoDB ObjectId
+      console.log('Attempting to find gym by ObjectId:', gymId);
+      gym = await Gym.findById(gymId);
+      console.log('Gym found by ObjectId:', gym ? gym.gymName : 'None');
+    } catch (error) {
+      console.log('ObjectId lookup failed, trying alternative methods:', error.message);
+      // If it fails (invalid ObjectId), try to find by custom string ID or name
+      gym = await Gym.findOne({
+        $or: [
+          { gymName: gymId },
+          { 'customId': gymId }
+        ]
+      });
+      console.log('Gym found by name/customId:', gym ? gym.gymName : 'None');
+    }
+    
+    // If still not found, try alternative lookup methods
     if (!gym) {
+      console.log('Attempting fuzzy search for gym:', gymId);
+      gym = await Gym.findOne({
+        $or: [
+          { gymName: { $regex: new RegExp(gymId, 'i') } },
+          { email: gymId }
+        ]
+      });
+      console.log('Gym found by fuzzy search:', gym ? gym.gymName : 'None');
+    }
+    
+    if (!gym) {
+      console.log('No gym found with identifier:', gymId);
       return res.status(404).json({
         success: false,
         message: 'Gym not found'
       });
     }
+    
+    console.log('Using gym:', { id: gym._id, name: gym.gymName });
+    console.log('Full gym object keys:', Object.keys(gym.toObject ? gym.toObject() : gym));
+    console.log('Gym gymName field:', gym.gymName);
+    console.log('Gym name field:', gym.name);
 
     // If user is authenticated and booking a trial, check trial limits
+    // If authenticated user and trial session, check trial limits first
     if (req.user && sessionType === 'trial') {
-      const canBook = await TrialLimitService.canBookTrial(req.user.id, gymId, new Date(preferredDate));
-      
-      if (!canBook.canBook) {
-        return res.status(400).json({
+      console.log('Checking trial limits for authenticated user:', req.user._id);
+      try {
+        const canBook = await TrialLimitService.canBookTrial(req.user._id, gym._id.toString(), new Date(preferredDate));
+        
+        if (!canBook.canBook) {
+          console.log('Trial booking denied due to limits:', canBook.message);
+          return res.status(400).json({
+            success: false,
+            message: canBook.message,
+            reason: canBook.reason
+          });
+        }
+        console.log('Trial limits check passed for user');
+      } catch (trialLimitError) {
+        console.error('Error checking trial limits:', trialLimitError);
+        return res.status(500).json({
           success: false,
-          message: canBook.message,
-          restrictions: canBook.restrictions
+          message: 'Error checking trial availability. Please try again.'
         });
       }
+    } else if (sessionType === 'trial') {
+      console.log('Anonymous trial booking request (no authentication)');
     }
 
     // Create booking
+    const gymNameValue = gym.gymName || gym.name || 'Unknown Gym';
+    console.log('Using gymName value:', gymNameValue);
+    
     const booking = new TrialBooking({
       name,
       email,
       phone,
-      gymId,
-      sessionType,
-      preferredDate: new Date(preferredDate),
-      preferredTime,
-      emergencyContact,
-      healthConditions,
-      fitnessGoals,
-      previousExperience,
-      userId: req.user ? req.user.id : null
+      gymId: gym._id.toString(), // Use the actual gym's ObjectId
+      gymName: gymNameValue,
+      trialDate: new Date(preferredDate),
+      trialTime: preferredTime,
+      preferredActivity: fitnessGoals,
+      message: req.body.message,
+      userId: req.user ? req.user._id : null, // Use _id instead of id to get proper ObjectId
+      status: 'pending',
+      isTrialUsed: req.user ? true : false // Only mark as trial used for authenticated users
     });
 
     const savedBooking = await booking.save();
 
-    // If authenticated user booked a trial, update their trial limits
+    console.log('Trial booking saved successfully:', {
+      bookingId: savedBooking._id,
+      userId: savedBooking.userId,
+      isTrialUsed: savedBooking.isTrialUsed,
+      bookingDate: savedBooking.bookingDate,
+      trialDate: savedBooking.trialDate
+    });
+
+    // If authenticated user booked a trial, update their trial history
     if (req.user && sessionType === 'trial') {
-      await TrialLimitService.bookTrial(req.user.id, gymId, savedBooking._id);
+      try {
+        console.log('Updating trial history for user after successful booking');
+        const user = await User.findById(req.user._id);
+        if (user) {
+          console.log('Current trial limits before update:', user.trialLimits);
+          
+          // Add to trial history
+          user.trialLimits.trialHistory.push({
+            gymId: gym._id.toString(),
+            gymName: gymNameValue,
+            bookingDate: new Date(),
+            trialDate: new Date(preferredDate),
+            trialBookingId: savedBooking._id,
+            status: 'pending'
+          });
+          await user.save();
+          
+          console.log('Trial history updated successfully');
+          console.log('Updated trial history length:', user.trialLimits.trialHistory.length);
+        }
+      } catch (trialUpdateError) {
+        console.error('Error updating trial history after booking:', trialUpdateError);
+        // Don't fail the booking response, but log the issue
+      }
     }
 
     // Create notification for gym admin
     try {
+      console.log('Creating notification for gym admin');
       const notification = new Notification({
         type: 'trial_booking',
         title: 'New Trial Booking',
-        message: `New trial booking from ${name} for ${gym.name}`,
-        gymId: gymId,
+        message: `New trial booking from ${name} for ${gymNameValue}`,
+        gymId: gym._id.toString(),
         relatedId: savedBooking._id,
         priority: 'medium'
       });
       await notification.save();
+      console.log('Notification created successfully');
 
       // Send real-time notification
-      await adminNotificationService.sendNotification({
-        type: 'trial_booking',
-        gymId: gymId,
-        title: 'New Trial Booking',
-        message: `${name} has booked a ${sessionType} session`,
-        data: {
-          bookingId: savedBooking._id,
-          customerName: name,
-          email: email,
-          phone: phone,
-          preferredDate: preferredDate,
-          preferredTime: preferredTime
-        }
-      });
+      try {
+        await adminNotificationService.sendNotification({
+          type: 'trial_booking',
+          gymId: gym._id.toString(),
+          title: 'New Trial Booking',
+          message: `${name} has booked a ${sessionType} session`,
+          data: {
+            bookingId: savedBooking._id,
+            customerName: name,
+            email: email,
+            phone: phone,
+            preferredDate: preferredDate,
+            preferredTime: preferredTime
+          }
+        });
+        console.log('Real-time notification sent successfully');
+      } catch (realtimeNotificationError) {
+        console.error('Error sending real-time notification:', realtimeNotificationError);
+        // Don't fail the booking if real-time notification fails
+      }
     } catch (notificationError) {
-      console.error('Error sending notification:', notificationError);
+      console.error('Error creating notification:', notificationError);
       // Don't fail the booking if notification fails
     }
 
+    console.log('Trial booking process completed successfully');
+    
     res.status(200).json({
       success: true,
       message: 'Trial booking created successfully',
-      booking: savedBooking
+      booking: {
+        id: savedBooking._id,
+        name: savedBooking.name,
+        email: savedBooking.email,
+        phone: savedBooking.phone,
+        gymName: savedBooking.gymName,
+        trialDate: savedBooking.trialDate,
+        trialTime: savedBooking.trialTime,
+        status: savedBooking.status,
+        createdAt: savedBooking.createdAt
+      }
     });
 
   } catch (error) {
     console.error('Error creating trial booking:', error);
+    
+    // Handle specific error types
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationErrors
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid data format provided'
+      });
+    }
+    
+    // Handle notification service errors gracefully
+    if (error.message && error.message.includes('notification')) {
+      return res.status(200).json({
+        success: true,
+        message: 'Trial booking created successfully (notification delivery pending)',
+        booking: { status: 'pending', message: 'Booking confirmed, gym will contact you soon' }
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error creating trial booking',
-      error: error.message
+      message: 'Error creating trial booking. Please try again or contact support.',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -233,7 +405,7 @@ const deleteBooking = async (req, res) => {
 // Get user trial status
 const getUserTrialStatus = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id; // Use _id instead of id
     const status = await TrialLimitService.getUserTrialStatus(userId);
     
     res.status(200).json({
@@ -253,7 +425,7 @@ const getUserTrialStatus = async (req, res) => {
 // Check trial availability for specific gym and date
 const checkTrialAvailability = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id; // Use _id instead of id
     const { gymId, date } = req.query;
     
     if (!gymId || !date) {
@@ -286,7 +458,7 @@ const checkTrialAvailability = async (req, res) => {
 // Cancel trial booking
 const cancelTrialBooking = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id; // Use _id instead of id
     const { bookingId } = req.params;
     
     // Find the booking and verify ownership
@@ -320,10 +492,7 @@ const cancelTrialBooking = async (req, res) => {
     // Refund trial if booking was for a trial session
     if (booking.sessionType === 'trial') {
       const user = await User.findById(userId);
-      if (user && user.trialLimits.usedTrials > 0) {
-        user.trialLimits.usedTrials -= 1;
-        user.trialLimits.remainingTrials += 1;
-        
+      if (user) {
         // Remove from trial history if it exists
         user.trialLimits.trialHistory = user.trialLimits.trialHistory.filter(
           trial => trial.bookingId.toString() !== bookingId
@@ -351,7 +520,7 @@ const cancelTrialBooking = async (req, res) => {
 // Get user trial history
 const getUserTrialHistory = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id; // Use _id instead of id
     const { page = 1, limit = 10, status } = req.query;
     
     const user = await User.findById(userId);
@@ -363,9 +532,12 @@ const getUserTrialHistory = async (req, res) => {
     }
     
     // Build filter for trial bookings
+    const mongoose = require('mongoose');
+    const userObjectId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+    
     let filter = {
-      userId: userId,
-      sessionType: 'trial'
+      userId: userObjectId
+      // Remove sessionType filter as it doesn't exist in TrialBooking model
     };
     
     if (status) {

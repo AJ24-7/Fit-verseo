@@ -60,14 +60,13 @@ const userSchema = new mongoose.Schema({
   // Trial tracking system
   trialLimits: {
     totalTrials: { type: Number, default: 3 }, // Total free trials per month
-    usedTrials: { type: Number, default: 0 }, // Used trials this month
-    remainingTrials: { type: Number, default: 3 }, // Remaining trials this month
     lastResetDate: { type: Date, default: Date.now }, // Last monthly reset date
     trialHistory: [{
       gymId: { type: mongoose.Schema.Types.ObjectId, ref: 'Gym' },
       gymName: String,
       bookingDate: Date,
       trialDate: Date,
+      trialBookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'TrialBooking' },
       status: { type: String, enum: ['scheduled', 'completed', 'cancelled'], default: 'scheduled' }
     }]
   },
