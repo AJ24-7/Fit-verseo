@@ -60,186 +60,670 @@
         </nav>
     </header>
     <section class="hero">
-        <div class="hero-content">
-            <h1 class="fade-in"><span>Welcome</span> To Gym-Wale</h1>
-            <p class="slide-up">Join the best gyms near you and achieve your fitness goals.</p>
-            <button class="explore-btn">Explore Now</button>
+        <div class="hero-overlay"></div>
+        
+        <!-- Floating Brand Text -->
+        <div class="hero-brand-float">GYM-WALE</div>
+        
+        <!-- Floating Gym Icons -->
+        <div class="hero-floating-icons">
+            <div class="floating-icon"><i class="fas fa-dumbbell"></i></div>
+            <div class="floating-icon"><i class="fas fa-heartbeat"></i></div>
+            <div class="floating-icon"><i class="fas fa-running"></i></div>
+            <div class="floating-icon"><i class="fas fa-weight-hanging"></i></div>
+            <div class="floating-icon"><i class="fas fa-swimmer"></i></div>
         </div>
-        <!--gym search container-->
-        <div class="gym-search-container">
-            <h2 style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
-                <span><i class="fas fa-search"></i> Find Your Perfect Gym</span>
-                <button id="nearYouBtn" class="near-you-btn" title="Find gyms near your location" style="margin: 0;">
-                    <i class="fas fa-location-crosshairs"></i> Near You
+        
+        <!-- Animated Particles -->
+        <div class="hero-particles">
+            <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+            <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
+            <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
+            <div class="particle" style="left: 40%; animation-delay: 6s;"></div>
+            <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
+            <div class="particle" style="left: 60%; animation-delay: 10s;"></div>
+            <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
+            <div class="particle" style="left: 80%; animation-delay: 14s;"></div>
+            <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
+        </div>
+        
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <i class="fas fa-medal"></i>
+                    <span>India's #1 Gym Finder Platform</span>
+                </div>
+                <h1 class="hero-title">
+                    Find Your <span class="gradient-text">Perfect Gym</span><br>
+                    Transform Your <span class="gradient-text">Fitness Journey</span>
+                </h1>
+                <p class="hero-description">
+                    Join thousands of fitness enthusiasts who have discovered their ideal workout space. 
+                    Find gyms near you with flexible plans, expert trainers, and state-of-the-art equipment.
+                </p>
+                <div class="hero-cta-group">
+                    <button class="btn-primary hero-cta-btn" onclick="showQuickSearchModal()">
+                        <i class="fas fa-search"></i>
+                        <span>Find Gyms Now</span>
+                    </button>
+                    <button class="btn-secondary hero-cta-btn" onclick="scrollToShowcase()">
+                        <i class="fas fa-play"></i>
+                        <span>Watch Demo</span>
+                    </button>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">500+</span>
+                        <span class="stat-label">Partner Gyms</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">10K+</span>
+                        <span class="stat-label">Happy Members</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">50+</span>
+                        <span class="stat-label">Cities</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-search-card">
+                <div class="search-card-header">
+                    <h2>
+                        <i class="fas fa-location-dot"></i>
+                        <span>Find Your Perfect Gym</span>
+                    </h2>
+                    <button id="nearYouBtn" class="location-btn">
+                        <i class="fas fa-crosshairs"></i>
+                        <span>Use My Location</span>
+                    </button>
+                </div>
+
+                <div class="search-form">
+                    <!-- Location Inputs -->
+                    <div class="input-group">
+                        <div class="input-field">
+                            <i class="fas fa-city input-icon"></i>
+                            <input type="text" id="city" placeholder="Enter city name" class="search-input">
+                        </div>
+                        <div class="input-field">
+                            <i class="fas fa-map-pin input-icon"></i>
+                            <input type="text" id="pincode" placeholder="Enter pincode" class="search-input">
+                        </div>
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="price-range-group">
+                        <label class="range-label">
+                            <i class="fas fa-wallet"></i>
+                            <span>Monthly Budget: <span id="priceValue" class="price-display">₹2000</span></span>
+                        </label>
+                        <div class="range-slider-container">
+                            <input type="range" id="priceRange" min="500" max="5000" step="500" value="2000" class="custom-range">
+                            <div class="range-track"></div>
+                        </div>
+                    </div>
+
+                    <!-- Activities Section -->
+                    <div class="activities-section">
+                        <h3 class="activities-title">
+                            <i class="fas fa-dumbbell"></i>
+                            <span>Choose Your Activities</span>
+                        </h3>
+                        <div class="activities-grid" id="activities-grid">
+                            <div class="activity-chip" data-activity="yoga">
+                                <i class="fas fa-person-praying"></i>
+                                <span>Yoga</span>
+                            </div>
+                            <div class="activity-chip" data-activity="zumba">
+                                <i class="fas fa-music"></i>
+                                <span>Zumba</span>
+                            </div>
+                            <div class="activity-chip" data-activity="crossfit">
+                                <i class="fas fa-dumbbell"></i>
+                                <span>CrossFit</span>
+                            </div>
+                            <div class="activity-chip" data-activity="weight training">
+                                <i class="fas fa-weight-hanging"></i>
+                                <span>Weight Training</span>
+                            </div>
+                            <div class="activity-chip" data-activity="cardio">
+                                <i class="fas fa-heartbeat"></i>
+                                <span>Cardio</span>
+                            </div>
+                            <div class="activity-chip" data-activity="pilates">
+                                <i class="fas fa-child"></i>
+                                <span>Pilates</span>
+                            </div>
+                            <div class="activity-chip" data-activity="hiit">
+                                <i class="fas fa-bolt"></i>
+                                <span>HIIT</span>
+                            </div>
+                            <div class="activity-chip" data-activity="aerobics">
+                                <i class="fas fa-running"></i>
+                                <span>Aerobics</span>
+                            </div>
+                            <div class="activity-chip" data-activity="martial arts">
+                                <i class="fas fa-hand-fist"></i>
+                                <span>Martial Arts</span>
+                            </div>
+                            <div class="activity-chip" data-activity="swimming">
+                                <i class="fas fa-person-swimming"></i>
+                                <span>Swimming</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Actions -->
+                    <div class="search-actions">
+                        <button onclick="searchGyms()" class="search-btn">
+                            <i class="fas fa-search"></i>
+                            <span>Search Gyms</span>
+                        </button>
+                        <span id="gymSearchCounter" class="results-counter" style="display:none;"></span>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div id="results" class="search-results"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Search Modal -->
+    <div id="quick-search-modal" class="search-modal">
+        <div class="modal-backdrop" onclick="closeQuickSearchModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-search"></i> Quick Gym Search</h2>
+                <button class="modal-close" onclick="closeQuickSearchModal()">
+                    <i class="fas fa-times"></i>
                 </button>
-            </h2>
-            <!-- City & Pincode -->
-            <div class="filter-group">
-                <label for="city"><i class="fas fa-city"></i> City:</label>
-                <input type="text" id="city" placeholder="Enter city name">
-                
-                <label for="pincode"><i class="fas fa-map-pin"></i> Pincode:</label>
-                <input type="text" id="pincode" placeholder="Enter pincode">
             </div>
-        
-            <!-- Monthly Price -->
-            <div class="filter-group">
-                <label for="priceRange"><i class="fas fa-wallet"></i> Monthly Price:</label>
-                <input type="range" id="priceRange" min="500" max="5000" step="500" value="2000">
-                <span id="priceValue">₹2000</span>
+            <div class="modal-body">
+                <div class="quick-search-form">
+                    <div class="location-input-group">
+                        <div class="input-field">
+                            <i class="fas fa-map-marker-alt input-icon"></i>
+                            <input type="text" id="quick-location" placeholder="Enter your location (city/area)" class="search-input">
+                        </div>
+                        <button id="quickLocationBtn" class="location-btn" onclick="getQuickLocation()">
+                            <i class="fas fa-crosshairs"></i>
+                            <span>Use GPS</span>
+                        </button>
+                    </div>
+                    <div class="quick-activities">
+                        <h4><i class="fas fa-dumbbell"></i> Select your preferred activities</h4>
+                        <div class="quick-activities-grid">
+                            <div class="quick-activity" data-activity="yoga"><i class="fas fa-person-praying"></i> Yoga</div>
+                            <div class="quick-activity" data-activity="weight training"><i class="fas fa-weight-hanging"></i> Weight Training</div>
+                            <div class="quick-activity" data-activity="cardio"><i class="fas fa-heartbeat"></i> Cardio</div>
+                            <div class="quick-activity" data-activity="zumba"><i class="fas fa-music"></i> Zumba</div>
+                            <div class="quick-activity" data-activity="crossfit"><i class="fas fa-dumbbell"></i> CrossFit</div>
+                            <div class="quick-activity" data-activity="swimming"><i class="fas fa-person-swimming"></i> Swimming</div>
+                        </div>
+                    </div>
+                    <button class="quick-search-btn" onclick="performQuickSearch()">
+                        <i class="fas fa-search"></i> Find Nearby Gyms
+                    </button>
+                </div>
+                <div id="quick-search-results" class="quick-results"></div>
             </div>
-        
-        
-            <!-- Gym Activities -->
-            <div class="gym-activities">
-                <h3><i class="fas fa-bolt"></i> Available Activities:</h3>
-                <div class="activity-list">
-                    <div class="activity" data-activity="yoga">
-                        <i class="fas fa-person-praying"></i> Yoga
+        </div>
+    </div>
+
+    <!-- Modern Showcase Section -->
+    <section class="showcase-section">
+        <div class="container">
+            <div class="showcase-content">
+                <div class="showcase-text">
+                    <div class="section-badge">
+                        <i class="fas fa-trophy"></i>
+                        <span>Premium Experience</span>
                     </div>
-                    <div class="activity" data-activity="zumba">
-                        <i class="fas fa-music"></i> Zumba
+                    <h2 class="showcase-title">
+                        Transform Your Fitness <span class="gradient-text">Journey Today</span>
+                    </h2>
+                    <p class="showcase-description">
+                        Experience world-class facilities, expert guidance, and a community that motivates you to achieve your fitness goals. 
+                        Join thousands who have already transformed their lives with our platform.
+                    </p>
+                    <div class="showcase-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>State-of-the-art Equipment</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Expert Personal Training</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Flexible Membership Plans</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Premium Facilities Access</span>
+                        </div>
                     </div>
-                    <div class="activity" data-activity="crossfit">
-                        <i class="fas fa-dumbbell"></i> CrossFit
+                    <div class="showcase-cta">
+                        <button class="btn-primary showcase-btn" onclick="showQuickSearchModal()">
+                            <i class="fas fa-rocket"></i>
+                            <span>Start Your Journey</span>
+                        </button>
                     </div>
-                    <div class="activity" data-activity="weight training">
-                        <i class="fas fa-weight-hanging"></i> Weight Training
-                    </div>
-                    <div class="activity" data-activity="cardio">
-                        <i class="fas fa-heartbeat"></i> Cardio
-                    </div>
-                    <div class="activity" data-activity="pilates">
-                        <i class="fas fa-child"></i> Pilates
-                    </div>
-                    <div class="activity" data-activity="hiit">
-                        <i class="fas fa-bolt"></i> HIIT
-                    </div>
-                    <div class="activity" data-activity="aerobics">
-                        <i class="fas fa-running"></i> Aerobics
-                    </div>
-                    <div class="activity" data-activity="martial arts">
-                        <i class="fas fa-hand-fist"></i> Martial Arts
-                    </div>
-                    <div class="activity" data-activity="spin class">
-                        <i class="fas fa-bicycle"></i> Spin Class
-                    </div>
-                    <div class="activity" data-activity="swimming">
-                        <i class="fas fa-person-swimming"></i> Swimming
-                    </div>
-                    <div class="activity" data-activity="boxing">
-                        <i class="fas fa-hand-rock"></i> Boxing
-                    </div>
-                    <div class="activity" data-activity="personal training">
-                        <i class="fas fa-user-tie"></i> Personal Training
-                    </div>
-                    <div class="activity" data-activity="bootcamp">
-                        <i class="fas fa-shoe-prints"></i> Bootcamp
-                    </div>
-                    <div class="activity" data-activity="stretching">
-                        <i class="fas fa-arrows-up-down"></i> Stretching
+                </div>
+
+                <div class="showcase-gallery">
+                    <div class="gallery-grid">
+                        <div class="gallery-item main-item">
+                            <img src="/frontend/data/stateofartequipment.png" alt="State-of-the-art Equipment" loading="lazy">
+                            <div class="gallery-overlay">
+                                <h4>Modern Equipment</h4>
+                                <p>Latest fitness technology</p>
+                            </div>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/frontend/data/experttraining.png" alt="Expert Training" loading="lazy">
+                            <div class="gallery-overlay">
+                                <h4>Expert Trainers</h4>
+                                <p>Certified professionals</p>
+                            </div>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/frontend/data/Convenienttraining.png" alt="Convenient Training" loading="lazy">
+                            <div class="gallery-overlay">
+                                <h4>Convenience</h4>
+                                <p>Train on your schedule</p>
+                            </div>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/frontend/data/allfacilities.png" alt="All Facilities" loading="lazy">
+                            <div class="gallery-overlay">
+                                <h4>Complete Facilities</h4>
+                                <p>Everything you need</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        
-            <!-- Search Button and Counter -->
-            <div class="search-btn-row">
-                <button onclick="searchGyms()" class="searchGyms"><i class="fas fa-search"></i> Search</button>
-                <span id="gymSearchCounter" class="gym-search-counter" style="display:none;"></span>
-            </div>
-        
-            <!-- Gym List -->
-            <div id="results">
-                <!-- Gyms will be displayed here dynamically -->
-            </div>
         </div>
-    
     </section>
-    <section>
-        <div class="image-slider-container">
-            <div class="slider-text">
-                <h1>Change your fitness journey</h1>
-                <p>Discover the best gyms, fitness plans, and expert trainers in your city. Find personalized workout programs that suit your fitness goals!</p>
-            </div>
-        
-            <div class="image-slider">
-                <div class="slider">
-                    <img src="/frontend/data/stateofartequipment.png" alt="State-of-the-art Equipments">
-                    <img src="/frontend/data/experttraining.png" alt="Expert Training">
-                    <img src="/frontend/data/Convenienttraining.png" alt="Convenient training">
-                    <img src="/frontend/data/allfacilities.png" alt="All facilities">
+    <!-- Modern Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">
+                    <i class="fas fa-star"></i>
+                    <span>Why Choose Gym-Wale</span>
                 </div>
-        
-                <!-- Navigation Arrows -->
-                <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
-                <button class="next" onclick="moveSlide(1)">&#10095;</button>
+                <h2 class="section-title">Everything You Need for Your <span class="gradient-text">Fitness Journey</span></h2>
+                <p class="section-description">
+                    Discover gyms that match your lifestyle with our comprehensive platform designed for modern fitness enthusiasts.
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card primary-feature">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3>Flexible Day Plans</h3>
+                    <p>Pay only for the days you train with our innovative per-day membership plans. Perfect for busy professionals and students.</p>
+                    <div class="feature-highlight">
+                        <span>Starting from ₹50/day</span>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <h3>Smart Rush Hour Tracking</h3>
+                    <p>Never wait in crowded gyms again. Check real-time crowd levels and plan your workouts for maximum comfort.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </div>
+                    </div>
+                    <h3>Location-Based Discovery</h3>
+                    <p>Find gyms within walking distance using GPS technology. Get directions, contact info, and reviews instantly.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                    </div>
+                    <h3>Budget-Friendly Options</h3>
+                    <p>Compare membership prices across multiple gyms and find the best deals that fit your budget and requirements.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                    </div>
+                    <h3>Verified Reviews & Ratings</h3>
+                    <p>Make informed decisions with authentic reviews from real gym members. Rate your experience and help others choose.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                    </div>
+                    <h3>Diverse Activity Options</h3>
+                    <p>From yoga to CrossFit, find gyms that offer your favorite activities. Filter by equipment, classes, and training styles.</p>
+                </div>
             </div>
         </div>
     </section>
-   <!-- Features Section -->
-   <div class="features-section">
-    <div class="features">
-        <h2 class="slide-up">Our Features</h2>
-        <div class="features-container">
-            <div class="feature-box slide-up">
-                <i class="fa-solid fa-calendar-day feature-icon"></i>
-                <h3>Per Day plans</h3>
-                <p>We provide the per day plans for non regular users.</p>
+
+    <!-- Modern FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Got Questions?</span>
+                </div>
+                <h2 class="section-title">Frequently Asked <span class="gradient-text">Questions</span></h2>
+                <p class="section-description">
+                    Find answers to the most common questions about our platform and services.
+                </p>
             </div>
-            <div class="feature-box slide-up" style="animation-delay: 0.1s;">
-                <i class="fas fa-clock feature-icon"></i>
-                <h3>Check rush hours</h3>
-                <p>You can check the rush hours to have a hassle-free workout</p>
-            </div>
-            <div class="feature-box slide-up" style="animation-delay: 0.2s;">
-                <i class="fas fa-map-marked-alt feature-icon"></i>
-                <h3>Find Gyms Nearby</h3>
-                <p>Locate the best gyms in your city with ease.</p>
-            </div>
-            <div class="feature-box slide-up" style="animation-delay: 0.3s;">
-                <i class="fas fa-wallet feature-icon"></i>
-                <h3>Affordable Plans</h3>
-                <p>Choose from flexible pricing plans that fit your budget.</p>
-            </div>
-            <div class="feature-box slide-up" style="animation-delay: 0.4s;">
-                <i class="fas fa-star feature-icon"></i>
-                <h3>Ratings & reviews</h3>
-                <p>You can rate the gyms based on your experience</p>
-            </div>
-            <div class="feature-box slide-up" style="animation-delay: 0.5s;">
-                <i class="fas fa-person-running feature-icon"></i>
-                <h3>Various gym activites</h3>
-                <p>Choose from various gym activites based on your goals</p>
+            
+            <div class="faq-grid">
+                <div class="faq-card">
+                    <div class="faq-question">
+                        <h3>What is Gym-Wale?</h3>
+                        <div class="faq-toggle">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Gym-Wale is India's leading gym discovery platform that helps you find the perfect gym based on your location, budget, and fitness preferences. We offer flexible membership options including unique per-day plans.</p>
+                    </div>
+                </div>
+
+                <div class="faq-card">
+                    <div class="faq-question">
+                        <h3>How do per-day plans work?</h3>
+                        <div class="faq-toggle">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Our innovative per-day plans allow you to pay only for the days you actually visit the gym. Perfect for people with irregular schedules or those who want to try different gyms without long-term commitments.</p>
+                    </div>
+                </div>
+
+                <div class="faq-card">
+                    <div class="faq-question">
+                        <h3>Do you offer personal training services?</h3>
+                        <div class="faq-toggle">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! We connect you with certified personal trainers available at partner gyms. You can book personalized training sessions based on your fitness goals and schedule.</p>
+                    </div>
+                </div>
+
+                <div class="faq-card">
+                    <div class="faq-question">
+                        <h3>What membership plans are available?</h3>
+                        <div class="faq-toggle">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We offer various membership tiers including Basic, Premium, and our unique Per-Day plans. Each gym may have different pricing structures and benefits to suit different needs and budgets.</p>
+                    </div>
+                </div>
+
+                <div class="faq-card">
+                    <div class="faq-question">
+                        <h3>How do I find gyms near me?</h3>
+                        <div class="faq-toggle">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Simply use our search feature above, enter your city or pincode, or click "Use My Location" to automatically find nearby gyms. You can filter by activities, price range, and other preferences.</p>
+                    </div>
+                </div>
+
+                <div class="faq-card">
+                    <div class="faq-question">
+                        <h3>Are the gym reviews authentic?</h3>
+                        <div class="faq-toggle">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Absolutely! All reviews are from verified gym members who have actually visited the facilities. We have strict policies against fake reviews to maintain authenticity and help you make informed decisions.</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!--FAQ section-->
-
-<div class="faq-container">
-    <div class="faq-item">
-        <div class="faq-question">What is Fit-Verse? <span class="arrow">▼</span></div>
-        <div class="faq-answer">Fit-Verse is a platform which offers different gym memberships and ratings at affordable prices with many unique features.</div>
-    </div>
-    <div class="faq-item">
-        <div class="faq-question">What is the per day plan? <span class="arrow">▼</span></div>
-        <div class="faq-answer">only Pay for the days you train</div>
-    </div>
-    <div class="faq-item">
-        <div class="faq-question">Do you offer personal training? <span class="arrow">▼</span></div>
-        <div class="faq-answer">Yes, we have certified trainers available in every gym for personalized training sessions.</div>
-    </div>
-    <div class="faq-item">
-        <div class="faq-question">What are the different membership plans? <span class="arrow">▼</span></div>
-        <div class="faq-answer">Yes, Every gym having same rating will have three plans Basic, premium and per day.</div>
-    </div>
-</div>
+    </section>
 <script>
-    document.querySelectorAll('.faq-question').forEach(question => {
-        question.addEventListener('click', () => {
-            const faqItem = question.parentElement;
-            faqItem.classList.toggle('active');
+    // Modern FAQ Toggle Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const faqCards = document.querySelectorAll('.faq-card');
+        
+        faqCards.forEach(card => {
+            const question = card.querySelector('.faq-question');
+            const answer = card.querySelector('.faq-answer');
+            const toggle = card.querySelector('.faq-toggle i');
+            
+            question.addEventListener('click', () => {
+                // Close other open FAQ items
+                faqCards.forEach(otherCard => {
+                    if (otherCard !== card && otherCard.classList.contains('active')) {
+                        otherCard.classList.remove('active');
+                        otherCard.querySelector('.faq-toggle i').className = 'fas fa-plus';
+                    }
+                });
+                
+                // Toggle current FAQ item
+                card.classList.toggle('active');
+                toggle.className = card.classList.contains('active') ? 'fas fa-minus' : 'fas fa-plus';
+            });
+        });
+    });
+</script>
+<script>
+    // Quick Search Modal Functions
+    function showQuickSearchModal() {
+        const modal = document.getElementById('quick-search-modal');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeQuickSearchModal() {
+        const modal = document.getElementById('quick-search-modal');
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+        // Clear results
+        document.getElementById('quick-search-results').innerHTML = '';
+    }
+
+    function scrollToShowcase() {
+        document.querySelector('.showcase-section').scrollIntoView({
+            behavior: 'smooth'
+        });
+    }
+
+    function getQuickLocation() {
+        const btn = document.getElementById('quickLocationBtn');
+        const locationInput = document.getElementById('quick-location');
+        
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser.');
+            return;
+        }
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting Location...';
+        btn.disabled = true;
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // Store location globally
+                window.userLocation = { lat, lng };
+                
+                // Try to reverse geocode to get readable address
+                locationInput.value = `Current Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                
+                btn.innerHTML = '<i class="fas fa-check"></i> Location Found';
+                
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-crosshairs"></i> Use GPS';
+                    btn.disabled = false;
+                }, 2000);
+            },
+            (error) => {
+                console.error('Error getting location:', error);
+                alert('Unable to get your location. Please enter manually.');
+                btn.innerHTML = '<i class="fas fa-crosshairs"></i> Use GPS';
+                btn.disabled = false;
+            }
+        );
+    }
+
+    function performQuickSearch() {
+        const locationInput = document.getElementById('quick-location').value;
+        const selectedActivities = Array.from(document.querySelectorAll('.quick-activity.active'))
+            .map(el => el.dataset.activity);
+        const resultsDiv = document.getElementById('quick-search-results');
+        
+        if (!locationInput && !window.userLocation) {
+            alert('Please enter a location or use GPS to find nearby gyms.');
+            return;
+        }
+        
+        // Show loading
+        resultsDiv.innerHTML = `
+            <div style="text-align: center; padding: 2rem;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-color);"></i>
+                <p>Searching for gyms near you...</p>
+            </div>
+        `;
+        
+        // Build search parameters
+        const params = new URLSearchParams();
+        if (locationInput) {
+            // Try to extract city/area from input
+            const cityMatch = locationInput.match(/([a-zA-Z\s]+)(?:,|$)/);
+            if (cityMatch) {
+                params.append('city', cityMatch[1].trim());
+            }
+        }
+        
+        selectedActivities.forEach(activity => params.append('activities', activity));
+        
+        // Make API call
+        const BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5500' : '';
+        
+        fetch(`${BASE_URL}/api/gyms/search?${params.toString()}`)
+            .then(res => res.json())
+            .then(gyms => {
+                if (gyms.length === 0) {
+                    resultsDiv.innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-search" style="font-size: 2rem; color: #6c757d;"></i>
+                            <p>No gyms found matching your criteria. Try expanding your search.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Show results
+                let resultsHTML = '<h3 style="margin-bottom: 1rem; color: var(--dark-color);">Found ' + gyms.length + ' gym' + (gyms.length > 1 ? 's' : '') + ' near you:</h3>';
+                
+                gyms.slice(0, 5).forEach(gym => {
+                    const activities = gym.activities ? gym.activities.slice(0, 3).map(a => 
+                        typeof a === 'object' ? a.name : a
+                    ) : [];
+                    
+                    const distance = gym.distance ? (gym.distance < 1 ? 
+                        Math.round(gym.distance * 1000) + 'm' : 
+                        gym.distance.toFixed(1) + 'km') : 'Distance unknown';
+                    
+                    resultsHTML += `
+                        <div class="quick-gym-card" onclick="window.open('/frontend/gymdetails.html?id=${gym._id}', '_blank')">
+                            <div class="quick-gym-header">
+                                <div class="quick-gym-name">${gym.gymName}</div>
+                                <div class="quick-gym-distance">${distance}</div>
+                            </div>
+                            <div class="quick-gym-address">${gym.location?.address || gym.location?.city || 'Address not available'}</div>
+                            <div class="quick-gym-activities">
+                                ${activities.map(activity => 
+                                    `<span class="quick-activity-tag">${activity}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (gyms.length > 5) {
+                    resultsHTML += `
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <button class="btn-secondary" onclick="closeQuickSearchModal(); scrollToSearchSection();">
+                                View All ${gyms.length} Results
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.innerHTML = resultsHTML;
+            })
+            .catch(error => {
+                console.error('Error searching gyms:', error);
+                resultsDiv.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--danger-color);"></i>
+                        <p>Error searching for gyms. Please try again.</p>
+                    </div>
+                `;
+            });
+    }
+
+    function scrollToSearchSection() {
+        document.querySelector('.hero-search-card').scrollIntoView({
+            behavior: 'smooth'
+        });
+    }
+
+    // Activity selection for quick search
+    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('.quick-activity')) {
+                e.target.classList.toggle('active');
+            }
+        });
+        
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeQuickSearchModal();
+            }
         });
     });
 </script>

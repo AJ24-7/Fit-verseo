@@ -700,81 +700,60 @@
                                     if (expiry >= now) {
                                         foundQRData = qrData;
                                         foundGymId = gymId;
-                                        console.log('Found QR code in localStorage for gym:', gymId);
+                                        console.log('Found valid QR data in localStorage:', foundQRData);
                                         break;
-                                    } else {
-                                        console.log('Found QR code but it is expired');
                                     }
                                 }
                             }
                         }
                         
-                        if (foundQRData && foundGymId) {
-                            this.qrData = foundQRData;
-                            this.gymId = foundGymId; // Update gymId to the correct gym
-                            this.gymData = {};
-                            document.getElementById('gymId').value = foundGymId;
-                            document.getElementById('qrToken').value = this.qrToken;
-                            document.getElementById('headerGymName').textContent = 'Loading...';
-                            console.log('*** USING localStorage QR data for gym:', foundGymId, '***');
-                            console.log('*** FORCED gymId update to:', foundGymId, '***');
-                            return;
+                        if (foundQRData) {
+                            // Use localStorage data
+                            this.qrData = {
+                                valid: true,
+                                qrCode: foundQRData,
+                                registrationType: foundQRData.registrationType || 'regular',
+                                specialOffer: foundQRData.specialOffer
+                            };
+                            this.gymId = foundGymId;
+                            console.log('Successfully loaded from localStorage, gymId:', this.gymId);
+                        } else {
+                            throw new Error(data.message || 'Invalid or expired QR code');
+                        }
+                    } else {
+                        console.log('Backend validation successful:', data);
+                        this.qrData = data;
+                        // Some APIs return gym as nested, some as flat. Handle both.
+                        this.gymData = data.gym || {};
+
+                        // Set hidden form fields and update gymId to match the QR code's gym
+                        let correctGymId = null;
+                        
+                        if (data.gym && data.gym.id) {
+                            correctGymId = data.gym.id;
+                            console.log('Got gym ID from data.gym.id:', correctGymId);
+                        } else if (data.gymId) {
+                            correctGymId = data.gymId;
+                            console.log('Got gym ID from data.gymId:', correctGymId);
+                        } else if (data.qrCode && data.qrCode.gymId) {
+                            correctGymId = data.qrCode.gymId;
+                            console.log('Got gym ID from data.qrCode.gymId:', correctGymId);
+                        } else {
+                            correctGymId = this.gymId;
+                            console.log('Using original gym ID from URL:', correctGymId);
                         }
                         
-                        throw new Error(data.message || 'Invalid QR code');
-                    }
-
-                    console.log('Backend validation successful:', data);
-                    this.qrData = data;
-                    // Some APIs return gym as nested, some as flat. Handle both.
-                    this.gymData = data.gym || {};
-
-                    // Set hidden form fields and update gymId to match the QR code's gym
-                    let correctGymId = null;
-                    
-                    if (data.gym && data.gym.id) {
-                        correctGymId = data.gym.id;
-                        console.log('Got gym ID from data.gym.id:', correctGymId);
-                    } else if (data.gymId) {
-                        correctGymId = data.gymId;
-                        console.log('Got gym ID from data.gymId:', correctGymId);
-                    } else if (data.qrCode && data.qrCode.gymId) {
-                        correctGymId = data.qrCode.gymId;
-                        console.log('Got gym ID from data.qrCode.gymId:', correctGymId);
-                    }
-                    
-                    if (correctGymId) {
-                        // Force update the gym ID
                         this.gymId = correctGymId;
-                        document.getElementById('gymId').value = correctGymId;
-                        console.log('*** UPDATED gymId to:', correctGymId, '***');
-                    } else {
-                        console.error('No gym ID found in QR validation response:', data);
-                        throw new Error('No gym ID in QR validation response');
+                        console.log('Final gymId after validation:', this.gymId);
                     }
-                    
-                    document.getElementById('qrToken').value = this.qrToken;
 
-                    // Set header gym name if available
-                    if (this.gymData && this.gymData.name) {
-                        document.getElementById('headerGymName').textContent = this.gymData.name;
-                    } else if (data.gymName) {
-                        document.getElementById('headerGymName').textContent = data.gymName;
-                    }
+                    // Set hidden form fields
+                    document.getElementById('gymId').value = this.gymId;
+                    document.getElementById('qrToken').value = this.qrToken;
 
                 } catch (error) {
                     console.error('QR validation error:', error);
-                    console.log('QR validation failed, attempting direct registration fallback');
-                    
-                    // Instead of throwing error, try to proceed with direct registration
-                    this.qrData = {
-                        registrationType: 'standard',
-                        specialOffer: null,
-                        gymId: this.gymId
-                    };
-                    
-                    // Show a warning but allow registration to continue
-                    this.showWarning('QR code validation failed - proceeding with direct registration. Some special offers may not apply.');
+                    throw new Error('Failed to validate QR code. Please try again or contact support.');
                 }
             }
 
@@ -799,55 +778,30 @@
                     
                     if (response.ok) {
                         const gymData = await response.json();
-                        console.log('Gym data loaded for gym', gymIdToUse, ':', gymData);
-                        
-                        // Verify this is the correct gym
-                        if (gymData._id !== gymIdToUse) {
-                            console.error('Gym ID mismatch! Expected:', gymIdToUse, 'Got:', gymData._id);
-                            throw new Error('Gym data mismatch');
-                        }
-                        
-                        // Store gym data
                         this.gymData = gymData;
-                        // Set gym name in both header and info, prefer gymData.name, fallback to gymData.gymName
-                        const gymNameElem = document.getElementById('gymName');
-                        let gymName = '';
-                        if (gymData.name && gymData.name.trim()) {
-                            gymName = gymData.name.trim();
-                        } else if (gymData.gymName && gymData.gymName.trim()) {
-                            gymName = gymData.gymName.trim();
-                        } else {
-                            gymName = 'Unknown Gym';
-                        }
+                        console.log('Loaded gym data:', gymData);
                         
-                        console.log(`Setting gym name to: "${gymName}" for gym ID: ${gymIdToUse}`);
-                        console.log('*** VERIFICATION: Loaded gym data _id:', gymData._id, 'Expected:', gymIdToUse, '***');
+                        // Update UI with gym information
+                        const gymName = gymData.gymName || gymData.name || 'Gym';
+                        const gymNameElem = document.getElementById('gymName');
+                        const headerGymNameElem = document.getElementById('headerGymName');
                         
                         if (gymNameElem) gymNameElem.textContent = gymName;
-                        // Always update headerGymName for consistency
-                        const headerGymNameElem = document.getElementById('headerGymName');
                         if (headerGymNameElem) headerGymNameElem.textContent = gymName;
-                        // Robust gym logo logic (like gymdetails.js)
+                        
+                        // Set gym logo
                         const logoElement = document.getElementById('gymLogo');
-                        let logoUrl = '';
-                        if (gymData.logoUrl && gymData.logoUrl.trim()) {
-                            logoUrl = gymData.logoUrl;
-                        } else if (gymData.logo && gymData.logo.trim()) {
-                            logoUrl = gymData.logo;
-                        } else {
-                            logoUrl = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
-                        }
-                        console.log('Setting gym logo to:', logoUrl);
+                        let logoUrl = gymData.logoUrl || gymData.logo || 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
+                        
                         if (logoElement) {
                             logoElement.src = logoUrl;
-                            logoElement.alt = `${gymData.name || 'Gym'} Logo`;
-                            logoElement.setAttribute('loading', 'eager');
-                            logoElement.setAttribute('decoding', 'sync');
+                            logoElement.alt = `${gymName} Logo`;
                             logoElement.onerror = function() {
                                 this.onerror = null;
                                 this.src = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
                             };
                         }
+                        
                         // Display gym details
                         const gymDetails = document.getElementById('gymDetails');
                         gymDetails.innerHTML = `
@@ -864,27 +818,18 @@
                                 <span>${gymData.contactDetails?.email || gymData.email || 'Email not available'}</span>
                             </div>
                         `;
+                        
                         // Populate activities dropdown
                         this.populateActivities(gymData.activities || []);
+                        
                         // Load membership plans
                         await this.loadMembershipPlans();
                     } else {
-                        console.error('Failed to fetch gym data:', response.status);
-                        document.getElementById('gymName').textContent = 'Unknown Gym';
-                        const headerGymNameElem = document.getElementById('headerGymName');
-                        if (headerGymNameElem) headerGymNameElem.textContent = 'Unknown Gym';
-                        // Set default logo on error
-                        const logoElement = document.getElementById('gymLogo');
-                        if (logoElement) logoElement.src = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
+                        throw new Error(`Failed to load gym data: ${response.status}`);
                     }
                 } catch (error) {
                     console.error('Error loading gym data:', error);
-                    document.getElementById('gymName').textContent = 'Unknown Gym';
-                    const headerGymNameElem = document.getElementById('headerGymName');
-                    if (headerGymNameElem) headerGymNameElem.textContent = 'Unknown Gym';
-                    // Set default logo on error
-                    const logoElement = document.getElementById('gymLogo');
-                    if (logoElement) logoElement.src = 'https://via.placeholder.com/40/1976d2/ffffff?text=GYM';
+                    this.showError('Failed to load gym information. Please try again.');
                 }
             }
 
@@ -1333,6 +1278,12 @@
 
                     const result = await response.json();
 
+                    // Handle cash validation response (202 status)
+                    if (response.status === 202 && result.requiresCashValidation) {
+                        this.showCashValidationSuccess(result);
+                        return;
+                    }
+
                     if (!response.ok) {
                         throw new Error(result.message || 'Registration failed');
                     }
@@ -1376,7 +1327,8 @@
                                         }
                                     }
                                     
-                                    const paymentUrl = `${result.nextSteps.redirectUrl}?member=${result.nextSteps.paymentOptions.memberId}&plan=${encodeURIComponent(planName)}&amount=${finalAmount}&duration=${selectedDuration}`;
+                                    const paymentUrl = `/frontend/payment-gateway.html?member=${result.nextSteps.paymentOptions.memberId}&planName=${encodeURIComponent(planName)}&amount=${finalAmount}&duration=${selectedDuration}&username=${encodeURIComponent(registrationData.memberName || 'Member')}&email=${encodeURIComponent(registrationData.memberEmail || '')}&phone=${encodeURIComponent(registrationData.memberPhone || '')}&gymId=${correctGymId}`;
+                                    console.log('Redirecting to payment gateway:', paymentUrl);
                                     window.location.href = paymentUrl;
                                 } else if (result.nextSteps.paymentUrl) {
                                     window.location.href = result.nextSteps.paymentUrl;
@@ -1521,6 +1473,84 @@
                 
                 // Scroll to success
                 successDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            showCashValidationSuccess(result) {
+                const successDiv = document.getElementById('successMessage');
+                successDiv.innerHTML = `
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #4caf50, #2e7d32); color: white; border-radius: 15px; margin: 20px 0;">
+                        <i class="fas fa-money-bill-wave" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                        <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 10px;">Cash Validation Created!</div>
+                        <div style="margin-bottom: 20px;">Please provide this validation code to the gym admin for payment confirmation.</div>
+                        
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin: 20px 0;">
+                            <div style="font-size: 0.9rem; margin-bottom: 5px;">VALIDATION CODE</div>
+                            <div style="font-size: 2.2rem; font-weight: bold; letter-spacing: 3px; color: #ffeb3b;">${result.validationCode}</div>
+                        </div>
+                        
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 15px;">
+                            <div class="countdown-display">⏰ This code expires in 2 minutes</div>
+                            <div>📱 Show this to the gym admin to confirm your cash payment</div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+                            <button onclick="navigator.share ? navigator.share({title: 'Gym Validation Code', text: 'Validation Code: ${result.validationCode}'}) : navigator.clipboard.writeText('${result.validationCode}')" 
+                                    style="background: #fff; color: #2e7d32; border: none; padding: 10px 20px; border-radius: 25px; font-weight: 600; cursor: pointer;">
+                                <i class="fas fa-copy"></i> Copy Code
+                            </button>
+                            <button onclick="window.print()" 
+                                    style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 25px; font-weight: 600; cursor: pointer;">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                        </div>
+                    </div>
+                `;
+                successDiv.style.display = 'block';
+                document.getElementById('errorMessage').style.display = 'none';
+                
+                // Scroll to success
+                successDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Auto-refresh validation code display with countdown
+                this.startValidationCountdown(result.validationCode, result.expiresAt);
+            }
+
+            startValidationCountdown(validationCode, expiresAt) {
+                const expiryTime = new Date(expiresAt).getTime();
+                
+                const countdownTimer = setInterval(() => {
+                    const now = new Date().getTime();
+                    const timeLeft = expiryTime - now;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(countdownTimer);
+                        // Show expired message
+                        const successDiv = document.getElementById('successMessage');
+                        if (successDiv && successDiv.innerHTML.includes(validationCode)) {
+                            successDiv.innerHTML = `
+                                <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #f44336, #c62828); color: white; border-radius: 15px; margin: 20px 0;">
+                                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                                    <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 10px;">Validation Code Expired</div>
+                                    <div style="margin-bottom: 20px;">The validation code has expired. Please register again to get a new code.</div>
+                                    <button onclick="window.location.reload()" 
+                                            style="background: #fff; color: #c62828; border: none; padding: 12px 30px; border-radius: 25px; font-weight: 600; cursor: pointer;">
+                                        <i class="fas fa-redo"></i> Register Again
+                                    </button>
+                                </div>
+                            `;
+                        }
+                        return;
+                    }
+                    
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000);
+                    
+                    // Update countdown display if still visible
+                    const countdownElement = successDiv.querySelector('.countdown-display');
+                    if (countdownElement) {
+                        countdownElement.textContent = `⏰ Expires in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
             }
         }
 

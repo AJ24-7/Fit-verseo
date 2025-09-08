@@ -2184,11 +2184,17 @@ async function checkUserLogin() {
     userToken = localStorage.getItem('authToken') || localStorage.getItem('token');
     const username = localStorage.getItem('username');
     
+    console.log('Checking user login...');
+    console.log('Token found:', !!userToken);
+    console.log('Username found:', username);
+    
     if (!userToken) {
+        console.log('No token found, user not logged in');
         return { isLoggedIn: false };
     }
     
     try {
+        console.log('Making API call to verify token...');
         // Fetch user profile to get current user info
         const response = await fetch(`${BASE_URL}/api/users/profile`, {
             method: 'GET',
@@ -2198,8 +2204,12 @@ async function checkUserLogin() {
             }
         });
         
+        console.log('API response status:', response.status);
+        console.log('API response ok:', response.ok);
+        
         if (response.ok) {
             const user = await response.json();
+            console.log('User data received:', user);
             updateProfileIconImage(user); // <-- update profile icon
             
             // Create full name from firstName and lastName with robust handling
@@ -2214,12 +2224,15 @@ async function checkUserLogin() {
                 displayName = username;
             }
             
+            console.log('Final display name:', displayName);
+            
             return {
                 isLoggedIn: true,
                 user: user,
                 name: displayName
             };
         } else {
+            console.log('Token verification failed, removing invalid tokens');
             // Token might be invalid
             localStorage.removeItem('authToken');
             localStorage.removeItem('token');
@@ -2349,7 +2362,15 @@ function displayReviews(reviews) {
     if (noReviewsElement) noReviewsElement.style.display = 'none';
     
     const reviewsHTML = reviews.map(review => {
-        console.log('Processing review:', review);
+        console.log('🔍 Processing review in gymdetails:', {
+            reviewId: review._id || review.id,
+            user: review.user,
+            userId: review.userId,
+            reviewerName: review.reviewerName,
+            userImagePath: getUserImageUrl(review),
+            userName: getUserNameFromReview(review)
+        });
+        
         const reviewDate = new Date(review.createdAt).toLocaleDateString('en-US', {
             year: 'numeric', month: 'long', day: 'numeric'
         });
@@ -2549,21 +2570,51 @@ function initializeReviewModal() {
     const loginNotice = document.getElementById('login-notice');
     const userInfo = document.getElementById('user-info');
     
-    if (!modal || !writeReviewBtn) return;
+    console.log('Initializing review modal...');
+    console.log('Modal elements found:', {
+        modal: !!modal,
+        writeReviewBtn: !!writeReviewBtn,
+        closeModal: !!closeModal,
+        reviewForm: !!reviewForm,
+        loginNotice: !!loginNotice,
+        userInfo: !!userInfo
+    });
+    
+    if (!modal || !writeReviewBtn) {
+        console.error('Required modal elements not found!');
+        return;
+    }
     
     // Open modal
     writeReviewBtn.addEventListener('click', async () => {
+        console.log('Write review button clicked, checking user login...');
         const userStatus = await checkUserLogin();
         
+        console.log('User login status:', userStatus);
+        
         if (userStatus.isLoggedIn) {
-            if (loginNotice) loginNotice.style.display = 'none';
+            console.log('User is logged in, showing modal with user info');
+            
+            // Hide login notice and show user info
+            if (loginNotice) {
+                loginNotice.style.display = 'none';
+                console.log('Login notice hidden');
+            }
             if (userInfo) {
                 userInfo.style.display = 'flex';
+                console.log('User info shown');
                 const userNameSpan = document.getElementById('review-user-name');
-                if (userNameSpan) userNameSpan.textContent = userStatus.name;
+                if (userNameSpan) {
+                    userNameSpan.textContent = userStatus.name;
+                    console.log('User name set to:', userStatus.name);
+                }
             }
+            
+            // Show the modal
             modal.style.display = 'block';
+            console.log('Modal opened for logged-in user');
         } else {
+            console.log('User is not logged in, showing login dialog');
             // Show login dialog
             showDialog({
                 title: 'Login Required',
@@ -2771,14 +2822,28 @@ async function loadGymRatingForHero(gymId) {
 // Helper function to get user image URL
 function getUserImageUrl(review) {
     try {
+        // Primary: Check user field (populated from backend) - same pattern as support-reviews.js
+        if (review.user && review.user.profileImage) {
+            // Handle different URL formats like in script.js
+            if (review.user.profileImage.startsWith('http')) {
+                return review.user.profileImage;
+            } else {
+                // Ensure proper BASE_URL prefix
+                return `${BASE_URL}${review.user.profileImage}`;
+            }
+        }
+        
+        // Fallback: Check userId field if user is not populated (legacy support)
         if (review.userId && review.userId.profileImage) {
-            if (review.userId.profileImage.startsWith('http') || review.userId.profileImage.startsWith('/uploads')) {
-                return review.userId.profileImage.startsWith('http') ? 
-                    review.userId.profileImage : BASE_URL + review.userId.profileImage;
+            if (review.userId.profileImage.startsWith('http')) {
+                return review.userId.profileImage;
+            } else if (review.userId.profileImage.startsWith('/uploads')) {
+                return `${BASE_URL}${review.userId.profileImage}`;
             } else {
                 return `${BASE_URL}/uploads/profile-pics/${review.userId.profileImage}`;
             }
         }
+        
         return `${BASE_URL}/uploads/profile-pics/default.png`;
     } catch (error) {
         console.error('Error getting user image URL:', error);
@@ -2789,11 +2854,29 @@ function getUserImageUrl(review) {
 // Helper function to get user name from review
 function getUserNameFromReview(review) {
     try {
+        // Primary: Check user field (populated from backend) - same pattern as support-reviews.js
+        if (review.user) {
+            // Combine first and last name if available
+            if (review.user.firstName || review.user.lastName) {
+                const firstName = review.user.firstName || '';
+                const lastName = review.user.lastName || '';
+                const fullName = `${firstName} ${lastName}`.trim();
+                if (fullName) return fullName;
+            }
+            // Fallback to name field if available
+            if (review.user.name) {
+                return review.user.name;
+            }
+        }
+        
+        // Fallback: Check userId field if user is not populated (legacy support)
         if (review.userId && (review.userId.firstName || review.userId.lastName)) {
             const firstName = review.userId.firstName || '';
             const lastName = review.userId.lastName || '';
-            return `${firstName} ${lastName}`.trim();
+            const fullName = `${firstName} ${lastName}`.trim();
+            if (fullName) return fullName;
         }
+        
         return review.reviewerName || 'Anonymous User';
     } catch (error) {
         console.error('Error getting user name:', error);
@@ -2884,6 +2967,47 @@ function displayFeaturedReviewsBadges(featuredReviews) {
         badgesContainer.id = 'featured-reviews-badges';
         badgesContainer.className = 'featured-reviews-badges';
         document.body.appendChild(badgesContainer);
+        
+        // Add CSS styles for the sliding animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInFromRight {
+                from { 
+                    transform: translateX(100px); 
+                    opacity: 0; 
+                }
+                to { 
+                    transform: translateX(0); 
+                    opacity: 1; 
+                }
+            }
+            
+            .featured-review-badge:hover {
+                transform: translateX(-5px) !important;
+                box-shadow: 0 3px 12px rgba(255, 215, 0, 0.3) !important;
+            }
+            
+            /* Ensure badges don't interfere with navbar dropdowns */
+            .featured-review-badge {
+                position: relative;
+                z-index: 100 !important;
+            }
+            
+            /* Make badges responsive */
+            @media (max-width: 768px) {
+                #featured-reviews-badges {
+                    right: 10px !important;
+                    top: 100px !important;
+                    max-width: 200px !important;
+                }
+                
+                .featured-review-badge {
+                    font-size: 10px !important;
+                    padding: 6px 8px !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     }
     
     // Add CSS styles for badges container
@@ -2891,11 +3015,11 @@ function displayFeaturedReviewsBadges(featuredReviews) {
         position: fixed;
         top: 120px;
         right: 20px;
-        z-index: 1000;
+        z-index: 100;
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        max-width: 300px;
+        gap: 8px;
+        max-width: 250px;
         pointer-events: none;
     `;
     
@@ -2924,8 +3048,8 @@ function createFeaturedReviewBadge(review, index) {
     ).join('');
     
     // Truncate comment if too long
-    const comment = review.comment.length > 80 ? 
-        review.comment.substring(0, 77) + '...' : 
+    const comment = review.comment.length > 60 ? 
+        review.comment.substring(0, 57) + '...' : 
         review.comment;
     
     badge.innerHTML = `
@@ -2950,26 +3074,28 @@ function createFeaturedReviewBadge(review, index) {
     badge.style.cssText = `
         background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
         border: 2px solid #FFD700;
-        border-radius: 12px;
-        padding: 12px;
-        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        border-radius: 8px;
+        padding: 8px 10px;
+        box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
         animation: slideInFromRight 0.6s ease-out ${index * 0.2}s both;
         pointer-events: auto;
         cursor: pointer;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         font-family: 'Arial', sans-serif;
-        font-size: 13px;
+        font-size: 11px;
+        max-width: 240px;
+        z-index: 100;
     `;
     
     // Add hover effect
     badge.addEventListener('mouseenter', () => {
-        badge.style.transform = 'translateX(-5px) scale(1.02)';
-        badge.style.boxShadow = '0 6px 16px rgba(255, 215, 0, 0.4)';
+        badge.style.transform = 'translateX(-3px)';
+        badge.style.boxShadow = '0 3px 12px rgba(255, 215, 0, 0.3)';
     });
     
     badge.addEventListener('mouseleave', () => {
-        badge.style.transform = 'translateX(0) scale(1)';
-        badge.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
+        badge.style.transform = 'translateX(0)';
+        badge.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
     });
     
     // Click to scroll to reviews section

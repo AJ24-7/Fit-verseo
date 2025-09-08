@@ -15,56 +15,113 @@ const CashValidation = mongoose.model('CashValidation', new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   expiresAt: { type: Date, required: true },
   approvedBy: { type: String }, // Admin ID who approved
-  approvedAt: { type: Date }
+  approvedAt: { type: Date },
+  // Member registration data for QR code processing
+  memberData: {
+    memberName: String,
+    memberEmail: String,
+    memberPhone: String,
+    planSelected: String,
+    monthlyPlan: String,
+    paymentAmount: Number,
+    paymentMode: String,
+    paymentStatus: String,
+    activityPreference: String,
+    address: String,
+    age: Number,
+    gender: String,
+    joinDate: Date,
+    membershipId: String
+  }
 }));
 
 // Generate cash payment validation code
 const createCashPaymentRequest = async (req, res) => {
   try {
-    const { memberId, amount, planName, duration } = req.body;
+    const { memberId, amount, planName, duration, username, email, phone, gymId, memberData } = req.body;
     
-    if (!memberId || !amount || !planName || !duration) {
+    if (!memberId || !amount || !planName || !duration || !username || !email) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing required fields' 
+        message: 'Missing required fields for member registration' 
       });
     }
 
     // Generate unique validation code (6 digits)
-    const validationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const validationCode = 'CASH' + Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Set expiration to 5 minutes from now
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    // Set expiration to 15 minutes from now
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
     
-    // Get gym ID from member or use default
-    // In production, fetch actual gymId from member record
-    const gymId = 'default-gym';
+    // Use provided gymId or default
+    const finalGymId = gymId || 'default-gym';
+    
+    // Create comprehensive QR data for gym admin
+    const qrData = {
+      type: 'gym_cash_payment_registration',
+      validationCode,
+      amount,
+      memberName: username,
+      memberEmail: email,
+      memberPhone: phone || '',
+      planName,
+      duration,
+      gymId: finalGymId,
+      timestamp: new Date().toISOString(),
+      // Member registration data
+      memberData: memberData || {
+        memberName: username,
+        memberEmail: email,
+        memberPhone: phone || '',
+        planSelected: planName,
+        monthlyPlan: duration === 1 ? '1 Month' : duration === 3 ? '3 Months' : duration === 6 ? '6 Months' : duration === 12 ? '12 Months' : `${duration} Month(s)`,
+        paymentAmount: amount,
+        paymentMode: 'cash',
+        paymentStatus: 'pending',
+        activityPreference: 'General Fitness',
+        address: '',
+        age: 25,
+        gender: 'not-specified',
+        joinDate: new Date().toISOString(),
+        membershipId: validationCode
+      }
+    };
+    
+    // Generate QR code URL with comprehensive data
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify(qrData))}`;
     
     // Create validation record
     const validation = new CashValidation({
       validationCode,
       memberId,
-      gymId,
+      gymId: finalGymId,
       amount,
       planName,
       duration,
-      expiresAt
+      expiresAt,
+      memberData: qrData.memberData // Store member data for registration
     });
     
     await validation.save();
+    
+    console.log('🔗 Cash payment validation created with member data:', {
+      validationCode,
+      qrData: qrData.memberData
+    });
     
     res.json({
       success: true,
       validationCode,
       expiresAt,
-      message: 'Cash payment validation code generated'
+      qrCodeUrl,
+      message: 'Cash payment validation code generated with member registration data'
     });
     
   } catch (error) {
     console.error('Error creating cash payment request:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to generate validation code' 
+      message: 'Failed to generate validation code with member data' 
     });
   }
 };
@@ -134,7 +191,8 @@ const getPendingCashValidations = async (req, res) => {
 const approveCashValidation = async (req, res) => {
   try {
     const { validationCode } = req.params;
-    const adminId = req.admin?.id || 'admin';
+    const adminId = req.admin?.id || req.admin?._id || 'admin';
+    const gymId = req.admin?.gymId || req.admin?.id || 'default-gym';
     
     const validation = await CashValidation.findOne({ 
       validationCode,
@@ -155,9 +213,44 @@ const approveCashValidation = async (req, res) => {
     validation.approvedAt = new Date();
     await validation.save();
     
+    // Create member record if memberData exists
+    let member = null;
+    if (validation.memberData) {
+      try {
+        const memberData = {
+          ...validation.memberData,
+          gym: gymId,
+          paymentStatus: 'paid', // Mark as paid since cash was received
+          joinDate: new Date(),
+          validUntil: new Date(Date.now() + (validation.duration * 30 * 24 * 60 * 60 * 1000)), // Add months
+          createdBy: adminId
+        };
+        
+        // Check if member already exists
+        const existingMember = await Member.findOne({ 
+          email: validation.memberData.memberEmail 
+        });
+        
+        if (!existingMember) {
+          member = new Member(memberData);
+          await member.save();
+          console.log('✅ New member created via cash validation:', member.membershipId);
+        } else {
+          console.log('ℹ️ Member already exists, updating payment status');
+          member = existingMember;
+          member.paymentStatus = 'paid';
+          member.validUntil = memberData.validUntil;
+          await member.save();
+        }
+      } catch (memberError) {
+        console.error('Error creating member:', memberError);
+        // Continue with payment approval even if member creation fails
+      }
+    }
+    
     // Create payment record
     const payment = new Payment({
-      memberId: validation.memberId,
+      memberId: member ? member._id : validation.memberId,
       amount: validation.amount,
       type: 'received',
       method: 'cash',
@@ -165,22 +258,70 @@ const approveCashValidation = async (req, res) => {
       planName: validation.planName,
       duration: validation.duration,
       validationCode: validation.validationCode,
-      createdAt: new Date()
+      createdAt: new Date(),
+      gymId: gymId,
+      memberName: validation.memberData?.memberName || 'Cash Payment'
     });
     
     await payment.save();
     
+    // Send welcome email if member was created
+    if (member && validation.memberData) {
+      try {
+        const sendEmail = require('../utils/sendEmail');
+        const Gym = require('../models/gym');
+        
+        const gym = await Gym.findById(gymId);
+        const gymName = gym?.gymName || gym?.name || 'Our Gym';
+        
+        const welcomeEmail = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #1976d2, #1565c0); color: white; padding: 30px; text-align: center;">
+              <h1 style="margin: 0;">🎉 Welcome to ${gymName}!</h1>
+              <p style="margin: 10px 0 0 0;">Your cash payment has been confirmed</p>
+            </div>
+            <div style="padding: 30px; background: white;">
+              <p>Dear ${validation.memberData.memberName},</p>
+              <p>Great news! Your cash payment has been processed and your membership is now active.</p>
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>Membership Details:</h3>
+                <p><strong>Membership ID:</strong> ${member.membershipId}</p>
+                <p><strong>Plan:</strong> ${validation.planName}</p>
+                <p><strong>Duration:</strong> ${validation.memberData.monthlyPlan}</p>
+                <p><strong>Valid Until:</strong> ${member.validUntil?.toLocaleDateString()}</p>
+                <p><strong>Amount Paid:</strong> ₹${validation.amount}</p>
+              </div>
+              <p>You can now visit the gym and start your fitness journey!</p>
+            </div>
+          </div>
+        `;
+        
+        await sendEmail({
+          to: validation.memberData.memberEmail,
+          subject: `Welcome to ${gymName} - Cash Payment Confirmed`,
+          html: welcomeEmail
+        });
+        
+        console.log('📧 Welcome email sent to:', validation.memberData.memberEmail);
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError);
+        // Don't fail the approval if email fails
+      }
+    }
+    
     res.json({
       success: true,
-      message: 'Cash payment approved successfully',
-      paymentId: payment._id
+      message: 'Cash payment approved and member registered successfully',
+      paymentId: payment._id,
+      memberId: member?._id,
+      membershipId: member?.membershipId
     });
     
   } catch (error) {
     console.error('Error approving cash validation:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to approve cash payment' 
+      message: 'Failed to approve cash payment and register member' 
     });
   }
 };

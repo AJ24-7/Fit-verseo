@@ -327,188 +327,366 @@ body[data-theme="dark"] .user-profile-animated .user-name {
 
 
 /* === Profile Dropdown Menu (Interactive, Theme-Aware) - Enhanced Z-Index === */
+/* Enhanced User Actions Container */
+.user-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1000;
+}
+
+/* Profile Dropdown Menu - Enhanced with Better Positioning */
 .profile-dropdown-menu {
-  position: fixed !important;
-  top: 70px !important;
-  right: 20px !important;
-  min-width: 180px;
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
+  min-width: 200px;
+  max-width: 300px;
   background: var(--card-bg, #fff);
-  color: var(--primary);
+  color: var(--text-primary, #333);
   border-radius: 12px;
-  box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18);
-  padding: 10px 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  padding: 8px 0;
   z-index: 999999 !important;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transform: translateY(-10px) scale(0.98);
-  transition: opacity 0.22s cubic-bezier(.4,0,.2,1), transform 0.22s cubic-bezier(.4,0,.2,1);
+  transform: translateY(-10px) scale(0.95);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
 }
+
+/* Show dropdown when active */
 .profile-dropdown-menu.open,
 .profile-dropdown-menu.show {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translateY(0) scale(1);
 }
 .profile-dropdown-menu .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 22px;
-  font-size: 1.04em;
-  color: inherit;
+  gap: 12px;
+  padding: 12px 18px;
+  font-size: 0.95rem;
+  color: var(--text-primary, #333);
   background: none;
   border: none;
   width: 100%;
   text-align: left;
   cursor: pointer;
-  transition: background 0.18s, color 0.18s;
+  transition: all 0.2s ease;
+  border-radius: 0;
 }
-.profile-dropdown-menu .dropdown-item:hover, .profile-dropdown-menu .dropdown-item:focus {
+
+.profile-dropdown-menu .dropdown-item:hover, 
+.profile-dropdown-menu .dropdown-item:focus {
   background: var(--primary, #1976d2);
   color: #fff;
+  outline: none;
 }
+
+.profile-dropdown-menu .dropdown-item i {
+  width: 16px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
 .profile-dropdown-menu .dropdown-divider {
   height: 1px;
   background: var(--border-color, #e0e0e0);
   margin: 6px 0;
   border: none;
 }
-body[data-theme="dark"] .profile-dropdown-menu {
-  background: var(--card-bg, #23262b);
-  color: var(--text-primary, #fff);
-  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.38);
-}
-body[data-theme="dark"] .profile-dropdown-menu .dropdown-item {
-  color: #fff;
-}
-body[data-theme="dark"] .profile-dropdown-menu .dropdown-item:hover, 
-body[data-theme="dark"] .profile-dropdown-menu .dropdown-item:focus {
-  background: var(--primary-dark, #0056b3);
-  color: #fff;
-}
-body[data-theme="dark"] .profile-dropdown-menu .dropdown-divider {
-  background: #33363d;
+
+/* Notification Bell and Dropdown Styles */
+.notification {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  background: rgba(25, 118, 210, 0.1);
+  z-index: 1000;
 }
 
-/* Profile dropdown positioning adjustments for sidebar states */
-.sidebar-collapsed .profile-dropdown-menu {
-  right: 20px;
+.notification:hover {
+  background: rgba(25, 118, 210, 0.2);
+  transform: scale(1.05);
 }
 
-/* Ensure dropdown appears above ALL tab content - Enhanced Override */
-#memberDisplayTab .profile-dropdown-menu,
-#trainerTab .profile-dropdown-menu,
-#settingsTab .profile-dropdown-menu,
-#attendanceTab .profile-dropdown-menu,
-#paymentTab .profile-dropdown-menu,
-#equipmentTab .profile-dropdown-menu,
-#supportReviewsTab .profile-dropdown-menu,
-.profile-dropdown-menu {
-  position: fixed !important;
-  z-index: 999999 !important;
-  top: 70px !important;
-  right: 20px !important;
-  pointer-events: auto !important;
+.notification-icon {
+  font-size: 1.25rem;
+  color: var(--primary, #1976d2);
+  transition: all 0.3s ease;
 }
 
-/* Additional override for all possible states */
-.profile-dropdown-menu.open,
-.profile-dropdown-menu.show,
-#memberDisplayTab .profile-dropdown-menu.open,
-#trainerTab .profile-dropdown-menu.open,
-#settingsTab .profile-dropdown-menu.open,
-#attendanceTab .profile-dropdown-menu.open,
-#paymentTab .profile-dropdown-menu.open,
-#equipmentTab .profile-dropdown-menu.open,
-#supportReviewsTab .profile-dropdown-menu.open {
-  z-index: 999999 !important;
-  position: fixed !important;
-  display: block !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  visibility: visible !important;
+.notification-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--card-bg, #fff);
+  animation: pulse 2s infinite;
 }
 
-/* Mobile responsive adjustments for profile dropdown */
-@media (max-width: 900px) {
-  .profile-dropdown-menu {
-    right: 10px !important;
-    top: 60px !important;
-    min-width: 160px;
-    max-width: calc(100vw - 20px);
-    z-index: 999999 !important;
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 400px;
+  max-height: 600px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  z-index: 999999;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  max-height: calc(100vh - 120px);
+}
+
+.notification-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.notification-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.notification-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-primary, #1f2937);
+  font-weight: 600;
+}
+
+.mark-all-read {
+  background: var(--primary, #2563eb);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.mark-all-read:hover {
+  background: var(--primary-dark, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+.notification-filters {
+  display: flex;
+  padding: 10px 15px;
+  gap: 5px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  flex-wrap: wrap;
+}
+
+.notification-filter-btn {
+  background: transparent;
+  border: 1px solid var(--border-color, #d1d5db);
+  color: var(--text-secondary, #6b7280);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-filter-btn.active,
+.notification-filter-btn:hover {
+  background: var(--primary, #2563eb);
+  color: white;
+  border-color: var(--primary, #2563eb);
+}
+
+.notification-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.notification-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  text-align: center;
+  background: #f8f9fa;
+}
+
+.view-all-notifications {
+  background: var(--primary, #2563eb);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.view-all-notifications:hover {
+  background: var(--primary-dark, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+.no-notifications {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary, #6b7280);
+  font-size: 14px;
+}
+
+/* Responsive styles for notifications */
+@media (max-width: 768px) {
+  .notification-dropdown {
+    width: 320px;
+    right: -50px;
+    max-height: 500px;
   }
   
-  #memberDisplayTab .profile-dropdown-menu,
-  #trainerTab .profile-dropdown-menu,
-  #settingsTab .profile-dropdown-menu,
-  #attendanceTab .profile-dropdown-menu,
-  #paymentTab .profile-dropdown-menu,
-  #equipmentTab .profile-dropdown-menu,
-  #supportReviewsTab .profile-dropdown-menu {
-    top: 60px !important;
-    right: 10px !important;
-    z-index: 999999 !important;
+  .notification-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  
+  .notification-filters {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+  }
+  
+  .notification-filter-btn {
+    font-size: 11px;
+    padding: 5px 10px;
+    margin: 2px;
+  }
+  
+  .notification-header h4 {
+    font-size: 14px;
+  }
+  
+  .mark-all-read {
+    font-size: 11px;
+    padding: 5px 10px;
   }
 }
 
-/* Very small screens - prevent overflow */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
+  .notification-dropdown {
+    width: 300px;
+    right: -60px;
+    max-height: 400px;
+  }
+  
+  .notification-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  
+  .user-actions {
+    gap: 8px;
+  }
+}
+/* Dark theme support */
+body[data-theme="dark"] .profile-dropdown-menu {
+  background: var(--card-bg, #2d3748);
+  color: var(--text-primary, #fff);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-color: var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+body[data-theme="dark"] .profile-dropdown-menu .dropdown-item {
+  color: var(--text-primary, #fff);
+}
+
+body[data-theme="dark"] .profile-dropdown-menu .dropdown-item:hover, 
+body[data-theme="dark"] .profile-dropdown-menu .dropdown-item:focus {
+  background: var(--primary, #3182ce);
+  color: #fff;
+}
+
+body[data-theme="dark"] .profile-dropdown-menu .dropdown-divider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
   .profile-dropdown-menu {
-    right: 5px;
-    min-width: 140px;
-    max-width: calc(100vw - 10px);
+    right: -8px !important;
+    min-width: 180px;
+    max-width: calc(100vw - 32px);
+  }
+  
+  .notification-dropdown,
+  #notificationDropdown {
+    right: -8px !important;
+    min-width: 250px;
+    max-width: calc(100vw - 32px);
+  }
+  
+  .user-actions {
+    gap: 12px;
   }
 }
 
-/* Force dropdown above everything - additional fallback */
-body .profile-dropdown-menu,
-body > .profile-dropdown-menu,
-html .profile-dropdown-menu {
-  position: fixed !important;
-  z-index: 999999 !important;
-  top: 70px !important;
-  right: 20px !important;
+@media (max-width: 600px) {
+  .profile-dropdown-menu {
+    right: -16px !important;
+    min-width: 160px;
+  }
+  
+  .notification-dropdown,
+  #notificationDropdown {
+    right: -16px !important;
+    min-width: 220px;
+  }
+  
+  .user-actions {
+    gap: 8px;
+  }
 }
 
-body .notification-dropdown,
-body > .notification-dropdown,
-html .notification-dropdown {
-  position: fixed !important;
-  z-index: 999998 !important;
-  top: 70px !important;
-  right: 80px !important;
-}
-
-/* Ensure dropdown visibility on all tabs */
-.content .profile-dropdown-menu,
-#memberDisplayTab .profile-dropdown-menu,
-#trainerTab .profile-dropdown-menu,
-#settingsTab .profile-dropdown-menu,
-#attendanceTab .profile-dropdown-menu,
-#paymentTab .profile-dropdown-menu,
-#equipmentTab .profile-dropdown-menu,
-#supportReviewsTab .profile-dropdown-menu {
-  position: fixed !important;
-  z-index: 2147483647 !important;
-  top: 70px !important;
-  right: 20px !important;
-  transform: none !important;
-  visibility: visible !important;
-  display: block !important;
-  pointer-events: auto !important;
-}
-
-/* Override any potential hiding */
-.profile-dropdown-menu.open,
-.profile-dropdown-menu.show {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  transform: translateY(0) scale(1) !important;
-  visibility: visible !important;
-  display: block !important;
-}
-/* --- Activities Offered Section: Grid Layout --- */
+/* Activities Offered Section: Grid Layout */
 .activities-offered-card {
   flex: 1 1 0;
   min-width: 280px;
@@ -2685,6 +2863,7 @@ body {
     color: var(--primary);
 }
 .page-actions {
+    position: relative;
     display: flex;
     gap: 10px;
 }
@@ -4003,29 +4182,46 @@ tr:last-child td {
 }
 
 /* CRITICAL: Universal dropdown fixes for ALL tabs */
+/* Enhanced Dropdown System - Clean Separation */
+
+/* User Profile Dropdown - positioned relative to user-actions */
 .user-profile-dropdown,
-.notification-dropdown,
-#userProfileDropdown,
-#notificationDropdown,
-.dropdown-content,
-.user-dropdown-content,
-.notification-dropdown-content {
-    position: fixed !important;
+#userProfileDropdown {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
     z-index: 999999 !important;
-    top: 70px !important;
-    right: 20px !important;
-    background: white !important;
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
-    display: none !important;
+    background: var(--card-bg, white) !important;
+    border: 1px solid var(--border-color, #e0e0e0) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18) !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-10px) scale(0.95);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 200px !important;
 }
 
+/* Notification Dropdown - positioned relative to notification button */
 .notification-dropdown,
 #notificationDropdown,
 .notification-dropdown-content {
-    right: 80px !important;
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
+    z-index: 999998 !important;
+    background: var(--card-bg, white) !important;
+    border: 1px solid var(--border-color, #e0e0e0) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18) !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-10px) scale(0.95);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 280px !important;
+    max-width: 400px;
 }
 
 /* Show dropdowns when active */
@@ -4033,52 +4229,24 @@ tr:last-child td {
 .notification-dropdown.show,
 #userProfileDropdown.show,
 #notificationDropdown.show,
-.dropdown-content.show {
+.dropdown-content.show,
+.profile-dropdown-menu.open,
+.profile-dropdown-menu.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(0) scale(1) !important;
     display: block !important;
 }
 
-/* CRITICAL: Tab-specific dropdown overrides to prevent hiding behind content */
-#supportDisplayTab.active .user-profile-dropdown,
-#supportDisplayTab.active .notification-dropdown,
-#supportDisplayTab.active #userProfileDropdown,
-#supportDisplayTab.active #notificationDropdown,
-#settingsDisplayTab.active .user-profile-dropdown,
-#settingsDisplayTab.active .notification-dropdown,
-#settingsDisplayTab.active #userProfileDropdown,
-#settingsDisplayTab.active #notificationDropdown,
-#equipmentDisplayTab.active .user-profile-dropdown,
-#equipmentDisplayTab.active .notification-dropdown,
-#equipmentDisplayTab.active #userProfileDropdown,
-#equipmentDisplayTab.active #notificationDropdown,
-#attendanceDisplayTab.active .user-profile-dropdown,
-#attendanceDisplayTab.active .notification-dropdown,
-#attendanceDisplayTab.active #userProfileDropdown,
-#attendanceDisplayTab.active #notificationDropdown,
-#memberDisplayTab.active .user-profile-dropdown,
-#memberDisplayTab.active .notification-dropdown,
-#memberDisplayTab.active #userProfileDropdown,
-#memberDisplayTab.active #notificationDropdown,
-#trainerTab.active .user-profile-dropdown,
-#trainerTab.active .notification-dropdown,
-#trainerTab.active #userProfileDropdown,
-#trainerTab.active #notificationDropdown {
-    position: fixed !important;
+/* Ensure dropdowns are always on top */
+.profile-dropdown-menu.open,
+.profile-dropdown-menu.show,
+.user-profile-dropdown.show,
+.notification-dropdown.show,
+#userProfileDropdown.show,
+#notificationDropdown.show {
     z-index: 999999 !important;
-    top: 70px !important;
-    right: 20px !important;
-    background: white !important;
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
-}
-
-#supportDisplayTab.active #notificationDropdown,
-#settingsDisplayTab.active #notificationDropdown,
-#equipmentDisplayTab.active #notificationDropdown,
-#attendanceDisplayTab.active #notificationDropdown,
-#memberDisplayTab.active #notificationDropdown,
-#trainerTab.active #notificationDropdown {
-    right: 80px !important;
 }
 
 /* Ensure tab content has lower z-index - CRITICAL FIX */
@@ -4249,10 +4417,12 @@ html #notificationDropdown.show {
 /* User actions container alignment */
 .top-nav .user-actions,
 #topNav .user-actions {
+    position: relative;
     height: 100%;
     display: flex;
     align-items: center;
     gap: 15px;
+    z-index: 1001; /* Above the top nav itself */
 }
 
 /* Sidebar collapsed navbar positioning */

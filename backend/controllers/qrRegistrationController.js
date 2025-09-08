@@ -117,6 +117,62 @@ const registerMemberViaQR = async (req, res) => {
     }
 
     // Create member record with correct field names for Member schema
+    console.log('=== PAYMENT MODE CHECK ===');
+    console.log('Payment mode:', paymentMode);
+    console.log('Registration type:', registrationType);
+
+    // For cash payments (except trials), create cash validation instead of member
+    if (paymentMode === 'cash' && registrationType !== 'trial') {
+      console.log('💰 Cash payment detected - creating cash validation request');
+      
+      // Generate unique validation code
+      const generateValidationCode = () => {
+        return 'CV' + Math.random().toString(36).substring(2, 15).toUpperCase();
+      };
+
+      const validationCode = generateValidationCode();
+      
+      // Create cash validation request instead of member
+      const validationData = {
+        validationCode,
+        memberName: finalMemberName,
+        email,
+        phone,
+        planName: finalPlanSelected,
+        duration: monthlyPlan,
+        amount: paymentAmount,
+        gymId: gymId || 'default_gym',
+        status: 'pending',
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 2 * 60 * 1000), // 2 minutes
+        qrToken: qrToken,
+        registrationData: {
+          age: parseInt(age),
+          gender,
+          address: address || '',
+          activityPreference
+        }
+      };
+
+      // Store in cash validation system (assuming it's imported)
+      // For now, we'll return a response indicating cash validation is needed
+      return res.status(202).json({
+        success: true,
+        requiresCashValidation: true,
+        validationCode,
+        message: 'Cash validation request created. Please ask gym admin to confirm payment.',
+        expiresAt: validationData.expiresAt.toISOString(),
+        timeLeft: 120, // 2 minutes in seconds
+        nextSteps: {
+          message: 'Payment verification required',
+          action: 'cash_validation',
+          details: `Please provide this code to the gym admin: ${validationCode}`,
+          validationCode: validationCode
+        }
+      });
+    }
+
+    // For trial registrations and online payments, proceed with immediate member creation
     const memberData = {
       gym: gymId,
       memberName: finalMemberName,
@@ -190,11 +246,13 @@ const registerMemberViaQR = async (req, res) => {
       message: 'Member registration successful',
       member: {
         id: newMember._id,
-        name: newMember.name,
+        name: newMember.memberName,
         email: newMember.email,
-        membershipPlan: newMember.membershipPlan,
-        membershipStatus: newMember.membershipStatus,
-        registrationType: newMember.registrationType
+        membershipPlan: newMember.planSelected, // Map to existing field
+        planSelected: newMember.planSelected,
+        monthlyPlan: newMember.monthlyPlan,
+        membershipId: newMember.membershipId,
+        paymentStatus: newMember.paymentStatus
       },
       gym: {
         name: gym.name,
@@ -239,7 +297,7 @@ const sendWelcomeEmail = async (member, gym, registrationType, specialOffer) => 
               <h3 style="margin: 0 0 10px 0; color: #2e7d32;">✅ Trial Details</h3>
               <ul style="margin: 0; padding-left: 20px; color: #555;">
                 <li>Duration: 3 Days</li>
-                <li>Plan: ${member.membershipPlan}</li>
+                <li>Plan: ${member.planSelected}</li>
                 <li>Start Date: ${member.membershipStartDate.toLocaleDateString()}</li>
                 <li>End Date: ${member.membershipEndDate.toLocaleDateString()}</li>
               </ul>
@@ -298,7 +356,7 @@ const sendWelcomeEmail = async (member, gym, registrationType, specialOffer) => 
             <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1976d2;">
               <h3 style="margin: 0 0 10px 0; color: #1976d2;">📋 Membership Details</h3>
               <ul style="margin: 0; padding-left: 20px; color: #555;">
-                <li>Plan: ${member.membershipPlan}</li>
+                <li>Plan: ${member.planSelected}</li>
                 <li>Type: ${registrationType === 'premium' ? 'Premium Registration' : 'Standard Registration'}</li>
                 <li>Registration Date: ${member.joinedDate.toLocaleDateString()}</li>
                 <li>Status: Pending Payment</li>

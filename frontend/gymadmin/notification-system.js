@@ -121,8 +121,8 @@ class NotificationSystem {
     // Create notification modal
     this.createNotificationModal();
     
-    // Add notification styles
-    this.addNotificationStyles();
+    // Add notification styles - now handled by CSS file
+    // this.addNotificationStyles();
   }
 
   // Add notification styles
@@ -191,13 +191,20 @@ class NotificationSystem {
         border-radius: 12px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         z-index: 999999;
-        display: none;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(-10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         overflow: hidden;
         max-height: calc(100vh - 120px);
       }
 
       .notification-dropdown.show {
-        display: block;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0);
         animation: slideDown 0.3s ease;
       }
 
@@ -527,6 +534,13 @@ class NotificationSystem {
           max-height: 500px;
         }
         
+        .notification-dropdown.show {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          transform: translateY(0);
+        }
+        
         .notification-toasts {
           top: 70px;
           right: 10px;
@@ -569,6 +583,13 @@ class NotificationSystem {
           width: 300px;
           right: -60px;
           max-height: 400px;
+        }
+        
+        .notification-dropdown.show {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          transform: translateY(0);
         }
         
         .notification-toasts {
@@ -672,6 +693,13 @@ class NotificationSystem {
       markAllRead.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
+        
+        // Check if notification dropdown is visible before processing
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        if (!notificationDropdown || !notificationDropdown.classList.contains('show')) {
+          return;
+        }
+        
         this.markAllNotificationsRead();
       });
     }
@@ -1020,7 +1048,13 @@ class NotificationSystem {
       }
 
       // Filter members with pending payments or overdue status
+      // Exclude members with cash payment mode and paid status (cash validation confirmed)
       const pendingPaymentMembers = members.filter(member => {
+        // Skip if member has cash payment with paid status (cash validation confirmed)
+        if (member.paymentMode === 'Cash' && member.paymentStatus === 'paid') {
+          return false;
+        }
+        
         return (
           member.paymentStatus === 'pending' || 
           member.paymentStatus === 'overdue' ||
@@ -2149,8 +2183,16 @@ class NotificationSystem {
   }
 
   formatTime(timestamp) {
+    // Convert timestamp to Date object if it isn't already
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Unknown time';
+    }
+    
     const now = new Date();
-    const diff = now - timestamp;
+    const diff = now - date;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
@@ -2159,7 +2201,7 @@ class NotificationSystem {
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
-    return timestamp.toLocaleDateString();
+    return date.toLocaleDateString();
   }
 
   // Play notification sound

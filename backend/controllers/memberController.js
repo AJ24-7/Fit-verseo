@@ -221,33 +221,50 @@ async function sendRenewalEmail({ to, memberName, membershipId, plan, monthlyPla
 // Add a new member to a gym
 exports.addMember = async (req, res) => {
   try {
-    // Duplicate check: email or phone for this gym
+    // Single duplicate check to prevent multiple validation runs
     const forceAdd = req.body.forceAdd === 'true' || req.body.forceAdd === true;
     const email = req.body.memberEmail;
     const phone = req.body.memberPhone;
-    if (!forceAdd && (email || phone)) {
-      const duplicate = await Member.findOne({
-        gym: ((req.admin && (req.admin.gymId || req.admin.id)) || req.body.gymId),
-        $or: [
-          { email: email },
-          { phone: phone }
-        ]
-      });
-      if (duplicate) {
-        return res.status(409).json({
-          code: 'DUPLICATE_MEMBER',
-          message: 'A member with this email or phone number already exists.'
-        });
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id)) || req.body.gymId;
+    
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    // Enhanced duplicate validation with single check
+    if (!forceAdd && (email || phone) && !req._duplicateCheckDone) {
+      req._duplicateCheckDone = true; // Prevent multiple validation runs
+      
+      const duplicateQuery = {
+        gym: gymId,
+        $or: []
+      };
+      
+      if (email && email.trim()) duplicateQuery.$or.push({ email: email.trim().toLowerCase() });
+      if (phone && phone.trim()) duplicateQuery.$or.push({ phone: phone.trim() });
+      
+      if (duplicateQuery.$or.length > 0) {
+        const duplicate = await Member.findOne(duplicateQuery);
+        if (duplicate) {
+          const duplicateField = duplicate.email && duplicate.email.toLowerCase() === (email || '').toLowerCase() ? 'email' : 'phone number';
+          return res.status(409).json({
+            code: 'DUPLICATE_MEMBER',
+            message: `A member with this ${duplicateField} already exists.`,
+            existingMember: {
+              memberName: duplicate.memberName,
+              email: duplicate.email,
+              phone: duplicate.phone,
+              membershipId: duplicate.membershipId,
+              planSelected: duplicate.planSelected,
+              membershipValidUntil: duplicate.membershipValidUntil
+            }
+          });
+        }
       }
     }
    
     for (const [key, value] of Object.entries(req.body)) {
     }
     
-    // Accept gymId from req.admin (set by gymadminAuth) or body
-    const gymId = (req.admin && (req.admin.gymId || req.admin.id)) || req.body.gymId;
-    
-    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    // Get gym and validate
     const gym = await Gym.findById(gymId);
     if (!gym) return res.status(404).json({ message: 'Gym not found.' });
     
@@ -829,3 +846,815 @@ exports.markPaymentAsPaid = async (req, res) => {
     });
   }
 };
+
+// Register member through cash payment validation
+exports.registerCashPayment = async (req, res) => {
+  try {
+    console.log('💰 Processing cash payment registration:', req.body);
+    
+    const {
+      memberName,
+      memberEmail,
+      memberPhone,
+      memberAge,
+      memberGender,
+      memberAddress,
+      planSelected,
+      monthlyPlan,
+      paymentAmount,
+      paymentMode,
+      activityPreference,
+      validationCode,
+      gymId
+    } = req.body;
+    
+    // Validate required fields
+    if (!memberName || !memberEmail || !planSelected || !monthlyPlan || !paymentAmount || !gymId) {
+      return res.status(400).json({ 
+        message: 'Missing required fields: memberName, memberEmail, planSelected, monthlyPlan, paymentAmount, gymId' 
+      });
+    }
+    
+    // Get gym details for membership ID generation
+    const gym = await Gym.findById(gymId);
+    if (!gym) {
+      return res.status(404).json({ message: 'Gym not found.' });
+    }
+    
+    // Check if member already exists (same logic as addMember)
+    const existingMember = await Member.findOne({
+      gym: gymId,
+      $or: [
+        { email: memberEmail.trim().toLowerCase() },
+        { phone: memberPhone?.trim() }
+      ].filter(condition => Object.values(condition)[0]) // Remove empty conditions
+    });
+    
+    if (existingMember) {
+      return res.status(409).json({
+        code: 'DUPLICATE_MEMBER',
+        message: 'A member with this email or phone number already exists.',
+        existingMember: {
+          memberName: existingMember.memberName,
+          email: existingMember.email,
+          phone: existingMember.phone,
+          membershipId: existingMember.membershipId
+        }
+      });
+    }
+    
+    // Calculate membership validity (same logic as addMember)
+    let months = 1;
+    if (/3\s*Months?/i.test(monthlyPlan)) months = 3;
+    else if (/6\s*Months?/i.test(monthlyPlan)) months = 6;
+    else if (/12\s*Months?|1\s*Year/i.test(monthlyPlan)) months = 12;
+    
+    const today = new Date();
+    const validUntil = new Date(today);
+    validUntil.setMonth(validUntil.getMonth() + months);
+    const membershipValidUntil = validUntil.toISOString().split('T')[0];
+    
+    // Generate membership ID (same format as addMember)
+    const now = new Date();
+    const ym = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const gymShort = (gym.gymName || 'GYM').replace(/[^A-Za-z0-9]/g, '').substring(0,6).toUpperCase();
+    const planShort = (planSelected || 'PLAN').replace(/[^A-Za-z0-9]/g, '').substring(0,6).toUpperCase();
+    const membershipId = `${gymShort}-${ym}-${planShort}-${random}`;
+    
+    // Create new member with same structure as addMember
+    const member = new Member({
+      gym: gymId,
+      memberName: memberName.trim(),
+      age: parseInt(memberAge) || 25,
+      gender: memberGender || 'Other',
+      phone: memberPhone?.trim() || '',
+      email: memberEmail.trim().toLowerCase(),
+      address: memberAddress?.trim() || '',
+      paymentMode: 'cash', // Cash payment validation is always cash
+      paymentAmount: parseFloat(paymentAmount),
+      planSelected: planSelected.trim(),
+      monthlyPlan: monthlyPlan.trim(),
+      activityPreference: activityPreference?.trim() || 'General Fitness',
+      profileImage: '', // No profile image for cash validation
+      membershipId: membershipId,
+      membershipValidUntil: membershipValidUntil,
+      joinDate: new Date(),
+      
+      // Payment is confirmed through cash validation process
+      paymentStatus: 'paid', // Mark as paid since validation was successful
+      pendingPaymentAmount: 0, // No pending amount
+      lastPaymentDate: new Date(),
+      
+      // Cash validation specific fields
+      registrationSource: 'CASH_VALIDATION',
+      validationCode: validationCode
+    });
+    
+    await member.save();
+    
+    // Create payment record (same as addMember)
+    try {
+      const payment = new Payment({
+        gymId: gymId,
+        type: 'received',
+        category: 'membership',
+        amount: parseFloat(paymentAmount),
+        description: `Membership payment for ${memberName} - ${planSelected} (${monthlyPlan})`,
+        memberName: memberName,
+        memberId: member._id,
+        paymentMethod: 'cash',
+        status: 'completed',
+        paidDate: new Date(),
+        transactionId: validationCode,
+        notes: `Cash payment validated via code: ${validationCode}`,
+        createdBy: (req.admin && req.admin.id) || gymId
+      });
+      await payment.save();
+    } catch (paymentErr) {
+      console.error('[CashValidation] Error creating payment record:', paymentErr);
+      // Don't block member creation if payment record fails
+    }
+    
+    // Create notification (same as addMember)
+    try {
+      const Notification = require('../models/Notification');
+      const notification = new Notification({
+        title: 'New Member Added (Cash Validation)',
+        message: `${memberName} has joined via cash payment validation with ${planSelected} plan`,
+        type: 'new-member',
+        priority: 'normal',
+        icon: 'fa-money-bill-wave',
+        color: '#28a745',
+        user: gymId,
+        metadata: {
+          memberName: memberName,
+          planSelected: planSelected,
+          membershipId: membershipId,
+          registrationSource: 'CASH_VALIDATION'
+        }
+      });
+      await notification.save();
+    } catch (notifError) {
+      console.error('Error creating cash validation notification:', notifError);
+    }
+    
+    // Send membership email (same format as addMember)
+    try {
+      if (memberEmail && memberName && membershipId && planSelected && monthlyPlan && membershipValidUntil && gym.gymName) {
+        await sendCashValidationWelcomeEmail({
+          to: memberEmail,
+          memberName: memberName,
+          membershipId: membershipId,
+          plan: planSelected,
+          monthlyPlan: monthlyPlan,
+          validUntil: membershipValidUntil,
+          gymName: gym.gymName,
+          amount: paymentAmount,
+          validationCode: validationCode
+        });
+        console.log('✅ Cash validation welcome email sent successfully');
+      } else {
+        console.warn('⚠️ Missing required fields for cash validation email:', {
+          hasEmail: !!memberEmail,
+          hasName: !!memberName,
+          hasMembershipId: !!membershipId,
+          hasPlan: !!planSelected,
+          hasMonthlyPlan: !!monthlyPlan,
+          hasValidUntil: !!membershipValidUntil,
+          hasGymName: !!gym.gymName
+        });
+      }
+    } catch (emailErr) {
+      console.error('[CashValidation] Error sending welcome email:', emailErr);
+      // Don't block member creation if email fails
+    }
+    
+    console.log('✅ Cash validation member registration completed:', {
+      memberName,
+      membershipId,
+      plan: planSelected,
+      monthlyPlan,
+      paymentAmount,
+      validationCode
+    });
+    
+    res.status(201).json({ 
+      success: true,
+      message: 'Member registered successfully via cash payment validation', 
+      member: member,
+      membershipId: membershipId
+    });
+    
+  } catch (error) {
+    console.error('❌ Error registering cash payment member:', error);
+    res.status(500).json({ 
+      message: 'Error registering member through cash payment', 
+      error: error.message 
+    });
+  }
+};
+
+// Enhanced QR Code Member Registration Function
+exports.registerMemberViaQR = async (req, res) => {
+  try {
+    console.log('🎯 Processing QR-based member registration:', req.body);
+    
+    const {
+      memberName,
+      memberEmail,
+      memberPhone,
+      memberAge,
+      memberGender,
+      memberAddress,
+      planSelected,
+      monthlyPlan,
+      paymentAmount,
+      paymentMode,
+      activityPreference,
+      gymId,
+      qrToken,
+      specialOffer,
+      profileImage
+    } = req.body;
+    
+    // Validate required fields
+    const requiredFields = ['memberName', 'memberEmail', 'memberPhone', 'memberAge', 'memberGender', 'planSelected', 'monthlyPlan', 'paymentAmount', 'gymId', 'qrToken'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        requiredFields,
+        missingFields
+      });
+    }
+    
+    // Validate QR Code
+    const QRCode = require('../models/QRCode');
+    const qrCode = await QRCode.findOne({ 
+      token: qrToken, 
+      isActive: true,
+      gymId: gymId
+    }).populate('gymId');
+    
+    if (!qrCode) {
+      return res.status(400).json({
+        message: 'Invalid or expired QR code',
+        code: 'INVALID_QR_CODE'
+      });
+    }
+    
+    // Check if expired
+    if (new Date() > qrCode.expiryDate) {
+      return res.status(400).json({
+        message: 'QR code has expired',
+        code: 'QR_CODE_EXPIRED'
+      });
+    }
+    
+    // Check usage limit
+    if (qrCode.usageLimit !== 'unlimited' && qrCode.usageCount >= parseInt(qrCode.usageLimit)) {
+      return res.status(400).json({
+        message: 'QR code usage limit reached',
+        code: 'QR_CODE_LIMIT_REACHED'
+      });
+    }
+    
+    // Enhanced duplicate check for QR registration
+    if (!req._qrDuplicateCheckDone) {
+      req._qrDuplicateCheckDone = true;
+      
+      const duplicateQuery = {
+        gym: gymId,
+        $or: [
+          { email: memberEmail.trim().toLowerCase() },
+          { phone: memberPhone.trim() }
+        ]
+      };
+      
+      const duplicate = await Member.findOne(duplicateQuery);
+      if (duplicate) {
+        const duplicateField = duplicate.email && duplicate.email.toLowerCase() === memberEmail.toLowerCase() ? 'email' : 'phone number';
+        return res.status(409).json({
+          code: 'DUPLICATE_MEMBER',
+          message: `A member with this ${duplicateField} already exists in the system.`,
+          existingMember: {
+            memberName: duplicate.memberName,
+            email: duplicate.email,
+            phone: duplicate.phone,
+            membershipId: duplicate.membershipId,
+            planSelected: duplicate.planSelected,
+            membershipValidUntil: duplicate.membershipValidUntil
+          }
+        });
+      }
+    }
+    
+    // Get gym details
+    const gym = await Gym.findById(gymId);
+    if (!gym) {
+      return res.status(404).json({ message: 'Gym not found' });
+    }
+    
+    // Calculate membership validity
+    let months = 1;
+    if (/3\s*Months?/i.test(monthlyPlan)) months = 3;
+    else if (/6\s*Months?/i.test(monthlyPlan)) months = 6;
+    else if (/12\s*Months?/i.test(monthlyPlan)) months = 12;
+    
+    const validUntil = new Date();
+    validUntil.setMonth(validUntil.getMonth() + months);
+    
+    // Generate membership ID
+    const membershipId = `QR-${gym.gymName ? gym.gymName.substring(0,3).toUpperCase() : 'GYM'}-${Date.now().toString().substr(-6)}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    
+    // Handle profile image path
+    let profileImagePath = '';
+    if (req.file) {
+      profileImagePath = '/uploads/profile-pics/' + req.file.filename;
+    } else if (profileImage) {
+      profileImagePath = profileImage;
+    }
+    
+    // Create new member with QR-specific data
+    const memberData = {
+      gym: gymId,
+      memberName: memberName.trim(),
+      age: parseInt(memberAge),
+      gender: memberGender,
+      phone: memberPhone.trim(),
+      email: memberEmail.trim().toLowerCase(),
+      address: memberAddress || '',
+      paymentMode: paymentMode || 'pending',
+      paymentAmount: parseFloat(paymentAmount),
+      planSelected: planSelected.trim(),
+      monthlyPlan: monthlyPlan.trim(),
+      activityPreference: activityPreference || 'General Fitness',
+      profileImage: profileImagePath,
+      membershipId: membershipId,
+      membershipValidUntil: validUntil.toISOString().split('T')[0],
+      joinDate: new Date(),
+      registrationSource: 'QR_CODE',
+      qrToken: qrToken,
+      specialOffer: specialOffer || null
+    };
+    
+    const newMember = new Member(memberData);
+    await newMember.save();
+    
+    // Update QR code usage
+    await QRCode.findByIdAndUpdate(qrCode._id, {
+      $inc: { usageCount: 1 },
+      $push: {
+        usageHistory: {
+          memberId: newMember._id,
+          memberName: memberName,
+          usedAt: new Date(),
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent') || 'Unknown'
+        }
+      }
+    });
+    
+    // Create payment record
+    const Payment = require('../models/Payment');
+    const paymentRecord = new Payment({
+      gymId: gymId,
+      memberId: newMember._id,
+      memberName: memberName,
+      type: paymentMode === 'cash' ? 'due' : 'received',
+      category: 'membership',
+      amount: paymentAmount,
+      description: `QR Registration - ${planSelected} (${monthlyPlan})`,
+      paymentMethod: paymentMode.toLowerCase(),
+      status: paymentMode === 'cash' ? 'pending' : 'completed',
+      transactionId: `QR-${qrToken.substr(-8)}-${Date.now()}`,
+      notes: `Registered via QR code: ${qrToken}${specialOffer ? ` | Special Offer: ${specialOffer}` : ''}`,
+      createdBy: qrCode.createdBy || gymId
+    });
+    await paymentRecord.save();
+    
+    // Send welcome email
+    try {
+      await sendQRWelcomeEmail({
+        to: memberEmail,
+        memberName,
+        membershipId,
+        plan: planSelected,
+        monthlyPlan,
+        validUntil: validUntil.toISOString().split('T')[0],
+        gymName: gym.gymName,
+        specialOffer,
+        qrToken
+      });
+    } catch (emailError) {
+      console.error('Failed to send QR welcome email:', emailError);
+      // Don't fail registration if email fails
+    }
+    
+    console.log('✅ QR member registration completed:', {
+      memberName,
+      membershipId,
+      plan: planSelected,
+      monthlyPlan,
+      qrToken
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Member registered successfully via QR code',
+      member: newMember,
+      payment: paymentRecord,
+      gym: {
+        id: gym._id,
+        name: gym.gymName,
+        logo: gym.logo
+      },
+      registrationSource: 'QR_CODE'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error in QR member registration:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to register member via QR code',
+      error: error.message
+    });
+  }
+};
+
+// Helper function to send QR welcome email
+async function sendQRWelcomeEmail({ to, memberName, membershipId, plan, monthlyPlan, validUntil, gymName, specialOffer, qrToken }) {
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa; padding: 32px 0;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🎉 Welcome via QR!</h1>
+          <p style="color: #e8f0ff; margin: 8px 0 0 0; font-size: 16px;">You've successfully registered at ${gymName}</p>
+        </div>
+        <div style="padding: 32px;">
+          <p style="font-size: 18px; color: #333; margin: 0 0 24px 0;">Hello ${memberName},</p>
+          <p style="font-size: 16px; color: #555; line-height: 1.6; margin: 0 0 24px 0;">
+            Welcome to ${gymName}! You've successfully registered using our QR code system. 
+            ${specialOffer ? `<br><br><strong style="color: #667eea;">🎁 Special Offer Applied:</strong> ${specialOffer}` : ''}
+          </p>
+          <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin: 24px 0;">
+            <h3 style="color: #333; margin: 0 0 16px 0; font-size: 18px;">📋 Your Membership Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Membership ID:</td><td style="padding: 8px 0; color: #333; font-weight: 600;">${membershipId}</td></tr>
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Plan:</td><td style="padding: 8px 0; color: #333; font-weight: 600;">${plan}</td></tr>
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Duration:</td><td style="padding: 8px 0; color: #333; font-weight: 600;">${monthlyPlan}</td></tr>
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Valid Until:</td><td style="padding: 8px 0; color: #333; font-weight: 600;">${new Date(validUntil).toLocaleDateString()}</td></tr>
+              <tr><td style="padding: 8px 0; color: #666; font-weight: 500;">Registration Method:</td><td style="padding: 8px 0; color: #667eea; font-weight: 600;">QR Code</td></tr>
+            </table>
+          </div>
+          <p style="font-size: 16px; color: #555; line-height: 1.6; margin: 24px 0;">
+            Your membership is now active! Visit the gym and show your membership ID to get started.
+          </p>
+          <div style="text-align: center; margin: 32px 0;">
+            <div style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: #ffffff; padding: 12px 24px; border-radius: 6px; font-weight: 600;">
+              Ready to Start Your Journey! 💪
+            </div>
+          </div>
+        </div>
+        <div style="background: #f8f9fa; padding: 24px; text-align: center; border-top: 1px solid #e9ecef;">
+          <p style="color: #6c757d; margin: 0; font-size: 14px;">
+            Thanks for choosing ${gymName}! Questions? Contact us anytime.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const sendEmail = require('../utils/sendEmail');
+  await sendEmail({
+    to,
+    subject: `🎉 Welcome to ${gymName} - QR Registration Complete!`,
+    html
+  });
+}
+
+// Cash Validation Welcome Email Function
+const sendCashValidationWelcomeEmail = async ({ 
+  to, 
+  memberName, 
+  membershipId, 
+  plan, 
+  monthlyPlan,
+  validUntil, 
+  gymName,
+  amount,
+  validationCode
+}) => {
+  const html = `
+    <div style="font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; background: #fff;">
+      <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px 20px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">
+          💰 Cash Payment Confirmed!
+        </h1>
+        <p style="color: #e8f5e8; margin: 10px 0 0 0; font-size: 16px;">
+          Welcome to ${gymName}
+        </p>
+      </div>
+      
+      <div style="padding: 30px; background: #fff;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h2 style="color: #28a745; margin: 0 0 10px 0; font-size: 24px;">
+            Welcome, ${memberName}! 🎉
+          </h2>
+          <p style="color: #666; margin: 0; font-size: 16px;">
+            Your cash payment has been verified and your membership is now active!
+          </p>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #28a745;">
+          <h3 style="color: #28a745; margin: 0 0 15px 0; font-size: 18px;">
+            💳 Membership Details
+          </h3>
+          <div style="display: grid; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-weight: 600; color: #495057;">Membership ID:</span>
+              <span style="color: #28a745; font-weight: 700; font-family: monospace; background: #e8f5e8; padding: 4px 8px; border-radius: 4px;">${membershipId}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-weight: 600; color: #495057;">Plan:</span>
+              <span style="color: #28a745; font-weight: 600;">${plan}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-weight: 600; color: #495057;">Duration:</span>
+              <span style="color: #495057; font-weight: 600;">${monthlyPlan}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-weight: 600; color: #495057;">Amount Paid:</span>
+              <span style="color: #28a745; font-weight: 700; font-size: 18px;">₹${amount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-weight: 600; color: #495057;">Valid Until:</span>
+              <span style="color: #495057; font-weight: 600;">${new Date(validUntil).toLocaleDateString('en-IN')}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+              <span style="font-weight: 600; color: #495057;">Validation Code:</span>
+              <span style="color: #28a745; font-weight: 700; font-family: monospace; background: #e8f5e8; padding: 4px 8px; border-radius: 4px;">${validationCode}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); padding: 20px; border-radius: 10px; margin: 25px 0; text-align: center;">
+          <h3 style="color: #155724; margin: 0 0 10px 0; font-size: 18px;">
+            🏃‍♂️ Ready to Start Your Fitness Journey?
+          </h3>
+          <p style="color: #155724; margin: 0; font-size: 14px; line-height: 1.5;">
+            Your membership is now active! Visit the gym with your membership ID to begin your workout sessions.
+          </p>
+        </div>
+        
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="color: #856404; margin: 0 0 10px 0; font-size: 16px;">
+            📋 Important Information:
+          </h4>
+          <ul style="color: #856404; margin: 0; padding-left: 20px; font-size: 14px;">
+            <li>Carry your membership ID for gym access</li>
+            <li>Payment verified via validation code: ${validationCode}</li>
+            <li>Contact gym staff for any queries or assistance</li>
+            <li>Follow gym rules and safety guidelines</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div style="background: #f8f9fa; padding: 24px; text-align: center; border-top: 1px solid #e9ecef;">
+        <p style="color: #6c757d; margin: 0; font-size: 14px;">
+          Thanks for choosing ${gymName}! Questions? Contact us anytime.
+        </p>
+        <p style="color: #6c757d; margin: 5px 0 0 0; font-size: 12px;">
+          This is an automated confirmation for your cash payment validation.
+        </p>
+      </div>
+    </div>
+  `;
+  
+  const sendEmail = require('../utils/sendEmail');
+  await sendEmail(to, `💰 Cash Payment Confirmed - Welcome to ${gymName}!`, html);
+}
+
+// Add membership plan to existing member (for handling duplicate member scenario)
+exports.addMembershipPlan = async (req, res) => {
+  try {
+    const { memberId, newPlan, paymentMethod = 'cash', paymentStatus = 'paid' } = req.body;
+    
+    // Get gym ID from authenticated admin
+    const gymId = (req.admin && (req.admin.gymId || req.admin.id));
+    if (!gymId) return res.status(400).json({ message: 'Gym ID is required.' });
+    
+    console.log('🔄 Adding new membership plan to existing member:', memberId);
+    
+    // Find the existing member
+    const member = await Member.findOne({ 
+      $or: [
+        { _id: memberId },
+        { membershipId: memberId }
+      ],
+      gym: gymId 
+    });
+    
+    if (!member) {
+      return res.status(404).json({ 
+        message: 'Member not found.',
+        code: 'MEMBER_NOT_FOUND'
+      });
+    }
+    
+    // Calculate validity based on plan
+    let months = 1;
+    let planType = 'monthly';
+    
+    if (/3\s*month/i.test(newPlan)) {
+      months = 3;
+      planType = 'quarterly';
+    } else if (/6\s*month/i.test(newPlan)) {
+      months = 6;
+      planType = 'half-yearly';
+    } else if (/annual|yearly|12\s*month/i.test(newPlan)) {
+      months = 12;
+      planType = 'annual';
+    }
+    
+    // Calculate new validity dates
+    const currentDate = new Date();
+    const newValidFrom = new Date(currentDate);
+    const newValidTo = new Date(currentDate);
+    newValidTo.setMonth(newValidTo.getMonth() + months);
+    
+    // Update member with new plan
+    const updateData = {
+      membershipPlan: newPlan,
+      validFrom: newValidFrom,
+      validTo: newValidTo,
+      paymentStatus: paymentStatus,
+      lastPaymentMethod: paymentMethod,
+      lastPaymentDate: currentDate,
+      updatedAt: currentDate
+    };
+    
+    // If member was inactive, activate them
+    if (member.status !== 'active') {
+      updateData.status = 'active';
+    }
+    
+    // Update the member
+    const updatedMember = await Member.findByIdAndUpdate(
+      member._id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+    
+    // Create payment record
+    try {
+      const paymentData = {
+        member: member._id,
+        gym: gymId,
+        amount: 0, // Default amount - should be updated based on actual plan pricing
+        currency: 'INR',
+        method: paymentMethod,
+        status: paymentStatus,
+        planName: newPlan,
+        planType: planType,
+        validityMonths: months,
+        validFrom: newValidFrom,
+        validTo: newValidTo,
+        transactionId: `CASH_${member.membershipId}_${Date.now()}`,
+        adminProcessed: req.admin?._id || req.admin?.id,
+        processedAt: currentDate,
+        notes: `Membership plan updated for existing member - ${newPlan}`
+      };
+      
+      await Payment.create(paymentData);
+      console.log('💳 Payment record created for membership update');
+      
+    } catch (paymentError) {
+      console.error('⚠️ Error creating payment record:', paymentError);
+      // Continue even if payment record creation fails
+    }
+    
+    // Send confirmation email
+    try {
+      const gym = await Gym.findById(gymId);
+      const gymName = gym ? gym.name : 'Your Gym';
+      
+      await sendMembershipUpdateConfirmationEmail({
+        to: member.email,
+        memberName: member.firstName ? `${member.firstName} ${member.lastName}` : member.memberName,
+        memberId: member.membershipId,
+        newPlan: newPlan,
+        validFrom: newValidFrom.toLocaleDateString('en-IN'),
+        validTo: newValidTo.toLocaleDateString('en-IN'),
+        gymName: gymName
+      });
+      
+      console.log('📧 Membership update confirmation email sent');
+      
+    } catch (emailError) {
+      console.error('📧 Error sending confirmation email:', emailError);
+      // Continue even if email fails
+    }
+    
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: 'Membership plan updated successfully',
+      member: {
+        id: updatedMember._id,
+        membershipId: updatedMember.membershipId,
+        name: updatedMember.firstName ? `${updatedMember.firstName} ${updatedMember.lastName}` : updatedMember.memberName,
+        email: updatedMember.email,
+        phone: updatedMember.phone,
+        membershipPlan: updatedMember.planSelected, // Map to existing field
+        planSelected: updatedMember.planSelected,
+        monthlyPlan: updatedMember.monthlyPlan,
+        status: updatedMember.status,
+        validFrom: updatedMember.validFrom,
+        validTo: updatedMember.validTo,
+        paymentStatus: updatedMember.paymentStatus
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error adding membership plan to existing member:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to update membership plan',
+      error: error.message,
+      code: 'MEMBERSHIP_UPDATE_FAILED'
+    });
+  }
+};
+
+// Send membership update confirmation email
+async function sendMembershipUpdateConfirmationEmail({ to, memberName, memberId, newPlan, validFrom, validTo, gymName }) {
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white; padding: 32px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
+        <h1 style="margin: 0; font-size: 28px; font-weight: 700;">Membership Updated!</h1>
+        <p style="margin: 8px 0 0 0; font-size: 16px; opacity: 0.9;">Your membership plan has been successfully updated</p>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding: 32px;">
+        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+          <h2 style="color: #2d3748; margin: 0 0 20px 0; font-size: 20px;">📋 Updated Membership Details</h2>
+          
+          <div style="display: grid; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: white; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1);">
+              <span style="font-weight: 600; color: #4b5563;">Member ID:</span>
+              <span style="color: #1f2937; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px;">${memberId}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: white; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1);">
+              <span style="font-weight: 600; color: #4b5563;">Name:</span>
+              <span style="color: #1f2937;">${memberName}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: white; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1);">
+              <span style="font-weight: 600; color: #4b5563;">New Plan:</span>
+              <span style="color: #1f2937; font-weight: 600;">${newPlan}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: white; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1);">
+              <span style="font-weight: 600; color: #4b5563;">Valid From:</span>
+              <span style="color: #1f2937;">${validFrom}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: white; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1);">
+              <span style="font-weight: 600; color: #4b5563;">Valid To:</span>
+              <span style="color: #1f2937;">${validTo}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%); border: 1px solid #4caf50; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+          <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
+          <h3 style="color: #388e3c; margin: 0 0 8px 0;">Payment Confirmed</h3>
+          <p style="color: #2e7d32; margin: 0; font-size: 14px;">Your membership has been updated and is now active!</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%); border: 1px solid #2196f3; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <h3 style="color: #1976d2; margin: 0 0 16px 0;">🎯 What's Next?</h3>
+          <ul style="margin: 0; padding-left: 16px; color: #1565c0;">
+            <li style="margin-bottom: 8px;">Visit the gym with your member ID</li>
+            <li style="margin-bottom: 8px;">Your updated membership is now active</li>
+            <li style="margin-bottom: 8px;">Access all facilities as per your new plan</li>
+            <li>Contact us if you have any questions</li>
+          </ul>
+        </div>
+        
+        <div style="text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">
+            <strong>Need help?</strong> Contact <strong>${gymName}</strong> support team<br>
+            This is an automated confirmation for your membership update.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const sendEmail = require('../utils/sendEmail');
+  await sendEmail(to, `✅ Membership Updated - Welcome Back to ${gymName}!`, html);
+}

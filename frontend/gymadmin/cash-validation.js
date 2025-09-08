@@ -213,10 +213,19 @@ class CashValidationSystem {
         try {
             const response = await fetch('/api/payments/pending-cash-validations', {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.error('Authentication failed - please login again');
+                    window.location.href = '/frontend/gymadmin/login.html';
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
 
             const result = await response.json();
 
@@ -419,7 +428,7 @@ class CashValidationSystem {
             const response = await fetch(`/api/payments/approve-cash-validation/${validationCode}`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -509,29 +518,41 @@ class CashValidationSystem {
         try {
             const response = await fetch('/api/payments/pending-cash-validations', {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
                     'Content-Type': 'application/json'
                 }
             });
 
-            const result = await response.json();
-
-            if (response.ok) {
-                const newValidations = result.validations || [];
-                const currentCount = this.pendingValidations.length;
-                const newCount = newValidations.length;
-
-                if (newCount > currentCount) {
-                    // New validation received
-                    this.showNotification(`${newCount - currentCount} new cash payment validation(s) received!`, 'info');
-                    this.playNotificationSound();
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.error('Authentication failed - please login again');
+                    // Redirect to login or show login prompt
+                    window.location.href = '/frontend/gymadmin/login.html';
+                    return;
                 }
-
-                this.pendingValidations = newValidations;
-                this.updateNotificationCount();
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
+
+            const result = await response.json();
+            const newValidations = result.validations || [];
+            const currentCount = this.pendingValidations.length;
+            const newCount = newValidations.length;
+
+            if (newCount > currentCount) {
+                // New validation received
+                this.showNotification(`${newCount - currentCount} new cash payment validation(s) received!`, 'info');
+                this.playNotificationSound();
+            }
+
+            this.pendingValidations = newValidations;
+            this.updateNotificationCount();
+            
         } catch (error) {
             console.error('Error checking for new validations:', error);
+            // Don't spam console with frequent polling errors
+            if (error.message.includes('Failed to fetch')) {
+                console.log('Network error while checking validations - server may be down');
+            }
         }
     }
 

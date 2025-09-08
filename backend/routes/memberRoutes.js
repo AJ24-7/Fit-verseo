@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addMember, getMembers, updateMember, removeMembersByIds, removeExpiredMembers, renewMembership, updateMemberPaymentStatus, getMembersWithPendingPayments, getExpiringMembers, grantSevenDayAllowance, markPaymentAsPaid } = require('../controllers/memberController');
+const { addMember, getMembers, updateMember, removeMembersByIds, removeExpiredMembers, renewMembership, updateMemberPaymentStatus, getMembersWithPendingPayments, getExpiringMembers, grantSevenDayAllowance, markPaymentAsPaid, registerCashPayment, registerMemberViaQR, addMembershipPlan } = require('../controllers/memberController');
 const gymadminAuth = require('../middleware/gymadminAuth');
 const memberImageUpload = require('../middleware/memberImageUpload');
 const Member = require('../models/Member');
@@ -375,5 +375,14 @@ router.get('/:id', gymadminAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch member' });
   }
 });
+
+// Register member through cash payment validation
+router.post('/register-cash-payment', gymadminAuth, registerCashPayment);
+
+// Add membership plan to existing member (for duplicate member handling)
+router.post('/add-membership-plan', gymadminAuth, require('../controllers/memberController').addMembershipPlan);
+
+// Register member via QR code (public endpoint)
+router.post('/register-via-qr', registerMemberViaQR);
 
 module.exports = router;

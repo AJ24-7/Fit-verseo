@@ -1312,36 +1312,272 @@ document.addEventListener('DOMContentLoaded', function () {
     modal.id = 'customRemoveMembersModal';
     modal.className = 'modal';
     modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    modal.style.zIndex = '100000';
     modal.innerHTML = `
-      <div class="modal-content" style="max-width:420px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <h3 style="margin:0;"><i class="fas fa-user-cog" style="color:#1976d2;margin-right:8px;"></i>Custom Remove Members</h3>
-          <button class="modal-close" id="closeCustomRemoveMembersModal" style="font-size:1.5rem;">&times;</button>
+      <div class="modal-content" style="max-width: 600px; height: 80vh; display: flex; flex-direction: column; overflow: hidden;">
+        <div class="modal-header-style" style="flex-shrink: 0; padding: 20px; border-bottom: 1px solid var(--border-color);">
+          <h3 class="modal-title-style">
+            <i class="fas fa-user-minus" style="color: #dc3545; margin-right: 8px;"></i>
+            Remove Members
+          </h3>
+          <button class="modal-close" id="closeCustomRemoveMembersModal">&times;</button>
         </div>
-        <div style="margin:18px 0;">
-          <label for="customRemoveSearch" style="font-weight:500;">Search by name, email, or ID:</label>
-          <input type="text" id="customRemoveSearch" style="width:100%;margin-top:6px;padding:8px;border-radius:6px;border:1px solid #ccc;">
+        
+        <div class="modal-body" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column;">
+          <div class="form-group" style="margin-bottom: 20px; flex-shrink: 0;">
+            <label for="customRemoveSearch" class="form-label">
+              <i class="fas fa-search" style="margin-right: 6px; color: var(--primary);"></i>
+              Search Members
+            </label>
+            <input type="text" 
+                   id="customRemoveSearch" 
+                   class="form-control" 
+                   placeholder="Search by name, email, or membership ID..."
+                   style="margin-top: 8px; width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px;">
+          </div>
+          
+          <div class="members-selection-container" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            <div class="selected-count-badge" id="selectedCountBadge" style="display: none;">
+              <i class="fas fa-check-circle"></i>
+              <span id="selectedCountText">0 selected</span>
+            </div>
+            
+            <div id="customRemoveMembersList" 
+                 style="flex: 1; 
+                        overflow-y: auto; 
+                        border: 1px solid var(--border-color); 
+                        border-radius: 8px; 
+                        background: var(--card-bg);
+                        min-height: 200px;
+                        max-height: none;">
+              <div class="loading-state" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
+                <div>Loading members...</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="customRemoveMembersList" style="max-height:260px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:8px 0;background:#fafbfc;"></div>
-        <div style="margin-top:18px;display:flex;justify-content:center;gap:12px;">
-          <button class="btn btn-secondary" id="cancelCustomRemoveBtn">Cancel</button>
-          <button class="btn btn-danger" id="confirmCustomRemoveBtn" disabled>Remove Selected</button>
+        
+        <div class="modal-footer" style="flex-shrink: 0; display: flex; justify-content: flex-end; gap: 12px; padding: 20px; border-top: 1px solid var(--border-color); background: white;">
+          <button class="btn btn-secondary" id="cancelCustomRemoveBtn" style="padding: 10px 20px; border: 1px solid #ccc; background: #f8f9fa; color: #333; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            <i class="fas fa-times" style="margin-right: 6px;"></i>
+            Cancel
+          </button>
+          <button class="btn btn-danger" id="confirmCustomRemoveBtn" disabled style="padding: 10px 20px; border: none; background: #dc3545; color: white; border-radius: 6px; cursor: pointer; font-size: 14px; opacity: 0.6;">
+            <i class="fas fa-user-minus" style="margin-right: 6px;"></i>
+            Remove Selected
+          </button>
         </div>
       </div>
+      
+      <style>
+        .members-selection-container {
+          position: relative;
+        }
+        
+        .selected-count-badge {
+          position: absolute;
+          top: -12px;
+          right: 8px;
+          background: #28a745;
+          color: white;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          z-index: 10;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .member-item {
+          display: flex;
+          align-items: center;
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--border-color, #e9ecef);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+          background: white;
+        }
+        
+        .member-item:hover {
+          background: #f8f9fa;
+        }
+        
+        .member-item.selected {
+          background: #e3f2fd;
+          border-left: 4px solid #1976d2;
+        }
+        
+        .member-item:last-child {
+          border-bottom: none;
+        }
+        
+        .member-checkbox {
+          margin-right: 12px;
+          transform: scale(1.2);
+          cursor: pointer;
+        }
+        
+        .member-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+          margin-right: 12px;
+          border: 2px solid #e9ecef;
+        }
+        
+        .member-info {
+          flex: 1;
+        }
+        
+        .member-name {
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 2px;
+        }
+        
+        .member-details {
+          color: #666;
+          font-size: 0.9rem;
+        }
+        
+        .empty-state {
+          text-align: center;
+          padding: 40px 20px;
+          color: #666;
+        }
+        
+        .empty-state i {
+          font-size: 2rem;
+          margin-bottom: 12px;
+          color: #999;
+        }
+        
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed !important;
+        }
+        
+        .btn:not(:disabled):hover {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .btn-danger:not(:disabled) {
+          background: #dc3545 !important;
+          opacity: 1 !important;
+        }
+        
+        .btn-danger:not(:disabled):hover {
+          background: #c82333 !important;
+        }
+        
+        .btn-secondary:hover {
+          background: #e2e6ea !important;
+          border-color: #adb5bd !important;
+        }
+        
+        /* Ensure modal content doesn't exceed viewport */
+        .modal-content {
+          max-height: 90vh !important;
+        }
+        
+        /* Custom scrollbar for member list */
+        #customRemoveMembersList::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        #customRemoveMembersList::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+        
+        #customRemoveMembersList::-webkit-scrollbar-thumb {
+          background: #ccc;
+          border-radius: 3px;
+        }
+        
+        #customRemoveMembersList::-webkit-scrollbar-thumb:hover {
+          background: #999;
+        }
+        
+        /* Responsive design for smaller screens */
+        @media (max-width: 768px) {
+          .modal-content {
+            max-width: 95vw !important;
+            height: 85vh !important;
+            margin: 10px;
+          }
+          
+          .modal-body {
+            padding: 15px !important;
+          }
+          
+          .modal-footer {
+            padding: 15px !important;
+            flex-direction: column-reverse;
+          }
+          
+          .modal-footer .btn {
+            width: 100%;
+            margin-bottom: 10px;
+          }
+          
+          .member-item {
+            padding: 10px 12px !important;
+          }
+          
+          .member-details {
+            font-size: 0.8rem !important;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .modal-content {
+            max-width: 100vw !important;
+            height: 100vh !important;
+            margin: 0;
+            border-radius: 0 !important;
+          }
+          
+          .modal-header-style {
+            padding: 15px !important;
+          }
+          
+          .modal-title-style {
+            font-size: 1.1rem !important;
+          }
+        }
+      </style>
     `;
     document.body.appendChild(modal);
 
-    // Close logic
-    document.getElementById('closeCustomRemoveMembersModal').onclick =
-      document.getElementById('cancelCustomRemoveBtn').onclick = function () {
-        modal.remove();
-      };
-    modal.addEventListener('mousedown', function handler(e) {
-      if (e.target === modal) {
-        modal.remove();
-        modal.removeEventListener('mousedown', handler);
-      }
+    // Close modal handlers
+    document.getElementById('closeCustomRemoveMembersModal').onclick = closeModal;
+    document.getElementById('cancelCustomRemoveBtn').onclick = closeModal;
+    
+    function closeModal() {
+      modal.remove();
+      document.body.style.overflow = '';
+    }
+    
+    // Close on backdrop click
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) closeModal();
     });
+
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
 
     // Fetch and render members
     const token = localStorage.getItem('gymAdminToken');
@@ -1351,106 +1587,214 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(res => res.json())
       .then(members => {
         renderCustomRemoveMembersList(members, '');
-        // Search logic
-        document.getElementById('customRemoveSearch').oninput = function (e) {
+        
+        // Search functionality
+        const searchInput = document.getElementById('customRemoveSearch');
+        searchInput.addEventListener('input', function(e) {
           renderCustomRemoveMembersList(members, e.target.value);
-        };
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching members:', error);
+        const list = document.getElementById('customRemoveMembersList');
+        list.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>Error loading members</div>
+            <small>Please try again or contact support</small>
+          </div>
+        `;
       });
 
-    // Render members with checkboxes
+    // Render members with enhanced UI
     function renderCustomRemoveMembersList(members, filter) {
       const list = document.getElementById('customRemoveMembersList');
+      const selectedCountBadge = document.getElementById('selectedCountBadge');
+      const selectedCountText = document.getElementById('selectedCountText');
+      const confirmBtn = document.getElementById('confirmCustomRemoveBtn');
+      
       if (!list) return;
+      
       let filtered = Array.isArray(members) ? members : [];
       if (filter) {
         const f = filter.toLowerCase();
         filtered = filtered.filter(m =>
           (m.memberName?.toLowerCase().includes(f)) ||
           (m.email?.toLowerCase().includes(f)) ||
-          (m.membershipId?.toLowerCase().includes(f))
+          (m.membershipId?.toLowerCase().includes(f)) ||
+          (m.phone?.toLowerCase().includes(f))
         );
       }
+
       if (!filtered.length) {
-        list.innerHTML = '<div style="color:#888;text-align:center;">No members found.</div>';
-        document.getElementById('confirmCustomRemoveBtn').disabled = true;
+        list.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <div>${filter ? 'No members found matching your search' : 'No members found'}</div>
+            <small>${filter ? 'Try adjusting your search terms' : 'Add some members first'}</small>
+          </div>
+        `;
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.6';
+        confirmBtn.style.cursor = 'not-allowed';
+        selectedCountBadge.style.display = 'none';
         return;
       }
+
       list.innerHTML = filtered.map(m => `
-        <label style="display:flex;align-items:center;padding:6px 12px;cursor:pointer;">
-          <input type="checkbox" class="custom-remove-checkbox" value="${m.membershipId || ''}" style="margin-right:10px;">
-          <img src="${m.profileImage ? `http://localhost:5000${m.profileImage}` : 'https://via.placeholder.com/32?text=Photo'}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;margin-right:10px;">
-          <span style="font-weight:500;">${m.memberName || ''}</span>
-          <span style="color:#888;font-size:0.95em;margin-left:8px;">${m.membershipId || ''}</span>
-        </label>
+        <div class="member-item" onclick="toggleMemberSelection('${m.membershipId || ''}')">
+          <input type="checkbox" 
+                 class="custom-remove-checkbox member-checkbox" 
+                 value="${m.membershipId || ''}" 
+                 onclick="event.stopPropagation();">
+          <img src="${m.profileImage ? `http://localhost:5000${m.profileImage}` : 'https://via.placeholder.com/40x40/e9ecef/6c757d?text=' + (m.memberName?.[0] || 'M')}" 
+               alt="${m.memberName || 'Member'}" 
+               class="member-avatar"
+               onerror="this.src='https://via.placeholder.com/40x40/e9ecef/6c757d?text=' + '${(m.memberName?.[0] || 'M')}'">
+          <div class="member-info">
+            <div class="member-name">${m.memberName || 'Unknown'}</div>
+            <div class="member-details">
+              ${m.membershipId || 'No ID'} • ${m.email || 'No email'} 
+              ${m.phone ? '• ' + m.phone : ''}
+            </div>
+          </div>
+        </div>
       `).join('');
-      // Enable/disable confirm button
+
+      // Add event listeners and update selection state
       const checkboxes = list.querySelectorAll('.custom-remove-checkbox');
-      const confirmBtn = document.getElementById('confirmCustomRemoveBtn');
-      checkboxes.forEach(cb => {
-        cb.onchange = function () {
-          confirmBtn.disabled = !Array.from(checkboxes).some(c => c.checked);
-        };
-      });
-      confirmBtn.disabled = !Array.from(checkboxes).some(c => c.checked);
-      // Confirm remove logic
-      confirmBtn.onclick = function () {
-        const selected = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
-        if (!selected.length) return;
-        showDialog({
-          title: 'Remove Members',
-          message: `Remove ${selected.length} selected member(s)?`,
-          confirmText: 'Remove',
-          cancelText: 'Cancel',
-          showCancel: true,
-          iconHtml: '<i class="fas fa-user-cog" style="color:#1976d2;"></i>',
-          onConfirm: async function () {
-            try {
-              const res = await fetch('http://localhost:5000/api/members/bulk', {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ membershipIds: selected })
-              });
-              const data = await res.json();
-              if (!res.ok) {
-                showDialog({
-                  title: 'Error',
-                  message: data && data.message ? data.message : 'Error removing members.',
-                  confirmText: 'OK',
-                  iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#ef233c;"></i>'
-                });
-                return;
-              }
-              showDialog({
-                title: 'Members Removed',
-                message: `Removed ${data.deletedCount || 0} member(s).`,
-                confirmText: 'OK',
-                iconHtml: '<i class="fas fa-check-circle" style="color:#38b000;"></i>',
-                onConfirm: function () {
-                  modal.remove();
-                  if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
-                  // Update member stats after removal
-                  if (typeof updateMembersStatsCard === 'function') updateMembersStatsCard();
-                  // Refresh payment stats to show accurate data from payment records
-                  if (typeof updatePaymentsStatsCard === 'function') updatePaymentsStatsCard();
-                }
-              });
-            } catch (err) {
-              showDialog({
-                title: 'Error',
-                message: 'Error removing members.',
-                confirmText: 'OK',
-                iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#ef233c;"></i>'
-              });
-            }
+      
+      function updateSelectionState() {
+        const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const memberItems = list.querySelectorAll('.member-item');
+        
+        // Update visual state of member items
+        checkboxes.forEach((cb, index) => {
+          if (memberItems[index]) {
+            memberItems[index].classList.toggle('selected', cb.checked);
           }
         });
+        
+        // Update count badge
+        if (selectedCount > 0) {
+          selectedCountBadge.style.display = 'block';
+          selectedCountText.textContent = `${selectedCount} selected`;
+        } else {
+          selectedCountBadge.style.display = 'none';
+        }
+        
+        // Update confirm button with proper styling
+        if (selectedCount === 0) {
+          confirmBtn.disabled = true;
+          confirmBtn.style.opacity = '0.6';
+          confirmBtn.style.cursor = 'not-allowed';
+          confirmBtn.style.background = '#dc3545';
+        } else {
+          confirmBtn.disabled = false;
+          confirmBtn.style.opacity = '1';
+          confirmBtn.style.cursor = 'pointer';
+          confirmBtn.style.background = '#dc3545';
+        }
+      }
+
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelectionState);
+      });
+
+      // Initial state
+      updateSelectionState();
+
+      // Confirm remove functionality - auto close and show confirmation
+      confirmBtn.onclick = function() {
+        const selected = Array.from(checkboxes).filter(c => c.checked);
+        if (!selected.length) return;
+        
+        const selectedIds = selected.map(c => c.value);
+        const selectedMembers = filtered.filter(m => selectedIds.includes(m.membershipId));
+        
+        // Close selection modal immediately
+        closeModal();
+        
+        // Show confirmation dialog with enhanced details
+        setTimeout(() => {
+          showDialog({
+            title: 'Confirm Member Removal',
+            message: `Are you sure you want to remove ${selected.length} member${selected.length > 1 ? 's' : ''}?\n\n` +
+                    `Members to be removed:\n${selectedMembers.map(m => `• ${m.memberName} (${m.membershipId})`).join('\n')}` +
+                    `\n\nThis action cannot be undone.`,
+            confirmText: 'Remove Members',
+            cancelText: 'Cancel',
+            iconHtml: '<i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 2rem;"></i>',
+            onConfirm: async function() {
+              try {
+                showDialog({
+                  title: 'Processing...',
+                  message: 'Removing selected members...',
+                  confirmText: 'Please wait...',
+                  iconHtml: '<i class="fas fa-spinner fa-spin" style="color: #1976d2; font-size: 2rem;"></i>'
+                });
+
+                const res = await fetch('http://localhost:5000/api/members/bulk', {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ membershipIds: selectedIds })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                  showDialog({
+                    title: 'Error',
+                    message: data?.message || 'Failed to remove members. Please try again.',
+                    confirmText: 'OK',
+                    iconHtml: '<i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 2rem;"></i>'
+                  });
+                  return;
+                }
+
+                // Success dialog
+                showDialog({
+                  title: 'Members Removed Successfully',
+                  message: `Successfully removed ${data.deletedCount || 0} member${(data.deletedCount || 0) !== 1 ? 's' : ''} from your gym.`,
+                  confirmText: 'OK',
+                  iconHtml: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i>',
+                  onConfirm: function() {
+                    // Refresh all relevant data
+                    if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
+                    if (typeof updateMembersStatsCard === 'function') updateMembersStatsCard();
+                    if (typeof updatePaymentsStatsCard === 'function') updatePaymentsStatsCard();
+                  }
+                });
+                
+              } catch (error) {
+                console.error('Error removing members:', error);
+                showDialog({
+                  title: 'Network Error',
+                  message: 'Unable to connect to server. Please check your connection and try again.',
+                  confirmText: 'OK',
+                  iconHtml: '<i class="fas fa-wifi" style="color: #dc3545; font-size: 2rem;"></i>'
+                });
+              }
+            }
+          });
+        }, 100); // Small delay for smooth transition
       };
     }
+
+    // Global function for member item click handling
+    window.toggleMemberSelection = function(membershipId) {
+      const checkbox = document.querySelector(`input[value="${membershipId}"]`);
+      if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      }
+    };
   }
 });
+
 // --- Add Member Modal Logic (Single Consolidated Implementation) ---
 document.addEventListener('DOMContentLoaded', function() {
   
@@ -1614,10 +1958,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const discountInfo = document.getElementById('discountInfo');
     const discountText = document.getElementById('discountText');
     
+    if (!currentPlanSelected || !currentMonthlyPlan || !currentPaymentAmount) {
+      console.warn('[AddMember] Payment calculation elements not found');
+      return;
+    }
 
     const selectedPlan = currentPlanSelected.value;
     const selectedDuration = currentMonthlyPlan.value;
     
+    console.log('[AddMember] Payment calculation:', { selectedPlan, selectedDuration, plansCache });
 
     if (!selectedPlan || !selectedDuration) {
       currentPaymentAmount.value = '';
@@ -1625,21 +1974,40 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Extract months from duration
-    const monthsMatch = selectedDuration.match(/(\d+)\s*Months?/i); // Updated regex to handle both "Month" and "Months"
-    const months = monthsMatch ? parseInt(monthsMatch[1]) : 1;
+    // Extract months from duration - handle multiple formats
+    let months = 1;
+    const durationLower = selectedDuration.toLowerCase();
+    
+    if (durationLower.includes('3') && durationLower.includes('month')) {
+      months = 3;
+    } else if (durationLower.includes('6') && durationLower.includes('month')) {
+      months = 6;
+    } else if (durationLower.includes('12') && (durationLower.includes('month') || durationLower.includes('year'))) {
+      months = 12;
+    } else {
+      // Try regex extraction as fallback
+      const monthsMatch = selectedDuration.match(/(\d+)\s*(?:months?|years?)/i);
+      if (monthsMatch) {
+        months = parseInt(monthsMatch[1]);
+        if (selectedDuration.toLowerCase().includes('year')) {
+          months *= 12; // Convert years to months
+        }
+      }
+    }
+
+    console.log('[AddMember] Extracted months:', months);
 
     // Find plan in cache
     const plan = plansCache.find(p => p.name === selectedPlan);
     
     if (!plan) {
-      console.warn('[AddMember] Plan not found in cache:', selectedPlan);
+      console.warn('[AddMember] Plan not found in cache:', selectedPlan, 'Available:', plansCache);
       currentPaymentAmount.value = '';
       if (discountInfo) discountInfo.style.display = 'none';
       return;
     }
 
-   
+    console.log('[AddMember] Found plan:', plan);
 
     // Calculate amount
     const baseAmount = plan.price * months;
@@ -1663,31 +2031,56 @@ document.addEventListener('DOMContentLoaded', function() {
       finalAmount = baseAmount - discountAmount;
     }
 
+    console.log('[AddMember] Payment calculation result:', {
+      baseAmount,
+      finalAmount,
+      discountApplies,
+      discountAmount,
+      discountPercentage
+    });
+
     // Update UI
     currentPaymentAmount.value = finalAmount;
     
     // Update discount information
     if (discountInfo && discountText) {
       if (discountApplies && discountAmount > 0) {
-        discountText.innerHTML = `${discountPercentage}% discount applied - You save ₹${discountAmount}`;
+        discountText.innerHTML = `${discountPercentage}% discount applied - You save ₹${discountAmount}! (Base: ₹${baseAmount})`;
         discountInfo.style.display = 'block';
         discountInfo.style.backgroundColor = '#d4edda';
         discountInfo.style.color = '#155724';
         discountInfo.style.border = '1px solid #c3e6cb';
+        discountInfo.style.padding = '10px';
+        discountInfo.style.borderRadius = '5px';
+        discountInfo.style.marginTop = '10px';
       } else {
-        discountText.innerHTML = 'No discount applied';
+        discountText.innerHTML = `No discount applied. Total: ₹${finalAmount} (${months} month${months > 1 ? 's' : ''} × ₹${plan.price})`;
         discountInfo.style.display = 'block';
         discountInfo.style.backgroundColor = '#f8f9fa';
         discountInfo.style.color = '#6c757d';
         discountInfo.style.border = '1px solid #dee2e6';
+        discountInfo.style.padding = '10px';
+        discountInfo.style.borderRadius = '5px';
+        discountInfo.style.marginTop = '10px';
       }
+    } else {
+      console.warn('[AddMember] Discount info elements not found');
     }
+    
+    // Trigger change event to notify other systems
+    currentPaymentAmount.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   // Open modal
   async function openAddMemberModal() {
-    await fetchPlansForModal();
-    await fetchActivitiesForModal();
+    console.log('[AddMember] Opening modal and fetching data...');
+    
+    try {
+      await fetchPlansForModal();
+      await fetchActivitiesForModal();
+    } catch (error) {
+      console.error('[AddMember] Error fetching data for modal:', error);
+    }
     
     if (addMemberModal) {
       addMemberModal.style.display = 'flex';
@@ -1703,27 +2096,52 @@ document.addEventListener('DOMContentLoaded', function() {
     const discountInfo = document.getElementById('discountInfo');
     if (discountInfo) discountInfo.style.display = 'none';
     
-    // Populate plan dropdown
-    if (planSelected && plansCache.length > 0) {
-      planSelected.innerHTML = '<option value="">Select Plan</option>' + 
-        plansCache.map(plan => `<option value="${plan.name}">${plan.name} - ₹${plan.price}/month</option>`).join('');
+    // Populate plan dropdown with enhanced options
+    if (planSelected) {
+      if (plansCache.length > 0) {
+        console.log('[AddMember] Populating plans:', plansCache);
+        
+        const planOptions = plansCache.map(plan => {
+          const planDetails = `${plan.name} - ₹${plan.price}/month`;
+          const discountInfo = plan.discount > 0 ? ` (${plan.discount}% off on ${plan.discountMonths}+ months)` : '';
+          return `<option value="${plan.name}" data-price="${plan.price}" data-discount="${plan.discount || 0}" data-discount-months="${plan.discountMonths || 0}">${planDetails}${discountInfo}</option>`;
+        }).join('');
+        
+        planSelected.innerHTML = '<option value="">Select Plan</option>' + planOptions;
+      } else {
+        console.warn('[AddMember] No plans available, using fallback options');
+        planSelected.innerHTML = `
+          <option value="">Select Plan</option>
+          <option value="Basic" data-price="1000" data-discount="0">Basic - ₹1000/month</option>
+          <option value="Standard" data-price="1500" data-discount="10">Standard - ₹1500/month (10% off on 3+ months)</option>
+          <option value="Premium" data-price="2000" data-discount="15">Premium - ₹2000/month (15% off on 6+ months)</option>
+        `;
+      }
     } else {
-      console.warn('[AddMember] Plan dropdown not populated:', {
-        planSelected: !!planSelected,
-        plansCache: plansCache.length,
-        planSelectedElement: planSelected
-      });
+      console.error('[AddMember] Plan dropdown element not found!');
+    }
+    
+    // Populate duration dropdown with consistent options
+    const monthlyPlanElement = document.getElementById('monthlyPlan');
+    if (monthlyPlanElement) {
+      monthlyPlanElement.innerHTML = `
+        <option value="">Select Duration</option>
+        <option value="1 Month">1 Month</option>
+        <option value="3 Months">3 Months</option>
+        <option value="6 Months">6 Months</option>
+        <option value="12 Months">12 Months</option>
+      `;
     }
     
     // Populate activity dropdown
     const activityPreference = document.getElementById('activityPreference');
     if (activityPreference && activitiesCache.length > 0) {
-      activityPreference.innerHTML = '<option value="">Select Activity</option>' + 
-        activitiesCache.map(activity => {
-          const activityName = typeof activity === 'string' ? activity : activity.name;
-          const activityIcon = typeof activity === 'object' && activity.icon ? `<i class="${activity.icon}"></i> ` : '';
-          return `<option value="${activityName}">${activityName}</option>`;
-        }).join('');
+      const activityOptions = activitiesCache.map(activity => {
+        const activityName = typeof activity === 'string' ? activity : activity.name;
+        return `<option value="${activityName}">${activityName}</option>`;
+      }).join('');
+      
+      activityPreference.innerHTML = '<option value="">Select Activity</option>' + activityOptions;
     } else if (activityPreference) {
       // Fallback to default options if no activities found
       activityPreference.innerHTML = `
@@ -1736,16 +2154,20 @@ document.addEventListener('DOMContentLoaded', function() {
         <option value="Pilates">Pilates</option>
         <option value="General Fitness">General Fitness</option>
       `;
-      console.warn('[AddMember] Activity dropdown populated with fallback options:', {
-        activityPreference: !!activityPreference,
-        activitiesCache: activitiesCache.length
-      });
+      console.warn('[AddMember] Activity dropdown populated with fallback options');
     }
     
     // Reattach event listeners after modal is opened and populated
     setTimeout(() => {
       attachPaymentListeners();
       attachImageUploadListeners();
+      
+      // Trigger initial calculation if both plan and duration are selected
+      const currentPlan = document.getElementById('planSelected')?.value;
+      const currentDuration = document.getElementById('monthlyPlan')?.value;
+      if (currentPlan && currentDuration) {
+        updatePaymentAmountAndDiscount();
+      }
     }, 100);
     
   }
@@ -4276,11 +4698,13 @@ function renderMembersTable(members) {
     const rowId = member._id ? `data-member-id="${member._id}"` : '';
     
     // Payment status badge (removed paid badge, keeping only pending and overdue)
+    // Exclude cash payment members with paid status from showing pending payment badges
     let paymentStatusBadge = '';
     const paymentStatus = member.paymentStatus || '';
     const pendingAmount = member.pendingPaymentAmount;
     
-    if (paymentStatus === 'pending' || (pendingAmount && pendingAmount > 0)) {
+    if ((paymentStatus === 'pending' || (pendingAmount && pendingAmount > 0)) &&
+        !(member.paymentMode === 'Cash' && paymentStatus === 'paid')) {
       paymentStatusBadge = `<span class="payment-status-badge pending" style="background:#ff6b6b;color:white;padding:2px 8px;border-radius:12px;font-size:0.75em;margin-left:5px;">💳 Payment Pending</span>`;
     } else if (paymentStatus === 'overdue') {
       paymentStatusBadge = `<span class="payment-status-badge overdue" style="background:#d63031;color:white;padding:2px 8px;border-radius:12px;font-size:0.75em;margin-left:5px;">⚠️ Overdue</span>`;
@@ -4292,7 +4716,9 @@ function renderMembersTable(members) {
     let actionButton = '';
     
     // Check if member has payment pending status (takes priority over expiry status)
-    if (paymentStatus === 'pending' || (pendingAmount && pendingAmount > 0)) {
+    // Skip pending payment logic for members with cash payment mode and paid status (cash validation)
+    if ((paymentStatus === 'pending' || (pendingAmount && pendingAmount > 0)) && 
+        !(member.paymentMode === 'Cash' && paymentStatus === 'paid')) {
       statusClass = 'member-row-payment-pending'; // Yellow effect for payment pending
       actionButton = `
         <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
