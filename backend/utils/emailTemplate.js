@@ -3,6 +3,7 @@
 // Supports dark-mode friendly colors and mobile responsiveness.
 
 const { getBase64Logo } = require('./logoUtils');
+const path = require('path');
 
 const DEFAULT_BRAND = {
   name: process.env.BRAND_NAME || 'Gym-Wale',
@@ -12,8 +13,37 @@ const DEFAULT_BRAND = {
   accent: process.env.BRAND_ACCENT_COLOR || '#38bdf8',
   bg: '#0a0f1e',
   cardBg: '#142036',
-  // Use publicly accessible logo URL - replace with your actual hosted logo
-  logo: process.env.BRAND_LOGO_URL || 'https://via.placeholder.com/128x128/0d4d89/ffffff?text=GW',
+  // Try to use local logo file, fallback to placeholder
+  logo: (() => {
+    // First, check if a hosted logo URL is provided via environment variable
+    if (process.env.BRAND_LOGO_URL && process.env.BRAND_LOGO_URL.startsWith('http')) {
+      return process.env.BRAND_LOGO_URL;
+    }
+    
+    try {
+      // Try different possible logo paths
+      const possibleLogoPaths = [
+        path.join(__dirname, '../../frontend/gymadmin/public/Gym-Wale.png'),
+        path.join(__dirname, '../../uploads/gym-logos/Gym-Wale.png'),
+        path.join(__dirname, '../../frontend/public/Gym-Wale.png'),
+        path.join(__dirname, '../assets/Gym-Wale.png')
+      ];
+      
+      for (const logoPath of possibleLogoPaths) {
+        try {
+          return getBase64Logo(logoPath);
+        } catch (error) {
+          continue;
+        }
+      }
+      
+      // If no local logo found, return fallback SVG
+      return getBase64Logo(null);
+    } catch (error) {
+      console.warn('Could not load Gym-Wale logo, using fallback');
+      return getBase64Logo(null);
+    }
+  })(),
   emailFromName: process.env.BRAND_FROM_NAME || 'Gym-Wale Team'
 };
 
@@ -27,6 +57,7 @@ const escapeHtml = (str = '') => str
 
 /**
  * Wrap provided bodyHtml inside branded email layout.
+ * Optimized for Gmail compatibility to prevent message clipping
  * @param {Object} opts
  * @param {String} opts.title - Heading title displayed near logo
  * @param {String} opts.preheader - Hidden preheader text for inbox preview
@@ -49,87 +80,67 @@ function wrapEmail(opts = {}) {
 
   const b = { ...DEFAULT_BRAND, ...brand };
   const safeTitle = escapeHtml(title);
-  const safePreheader = escapeHtml(preheader).slice(0, 180);
+  const safePreheader = escapeHtml(preheader).slice(0, 150); // Shorter preheader
 
   const actionButton = action && action.url && action.label ? `
-    <div style="margin:32px 0 10px;text-align:center;">
-      <a href="${action.url}" style="background:${b.accent};color:#041424;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:14px;font-size:15px;display:inline-block;box-shadow:0 4px 14px -2px rgba(0,0,0,.4);letter-spacing:.3px;">
-        ${escapeHtml(action.label)}
-      </a>
-    </div>` : '';
-
-  const effectiveFooterNote = footerNote || `This is an automated message from the ${b.name} platform. Please do not reply to this email.`;
-
-  // Use table-based layout for better email client compatibility.
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>${safeTitle}</title>
-  <style>
-    @media (max-width:600px){
-      .container{padding:18px !important;}
-      h1{font-size:20px !important;}
-      .card{padding:20px !important;}
-    }
-    @media (prefers-color-scheme: light){
-      body{background:#f1f5f9 !important;}
-      .card{background:#ffffff !important;}
-      .muted{color:#475569 !important;}
-    }
-  </style>
-</head>
-<body style="margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:${b.bg};color:#e2e8f0;line-height:1.55;">
-  <span style="display:none !important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">${safePreheader}</span>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
     <tr>
-      <td align="center" style="padding:28px 14px;">
-        <table class="container" role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;border-collapse:collapse;padding:0 10px;">
-          <tr>
-            <td style="text-align:center;padding:0 0 20px;">
-              <div style="display:inline-flex;align-items:center;gap:14px;background:linear-gradient(135deg,${b.primary} 0%,${b.accent} 90%);padding:14px 26px 14px 18px;border-radius:22px;box-shadow:0 4px 16px -2px rgba(0,0,0,.4);">
-                <img src="${b.logo}" alt="${b.name} Logo" width="56" height="56" style="display:block;border-radius:16px;object-fit:contain;background:#ffffff;padding:4px;box-shadow:0 2px 6px rgba(0,0,0,.35);" />
-                <div style="text-align:left;">
-                  <div style="font-size:18px;font-weight:700;letter-spacing:.5px;color:#ffffff;margin:0 0 4px;">${b.name}</div>
-                  <div style="font-size:12px;font-weight:500;color:#f1f5f9;opacity:.9;">${minimal ? '' : 'Fitness Management Platform'}</div>
-                </div>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <table role="presentation" width="100%" class="card" cellspacing="0" cellpadding="0" style="background:${b.cardBg};border-radius:28px;padding:36px 44px 40px;border:1px solid #1e293b;box-shadow:0 8px 28px -4px rgba(0,0,0,.55);">
-                <tr>
-                  <td style="padding:0 0 8px;">
-                    <h1 style="margin:0 0 18px;font-size:24px;line-height:1.25;letter-spacing:.5px;font-weight:700;color:#f8fafc;">${safeTitle}</h1>
-                    <div style="font-size:15px;color:#dbeafe;">
-                      ${bodyHtml}
-                    </div>
-                    ${actionButton}
-                    <div style="margin-top:40px;font-size:12px;color:#94a3b8;line-height:1.4;" class="muted">${effectiveFooterNote}</div>
-                    <p style="margin:32px 0 4px;font-size:13px;color:#e2e8f0;">Regards,<br/><strong>${b.emailFromName}</strong></p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="text-align:center;padding:28px 0 0;">
-              <div style="font-size:12px;color:#64748b;letter-spacing:.3px;">
-                <div style="margin-bottom:6px;">© ${new Date().getFullYear()} ${b.name}. All rights reserved.</div>
-                <div>
-                  <a href="${b.portalUrl}" style="color:${b.accent};text-decoration:none;font-weight:500;">Platform</a>
-                  &nbsp;•&nbsp;
-                  <a href="${b.supportUrl}" style="color:${b.accent};text-decoration:none;font-weight:500;">Support</a>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </table>
+      <td style="padding:20px 0;text-align:center;">
+        <a href="${action.url}" style="background:${b.accent};color:#ffffff;font-weight:600;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px;display:inline-block;">
+          ${escapeHtml(action.label)}
+        </a>
       </td>
-    </tr>
-  </table>
+    </tr>` : '';
+
+  const effectiveFooterNote = footerNote || `This is an automated message from ${b.name}.`;
+
+  // Simplified, Gmail-optimized template (under 102KB)
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${safeTitle}</title>
+</head>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;color:#333333;">
+<div style="display:none;font-size:1px;color:transparent;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${safePreheader}</div>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f4f4f4;">
+<tr>
+<td align="center" style="padding:20px 15px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+<tr>
+<td style="padding:30px 40px 20px;text-align:center;background:linear-gradient(135deg,${b.primary} 0%,${b.accent} 100%);border-radius:8px 8px 0 0;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+<tr>
+<td style="text-align:center;">
+<div style="display:inline-block;background:rgba(255,255,255,0.2);padding:8px;border-radius:8px;margin-bottom:10px;">
+<div style="width:40px;height:40px;background:${b.accent};border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-weight:bold;color:white;font-size:16px;">GW</div>
+</div>
+<h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:600;">${b.name}</h1>
+<p style="margin:5px 0 0;color:rgba(255,255,255,0.9);font-size:14px;">${minimal ? '' : 'Fitness Management Platform'}</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:30px 40px;">
+<h2 style="margin:0 0 20px;color:#333;font-size:20px;font-weight:600;">${safeTitle}</h2>
+<div style="color:#555;font-size:15px;line-height:1.6;">
+${bodyHtml}
+</div>
+${actionButton}
+</td>
+</tr>
+<tr>
+<td style="padding:20px 40px;background-color:#f8f9fa;border-radius:0 0 8px 8px;border-top:1px solid #dee2e6;">
+<p style="margin:0;color:#6c757d;font-size:12px;text-align:center;">${effectiveFooterNote}</p>
+<p style="margin:8px 0 0;color:#6c757d;font-size:12px;text-align:center;">© 2025 ${b.name}. All rights reserved.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
 </body>
 </html>`;
 }

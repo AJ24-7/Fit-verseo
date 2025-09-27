@@ -168,6 +168,7 @@
     try {
       const token = await getAdminToken();
       if(!token) return;
+      
       const res = await fetch(`${API_BASE}/api/gyms/profile/me`, { headers:{ 'Authorization':`Bearer ${token}` }});
       if(res.ok){
         const profile = await res.json();
@@ -205,6 +206,7 @@
       state.all.pending = fetches[0];
       state.all.approved = fetches[1];
       state.all.rejected = fetches[2];
+      
       state.all.all = [...state.all.pending, ...state.all.approved, ...state.all.rejected];
       updateCounts();
       populateSpecialtyFilter();
@@ -431,7 +433,11 @@
     return doApprove(id,true);
   }
   async function doApprove(id,silent){
-    const token = await getAdminToken(); if(!token){ if(!silent) notify('Missing auth token – please re-login.','error'); return; }
+    const token = await getAdminToken(); 
+    if(!token){ 
+      if(!silent) notify('Missing auth token – please re-login.','error'); 
+      return; 
+    }
     try {
       const res = await fetch(`${API_BASE}/api/trainers/${id}/approve`,{ method:'PATCH', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({}) });
       if(!res.ok){
@@ -460,7 +466,11 @@
     return doReject(id, reason, true);
   }
   async function doReject(id, reason='', silent){
-    const token = await getAdminToken(); if(!token){ if(!silent) notify('Missing auth token – please re-login.','error'); return; }
+    const token = await getAdminToken(); 
+    if(!token){ 
+      if(!silent) notify('Missing auth token – please re-login.','error'); 
+      return; 
+    }
     try {
       const res = await fetch(`${API_BASE}/api/trainers/${id}/reject`,{ method:'PATCH', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ reason }) });
       if(!res.ok){

@@ -84,6 +84,96 @@ router.get('/', gymadminAuth, async (req, res) => {
 // 🔒 Get My Profile [GET] /profile/me
 // ⭐ Gym Admin Login [POST] /login
 router.post('/login', require('../controllers/gymController').login);
+
+// 📍 Update location info after login [POST] /update-location
+router.post('/update-location', async (req, res) => {
+  try {
+    const { token, locationInfo } = req.body;
+    
+    if (!token || !locationInfo) {
+      return res.status(400).json({ success: false, message: 'Token and location info required' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const gymId = decoded.admin?.id;
+
+    if (!gymId) {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+
+    console.log(`📍 Location update for gym ${gymId}:`, locationInfo);
+    
+    // You can store this in database if needed, for now just log it
+    res.json({ success: true, message: 'Location updated successfully' });
+  } catch (error) {
+    console.error('Error updating location:', error);
+    res.status(500).json({ success: false, message: 'Failed to update location' });
+  }
+});
+
+// 📧 Test email functionality [POST] /test-email
+router.post('/test-email', gymadminAuth, async (req, res) => {
+  try {
+    const { testType = 'login' } = req.body;
+    const gymId = req.admin?.id;
+    
+    if (!gymId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const gym = await Gym.findById(gymId);
+    if (!gym) {
+      return res.status(404).json({ success: false, message: 'Gym not found' });
+    }
+
+    const EmailService = require('../services/emailService');
+    const emailService = new EmailService();
+
+    if (testType === 'login') {
+      const testLoginDetails = {
+        timestamp: new Date().toLocaleString('en-US', { 
+          timeZone: 'Asia/Kolkata',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
+        ip: req.ip || 'Test IP',
+        device: 'Windows - Chrome 118.0',
+        browser: 'Chrome 118.0',
+        os: 'Windows 10',
+        userAgent: 'Test User Agent',
+        screen: '1920x1080',
+        timezone: 'Asia/Kolkata',
+        location: 'Mumbai, Maharashtra, India',
+        city: 'Mumbai',
+        country: 'India',
+        coordinates: { lat: 19.0760, lng: 72.8777 },
+        method: 'test'
+      };
+
+      await emailService.sendLoginAlert(
+        gym.email,
+        gym.contactPerson || gym.gymName,
+        testLoginDetails
+      );
+
+      res.json({ 
+        success: true, 
+        message: `Test login notification email sent to ${gym.email}` 
+      });
+    } else {
+      res.status(400).json({ success: false, message: 'Invalid test type' });
+    }
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    res.status(500).json({ success: false, message: 'Failed to send test email' });
+  }
+});
+
 router.post('/request-password-otp', require('../controllers/gymController').requestPasswordChangeOTP);
 router.post('/verify-password-otp', require('../controllers/gymController').verifyPasswordChangeOTP);
 

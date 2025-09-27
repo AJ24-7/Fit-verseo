@@ -105,7 +105,7 @@ class GymProfileManager {
                 return;
             }
 
-            // Fallback to API call if global profile is not available
+            // Direct API call
             const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`

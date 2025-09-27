@@ -23,12 +23,10 @@ uploadDirs.forEach(dir => {
   try { if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); console.log('📁 Created directory:', dir); } } catch (e) { console.error('❌ Failed to create directory', dir, e); }
 });
 
-console.log('tempAuth imported:', typeof require('./backend/controllers/simpleAdminAuth').tempAuth);
 
 // Request logging middleware - placed early to catch all requests
 app.use((req, res, next) => {
-  console.log(`📥 ${new Date().toISOString()} - ${req.method} ${req.url}`);
-  console.log(`   Headers: ${JSON.stringify(req.headers)}`);
+  
   next();
 });
 
@@ -78,7 +76,6 @@ const SubscriptionService = require('./backend/services/subscriptionService');
 
 // <<<< TEMPORARY TEST ROUTE >>>>
 app.get('/test-route', (req, res) => {
-  console.log('[DEBUG] /test-route was hit!');
   res.status(200).send('Test route is working!');
 });
 // <<<< END TEMPORARY TEST ROUTE >>>>
@@ -226,8 +223,7 @@ app.use(cors({
 // QR-based member registration route
 app.post('/api/register-via-qr', async (req, res) => {
   try {
-    console.log('=== QR REGISTRATION DEBUG ===');
-    console.log('Request body:', req.body);
+   
     
     const QRCode = require('./backend/models/QRCode');
     const Member = require('./backend/models/Member');
@@ -248,10 +244,6 @@ app.post('/api/register-via-qr', async (req, res) => {
       specialOffer
     } = req.body;
 
-    console.log('Extracted fields:', {
-      qrToken, memberName, memberEmail, memberPhone, memberAge, memberGender,
-      activityPreference, planSelected, gymId, registrationType
-    });
 
     // Validate required fields based on what frontend actually sends
     if (!memberName || !memberEmail || !memberPhone || !memberAge || !memberGender || !activityPreference || !planSelected) {
@@ -272,51 +264,38 @@ app.post('/api/register-via-qr', async (req, res) => {
       });
       
       if (!qrCode) {
-        console.log(`QR code validation failed for token: ${qrToken}`);
-        console.log('Available QR codes in database:');
+       
         const allQRCodes = await QRCode.find({ gymId: gymId });
         allQRCodes.forEach(qr => {
-          console.log(`- Token: ${qr.token}, Active: ${qr.isActive}, Expires: ${qr.expiryDate}`);
         });
         
         // Instead of rejecting, proceed with direct registration
-        console.log('Proceeding with direct registration (no QR benefits)');
         qrCode = null; // Ensure it's null for later logic
       } else {
-        console.log(`Valid QR code found: ${qrToken}`);
       }
-    } else {
-      console.log('No QR token provided - proceeding with direct registration');
-    }
-
+    } 
     // Get gym details
     const gym = await Gym.findById(gymId);
     if (!gym) {
       return res.status(404).json({ message: 'Gym not found' });
     }
 
-    console.log('Gym object fields:', Object.keys(gym.toObject()));
-    console.log('Gym name:', gym.name);
-    console.log('Gym gymName:', gym.gymName);
+   
 
     // Convert planSelected from ID to name if needed
     let planName = planSelected;
     if (planSelected && planSelected.length === 24) { // Looks like ObjectId
-      console.log('Converting plan ID to name, looking in gym.membershipPlans:', gym.membershipPlans);
       if (gym.membershipPlans && gym.membershipPlans.length > 0) {
         const selectedPlan = gym.membershipPlans.find(plan => 
           plan._id && plan._id.toString() === planSelected
         );
         if (selectedPlan) {
           planName = selectedPlan.name;
-          console.log('Found plan name:', planName, 'for ID:', planSelected);
         } else {
-          console.log('Plan not found, using fallback name');
           // Fallback to default plan names
           planName = 'Standard';
         }
       } else {
-        console.log('No membership plans found, using fallback');
         planName = 'Standard';
       }
     }
@@ -326,7 +305,6 @@ app.post('/api/register-via-qr', async (req, res) => {
     const formattedPlanName = planName.charAt(0).toUpperCase() + planName.slice(1).toLowerCase();
     const finalPlanName = validPlanNames.includes(formattedPlanName) ? formattedPlanName : 'Standard';
 
-    console.log('Final plan name:', finalPlanName);
 
     // Create member record with correct field names for Member schema
     const memberData = {
@@ -347,21 +325,17 @@ app.post('/api/register-via-qr', async (req, res) => {
       paymentStatus: registrationType === 'trial' ? 'paid' : 'pending'
     };
 
-    console.log('Creating member with data:', memberData);
 
     const newMember = new Member(memberData);
     await newMember.save();
 
-    console.log('Member created successfully:', newMember._id);
 
     // Increment QR code usage (only if QR code was used)
     if (qrCode) {
       qrCode.usageCount += 1;
       qrCode.lastUsedAt = new Date();
       await qrCode.save();
-      console.log('QR code usage updated');
     } else {
-      console.log('No QR code to update - direct registration');
     }
 
     // Determine next steps based on registration type
@@ -446,17 +420,12 @@ app.use('/api/diet', dietRoutes);
 app.use('/api/members', (req, res, next) => {
   next();
 }, memberRoutes);
-console.log('🎫 About to mount notifications...');
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/notifications', adminNotificationRoutes);
 app.use('/api/gym/notifications', gymNotificationRoutes);
 app.use('/api/gym/communication', gymCommunicationRoutes); // Enhanced Gym-Admin Communication System
 
-console.log('🎫 About to mount support routes...');
-console.log('🎫 supportRoutes module type:', typeof supportRoutes);
-console.log('🎫 supportRoutes is function?', typeof supportRoutes === 'function');
 app.use('/api/support', supportRoutes); // Legacy Admin Support System (still needed for admin panel)
-console.log('🎫 Support routes mounted at /api/support');
 
 app.use('/api/whatsapp', whatsappRoutes); // WhatsApp Business API Integration
 app.use('/api/attendance', (req, res, next) => {
@@ -466,45 +435,36 @@ app.use('/api/payments', (req, res, next) => {
   next();
 }, paymentRoutes);
 app.use('/api/cash-validation', (req, res, next) => {
-  console.log(`💰 Cash validation route accessed: ${req.method} ${req.url}`);
   next();
 }, cashValidationRoutes);
 app.use('/api/gym', (req, res, next) => {
-  console.log(`🏋️ Equipment route accessed: ${req.method} ${req.url}`);
   next();
 }, equipmentRoutes);
 
 // Mount equipment routes under /api/equipment as well for direct access
 app.use('/api/equipment', (req, res, next) => {
-  console.log(`🏋️ Direct Equipment route accessed: ${req.method} ${req.url}`);
   next();
 }, equipmentRoutes);
 
 // QR Code routes
 app.use('/api/qr-codes', (req, res, next) => {
-  console.log(`📱 QR Code route accessed: ${req.method} ${req.url}`);
   next();
 }, qrCodeRoutes);
 
 // Biometric attendance routes
 app.use('/api/biometric', (req, res, next) => {
-  console.log(`🔐 Biometric route accessed: ${req.method} ${req.url}`);
   next();
 }, biometricRoutes);
 
 // Security routes for admin settings
 app.use('/api/security', (req, res, next) => {
-  console.log(`🔐 Security route accessed: ${req.method} ${req.url}`);
   next();
 }, securityRoutes);
 
-// Test routes for debugging (can be removed in production) - TEMPORARILY DISABLED
-console.log("[DEBUG] server.js: Mounting test routes at /api/test");
-// app.use('/api/test', testRoutes);
+
 
 // Simple test route directly in server.js
 app.get('/api/simple-test', (req, res) => {
-  console.log('🧪 Simple test route hit!');
   res.json({ success: true, message: 'Simple test route working!', timestamp: new Date().toISOString() });
 });
 
@@ -521,11 +481,6 @@ app.get('/register', (req, res) => {
 
 // Debug route to see what data is being sent
 app.post('/api/debug-qr-data', (req, res) => {
-  console.log('=== DEBUG QR DATA ===');
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  console.log('Body type:', typeof req.body);
-  console.log('Body keys:', Object.keys(req.body));
   res.json({ 
     message: 'Debug complete', 
     received: req.body,
@@ -536,9 +491,7 @@ app.post('/api/debug-qr-data', (req, res) => {
 // Direct registration endpoint (no QR validation required)
 app.post('/api/register-direct', async (req, res) => {
   try {
-    console.log('=== DIRECT REGISTRATION DEBUG ===');
-    console.log('Request body:', req.body);
-    
+   
     const Member = require('./backend/models/Member');
     const Gym = require('./backend/models/gym');
     
@@ -555,10 +508,7 @@ app.post('/api/register-direct', async (req, res) => {
       registrationType = 'standard'
     } = req.body;
 
-    console.log('Direct registration - extracted fields:', {
-      memberName, memberEmail, memberPhone, memberAge, memberGender,
-      activityPreference, planSelected, gymId, registrationType
-    });
+  
 
     // Validate required fields
     if (!memberName || !memberEmail || !memberPhone || !memberAge || !memberGender || !activityPreference || !planSelected) {
@@ -578,7 +528,6 @@ app.post('/api/register-direct', async (req, res) => {
       }
     }
 
-    console.log('Processing direct registration for gym:', gym ? gym.name : 'Default');
 
     // Use plan name directly
     const planName = planSelected || 'Standard';
@@ -602,12 +551,10 @@ app.post('/api/register-direct', async (req, res) => {
       paymentStatus: registrationType === 'trial' ? 'paid' : 'pending'
     };
 
-    console.log('Creating member with direct registration data:', memberData);
 
     const newMember = new Member(memberData);
     await newMember.save();
 
-    console.log('Direct registration member created successfully:', newMember._id);
 
     // Determine next steps
     let nextSteps = {

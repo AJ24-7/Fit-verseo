@@ -279,6 +279,186 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
+    // Device information collection
+    function getDeviceInfo() {
+      const userAgent = navigator.userAgent;
+      const platform = navigator.platform;
+      const vendor = navigator.vendor || 'Unknown';
+      const cookieEnabled = navigator.cookieEnabled;
+      const language = navigator.language;
+      const screen = {
+        width: window.screen.width,
+        height: window.screen.height,
+        colorDepth: window.screen.colorDepth
+      };
+      
+      // Browser detection
+      let browser = 'Unknown';
+      let browserVersion = 'Unknown';
+      
+      if (userAgent.indexOf('Chrome') > -1) {
+        browser = 'Chrome';
+        browserVersion = userAgent.match(/Chrome\/([0-9.]+)/)?.[1] || 'Unknown';
+      } else if (userAgent.indexOf('Firefox') > -1) {
+        browser = 'Firefox';
+        browserVersion = userAgent.match(/Firefox\/([0-9.]+)/)?.[1] || 'Unknown';
+      } else if (userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') === -1) {
+        browser = 'Safari';
+        browserVersion = userAgent.match(/Version\/([0-9.]+)/)?.[1] || 'Unknown';
+      } else if (userAgent.indexOf('Edge') > -1) {
+        browser = 'Edge';
+        browserVersion = userAgent.match(/Edge\/([0-9.]+)/)?.[1] || 'Unknown';
+      } else if (userAgent.indexOf('MSIE') > -1 || userAgent.indexOf('Trident') > -1) {
+        browser = 'Internet Explorer';
+        browserVersion = userAgent.match(/(?:MSIE |rv:)([0-9.]+)/)?.[1] || 'Unknown';
+      }
+      
+      // Operating system detection
+      let os = 'Unknown';
+      if (userAgent.indexOf('Windows') > -1) os = 'Windows';
+      else if (userAgent.indexOf('Mac OS X') > -1) os = 'macOS';
+      else if (userAgent.indexOf('Linux') > -1) os = 'Linux';
+      else if (userAgent.indexOf('Android') > -1) os = 'Android';
+      else if (userAgent.indexOf('iPhone') > -1 || userAgent.indexOf('iPad') > -1) os = 'iOS';
+      
+      return {
+        userAgent,
+        platform,
+        vendor,
+        cookieEnabled,
+        language,
+        screen,
+        browser: `${browser} ${browserVersion}`,
+        os,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    // Location detection - optimized for speed
+    async function getLocationInfo() {
+      return new Promise((resolve) => {
+        const locationInfo = {
+          latitude: null,
+          longitude: null,
+          city: 'Unknown',
+          country: 'Unknown',
+          region: 'Unknown',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          method: 'none'
+        };
+        
+        // Try to get geolocation with short timeout for instant login
+        if (navigator.geolocation) {
+          const timeoutId = setTimeout(() => {
+            console.log('Geolocation timeout (1s), falling back to IP-based location');
+            getIPLocation().then(ipLocation => {
+              resolve({ ...locationInfo, ...ipLocation, method: 'ip' });
+            }).catch(() => {
+              resolve(locationInfo);
+            });
+          }, 1000); // Reduced to 1 second timeout for faster login
+          
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              clearTimeout(timeoutId);
+              locationInfo.latitude = position.coords.latitude;
+              locationInfo.longitude = position.coords.longitude;
+              locationInfo.method = 'gps';
+              
+              // Try quick reverse geocoding for proper city/country names
+              try {
+                const reverseGeoResponse = await fetch(
+                  `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`,
+                  { method: 'GET' }
+                );
+                
+                if (reverseGeoResponse.ok) {
+                  const geoData = await reverseGeoResponse.json();
+                  locationInfo.city = geoData.city || geoData.locality || geoData.principalSubdivision || 'Unknown';
+                  locationInfo.country = geoData.countryName || 'Unknown';
+                  locationInfo.region = geoData.principalSubdivision || geoData.region || 'Unknown';
+                } else {
+                  // Fallback to coordinates if reverse geocoding fails
+                  locationInfo.city = `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+                  locationInfo.country = 'GPS Location';
+                }
+              } catch (geoError) {
+                console.log('Reverse geocoding failed, using coordinates:', geoError);
+                locationInfo.city = `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+                locationInfo.country = 'GPS Location';
+              }
+              
+              resolve(locationInfo);
+            },
+            (error) => {
+              clearTimeout(timeoutId);
+              console.log('Geolocation failed:', error.message);
+              // Quick fallback to IP-based location
+              getIPLocation().then(ipLocation => {
+                resolve({ ...locationInfo, ...ipLocation, method: 'ip' });
+              }).catch(() => {
+                resolve(locationInfo);
+              });
+            },
+            {
+              enableHighAccuracy: false, // Faster, less accurate
+              timeout: 800, // Very short timeout
+              maximumAge: 600000 // 10 minutes cache
+            }
+          );
+        } else {
+          // No geolocation support, try IP-based location quickly
+          getIPLocation().then(ipLocation => {
+            resolve({ ...locationInfo, ...ipLocation, method: 'ip' });
+          }).catch(() => {
+            resolve(locationInfo);
+          });
+        }
+      });
+    }
+    
+    // IP-based location fallback - optimized for speed
+    async function getIPLocation() {
+      try {
+        // Use faster timeout and simpler service
+        const response = await fetch('https://ipapi.co/json/', { 
+          timeout: 1500 // 1.5 second timeout
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return {
+            city: data.city || 'Unknown',
+            country: data.country_name || 'Unknown',
+            region: data.region || 'Unknown',
+            latitude: data.latitude || null,
+            longitude: data.longitude || null
+          };
+        }
+      } catch (error) {
+        console.log('IP location service failed (quick timeout):', error);
+      }
+      return {
+        city: 'Unknown',
+        country: 'Unknown',
+        region: 'Unknown'
+      };
+    }
+    
+    // Generate device fingerprint
+    function generateDeviceFingerprint(deviceInfo) {
+      const fingerprint = btoa(JSON.stringify({
+        userAgent: deviceInfo.userAgent,
+        screen: deviceInfo.screen,
+        language: deviceInfo.language,
+        timezone: deviceInfo.timezone,
+        platform: deviceInfo.platform,
+        browser: deviceInfo.browser,
+        os: deviceInfo.os
+      }));
+      return fingerprint;
+    }
+
     // Login function
     async function handleLogin(e) {
       if (e) {
@@ -304,17 +484,62 @@ document.addEventListener('DOMContentLoaded', function() {
       loginButton.disabled = true;
 
       try {
-        // Use JSON for login. Backend must use express.json() middleware.
-        const formData = new FormData(loginForm);
-        const loginPayload = Object.fromEntries(formData);
+        // Start location collection in background immediately
+        const locationPromise = getLocationInfo();
         
-       
+        // Collect device information (fast)
+        const deviceInfo = getDeviceInfo();
+        const deviceFingerprint = generateDeviceFingerprint(deviceInfo);
+        
+        // Wait for location to be resolved (with timeout) or use fallback
+        let locationInfo;
+        try {
+          // Wait up to 2 seconds for location, then proceed
+          locationInfo = await Promise.race([
+            locationPromise,
+            new Promise(resolve => setTimeout(() => resolve({
+              latitude: null,
+              longitude: null,
+              city: 'Unknown',
+              country: 'Unknown', 
+              region: 'Unknown',
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              method: 'timeout'
+            }), 2000))
+          ]);
+        } catch (error) {
+          console.log('Location detection failed, using fallback');
+          locationInfo = {
+            latitude: null,
+            longitude: null,
+            city: 'Unknown',
+            country: 'Unknown',
+            region: 'Unknown', 
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            method: 'failed'
+          };
+        }
+
+        // Create login payload with actual location data
+        const formData = new FormData(loginForm);
+        const loginPayload = {
+          ...Object.fromEntries(formData),
+          deviceInfo,
+          locationInfo,
+          deviceFingerprint,
+          userAgent: navigator.userAgent,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
+
+        // Send login request
         const response = await fetch('http://localhost:5000/api/gyms/login', {
           method: 'POST',
           body: JSON.stringify(loginPayload),
           headers: { 'Content-Type': 'application/json' }
         });
 
+        // Location data is already sent in the main login request above
+        // No need for additional background location updates
 
         const data = await response.json();
 
@@ -382,12 +607,12 @@ document.addEventListener('DOMContentLoaded', function() {
               if (storedToken === data.token && storedGymId === data.gymId) {
                
                 
-                // Use a longer delay to ensure localStorage has fully committed
+                // Quick redirect for instant login experience
                 setTimeout(() => {
-                  // Pass token and gymId as URL parameters as backup
-                  const dashboardUrl = `http://localhost:5000/gymadmin/gymadmin.html?token=${encodeURIComponent(data.token)}&gymId=${encodeURIComponent(data.gymId)}`;
+                  // Correct path to gymadmin dashboard
+                  const dashboardUrl = `http://localhost:5000/frontend/gymadmin/gymadmin.html?token=${encodeURIComponent(data.token)}&gymId=${encodeURIComponent(data.gymId)}`;
                   window.location.replace(dashboardUrl);
-                }, 1000); // Increased to 1 second
+                }, 300); // Reduced to 300ms for instant feel
               } else {
                 throw new Error('Token or GymId verification failed');
               }

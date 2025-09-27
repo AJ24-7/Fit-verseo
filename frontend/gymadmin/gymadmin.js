@@ -1,5 +1,642 @@
 // === Profile Dropdown Menu Toggle ===
+// --- Consolidated Initialization Wrapper (injecting to reduce duplicate DOMContentLoaded handlers) ---
+// We keep legacy blocks below but guard them with a flag so they don't all re-run heavy logic.
+window.__GYM_ADMIN_INIT_RUN__ = window.__GYM_ADMIN_INIT_RUN__ || false;
+// --- Performance Monkey Patch: defer legacy DOMContentLoaded listeners registered AFTER this point ---
+if (!window.__DEFER_DCL_PATCH__) {
+  window.__DEFER_DCL_PATCH__ = true;
+  const origAddEventListener = document.addEventListener;
+  const deferredDCL = [];
+  document.addEventListener = function(type, listener, options) {
+    if (type === 'DOMContentLoaded' && window.__GYM_ADMIN_INIT_RUN__) {
+      // Queue rather than run immediately; execute on idle or first interaction
+      deferredDCL.push({listener, options});
+      return; // swallow registration now
+    }
+    return origAddEventListener.call(this, type, listener, options);
+  };
+  function runDeferred() {
+    if (!deferredDCL.length) return;
+    const tasks = deferredDCL.splice(0, deferredDCL.length);
+    tasks.forEach(h => {
+      try { h.listener(); } catch(err){ console.warn('Deferred DOMContentLoaded handler error', err); }
+    });
+  }
+  // Run after first sidebar interaction or when browser idle
+  (window.requestIdleCallback || function(cb){ setTimeout(cb,400); })(runDeferred);
+  window.addEventListener('click', runDeferred, { once:true, capture:true });
+}
 document.addEventListener('DOMContentLoaded', function() {
+  if (window.__GYM_ADMIN_INIT_RUN__) return; // prevent duplicate execution
+  window.__GYM_ADMIN_INIT_RUN__ = true;
+
+  console.log('🚀 Production-ready Gym Admin Dashboard initializing...');
+
+  // Wait for performance managers to be available
+  const initializeWithManagers = async () => {
+    try {
+      // Register all tabs with the isolation manager
+      await registerAllTabsWithIsolation();
+
+      // Setup the existing tab handling with performance enhancements
+      setupEnhancedTabHandling();
+
+      // Initialize dashboard components
+      await initializeDashboardComponents();
+
+      console.log('✅ Dashboard initialization complete with performance optimizations');
+    } catch (error) {
+      console.error('❌ Dashboard initialization failed:', error);
+    }
+  };
+
+  // Check if managers are ready, otherwise wait
+  if (window.tabIsolationManager && window.skeletonLoadingManager) {
+    initializeWithManagers();
+  } else {
+    const checkManagers = () => {
+      if (window.tabIsolationManager && window.skeletonLoadingManager) {
+        initializeWithManagers();
+      } else {
+        setTimeout(checkManagers, 100);
+      }
+    };
+    checkManagers();
+  }
+
+  /**
+   * Register all tabs with isolation manager for performance
+   */
+  async function registerAllTabsWithIsolation() {
+    if (!window.tabIsolationManager) return;
+    
+    // Prevent multiple registrations
+    if (window.__TABS_REGISTERED_WITH_ISOLATION__) {
+      console.log('📑 Tabs already registered with isolation, skipping');
+      return;
+    }
+    window.__TABS_REGISTERED_WITH_ISOLATION__ = true;
+
+    // Dashboard Tab
+    window.tabIsolationManager.registerTab('dashboardTab', {
+      name: 'Dashboard',
+      priority: 'critical',
+      contentSelector: '#dashboardTab',
+      preloadData: true,
+      init: async () => {
+        console.log('📊 Initializing dashboard tab');
+        // Dashboard is always loaded, just ensure visibility
+      }
+    });
+
+    // Payment Tab
+    window.tabIsolationManager.registerTab('paymentTab', {
+      name: 'Payments',
+      priority: 'high',
+      contentSelector: '#paymentTab',
+      preloadData: true,
+      init: async () => {
+        await window.__loadTabScripts?.(['payment.js', 'cash-validation.js']);
+        if (window.ensurePaymentManager) {
+          window.ensurePaymentManager();
+        }
+      },
+      onActivate: () => {
+        if (window.paymentManager) {
+          window.paymentManager.resume?.();
+        }
+      },
+      onDeactivate: () => {
+        if (window.paymentManager) {
+          window.paymentManager.pause?.();
+        }
+      }
+    });
+
+    // Attendance Tab
+    window.tabIsolationManager.registerTab('attendanceTab', {
+      name: 'Attendance',
+      priority: 'normal',
+      contentSelector: '#attendanceTab',
+      init: async () => {
+        await window.__loadTabScripts?.(['attendance.js', 'attendance-stats.js']);
+      }
+    });
+
+    // Equipment Tab
+    window.tabIsolationManager.registerTab('equipmentTab', {
+      name: 'Equipment',
+      priority: 'normal',
+      contentSelector: '#equipmentTab',
+      init: async () => {
+        await window.__loadTabScripts?.(['equipment.js']);
+      }
+    });
+
+    // Settings Tab
+    window.tabIsolationManager.registerTab('settingsTab', {
+      name: 'Settings',
+      priority: 'low',
+      contentSelector: '#settingsTab',
+      init: async () => {
+        await window.__loadTabScripts?.(['settings.js', 'gym-profile.js']);
+        if (window.updatePasskeySettingsUI) {
+          window.updatePasskeySettingsUI();
+        }
+      }
+    });
+
+    // Support Tab
+    window.tabIsolationManager.registerTab('supportReviewsTab', {
+      name: 'Support',
+      priority: 'low',
+      contentSelector: '#supportReviewsTab',
+      init: async () => {
+        await window.__loadTabScripts?.(['enhanced-support-integration.js', 'support-reviews.js']);
+      }
+    });
+
+    // Trainer Tab
+    window.tabIsolationManager.registerTab('trainerTab', {
+      name: 'Trainers',
+      priority: 'normal',
+      contentSelector: '#trainerTab',
+      init: async () => {
+        await window.__loadTabScripts?.(['trainer-management.js']);
+        if (window.showTrainerTab) {
+          window.showTrainerTab();
+        }
+      }
+    });
+
+    // Member Display Tab
+    window.tabIsolationManager.registerTab('memberDisplayTab', {
+      name: 'Members',
+      priority: 'normal',
+      contentSelector: '#memberDisplayTab',
+      init: async () => {
+        // Member tab initialization if needed
+      }
+    });
+
+    console.log('📑 All tabs registered with performance isolation');
+  }
+
+  /**
+   * Utility function to get the current gym ID
+   * @returns {string|null} The current gym ID
+   */
+  function getGymId() {
+    try {
+      // Try to get from current gym profile (priority order)
+      if (window.currentGymProfile) {
+        return window.currentGymProfile._id || window.currentGymProfile.id;
+      }
+      
+      // Try to get from window.currentGymProfile global
+      if (window.currentGymProfile) {
+        return window.currentGymProfile._id;
+      }
+      
+      // Fallback to localStorage
+      return localStorage.getItem('gymId') || localStorage.getItem('currentGymId');
+    } catch (error) {
+      console.warn('Error getting gym ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Setup enhanced tab handling with performance managers
+   */
+  function setupEnhancedTabHandling() {
+    // Central tab handling using data-tab attributes with performance optimizations
+    const mainTabs = {
+      dashboardTab: document.getElementById('dashboardTab'),
+      memberDisplayTab: document.getElementById('memberDisplayTab'),
+      trainerTab: document.getElementById('trainerTab'),
+      attendanceTab: document.getElementById('attendanceTab'),
+      paymentTab: document.getElementById('paymentTab'),
+      equipmentTab: document.getElementById('equipmentTab'),
+      supportReviewsTab: document.getElementById('supportReviewsTab'),
+      settingsTab: document.getElementById('settingsTab')
+    };
+
+    // ⚡ Optimized Tab Management
+    window.hideAllMainTabs = () => {
+      // High-performance tab hiding
+      const allTabs = document.querySelectorAll('[id$="Tab"], [id$="tab"], .tab-content');
+      allTabs.forEach(tab => {
+        if (tab.style.display !== 'none') {
+          tab.style.display = 'none';
+          tab.classList.remove('active', 'show', 'visible');
+        }
+      });
+    };
+
+    // ⚡ High-Performance Sidebar Handler
+    const initializeSidebar = () => {
+      const sidebar = document.querySelector('.sidebar');
+      const mobileSidebar = document.querySelector('#mobileSidebarDropdown');
+      
+      if (!sidebar) return;
+
+      // Single optimized event handler for both desktop and mobile
+      const handleSidebarClick = (e) => {
+        const link = e.target.closest('.menu-link');
+        if (!link) return;
+        
+        const tabId = link.getAttribute('data-tab');
+        if (!tabId) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Immediate visual feedback
+        updateActiveState(link);
+        
+        // Fast tab switching without delays
+        switchTab(tabId);
+        
+        // Close mobile sidebar if it's open
+        if (mobileSidebar) {
+          mobileSidebar.classList.remove('show');
+          document.getElementById('mobileSidebarBackdrop')?.classList.remove('show');
+        }
+      };
+
+      // Optimized active state management
+      const updateActiveState = (activeLink) => {
+        // Use requestAnimationFrame for smooth visual updates
+        requestAnimationFrame(() => {
+          // Remove active class from all links (both desktop and mobile)
+          document.querySelectorAll('.menu-link.active').forEach(link => {
+            link.classList.remove('active');
+          });
+          
+          // Add active class to clicked link and its mobile counterpart
+          activeLink.classList.add('active');
+          
+          // Find corresponding link in other sidebar (desktop/mobile)
+          const tabId = activeLink.getAttribute('data-tab');
+          const otherLink = document.querySelector(`.menu-link[data-tab=\"${tabId}\"]:not(.active)`);
+          if (otherLink) {
+            otherLink.classList.add('active');
+          }
+        });
+      };
+
+      // Optimized tab switching - removed complex logic for speed
+      const switchTab = (tabId) => {
+        // Use DocumentFragment to batch DOM operations
+        const fragment = document.createDocumentFragment();
+        
+        // Hide all tabs with better performance
+        const allTabs = document.querySelectorAll('[id$="Tab"], [id$="tab"], .tab-content');
+        allTabs.forEach(tab => {
+          if (tab.style.display !== 'none') {
+            tab.style.display = 'none';
+            // Remove any overlapping classes
+            tab.classList.remove('active', 'show', 'visible');
+          }
+        });
+
+        // Show target tab with immediate visibility
+        const targetTab = document.getElementById(tabId);
+        if (targetTab) {
+          requestAnimationFrame(() => {
+            targetTab.style.display = 'block';
+            targetTab.classList.add('active');
+            
+            // Ensure proper scrolling and layout
+            targetTab.scrollTop = 0;
+            
+            // Trigger any tab-specific initialization
+            triggerTabInit(tabId);
+          });
+        } else {
+          console.warn(`Tab ${tabId} not found`);
+        }
+      };
+
+      // Lazy initialization for tab-specific functionality
+      const triggerTabInit = (tabId) => {
+        // Use setTimeout to prevent blocking UI updates
+        setTimeout(() => {
+          switch(tabId) {
+            case 'trainerTab':
+              if (typeof window.showTrainerTab === 'function') window.showTrainerTab();
+              break;
+            case 'settingsTab':
+              if (typeof window.updatePasskeySettingsUI === 'function') window.updatePasskeySettingsUI();
+              break;
+            case 'paymentTab':
+              if (window.ensurePaymentManager && typeof window.ensurePaymentManager === 'function') {
+                window.ensurePaymentManager();
+              }
+              break;
+            case 'membersTab':
+              if (typeof window.initializeMembersTab === 'function') window.initializeMembersTab();
+              break;
+            case 'attendanceTab':
+              if (typeof window.initializeAttendanceTab === 'function') window.initializeAttendanceTab();
+              break;
+            case 'equipmentTab':
+              if (typeof window.initializeEquipmentTab === 'function') window.initializeEquipmentTab();
+              break;
+            case 'supportTab':
+              if (typeof window.initializeSupportTab === 'function') window.initializeSupportTab();
+              break;
+          }
+        }, 0);
+      };
+
+      // Add optimized event listeners
+      sidebar.addEventListener('click', handleSidebarClick, { passive: false });
+      if (mobileSidebar) {
+        mobileSidebar.addEventListener('click', handleSidebarClick, { passive: false });
+      }
+    };
+
+    // ⚡ Mobile Sidebar Controls
+    const initializeMobileSidebar = () => {
+      const hamburger = document.getElementById('hamburgerMenuBtn');
+      const mobileDropdown = document.getElementById('mobileSidebarDropdown');
+      const backdrop = document.getElementById('mobileSidebarBackdrop');
+      const closeBtn = document.getElementById('closeMobileSidebar');
+
+      if (!hamburger || !mobileDropdown || !backdrop) return;
+
+      // Open mobile sidebar
+      hamburger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        mobileDropdown.classList.add('show');
+        backdrop.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent body scroll
+      });
+
+      // Close mobile sidebar
+      const closeMobileSidebar = () => {
+        mobileDropdown.classList.remove('show');
+        backdrop.classList.remove('show');
+        document.body.style.overflow = ''; // Restore body scroll
+      };
+
+      closeBtn?.addEventListener('click', closeMobileSidebar);
+      backdrop.addEventListener('click', closeMobileSidebar);
+
+      // Close on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && mobileDropdown.classList.contains('show')) {
+          closeMobileSidebar();
+        }
+      });
+    };
+
+  // === Enhanced Tab System Initialization ===
+  window.initializeTabSystem = () => {
+    // Ensure default tab is visible
+    const defaultTab = document.getElementById('dashboardTab') || 
+                      document.querySelector('[id$="Tab"]:first-child') ||
+                      document.querySelector('.tab-content:first-child');
+    
+    if (defaultTab) {
+      defaultTab.style.display = 'block';
+      defaultTab.classList.add('active');
+    }
+
+    // Set default active menu item
+    const defaultMenuItem = document.querySelector('.menu-link[data-tab="dashboardTab"]') ||
+                           document.querySelector('.menu-link:first-child');
+    
+    if (defaultMenuItem) {
+      defaultMenuItem.classList.add('active');
+    }
+
+    console.log('✅ Tab system initialized with optimized performance');
+  };
+
+  // Global function for external tab switching
+  window.switchToTab = (tabId) => {
+    const link = document.querySelector(`[data-tab="${tabId}"]`);
+    if (link) {
+      link.click();
+    } else {
+      console.warn(`No menu link found for tab: ${tabId}`);
+    }
+  };
+
+  // Initialize enhanced tab system
+  window.initializeTabSystem();
+
+  // Initialize mobile sidebar and main sidebar
+  initializeMobileSidebar();
+  initializeSidebar();
+
+    // Initial tab setup
+    const anyVisible = Object.values(mainTabs).some(t => t && t.style.display !== 'none');
+    if (!anyVisible && mainTabs.dashboardTab) {
+      hideAllMainTabs();
+      mainTabs.dashboardTab.style.display = 'block';
+    }
+  }
+
+  /**
+   * Initialize dashboard components with performance optimizations
+   */
+  async function initializeDashboardComponents() {
+    // Prevent multiple initialization
+    if (window.__DASHBOARD_COMPONENTS_INITIALIZED__) {
+      console.log('🎯 Dashboard components already initialized, skipping');
+      return;
+    }
+    window.__DASHBOARD_COMPONENTS_INITIALIZED__ = true;
+    
+    // Enhanced fetch cache integration
+    if (!window.__fetchCache) {
+      window.__fetchCache = new Map();
+      window.cachedFetch = window.cachedFetch || function(url, options = {}) {
+        if (window.asyncFetchManager) {
+          return window.asyncFetchManager.fetch(url, options);
+        }
+        
+        // Improved cache key with auth headers and method restrictions
+        const authHeader = (options.headers && options.headers['Authorization']) || '';
+        const method = options.method || 'GET';
+        const key = `${url}::${method}::${authHeader}`;
+        
+        // Only cache GET requests to prevent issues with POST/PUT/DELETE
+        if (method !== 'GET') {
+          return fetch(url, options).then(r => { 
+            if (!r.ok) throw new Error('HTTP '+r.status); 
+            return r.json(); 
+          });
+        }
+        
+        if (window.__fetchCache.has(key)) return window.__fetchCache.get(key);
+        const p = fetch(url, options)
+          .then(r => { if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+          .catch(err => { window.__fetchCache.delete(key); throw err; });
+        window.__fetchCache.set(key, p);
+        return p;
+      };
+    }
+
+    // Initialize profile dropdown with performance optimization
+    initializeProfileDropdown();
+
+    // Setup theme system
+    initializeThemeSystem();
+
+    // Setup keyboard shortcuts
+    setupKeyboardShortcuts();
+
+    // Initialize notification system (only once)
+    if (window.NotificationSystem && !window.notificationSystem) {
+      window.notificationSystem = new NotificationSystem();
+    }
+
+    console.log('🎯 Dashboard components initialized with performance optimizations');
+  }
+
+  /**
+   * Initialize profile dropdown menu
+   */
+  function initializeProfileDropdown() {
+    const userProfileToggle = document.getElementById('userProfileToggle');
+    const profileDropdownMenu = document.getElementById('profileDropdownMenu');
+
+    if (userProfileToggle && profileDropdownMenu) {
+      // Use throttled handler for better performance
+      const toggleDropdown = window.throttledHandler ? 
+        window.throttledHandler(() => {
+          profileDropdownMenu.classList.toggle('show');
+        }, 100) :
+        () => {
+          profileDropdownMenu.classList.toggle('show');
+        };
+
+      userProfileToggle.addEventListener('click', toggleDropdown);
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!userProfileToggle.contains(e.target) && !profileDropdownMenu.contains(e.target)) {
+          profileDropdownMenu.classList.remove('show');
+        }
+      });
+    }
+  }
+
+  /**
+   * Initialize theme system
+   */
+  function initializeThemeSystem() {
+    // Basic theme handling - can be enhanced later
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+      });
+
+      // Apply saved theme
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+      }
+    }
+  }
+
+  /**
+   * Setup keyboard shortcuts
+   */
+  function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      // Ctrl/Cmd + number keys for tab switching
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '8') {
+        e.preventDefault();
+        const tabIndex = parseInt(e.key) - 1;
+        const tabs = document.querySelectorAll('[data-tab]');
+        if (tabs[tabIndex]) {
+          const tabId = tabs[tabIndex].getAttribute('data-tab');
+          if (window.tabIsolationManager) {
+            window.tabIsolationManager.switchToTab(tabId);
+          }
+        }
+      }
+
+      // Escape key to close modals/dropdowns
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.show').forEach(modal => {
+          modal.classList.remove('show');
+        });
+        document.querySelectorAll('.dropdown-menu.show').forEach(dropdown => {
+          dropdown.classList.remove('show');
+        });
+      }
+    });
+  }
+
+  // Execute the initialization
+  initializeWithManagers();
+
+  // Central tab handling using data-tab attributes (preferred) or fallback mapping
+  const mainTabs = {
+    dashboardTab: document.getElementById('dashboardTab'),
+    memberDisplayTab: document.getElementById('memberDisplayTab'),
+    trainerTab: document.getElementById('trainerTab'),
+    attendanceTab: document.getElementById('attendanceTab'),
+    paymentTab: document.getElementById('paymentTab'),
+    equipmentTab: document.getElementById('equipmentTab'),
+    supportReviewsTab: document.getElementById('supportReviewsTab'),
+    settingsTab: document.getElementById('settingsTab')
+  };
+
+  // REMOVED: Legacy sidebar event delegation - now handled by UltraFastSidebar system
+  // UltraFastSidebar provides optimized event handling with proper performance
+
+  // Initial visible tab (ensure only one shown)
+  // If a tab already visible (inline style), keep it; else default to dashboard if present
+  const anyVisible = Object.values(mainTabs).some(t => t && t.style.display !== 'none');
+  if (!anyVisible && mainTabs.dashboardTab) {
+    hideAllMainTabs();
+    mainTabs.dashboardTab.style.display = 'block';
+  }
+
+  // Light performance hint: defer expensive data loads until tab first shown
+  // Use IntersectionObserver or simple lazy markers later if needed.
+
+  // --- Simple global fetch cache to dedupe identical endpoint calls ---
+  if (!window.__fetchCache) {
+    window.__fetchCache = new Map();
+    window.cachedFetch = function(url, options = {}) {
+      // Create a more comprehensive cache key that includes auth headers
+      const authHeader = (options.headers && options.headers['Authorization']) || '';
+      const method = options.method || 'GET';
+      const key = `${url}::${method}::${authHeader}`;
+      
+      // Only cache GET requests to prevent issues with POST/PUT/DELETE
+      if (method !== 'GET') {
+        return fetch(url, options).then(r => { 
+          if (!r.ok) throw new Error('HTTP '+r.status); 
+          return r.json(); 
+        });
+      }
+      
+      if (window.__fetchCache.has(key)) return window.__fetchCache.get(key);
+      const p = fetch(url, options).then(r => { 
+        if (!r.ok) throw new Error('HTTP '+r.status); 
+        return r.json(); 
+      }).catch(err => { 
+        window.__fetchCache.delete(key); 
+        throw err; 
+      });
+      window.__fetchCache.set(key, p);
+      return p;
+    };
+  }
+
+  // === Profile Dropdown Menu Toggle (migrated into consolidated init) ===
   const userProfileToggle = document.getElementById('userProfileToggle');
   const profileDropdownMenu = document.getElementById('profileDropdownMenu');
   
@@ -3124,7 +3761,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function handleMissingToken() {
         console.error("No authentication token found after retry. Redirecting to login.");
-        window.location.replace('http://localhost:5000/public/admin-login.html');
+        window.location.replace('/public/admin-login.html');
     }
     
     async function fetchAdminProfile(token) {
@@ -3146,7 +3783,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (responseData.status === 401 || responseData.status === 403) {
             console.error('Unauthorized access. Clearing tokens.');
             localStorage.removeItem('gymAdminToken');
-            window.location.replace('http://localhost:5000/public/admin-login.html');
+            window.location.replace('/public/admin-login.html');
         } else {
             throw new Error(responseData.data.message || 'Failed to fetch profile');
         }
@@ -3676,7 +4313,7 @@ function clearUploadPhotoMsgAndCloseModal() {
             logoutLink.addEventListener('click', function(event) {
                 event.preventDefault(); // Prevent default anchor behavior
                localStorage.removeItem('gymAdminToken');
-                window.location.href = 'http://localhost:5000/public/admin-login.html'; // Redirect to login page
+                window.location.href = '/public/admin-login.html'; // Redirect to login page
             });
         }
 
@@ -4074,33 +4711,8 @@ function clearUploadPhotoMsgAndCloseModal() {
         });
     }
 
-// Sidebar toggle logic for desktop and mobile
-const toggleBtn = document.getElementById('toggleBtn');
-const sidebar = document.getElementById('sidebar');
-const mainContent = document.getElementById('mainContent');
-const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-const topNav = document.getElementById('topNav'); // Navbar element
-
-// Desktop toggle (collapse/expand)
-if (toggleBtn && sidebar && mainContent) {
-    toggleBtn.addEventListener('click', () => {
-        if (window.innerWidth > 900) {
-            const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
-            // Also toggle on body for global state management
-            document.body.classList.toggle('sidebar-collapsed', isCollapsed);
-            
-            // Rotate the icon
-            const icon = toggleBtn.querySelector('i');
-            if (isCollapsed) {
-                icon.classList.remove('fa-chevron-left');
-                icon.classList.add('fa-chevron-right');
-            } else {
-                icon.classList.remove('fa-chevron-right');
-                icon.classList.add('fa-chevron-left');
-            }
-        }
-    });
-}
+// OPTIMIZED: Sidebar toggle logic now handled by UltraFastSidebar system for better performance
+// The sidebar toggle functionality is provided by the performance-sidebar.js UltraFastSidebar class
 
 
 
@@ -4135,16 +4747,7 @@ const equipmentTab = document.getElementById('equipmentTab');
 const supportReviewsTab = document.getElementById('supportReviewsTab');
 const dashboardContent = document.querySelector('.content');
 
-function hideAllMainTabs() {
-  if (dashboardContent) dashboardContent.style.display = 'none';
-  if (memberDisplayTab) memberDisplayTab.style.display = 'none';
-  if (trainerTab) trainerTab.style.display = 'none';
-  if (settingsTab) settingsTab.style.display = 'none';
-  if (attendanceTab) attendanceTab.style.display = 'none';
-  if (paymentTab) paymentTab.style.display = 'none';
-  if (equipmentTab) equipmentTab.style.display = 'none';
-  if (supportReviewsTab) supportReviewsTab.style.display = 'none';
-}
+// Use the optimized global hideAllMainTabs function
 
 if (attendanceMenuLink && attendanceTab) {
   attendanceMenuLink.addEventListener('click', function(e) {
@@ -4161,17 +4764,24 @@ if (attendanceMenuLink && attendanceTab) {
   });
 }
 
-if (paymentsMenuLink && paymentTab) {
+if (paymentsMenuLink) {
   paymentsMenuLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    hideAllMainTabs();
-    paymentTab.style.display = 'block';
-    // Initialize payment manager if it exists
-    if (typeof window.paymentManager !== 'undefined') {
-      window.paymentManager.loadPaymentData();
+    // Delegate to PaymentManager passkey + lazy init flow
+    if (typeof window.ensurePaymentManager === 'function') {
+      const mgr = window.ensurePaymentManager();
+      if (mgr && typeof mgr.handlePaymentMenuClick === 'function') {
+        mgr.handlePaymentMenuClick(e);
+        return; // Prevent duplicate handling
+      }
     }
-    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
-    paymentsMenuLink.classList.add('active');
+    // Fallback: default behavior if payment module not loaded
+    if (paymentTab) {
+      e.preventDefault();
+      hideAllMainTabs();
+      paymentTab.style.display = 'block';
+      sidebarMenuLinks.forEach(link => link.classList.remove('active'));
+      paymentsMenuLink.classList.add('active');
+    }
   });
 }
 

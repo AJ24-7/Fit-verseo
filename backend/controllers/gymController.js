@@ -20,7 +20,6 @@ const geocodeAddress = async (address, city, state, pincode) => {
     const fullAddress = [address, city, state, pincode].filter(Boolean).join(', ');
     const encodedAddress = encodeURIComponent(fullAddress);
     
-    console.log(`Geocoding address: ${fullAddress}`);
     
     // Using Nominatim (free geocoding service)
     const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=in`);
@@ -132,43 +131,121 @@ const send2FAEmail = async (email, otp, gymName) => {
 
 // Unified Gym/Admin Login (use for both gym and admin dashboard)
 exports.login = async (req, res) => {
-  const { email, password, twoFactorCode } = req.body;
+  const { 
+    email, 
+    password, 
+    twoFactorCode, 
+    deviceInfo, 
+    locationInfo, 
+    deviceFingerprint, 
+    userAgent, 
+    timezone 
+  } = req.body;
+  
   const ipAddress = req.ip || req.connection.remoteAddress || 'Unknown';
-  const userAgent = req.get('User-Agent') || 'Unknown';
+  const requestUserAgent = userAgent || req.get('User-Agent') || 'Unknown';
+  
+  // Helper function to format device information properly
+  const formatDeviceInfo = (deviceInfo, userAgent) => {
+    if (deviceInfo && typeof deviceInfo === 'object') {
+      return {
+        device: `${deviceInfo.os || 'Unknown'} - ${deviceInfo.browser || 'Unknown'}`,
+        browser: deviceInfo.browser || extractBrowserInfo(userAgent),
+        os: deviceInfo.os || 'Unknown',
+        platform: deviceInfo.platform || 'Unknown',
+        userAgent: deviceInfo.userAgent || userAgent,
+        screen: deviceInfo.screen ? `${deviceInfo.screen.width}x${deviceInfo.screen.height}` : 'Unknown',
+        language: deviceInfo.language || 'Unknown',
+        timezone: deviceInfo.timezone || timezone || 'Unknown'
+      };
+    } else {
+      return {
+        device: extractDeviceInfo(userAgent),
+        browser: extractBrowserInfo(userAgent),
+        os: 'Unknown',
+        platform: 'Unknown',
+        userAgent: userAgent,
+        screen: 'Unknown',
+        language: 'Unknown',
+        timezone: timezone || 'Unknown'
+      };
+    }
+  };
+
+  // Helper function to format location information properly
+  const formatLocationInfo = (locationInfo, ipAddress) => {
+    if (locationInfo && typeof locationInfo === 'object') {
+      const locationParts = [];
+      
+      // Filter out invalid location data
+      const isValidLocation = (value) => {
+        return value && 
+               value !== 'Unknown' && 
+               value !== 'Detecting...' && 
+               value !== 'pending' && 
+               !value.includes('Detecting');
+      };
+      
+      if (isValidLocation(locationInfo.city)) {
+        locationParts.push(locationInfo.city);
+      }
+      if (isValidLocation(locationInfo.region) && locationInfo.region !== locationInfo.city) {
+        locationParts.push(locationInfo.region);
+      }
+      if (isValidLocation(locationInfo.country)) {
+        locationParts.push(locationInfo.country);
+      }
+
+      return {
+        location: locationParts.length > 0 ? locationParts.join(', ') : 'Unknown',
+        city: isValidLocation(locationInfo.city) ? locationInfo.city : 'Unknown',
+        country: isValidLocation(locationInfo.country) ? locationInfo.country : 'Unknown',
+        region: isValidLocation(locationInfo.region) ? locationInfo.region : 'Unknown',
+        coordinates: (locationInfo.latitude && locationInfo.longitude) 
+          ? { lat: locationInfo.latitude, lng: locationInfo.longitude }
+          : { lat: 0, lng: 0 },
+        method: locationInfo.method || 'unknown',
+        ipAddress: ipAddress
+      };
+    } else {
+      // Fallback to IP-based location detection
+      return null; // Will be filled by getLocationFromIP
+    }
+  };
+
+  const formattedDeviceInfo = formatDeviceInfo(deviceInfo, requestUserAgent);
+  const formattedLocationInfo = formatLocationInfo(locationInfo, ipAddress);
   
   // Helper function to record login attempt
   const recordLoginAttempt = async (gymId, success, failureReason = null) => {
     try {
+      // Use formatted location if available, otherwise get from IP
+      const locationData = formattedLocationInfo || await getLocationFromIP(ipAddress);
+      
       const loginAttempt = new LoginAttempt({
         gymId,
         ipAddress,
-        userAgent,
+        userAgent: requestUserAgent,
         success,
         failureReason,
-        device: extractDeviceInfo(userAgent),
-        browser: extractBrowserInfo(userAgent),
+        device: formattedDeviceInfo.device,
+        browser: formattedDeviceInfo.browser,
         suspicious: await isSuspiciousLogin(gymId, ipAddress),
-        location: await getLocationFromIP(ipAddress)
+        location: locationData,
+        deviceDetails: formattedDeviceInfo // Store complete device info
       });
       await loginAttempt.save();
       
       // Send notification if enabled (only if SecuritySettings exist and are configured)
       if (success && gymId) {
         const settings = await SecuritySettings.findOne({ gymId });
-        console.log(`🔍 Login notification check for gym ID: ${gymId}`, {
-          hasSettings: !!settings,
-          loginNotificationsEnabled: settings?.loginNotifications?.enabled,
-          fullSettings: settings?.loginNotifications
-        });
+       
         
         if (settings && settings.loginNotifications && settings.loginNotifications.enabled) {
-          console.log(`📧 Sending successful login notification for gym ID: ${gymId}`);
           await sendLoginNotification(gymId, loginAttempt);
         } else {
-          console.log(`🔕 Login notifications disabled for gym ID: ${gymId} (settings: ${settings ? 'exist but disabled' : 'not found'})`);
         }
       } else if (!success && gymId && await shouldNotifyFailedLogin(gymId)) {
-        console.log(`📧 Sending failed login notification for gym ID: ${gymId}`);
         await sendLoginNotification(gymId, loginAttempt);
       }
     } catch (error) {
@@ -254,7 +331,6 @@ exports.login = async (req, res) => {
         });
       }
       
-      // This is for direct verification (when twoFactorCode is provided)
       // For email OTP, we'll handle this in a separate endpoint
       if (twoFactorCode) {
         await recordLoginAttempt(gym._id, false, 'Direct 2FA verification not supported');
@@ -296,6 +372,9 @@ exports.login = async (req, res) => {
     // Send login notification if enabled
     try {
       if (securitySettings.loginNotifications && securitySettings.loginNotifications.enabled) {
+        // Use formatted location if available, otherwise get from IP
+        const locationData = formattedLocationInfo || await getLocationFromIP(ipAddress);
+        
         const loginDetails = {
           timestamp: new Date().toLocaleString('en-US', { 
             timeZone: 'Asia/Kolkata',
@@ -306,10 +385,18 @@ exports.login = async (req, res) => {
             minute: '2-digit',
             hour12: true
           }),
-          ip: req.ip || req.connection.remoteAddress || 'Unknown',
-          device: extractDeviceInfo(req.get('User-Agent')),
-          browser: extractBrowserInfo(req.get('User-Agent')),
-          location: await getLocationFromIP(req.ip || req.connection.remoteAddress)
+          ip: ipAddress,
+          device: formattedDeviceInfo.device,
+          browser: formattedDeviceInfo.browser,
+          os: formattedDeviceInfo.os,
+          userAgent: formattedDeviceInfo.userAgent,
+          screen: formattedDeviceInfo.screen,
+          timezone: formattedDeviceInfo.timezone,
+          location: locationData.location || `${locationData.city}, ${locationData.country}`,
+          city: locationData.city,
+          country: locationData.country,
+          coordinates: locationData.coordinates,
+          method: locationData.method || 'ip'
         };
         
         const emailService = new EmailService();
@@ -318,7 +405,6 @@ exports.login = async (req, res) => {
           gym.contactPerson || gym.gymName, 
           loginDetails
         );
-        console.log('✅ Login notification sent to:', gym.email);
       }
     } catch (notificationError) {
       console.error('❌ Error sending login notification:', notificationError);
@@ -590,7 +676,6 @@ exports.registerGym = async (req, res) => {
       logoUrl = '';
     }
 
-    // Parse repeated fields (ensure arrays)
 
     // Parse activities as array of objects: [{ name, icon, description }]
     let activities = [];
@@ -727,9 +812,7 @@ exports.registerGym = async (req, res) => {
         req.body.pincode
       );
       if (coordinates) {
-        console.log(`✅ Geocoded ${req.body.gymName}: ${coordinates.lat}, ${coordinates.lng}`);
       } else {
-        console.log(`⚠️ Could not geocode address for ${req.body.gymName}`);
       }
     } catch (geocodeError) {
       console.error('Geocoding error during registration:', geocodeError);
@@ -785,7 +868,6 @@ exports.registerGym = async (req, res) => {
         json: (data) => {
           if (data.success) {
             subscriptionCreated = true;
-            console.log('✅ Subscription created successfully for gym:', newGym.gymName);
           }
           return mockRes;
         }
@@ -926,7 +1008,6 @@ exports.getMyProfile = async (req, res) => {
   }
 };
 
-// Update Logged-in Gym's Profile (by admin)
 // Helper: Validate current password
 async function validateCurrentPassword(gym, currentPassword) {
   if (typeof currentPassword !== 'string' || currentPassword.trim().length === 0) {
@@ -1106,7 +1187,6 @@ exports.getGymsByCities = async (req, res) => {
 
     // Optional: Transform data if needed, for example, to construct full image URLs
     const processedGyms = gyms.map(gym => {
-      // Attempt to keep original stored logo reference; frontend will normalize.
       // Support older fields if they ever existed (defensive coding)
       const rawLogo = gym.logoUrl || gym.logo || gym.logoURL || gym.logo_path || gym.logoFile || '';
       return {
@@ -1132,9 +1212,7 @@ exports.uploadGymPhoto = async (req, res) => {
     if (!adminId) {
       return res.status(401).json({ success: false, message: 'Not authorized, no admin ID found' });
     }
-    console.log('req.admin:', req.admin);
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
+   
     const { title, description, category } = req.body;
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No photo uploaded.' });
@@ -1159,7 +1237,6 @@ exports.uploadGymPhoto = async (req, res) => {
 // Update a gym photo by ID for the logged-in admin
 exports.updateGymPhoto = async (req, res) => {
   try {
-    console.log('DEBUG: updateGymPhoto adminId =', req.admin && req.admin.id, 'photoId =', req.params.photoId);
 
     const adminId = req.admin && req.admin.id;
     if (!adminId) {
@@ -1218,9 +1295,7 @@ exports.deleteGymPhoto = async (req, res) => {
 // Get all gym photos for the logged-in admin
 exports.getAllGymPhotos = async (req, res) => {
   try {
-    // Debug logging for authentication troubleshooting
-    console.log('DEBUG: getAllGymPhotos req.admin =', req.admin);
-    console.log('DEBUG: getAllGymPhotos req.headers.authorization =', req.headers['authorization']);
+   
     const adminId = req.admin && req.admin.id;
     if (!adminId) {
       return res.status(401).json({ success: false, message: 'Not authorized, no admin ID found' });

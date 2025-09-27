@@ -1,11 +1,14 @@
 // models/trainerModel.js
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const trainerSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   phone: { type: String, required: true, unique: true },
+  // Authentication fields
+  password: { type: String, required: true, select: false },
   specialty: { type: String, required: true },
   experience: { type: Number, required: true },
   locations: { type: [String], default: [] },
@@ -121,6 +124,10 @@ const trainerSchema = new mongoose.Schema({
     enum: ['pending', 'verified', 'rejected'],
     default: 'pending'
   },
+  // Password reset & security metadata
+  resetPasswordOTP: { type: String, select: false },
+  resetPasswordOTPExpiry: { type: Date, select: false },
+  passwordChangedAt: { type: Date },
   // Review & approval workflow metadata
   reviewTarget: {
     type: String,
@@ -186,6 +193,21 @@ trainerSchema.methods.getMinRate = function() {
   if (this.hourlyRate) rates.push(this.hourlyRate);
   if (this.monthlyRate) rates.push(this.monthlyRate / 30); // Convert monthly to daily equivalent
   return rates.length > 0 ? Math.min(...rates) : 0;
+};
+// Hash password before save if modified (place before export)
+trainerSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    this.passwordChangedAt = new Date();
+    next();
+  } catch (err) { next(err); }
+});
+
+// Compare password
+trainerSchema.methods.comparePassword = function(candidate) {
+  return bcrypt.compare(candidate, this.password);
 };
 
 module.exports = mongoose.model('Trainer', trainerSchema);

@@ -74,7 +74,9 @@ class AdminAuthController {
                 deviceFingerprint, 
                 rememberMe = false,
                 userAgent,
-                timezone 
+                timezone,
+                deviceInfo,
+                locationInfo
             } = req.body;
 
             // Input validation
@@ -91,6 +93,10 @@ class AdminAuthController {
                     message: 'Device verification required'
                 });
             }
+
+            // Parse and format device information
+            const formattedDeviceInfo = this.formatDeviceInfo(deviceInfo, req);
+            const formattedLocationInfo = this.formatLocationInfo(locationInfo);
 
             // Find admin by email (not locked)
             const admin = await Admin.findByEmailNotLocked(email);

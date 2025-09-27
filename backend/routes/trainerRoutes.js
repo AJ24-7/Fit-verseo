@@ -3,9 +3,11 @@ const router = express.Router();
 const multer = require('multer');
 const Trainer = require('../models/trainerModel');
 const trainerController = require('../controllers/trainerController');
+const trainerAuthController = require('../controllers/trainerAuthController');
 const adminAuth = require('../middleware/adminAuth');
 const { requireRole } = require('../middleware/adminAuth');
 const gymadminAuth = require('../middleware/gymadminAuth');
+const trainerAuth = require('../middleware/trainerAuth');
 
 
 // File storage config
@@ -23,6 +25,16 @@ const cpUpload = upload.fields([
   { name: 'photo', maxCount: 1 },
   { name: 'profileImage', maxCount: 1 }
 ]);
+
+// Public/Auth endpoints
+router.post('/login', trainerAuthController.login);
+router.post('/forgot-password', trainerAuthController.forgotPassword);
+router.post('/verify-otp', trainerAuthController.verifyOTP);
+router.post('/reset-password', trainerAuthController.resetPassword);
+
+// Authenticated trainer endpoints
+router.get('/me', trainerAuth, trainerAuthController.getProfile);
+router.patch('/me', trainerAuth, trainerAuthController.updateProfile);
 
 // Admin: Get all trainers from all gyms, filterable by status
 router.get('/all', trainerController.getAllTrainersForAdmin);

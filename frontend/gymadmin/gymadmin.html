@@ -6,34 +6,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gym-Wale | Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="gymadmin.css">
-    <link rel="stylesheet" href="attendance.css">
-    <link rel="stylesheet" href="membertab.css">
-    <link rel="stylesheet" href="payment.css">
-    <link rel="stylesheet" href="member-payments.css">
-    <link rel="stylesheet" href="equipment.css">
-    <link rel="stylesheet" href="settings.css">
-    <link rel="stylesheet" href="enhanced-support-styles.css">
-  <link rel="stylesheet" href="trainer-list.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <!-- 🚀 PRODUCTION-READY SIDEBAR STYLES - SINGLE SOURCE OF TRUTH -->
+    <link rel="stylesheet" href="styles/sidebar-enhancements.css">
+    <!-- Main Admin Styles -->
+    <link rel="stylesheet" href="styles/gymadmin.css">
+    <link rel="stylesheet" href="styles/attendance.css">
+    <link rel="stylesheet" href="styles/membertab.css">
+    <link rel="stylesheet" href="styles/payment.css">
+    <link rel="stylesheet" href="styles/member-payments.css">
+    <link rel="stylesheet" href="styles/equipment.css">
+    <link rel="stylesheet" href="styles/settings.css">
+    <link rel="stylesheet" href="styles/enhanced-support-styles.css">
+    <link rel="stylesheet" href="styles/trainer-list.css">
+    
+    <!-- Performance Optimization Scripts -->
+    <script defer src="core/async-fetch-manager.js"></script>
+    <script defer src="core/visibility-chart-manager.js"></script>
+    <script defer src="core/dom-performance-manager.js"></script>
+    <script defer src="core/smart-polling-manager.js"></script>
+    <script defer src="core/skeleton-loading-manager.js"></script>
+    <script defer src="core/tab-isolation-manager.js"></script>
+    
+    <!-- Core System Scripts -->
+    <script defer src="core/unified-auth-manager.js"></script>
+    <script defer src="core/unified-notification-system.js"></script>
+    <script defer src="core/module-optimizer.js"></script>
+    <script defer src="core/lazy-modules.js"></script>
+    
+    <!-- Utility Scripts -->
+    <script defer src="utils/i18n.js"></script>
+    <script defer src="utils/subscription-management.js"></script>
+    <script defer src="utils/quick-actions-customizer.js"></script>
+    
+    <!-- Main Application Scripts -->
     <script defer src="gymadmin.js"></script>
-    <script defer src="settings.js"></script>
-    <script defer src="subscription-management.js"></script>
-    <script defer src="gym-profile.js"></script>
-    <script defer src="notification-modal.js"></script>
-    <script defer src="notification-system.js"></script>
-    <script defer src="support-reviews.js"></script>
-    <script defer src="enhanced-support-integration.js"></script>
-    <script defer src="attendance.js"></script>
-    <script defer src="trial-bookings.js"></script>
-    <script defer src="attendance-stats.js"></script>
-    <script defer src="payment.js"></script>
-    <script defer src="equipment.js"></script>
-    <script defer src="cash-validation.js"></script>
-    <script defer src="cash-validation-dialog.js"></script>
-    <script defer src="quick-actions-customizer.js"></script>
-  <script defer src="trainer-management.js"></script>
+    
+    <!-- ⚡ ULTRA-FAST PERFORMANCE SIDEBAR SYSTEM -->
+    <script defer src="performance-sidebar.js"></script>
+    
+    <!-- Development & Testing (only in development) -->
+    <script defer src="system-test-suite.js"></script>
 </head>
 <body>
 <!-- Hamburger Menu for Mobile (move outside sidebar, just after <body>) -->
@@ -54,54 +66,54 @@
             <div class="logo-text" style="font-size:2rem;color:var(--primary);letter-spacing:1px;transition:color .2s;user-select:none;">Gym-Wale</div>
         </div>
         <ul class="menu">
-            <li class="menu-item">
-                <a href="#" class="menu-link active">
-                    <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
-                    <span class="menu-text">Dashboard</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <span class="menu-icon"><i class="fas fa-users"></i></span>
-                    <span class="menu-text">Members</span>
-                </a>
-            </li>
-             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
-                    <span class="menu-text">Trainers</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
-                    <span class="menu-text">Attendance</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link" data-tab="paymentTab">
-                    <span class="menu-icon"><i class="fas fa-credit-card"></i></span>
-                    <span class="menu-text">Payments</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <span class="menu-icon"><i class="fas fa-dumbbell"></i></span>
-                    <span class="menu-text">Equipment</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <span class="menu-icon"><i class="fas fa-headset"></i></span>
-                    <span class="menu-text">Support & Reviews</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <span class="menu-icon"><i class="fas fa-cog"></i></span>
-                    <span class="menu-text">Settings</span>
-                </a>
-            </li>
+      <li class="menu-item">
+        <a href="#" class="menu-link active" data-tab="dashboardTab">
+          <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+          <span class="menu-text" data-translate="dashboard">Dashboard</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-link" data-tab="membersTab">
+          <span class="menu-icon"><i class="fas fa-users"></i></span>
+          <span class="menu-text" data-translate="members">Members</span>
+        </a>
+      </li>
+       <li class="menu-item">
+        <a href="#" class="menu-link" data-tab="trainerTab">
+          <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
+          <span class="menu-text" data-translate="trainers">Trainers</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-link" data-tab="attendanceTab">
+          <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
+          <span class="menu-text" data-translate="attendance">Attendance</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-link" data-tab="paymentTab">
+          <span class="menu-icon"><i class="fas fa-credit-card"></i></span>
+          <span class="menu-text" data-translate="payments">Payments</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-link" data-tab="equipmentTab">
+          <span class="menu-icon"><i class="fas fa-dumbbell"></i></span>
+          <span class="menu-text" data-translate="equipment">Equipment</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-link" data-tab="supportTab">
+          <span class="menu-icon"><i class="fas fa-headset"></i></span>
+          <span class="menu-text" data-translate="support">Support & Reviews</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-link" data-tab="settingsTab">
+          <span class="menu-icon"><i class="fas fa-cog"></i></span>
+          <span class="menu-text" data-translate="settings">Settings</span>
+        </a>
+      </li>
         </ul>
         <div class="toggle-btn" id="toggleBtn">
             <i class="fas fa-chevron-left"></i>
@@ -114,14 +126,14 @@
         <button id="closeMobileSidebar" aria-label="Close menu" style="background:none; border:none; font-size:2rem; cursor:pointer;">&times;</button>
       </div>
       <ul class="menu" style="padding:0 24px;">
-        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span> <span class="menu-text">Dashboard</span></a></li>
-        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-users"></i></span> <span class="menu-text">Members</span></a></li>
-        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-calendar-check"></i></span> <span class="menu-text">Attendance</span></a></li>
-        <li class="menu-item"><a href="#" class="menu-link" data-tab="paymentTab"><span class="menu-icon"><i class="fas fa-credit-card"></i></span> <span class="menu-text">Payments</span></a></li>
-        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-user-tie"></i></span> <span class="menu-text">Trainers</span></a></li>
-        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-dumbbell"></i></span> <span class="menu-text">Equipment</span></a></li>
-        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-headset"></i></span> <span class="menu-text">Support & Reviews</span></a></li>
-        <li class="menu-item"><a href="#" class="menu-link"><span class="menu-icon"><i class="fas fa-cog"></i></span> <span class="menu-text">Settings</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link" data-tab="dashboardTab"><span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span> <span class="menu-text" data-translate="dashboard">Dashboard</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link" data-tab="membersTab"><span class="menu-icon"><i class="fas fa-users"></i></span> <span class="menu-text" data-translate="members">Members</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link" data-tab="attendanceTab"><span class="menu-icon"><i class="fas fa-calendar-check"></i></span> <span class="menu-text" data-translate="attendance">Attendance</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link" data-tab="paymentTab"><span class="menu-icon"><i class="fas fa-credit-card"></i></span> <span class="menu-text" data-translate="payments">Payments</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link" data-tab="trainerTab"><span class="menu-icon"><i class="fas fa-user-tie"></i></span> <span class="menu-text" data-translate="trainers">Trainers</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link" data-tab="equipmentTab"><span class="menu-icon"><i class="fas fa-dumbbell"></i></span> <span class="menu-text" data-translate="equipment">Equipment</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link" data-tab="supportTab"><span class="menu-icon"><i class="fas fa-headset"></i></span> <span class="menu-text" data-translate="support">Support & Reviews</span></a></li>
+        <li class="menu-item"><a href="#" class="menu-link" data-tab="settingsTab"><span class="menu-icon"><i class="fas fa-cog"></i></span> <span class="menu-text" data-translate="settings">Settings</span></a></li>
       </ul>
     </div>
 
@@ -129,9 +141,11 @@
     <div class="main-content" id="mainContent">
         <!-- Top Nav -->
         <div class="top-nav" id="topNav">
-            <div class="user-actions">
-                <!-- Notification Bell -->
-                <div class="notification" id="notificationBell">
+    <!-- Top Nav -->
+    <div class="top-nav" id="topNav"></div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboardTab" class="content tab-content" style="display: block;">
                     <i class="fas fa-bell notification-icon" id="notificationIcon"></i>
                     <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
                     <div class="notification-dropdown" id="notificationDropdown">
@@ -173,12 +187,12 @@
                   <div class="dropdown-divider"></div>
                   <button class="dropdown-item" id="logoutLink" type="button"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
-            </div>
+        </div>
 
-            <!-- Dashboard Content -->
-            <div class="content">
+        <!-- Dashboard Tab -->
+        <div id="dashboardTab" class="content" style="display: block;">
                 <div class="page-header">
-                    <h1 class="page-title"><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h1>
+                    <h1 class="page-title"><i class="fas fa-tachometer-alt"></i> <span data-i18n="header.dashboard.title">Dashboard Overview</span></h1>
                     <div class="page-actions">
                         <button id="openNotificationModalBtn">
                             <i class="fas fa-bell"></i> Send Notification
@@ -193,7 +207,8 @@
                     <div class="stat-card new-users loading" id="membersStatCard" style="cursor:pointer;">
                         <div class="stat-card-header">
                             <div class="stat-title">Members</div>
-                            <div class="stat-icon-dashboard">
+                              <div class="stat-title" data-i18n="stat.members">Members</div>
+                              <div class="stat-icon-dashboard">
                                 <i class="fas fa-users"></i>
                             </div>
                         </div>
@@ -215,7 +230,8 @@
                     <div class="stat-card payments loading">
                         <div class="stat-card-header">
                             <div class="stat-title">Total Payments</div>
-                            <div class="stat-icon-dashboard">
+                              <div class="stat-title" data-i18n="stat.totalPayments">Total Payments</div>
+                              <div class="stat-icon-dashboard">
                                 <i class="fas fa-credit-card"></i>
                             </div>
                         </div>
@@ -237,7 +253,8 @@
                     <div class="stat-card attendance loading" id="attendanceStatCard" style="cursor:pointer;">
                         <div class="stat-card-header">
                             <div class="stat-title">Overall Attendance</div>
-                            <div class="stat-icon-dashboard">
+                              <div class="stat-title" data-i18n="stat.attendance">Overall Attendance</div>
+                              <div class="stat-icon-dashboard">
                                 <i class="fas fa-calendar-check"></i>
                             </div>
                         </div>
@@ -259,7 +276,8 @@
                     <div class="stat-card trainers loading">
                         <div class="stat-card-header">
                             <div class="stat-title">Active Trainers</div>
-                            <div class="stat-icon-dashboard">
+                              <div class="stat-title" data-i18n="stat.trainers">Active Trainers</div>
+                              <div class="stat-icon-dashboard">
                                 <i class="fas fa-user-tie"></i>
                             </div>
                         </div>
@@ -284,55 +302,55 @@
                   <div class="card quick-action-card">
                     <div class="card-header">
                       <h2 class="card-title">
-                        <i class="fas fa-bolt"></i>
-                        Quick Actions
+             <i class="fas fa-bolt"></i>
+             <span data-i18n="quick.actions.title">Quick Actions</span>
                       </h2>
                       <div class="card-actions">
                         <button id="customizeQuickActionsBtn" type="button" class="secondary customize-btn">
-                          <i class="fas fa-palette"></i> Customize
+                          <i class="fas fa-palette"></i> <span data-i18n="quick.actions.customize">Customize</span>
                         </button>
                       </div>
                     </div>
                     <div class="quick-actions-grid" id="quickActionsGrid">
                       <div class="quick-action-badge" data-action="add-member" id="addMemberBtn">
                         <i class="fas fa-user-plus"></i>
-                        <span>Add Member</span>
+                        <span data-i18n="quick.actions.addMember">Add Member</span>
                       </div>
                       <div class="quick-action-badge" data-action="record-payment" id="recordPaymentBtn">
                         <i class="fas fa-money-bill-wave"></i>
-                        <span>Record Payment</span>
+                        <span data-i18n="quick.actions.recordPayment">Record Payment</span>
                       </div>
                       <div class="quick-action-badge" data-action="add-trainer" id="addTrainerBtn">
                         <i class="fas fa-user-tie"></i>
-                        <span>Add Trainer</span>
+                        <span data-i18n="quick.actions.addTrainer">Add Trainer</span>
                       </div>
                       <div class="quick-action-badge" data-action="add-equipment" id="uploadEquipmentBtn">
                         <i class="fas fa-dumbbell"></i>
-                        <span>Add Equipment</span>
+                        <span data-i18n="quick.actions.addEquipment">Add Equipment</span>
                       </div>
                       <div class="quick-action-badge" data-action="generate-qr" id="generateQRCodeBtn">
                         <i class="fas fa-qrcode"></i>
-                        <span>Generate QR Code</span>
+                        <span data-i18n="quick.actions.generateQR">Generate QR Code</span>
                       </div>
                       <div class="quick-action-badge" data-action="biometric-enroll" id="biometricEnrollBtn">
                         <i class="fas fa-fingerprint"></i>
-                        <span>Biometric Enrollment</span>
+                        <span data-i18n="quick.actions.enrollBiometric">Biometric Enrollment</span>
                       </div>
                       <div class="quick-action-badge" data-action="device-setup" id="deviceSetupBtn">
                         <i class="fas fa-cogs"></i>
-                        <span>Setup Devices</span>
+                        <span data-i18n="quick.actions.deviceSetup">Setup Devices</span>
                       </div>
                       <div class="quick-action-badge" data-action="send-notification" id="sendNotificationQuickBtn">
                         <i class="fas fa-bell"></i>
-                        <span>Send Notification</span>
+                        <span data-i18n="quick.actions.sendNotification">Send Notification</span>
                       </div>
                     </div>
                   </div>
                   <div class="card activities-offered-card">
                     <div class="card-header">
                       <h2 class="card-title">
-                        <i class="fas fa-heart"></i>
-                        Activities Offered
+             <i class="fas fa-heart"></i>
+             <span data-i18n="activities.offered">Activities Offered</span>
                       </h2>
                       <div class="card-actions">
                         <button id="addActivitiesBtn" type="button" class="secondary">
@@ -350,6 +368,7 @@
                 <section id="photoGridSection" class="card" style="margin-top: 24px;">
                   <div class="card-header">
                     <h1 class="card-title"><i class="fas fa-images"></i> Previously Uploaded Gym Photos</h1>
+                        <h1 class="card-title"><i class="fas fa-images"></i> <span data-i18n="photos.uploaded">Previously Uploaded Gym Photos</span></h1>
                     <button class="upload-photo-btn" id="uploadPhotoBtn">
                             <i class="fas fa-camera"></i> Upload Photo
                         </button>
@@ -362,6 +381,7 @@
                         <div class="card" id="membershipPlansSection" style="margin-top:18px;">
                           <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
                             <h2 class="card-title"><i class="fas fa-crown" style="color:#ffbe0b;margin-right:8px;"></i>Membership Plans</h2>
+                              <h2 class="card-title"><i class="fas fa-crown" style="color:#ffbe0b;margin-right:8px;"></i><span data-i18n="membership.plans">Membership Plans</span></h2>
                             <button id="editPlansBtn" class="btn btn-primary" style="font-size:1em;padding:6px 18px;"><i class="fas fa-edit"></i> Edit Plans</button>
                           </div>
 <div class="plans-list" id="plansList"></div>
@@ -371,6 +391,7 @@
                           <div class="modal-content" style="max-width:700px;margin-top:48px;">
                             <div style="display:flex;align-items:center;justify-content:space-between;">
                               <h3 style="margin:0;display:flex;align-items:center;gap:10px;"><i class="fas fa-crown" style="color:#ffbe0b;"></i> Edit Membership Plans</h3>
+                                <h3 style="margin:0;display:flex;align-items:center;gap:10px;"><i class="fas fa-crown" style="color:#ffbe0b;"></i> <span data-i18n="membership.edit">Edit Membership Plans</span></h3>
                               <button class="modal-close" id="closePlanEditorModal" style="font-size:1.5rem;">&times;</button>
                             </div>
                             <form id="planEditorForm" style="margin-top:18px;">
@@ -378,8 +399,8 @@
                         
                          
                               <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;">
-                                <button type="button" class="btn btn-secondary" id="cancelPlanEditBtn">Cancel</button>
-                                <button type="submit" class="btn btn-primary">Save All</button>
+                                  <button type="button" class="btn btn-secondary" id="cancelPlanEditBtn" data-i18n="cancel">Cancel</button>
+                                  <button type="submit" class="btn btn-primary" data-i18n="saveAll">Save All</button>
                               </div>
                             </form>
                           </div>
@@ -393,8 +414,8 @@
                         <div class="card" id="newMembersCard">
                             <div class="card-header">
                                 <h2 class="card-title">
-                                    <i class="fas fa-users"></i>
-                                    New Members
+                 <i class="fas fa-users"></i>
+                 <span data-i18n="new.members">New Members</span>
                                 </h2>
                                 <div class="card-actions">
                                     <button id="viewAllMembersBtn">View All</button>
@@ -433,8 +454,8 @@
                         <div class="card" id="trialBookingsCard">
                             <div class="card-header">
                                 <h2 class="card-title">
-                                    <i class="fas fa-calendar-plus"></i>
-                                    Trial Bookings
+                 <i class="fas fa-calendar-plus"></i>
+                 <span data-i18n="trial.bookings">Trial Bookings</span>
                                 </h2>
                                 <div class="card-actions">
                                     <select id="dashboardTrialStatusFilter" class="filter-select">
@@ -479,8 +500,8 @@
                         <div class="card">
                             <div class="card-header">
                                 <h2 class="card-title">
-                                    <i class="fas fa-chart-line"></i>
-                                    Attendance Trend
+                 <i class="fas fa-chart-line"></i>
+                 <span data-i18n="attendance.trend">Attendance Trend</span>
                                 </h2>
                                 <div class="card-actions" style="display:flex;gap:12px;align-items:center;">
                                     <div class="chart-controls">
@@ -523,8 +544,8 @@
                         <div class="card">
                             <div class="card-header">
                                 <h2 class="card-title">
-                                    <i class="fas fa-clock"></i>
-                                    Recent Activity
+                 <i class="fas fa-clock"></i>
+                 <span data-i18n="recent.activity">Recent Activity</span>
                                 </h2>
                                 <div class="card-actions">
                                     <button id="viewAllActivitiesBtn">View All</button>
@@ -557,8 +578,8 @@
                         <div class="card">
                             <div class="card-header">
                                 <h2 class="card-title">
-                                    <i class="fas fa-dumbbell"></i>
-                                    Equipment Gallery
+                 <i class="fas fa-dumbbell"></i>
+                 <span data-i18n="equipment.gallery">Equipment Gallery</span>
                                 </h2>
                                 <div class="card-actions">
                                     <button id="viewAllEquipmentBtn">View All</button>
@@ -598,12 +619,13 @@
                         </div>
                     </div>
                 </div>
-            </div>
+        </div>
 
-            <!-- Payment Tab (Initially Hidden) -->
+        <!-- Payment Tab (Initially Hidden) -->
             <div id="paymentTab" class="payment-tab">
                 <div class="page-header">
                     <h1 class="page-title"><i class="fas fa-credit-card"></i> Payment Management</h1>
+                      <h1 class="page-title"><i class="fas fa-credit-card"></i> <span data-i18n="payment.management">Payment Management</span></h1>
                     <div class="page-actions">
                         <button id="addPaymentBtn" class="add-payment-btn">
                             <i class="fas fa-plus"></i> Add Payment
@@ -617,6 +639,7 @@
                     <div class="payment-stat-card received" id="receivedAmountStatCard" style="cursor:pointer;">
                         <div class="payment-stat-header">
                             <div class="payment-stat-title">Amount Received</div>
+                              <div class="payment-stat-title" data-i18n="payment.amountReceived">Amount Received</div>
                             <div class="payment-stat-icon received">
                                 <i class="fas fa-arrow-down"></i>
                             </div>
@@ -642,6 +665,7 @@
                     <div class="payment-stat-card paid" id="paidAmountStatCard" style="cursor:pointer;">
                         <div class="payment-stat-header">
                             <div class="payment-stat-title">Amount Paid</div>
+                              <div class="payment-stat-title" data-i18n="payment.amountPaid">Amount Paid</div>
                             <div class="payment-stat-icon paid">
                                 <i class="fas fa-arrow-up"></i>
                             </div>
@@ -667,6 +691,7 @@
                     <div class="payment-stat-card pending" id="pendingPaymentsStatCard" style="cursor:pointer;">
                         <div class="payment-stat-header">
                             <div class="payment-stat-title">Pending Payments</div>
+                              <div class="payment-stat-title" data-i18n="payment.pending">Pending Payments</div>
                             <div class="payment-stat-icon pending">
                                 <i class="fas fa-clock"></i>
                             </div>
@@ -688,6 +713,7 @@
                     <div class="payment-stat-card due" id="duePaymentsStatCard" style="cursor:pointer;">
                         <div class="payment-stat-header">
                             <div class="payment-stat-title">Due Payments</div>
+                              <div class="payment-stat-title" data-i18n="payment.due">Due Payments</div>
                             <div class="payment-stat-icon due">
                                 <i class="fas fa-calendar-times"></i>
                             </div>
@@ -713,6 +739,7 @@
                     <div class="payment-stat-card profit" id="profitLossStatCard" style="cursor:pointer;">
                         <div class="payment-stat-header">
                             <div class="payment-stat-title">Profit/Loss</div>
+                              <div class="payment-stat-title" data-i18n="payment.profitLoss">Profit/Loss</div>
                             <div class="payment-stat-icon profit">
                                 <i class="fas fa-chart-line"></i>
                             </div>
@@ -876,7 +903,7 @@
   
   <div class="circular-panel">
     <div class="circular-panel-header">
-      <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+  <h3><i class="fas fa-bolt"></i> <span data-i18n="quick.actions.title">Quick Actions</span></h3>
       <button class="circular-panel-close" id="circularPanelClose">
         <i class="fas fa-times"></i>
       </button>
@@ -1674,16 +1701,15 @@
                 </form>
             </div>
         </div>
-    </div>
+  </div>
 
-   >
    <!-- Password Confirmation Dialog -->
 <div id="passwordConfirmDialog" class="modal" style="display:none;">
   <div class="modal-content" style="max-width:350px;">
     <span class="modal-close" id="closePasswordConfirmDialog">&times;</span>
     <form id="passwordConfirmForm">
-      <label for="currentPassword">Please enter your current password to confirm changes:</label>
-      <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+      <label for="confirmCurrentPassword">Please enter your current password to confirm changes:</label>
+      <input type="password" id="confirmCurrentPassword" name="currentPassword" required autocomplete="current-password">
       <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Confirm</button>
     </form>
   </div>
@@ -2748,8 +2774,8 @@
       <form id="notificationForm">
         <div class="form-row">
           <div class="form-group">
-            <label for="notificationTitle">Title *</label>
-            <input type="text" id="notificationTitle" placeholder="Notification title" required>
+            <label for="modalNotificationTitle">Title *</label>
+            <input type="text" id="modalNotificationTitle" placeholder="Notification title" required>
           </div>
           <div class="form-group">
             <label for="notificationType">Type *</label>
@@ -3137,8 +3163,8 @@
       <div class="admin-passkey-icon">
         <i class="fas fa-shield-alt"></i>
       </div>
-      <h2 class="admin-passkey-title modal-title">Admin Security</h2>
-      <p class="admin-passkey-subtitle passkey-instruction">Enter your 4-digit admin passkey to access payment management</p>
+  <h2 class="admin-passkey-title modal-title" data-i18n="adminSecurityTitle">Admin Security</h2>
+  <p class="admin-passkey-subtitle passkey-instruction" data-i18n="enterPasskeyInstruction">Enter your 4-digit admin passkey to access payment management</p>
     </div>
     
     <form class="admin-passkey-form" id="adminPasskeyForm">
@@ -3169,18 +3195,16 @@
         </button>
       </div>
       
-      <div class="passkey-error" id="passkeyError">
-        Invalid passkey. Please try again.
-      </div>
+      <div class="passkey-error" id="passkeyError" data-i18n="invalidPasskey">Invalid passkey. Please try again.</div>
       
       <div class="passkey-attempts" id="passkeyAttempts" style="display: none;">
-        Attempts remaining: <span id="remainingAttempts">3</span>
+        <span data-i18n="attemptsRemaining">Attempts remaining:</span> <span id="remainingAttempts">3</span>
       </div>
     </form>
     
     <div class="passkey-actions">
-      <button type="button" class="passkey-btn secondary" id="cancelPasskey">Cancel</button>
-      <button type="button" class="passkey-btn primary" id="verifyPasskey">Verify</button>
+  <button type="button" class="passkey-btn secondary" id="cancelPasskey" data-i18n="cancel">Cancel</button>
+  <button type="button" class="passkey-btn primary" id="verifyPasskey" data-i18n="verify">Verify</button>
     </div>
   </div>
 </div>
@@ -3614,6 +3638,33 @@
           </div>
         </div>
       }
+
+      <!-- Language & Region -->
+      <div class="settings-section">
+        <div class="settings-card" id="languageRegionSection">
+          <div class="section-info-icon" onclick="showLanguageInfo && showLanguageInfo()" title="Language & Region Information">
+            <i class="fas fa-info"></i>
+          </div>
+          <div class="settings-header">
+            <h3><i class="fas fa-language"></i> <span data-i18n="settings.language.title">Language & Region</span></h3>
+            <p><span data-i18n="settings.language.subtitle">Choose your preferred language for the dashboard</span></p>
+          </div>
+          <div class="settings-content">
+            <div class="setting-row">
+              <div>
+                <strong><span data-i18n="settings.language.label">Language</span></strong>
+                <p><span data-i18n="settings.language.desc">Switch between English and Hindi. English is the default.</span></p>
+              </div>
+              <div>
+                <select id="languageSelect" class="enhanced-form-select" style="min-width: 180px;">
+                  <option value="en">English</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
     <!-- Subscription Management Section -->
     <div class="settings-section card" id="subscriptionManagementSection">
@@ -4530,8 +4581,8 @@
             </div>
 
             <div class="payment-form-group">
-              <label class="payment-form-label" for="paymentAmount">Amount (₹)</label>
-              <input type="number" class="payment-form-input" id="paymentAmount" name="amount" min="0" step="0.01" required>
+              <label class="payment-form-label" for="generalPaymentAmount">Amount (₹)</label>
+              <input type="number" class="payment-form-input" id="generalPaymentAmount" name="amount" min="0" step="0.01" required>
             </div>
 
             <div class="payment-form-group full-width">
@@ -4620,8 +4671,8 @@
             </div>
 
             <div class="payment-form-group">
-              <label class="payment-form-label" for="memberName">Person Name (if applicable)</label>
-              <input type="text" class="payment-form-input" id="memberName" name="memberName" placeholder="Enter person name" style="display: block;">
+              <label class="payment-form-label" for="paymentPersonName">Person Name (if applicable)</label>
+              <input type="text" class="payment-form-input" id="paymentPersonName" name="memberName" placeholder="Enter person name" style="display: block;">
               <select class="payment-form-input" id="memberSelect" name="memberId" style="display: none;">
                 <option value="">Select Member</option>
               </select>
@@ -4842,8 +4893,8 @@
         </div>
 
         <div class="form-group" style="margin-bottom: 20px;">
-          <label class="form-label" for="paymentMethod">Payment Method:</label>
-          <select id="paymentMethod" class="form-control" required>
+          <label class="form-label" for="renewalPaymentMethod">Payment Method:</label>
+          <select id="renewalPaymentMethod" class="form-control" required>
             <option value="">Select payment method</option>
             <option value="razorpay">Razorpay (Credit/Debit Card, UPI, Net Banking)</option>
             <option value="bank_transfer">Bank Transfer</option>
@@ -4980,13 +5031,11 @@
 </div>
  
    <!-- 7-Day Allowance System -->
-   <script src="seven-day-allowance.js"></script>
+   <script src="modules/seven-day-allowance.js"></script>
    <!-- QR Code Generator System -->
-   <script src="qr-code-generator.js"></script>
-   <!-- Notification integration with enhanced form handler compatibility -->
-   <script src="notification-integration.js"></script>
-   <!-- Notification Configuration -->
-   <script src="notification-config.js"></script>
+   <script src="utils/qr-code-generator.js"></script>
+  <!-- notification-integration.js now loaded lazily via lazy-modules.js when Support/Reviews related tabs are opened -->
+   <!-- Notification Configuration now integrated in unified-notification-system.js -->
    
    <!-- Enhanced Security Info Modal Functions -->
    <script>
@@ -5005,8 +5054,8 @@
          <div class="modal-body">
            <form id="changePasswordForm">
              <div class="form-group" style="margin-bottom: 16px;">
-               <label for="currentPassword" style="display: block; margin-bottom: 4px; font-weight: 500;">Current Password</label>
-               <input type="password" id="currentPassword" required style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+               <label for="modalCurrentPassword" style="display: block; margin-bottom: 4px; font-weight: 500;">Current Password</label>
+               <input type="password" id="modalCurrentPassword" required style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
              </div>
              <div class="form-group" style="margin-bottom: 16px;">
                <label for="newPassword" style="display: block; margin-bottom: 4px; font-weight: 500;">New Password</label>

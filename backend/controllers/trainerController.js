@@ -537,9 +537,14 @@ exports.registerTrainer = async (req, res) => {
       firstName, lastName, email, phone,
       specialty, experience, bio, 
       trainerType = 'gym',
+      password,
       // Enhanced rate structure
       rateTypes, hourlyRateValue, monthlyRateValue
     } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: 'Password (min 6 chars) is required' });
+    }
 
     // Validate rate structure
     let processedRateTypes = [];
@@ -635,6 +640,7 @@ exports.registerTrainer = async (req, res) => {
       lastName, 
       email, 
       phone,
+      password,
       specialty, 
       experience: Number(experience) || 0, 
       availability,
