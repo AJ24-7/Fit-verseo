@@ -60,7 +60,7 @@ class DiagnosticTester {
             
             // API endpoints
             '/api/admin/profile',
-            '/public/admin-login.html'
+            '../public/admin-login.html'
         ];
 
         for (const path of criticalPaths) {

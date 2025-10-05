@@ -81,7 +81,6 @@
 }
 
 /* Smaller cards for pending, due, profit */
-.payment-stat-card.pending,
 .payment-stat-card.due,
 .payment-stat-card.profit {
   grid-row: 2;
@@ -130,10 +129,7 @@
   transform: scaleX(1);
 }
 
-.payment-stat-card.received {
-  border-left: 6px solid #22c55e;
-  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-}
+
 
 .payment-stat-card.paid {
   border-left: 6px solid #ef4444;

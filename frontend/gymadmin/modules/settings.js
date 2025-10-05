@@ -1584,13 +1584,20 @@ async function setupActualToggleHandlers(gymId) {
       });
       
       if (response.ok) {
-        const result = await response.json();
-        const is2FAEnabled = result.data?.enabled !== false; // Default to enabled
-        twoFactorToggle.checked = is2FAEnabled;
-        
-        // Also save to localStorage for backup
-        setGymSpecificSetting(`twoFactorEnabled_${gymId}`, is2FAEnabled.toString());
-        console.log(`📱 2FA toggle loaded from API: ${is2FAEnabled}`);
+        // Check if response is actually JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const result = await response.json();
+          const is2FAEnabled = result.data?.enabled !== false; // Default to enabled
+          twoFactorToggle.checked = is2FAEnabled;
+          
+          // Also save to localStorage for backup
+          setGymSpecificSetting(`twoFactorEnabled_${gymId}`, is2FAEnabled.toString());
+          console.log(`📱 2FA toggle loaded from API: ${is2FAEnabled}`);
+        } else {
+          // Response is not JSON, probably an HTML error page
+          throw new Error('API returned non-JSON response (likely HTML error page)');
+        }
       } else {
         // Fallback to localStorage
         const saved2FAState = getGymSpecificSetting(`twoFactorEnabled_${gymId}`);
@@ -8048,13 +8055,13 @@ class SessionTimeoutManager {
       
       // Redirect to login
       setTimeout(() => {
-        window.location.href = '/frontend/public/admin-login.html';
+        window.location.href = '../public/admin-login.html';
       }, 2000);
       
     } catch (error) {
       console.error('Error during logout:', error);
       // Force redirect even if API call fails
-      window.location.href = '/frontend/public/admin-login.html';
+      window.location.href = '../public/admin-login.html';
     }
   }
 
@@ -8251,7 +8258,7 @@ if (initialSetupResult && window.securityManagersInitialized) {
   console.log('🔧 Security managers initialized successfully, setting up pending toggles...');
   
   // Check if there's a pending gym ID for security toggle setup
-  const currentGymId = window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId'));
+  const currentGymId = window.GymIdManager ? window.GymIdManager.getCurrentGymId() : (window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId')));
   if (currentGymId && !window.securityToggleHandlersSetup) {
     console.log('🔄 Setting up security toggles for gym:', currentGymId);
     setTimeout(() => {
@@ -8271,7 +8278,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // If initialization successful, try to set up pending toggles
     if (result && window.securityManagersInitialized) {
-      const currentGymId = window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId'));
+      const currentGymId = window.GymIdManager ? window.GymIdManager.getCurrentGymId() : (window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId')));
       if (currentGymId && !window.securityToggleHandlersSetup) {
         console.log('🔄 Setting up security toggles after DOMContentLoaded initialization...');
         setTimeout(() => {
@@ -8693,7 +8700,7 @@ window.testToggleFunctionality = async function() {
         console.log('✅ Final initialization successful');
         
         // Try to set up any pending security toggles
-        const currentGymId = window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId'));
+        const currentGymId = window.GymIdManager ? window.GymIdManager.getCurrentGymId() : (window.getGymId ? window.getGymId() : (sessionStorage.getItem('currentGymId') || localStorage.getItem('currentGymId')));
         if (currentGymId && !window.securityToggleHandlersSetup) {
           console.log('🔄 Setting up pending security toggles after final initialization...');
           setTimeout(() => {

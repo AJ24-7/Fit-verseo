@@ -17,6 +17,7 @@
       'sidebar.attendance': 'Attendance',
       'sidebar.payments': 'Payments',
       'sidebar.equipment': 'Equipment',
+      'sidebar.offers': 'Offers & Coupons',
       'sidebar.support': 'Support & Reviews',
       'sidebar.settings': 'Settings',
 
@@ -31,7 +32,137 @@
       'quick.actions.generateQR': 'Generate QR Code',
       'quick.actions.enrollBiometric': 'Biometric Enrollment',
       'quick.actions.deviceSetup': 'Setup Devices',
-      'quick.actions.sendNotification': 'Send Notification'
+      'quick.actions.sendNotification': 'Send Notification',
+
+      // Notifications
+      'notifications.all': 'All Notifications',
+      'notifications.markAllRead': 'Mark All Read',
+      'notifications.none': 'No new notifications',
+      'notifications.viewAll': 'View All',
+
+      // Filters
+      'filter.all': 'All',
+      'filter.system': 'System',
+      'filter.admin': 'Admin',
+      'filter.grievances': 'Grievances',
+      'filter.membership': 'Membership',
+      'filter.unread': 'Unread',
+
+      // Activities
+      'activities.offered': 'Activities Offered',
+      'activities.add': 'Add Activities',
+
+      // Photos
+      'photos.uploaded': 'Previously Uploaded Gym Photos',
+      'photos.upload': 'Upload Photo',
+
+      // Membership
+      'membership.plans': 'Membership Plans',
+      'membership.editPlans': 'Edit Plans',
+      'membership.edit': 'Edit Membership Plans',
+
+      // Stats
+      'stat.members': 'Members',
+      'stat.totalPayments': 'Total Payments',
+      'stat.attendance': 'Overall Attendance',
+      'stat.trainers': 'Active Trainers',
+
+      // Loading states
+      'loading.text': 'Loading...',
+      'calculating.text': 'Calculating...',
+
+      // Activities Messages
+      'activities.failed': 'Failed to load activities.',
+      'activities.none': 'No activities added yet.',
+      'activities.invalid': 'No valid activities found.',
+
+      // Trainers Messages
+      'trainers.pending.none': 'No pending trainers found.',
+      'trainers.approved.none': 'No approved trainers found.',
+      'trainers.rejected.none': 'No rejected trainers found.',
+
+      // Total/Price
+      'total.text': 'Total:',
+
+      // Form buttons
+      'saveAll': 'Save All',
+
+      // Search/Input
+      'search.actions': 'Search actions...',
+
+      // Payment
+      'payment.management': 'Payment Management',
+
+      // Offers & Coupons
+      'offers.management': 'Offers & Coupons Management',
+      'offers.create.custom': 'Create Custom Offer',
+      'offers.view.coupons': 'Active Coupons',
+      'offers.active.count': 'Active Offers',
+      'offers.revenue.generated': 'Revenue Generated',
+      'offers.this.month': 'This Month',
+      'offers.total.revenue': 'Total Revenue',
+      'offers.active.coupons': 'Active Coupons',
+      'offers.total.claims': 'Total Claims',
+      'offers.conversion.rate': 'Conversion Rate',
+      'offers.templates': 'Offer Templates',
+      'offers.active.campaigns': 'Active Campaigns',
+      'offers.coupon.management': 'Coupon Management',
+      'offers.analytics': 'Analytics',
+      'offers.quick.templates': 'Quick Offer Templates',
+      'offers.templates.description': 'Choose from pre-designed templates or create custom offers for your gym members',
+      'offers.loading.templates': 'Loading offer templates...',
+      'offers.active.campaigns.title': 'Active Campaigns',
+      'offers.campaigns.description': 'Monitor and manage your currently running promotional campaigns',
+      'offers.filter.status': 'Status:',
+      'offers.filter.all': 'All Campaigns',
+      'offers.filter.active': 'Active',
+      'offers.filter.paused': 'Paused',
+      'offers.filter.expired': 'Expired',
+      'offers.no.campaigns': 'No Active Campaigns',
+      'offers.campaigns.empty.message': 'Create your first promotional campaign to start attracting new members',
+      'offers.create.campaign': 'Create Campaign',
+      'offers.coupon.management.title': 'Coupon Management',
+      'offers.generate.coupon': 'Generate Coupon',
+      'offers.export.coupons': 'Export',
+      'offers.search.coupons': 'Search Coupons:',
+      'offers.search.placeholder': 'Search by code, type, or description...',
+      'offers.coupon.type': 'Type:',
+      'offers.filter.all.types': 'All Types',
+      'offers.filter.percentage': 'Percentage',
+      'offers.filter.fixed': 'Fixed Amount',
+      'offers.coupon.status': 'Status:',
+      'offers.filter.all.status': 'All Status',
+      'offers.status.active': 'Active',
+      'offers.status.expired': 'Expired',
+      'offers.status.disabled': 'Disabled',
+      'offers.table.code': 'Coupon Code',
+      'offers.table.type': 'Type',
+      'offers.table.discount': 'Discount',
+      'offers.table.usage': 'Usage',
+      'offers.table.expiry': 'Expiry Date',
+      'offers.table.status': 'Status',
+      'offers.table.actions': 'Actions',
+      'offers.no.coupons': 'No Coupons Found',
+      'offers.coupons.empty.message': 'Create your first coupon to offer discounts to your members',
+      'offers.create.first.coupon': 'Create First Coupon',
+      'offers.analytics.title': 'Offers & Coupons Analytics',
+      'offers.export.analytics': 'Export Report',
+      'offers.last.7.days': 'Last 7 Days',
+      'offers.last.30.days': 'Last 30 Days',
+      'offers.last.90.days': 'Last 90 Days',
+      'offers.last.year': 'Last Year',
+      'offers.usage.trends': 'Coupon Usage Trends',
+      'offers.discount.distribution': 'Discount Distribution',
+      'offers.chart.loading': 'Loading chart data...',
+      'offers.top.performing': 'Top Performing Offers',
+      'offers.recent.activity': 'Recent Activity',
+
+      // Dashboard Cards
+      'new.members': 'New Members',
+      'trial.bookings': 'Trial Bookings',
+      'attendance.trend': 'Attendance Trend',
+      'recent.activity': 'Recent Activity',
+      'equipment.gallery': 'Equipment Gallery'
     },
     hi: {
       'settings.language.title': 'भाषा और क्षेत्र',
@@ -60,7 +191,136 @@
       'quick.actions.generateQR': 'क्यूआर कोड बनाएं',
       'quick.actions.enrollBiometric': 'बायोमेट्रिक एनरोलमेंट',
       'quick.actions.deviceSetup': 'डिवाइस सेटअप',
-      'quick.actions.sendNotification': 'सूचना भेजें'
+      'quick.actions.sendNotification': 'सूचना भेजें',
+
+      // Notifications
+      'notifications.all': 'सभी सूचनाएँ',
+      'notifications.markAllRead': 'सभी पढ़ा चिह्नित करें',
+      'notifications.none': 'कोई नई सूचनाएँ नहीं',
+      'notifications.viewAll': 'सभी देखें',
+
+      // Filters
+      'filter.all': 'सभी',
+      'filter.system': 'सिस्टम',
+      'filter.admin': 'एडमिन',
+      'filter.grievances': 'शिकायतें',
+      'filter.membership': 'सदस्यता',
+      'filter.unread': 'अपठित',
+
+      // Activities
+      'activities.offered': 'प्रस्तावित गतिविधियाँ',
+      'activities.add': 'गतिविधियाँ जोड़ें',
+
+      // Photos
+      'photos.uploaded': 'पहले अपलोड की गई जिम फोटो',
+      'photos.upload': 'फोटो अपलोड करें',
+
+      // Membership
+      'membership.plans': 'सदस्यता प्लान',
+      'membership.editPlans': 'प्लान संपादित करें',
+      'membership.edit': 'सदस्यता प्लान संपादित करें',
+
+      // Stats
+      'stat.members': 'सदस्य',
+      'stat.totalPayments': 'कुल भुगतान',
+      'stat.attendance': 'कुल उपस्थिति',
+      'stat.trainers': 'सक्रिय ट्रेनर्स',
+
+      // Loading states
+      'loading.text': 'लोड हो रहा है...',
+      'calculating.text': 'गणना हो रही है...',
+      // Activities Messages
+      'activities.failed': 'गतिविधियाँ लोड करने में विफल।',
+      'activities.none': 'अभी तक कोई गतिविधियाँ नहीं जोड़ी गई हैं।',
+      'activities.invalid': 'कोई वैध गतिविधियाँ नहीं मिलीं।',
+
+      // Trainers Messages
+      'trainers.pending.none': 'कोई लंबित ट्रेनर नहीं मिला।',
+      'trainers.approved.none': 'कोई स्वीकृत ट्रेनर नहीं मिला।',
+      'trainers.rejected.none': 'कोई अस्वीकृत ट्रेनर नहीं मिला।',
+
+      // Total/Price
+      'total.text': 'कुल:',
+
+      // Form buttons
+      'saveAll': 'सभी सहेजें',
+
+      // Search/Input
+      'search.actions': 'क्रियाएं खोजें...',
+
+      // Payment
+      'payment.management': 'भुगतान प्रबंधन',
+
+      // Offers & Coupons
+      'offers.management': 'ऑफर और कूपन प्रबंधन',
+      'offers.create.custom': 'कस्टम ऑफर बनाएं',
+      'offers.view.coupons': 'सक्रिय कूपन',
+      'offers.active.count': 'सक्रिय ऑफर',
+      'offers.revenue.generated': 'उत्पन्न आयकर',
+      'offers.this.month': 'इस महीने',
+      'offers.total.revenue': 'कुल आयकर',
+      'offers.active.coupons': 'सक्रिय कूपन',
+      'offers.total.claims': 'कुल दावे',
+      'offers.conversion.rate': 'रूपांतरण दर',
+      'offers.templates': 'ऑफर टेम्प्लेट',
+      'offers.active.campaigns': 'सक्रिय अभियान',
+      'offers.coupon.management': 'कूपन प्रबंधन',
+      'offers.analytics': 'विश्लेषिकी',
+      'offers.quick.templates': 'त्वरित ऑफर टेम्प्लेट',
+      'offers.templates.description': 'पूर्व-डिज़ाइन किए गए टेम्प्लेट चुनें या अपने जिम सदस्यों के लिए कस्टम ऑफर बनाएं',
+      'offers.loading.templates': 'ऑफर टेम्प्लेट लोड हो रहे हैं...',
+      'offers.active.campaigns.title': 'सक्रिय अभियान',
+      'offers.campaigns.description': 'अपने वर्तमान में चल रहे प्रचार अभियानों की निगरानी और प्रबंधन करें',
+      'offers.filter.status': 'स्थिति:',
+      'offers.filter.all': 'सभी अभियान',
+      'offers.filter.active': 'सक्रिय',
+      'offers.filter.paused': 'रोका गया',
+      'offers.filter.expired': 'समाप्त',
+      'offers.no.campaigns': 'कोई सक्रिय अभियान नहीं',
+      'offers.campaigns.empty.message': 'नए सदस्यों को आकर्षित करने के लिए अपना पहला प्रचार अभियान बनाएं',
+      'offers.create.campaign': 'अभियान बनाएं',
+      'offers.coupon.management.title': 'कूपन प्रबंधन',
+      'offers.generate.coupon': 'कूपन बनाएं',
+      'offers.export.coupons': 'निर्यात',
+      'offers.search.coupons': 'कूपन खोजें:',
+      'offers.search.placeholder': 'कोड, प्रकार या विवरण से खोजें...',
+      'offers.coupon.type': 'प्रकार:',
+      'offers.filter.all.types': 'सभी प्रकार',
+      'offers.filter.percentage': 'प्रतिशत',
+      'offers.filter.fixed': 'निश्चित राशि',
+      'offers.coupon.status': 'स्थिति:',
+      'offers.filter.all.status': 'सभी स्थिति',
+      'offers.status.active': 'सक्रिय',
+      'offers.status.expired': 'समाप्त',
+      'offers.status.disabled': 'निष्क्रिय',
+      'offers.table.code': 'कूपन कोड',
+      'offers.table.type': 'प्रकार',
+      'offers.table.discount': 'छूट',
+      'offers.table.usage': 'उपयोग',
+      'offers.table.expiry': 'समाप्ति तिथि',
+      'offers.table.status': 'स्थिति',
+      'offers.table.actions': 'क्रियाएं',
+      'offers.no.coupons': 'कोई कूपन नहीं मिला',
+      'offers.coupons.empty.message': 'अपने सदस्यों को छूट देने के लिए अपना पहला कूपन बनाएं',
+      'offers.create.first.coupon': 'पहला कूपन बनाएं',
+      'offers.analytics.title': 'ऑफर और कूपन विश्लेषिकी',
+      'offers.export.analytics': 'रिपोर्ट निर्यात करें',
+      'offers.last.7.days': 'पिछले 7 दिन',
+      'offers.last.30.days': 'पिछले 30 दिन',
+      'offers.last.90.days': 'पिछले 90 दिन',
+      'offers.last.year': 'पिछला साल',
+      'offers.usage.trends': 'कूपन उपयोग रुझान',
+      'offers.discount.distribution': 'छूट वितरण',
+      'offers.chart.loading': 'चार्ट डेटा लोड हो रहा है...',
+      'offers.top.performing': 'सर्वश्रेष्ठ प्रदर्शन करने वाले ऑफर',
+      'offers.recent.activity': 'हाल की गतिविधि',
+
+      // Dashboard Cards
+      'new.members': 'नए सदस्य',
+      'trial.bookings': 'ट्रायल बुकिंग',
+      'attendance.trend': 'उपस्थिति रुझान',
+      'recent.activity': 'हाल की गतिविधि',
+      'equipment.gallery': 'उपकरण गैलरी'
     }
   };
 
@@ -86,6 +346,7 @@
       'Attendance': 'Attendance',
       'Payments': 'Payments',
       'Equipment': 'Equipment',
+      'Offers & Coupons': 'Offers & Coupons',
       'Support & Reviews': 'Support & Reviews',
       'Dashboard Overview': 'Dashboard Overview',
       'Quick Actions': 'Quick Actions',
@@ -144,7 +405,7 @@
       'Year': 'Year',
       // Month names
       'Jan': 'Jan','Feb': 'Feb','Mar': 'Mar','Apr': 'Apr','May': 'May','Jun': 'Jun','Jul': 'Jul','Aug': 'Aug','Sep': 'Sep','Oct': 'Oct','Nov': 'Nov','Dec': 'Dec',
-      'January': 'January','February': 'February','March': 'March','April': 'April','May': 'May','June': 'June','July': 'July','August': 'August','September': 'September','October': 'October','November': 'November','December': 'December',
+      'January': 'January','February': 'February','March': 'March','April': 'April','June': 'June','July': 'July','August': 'August','September': 'September','October': 'October','November': 'November','December': 'December',
       // Common actions, modals, forms
       'Close': 'Close','Apply': 'Apply','Reset': 'Reset','Delete': 'Delete','Remove': 'Remove','Update': 'Update','Create': 'Create','Submit': 'Submit',
       'Next': 'Next','Previous': 'Previous','Back': 'Back','Continue': 'Continue','Search': 'Search','Filter': 'Filter','Clear': 'Clear','Download': 'Download','Print': 'Print',
@@ -157,21 +418,21 @@
       // Notifications top bar
       'All Notifications': 'All Notifications','Mark All Read': 'Mark All Read','System': 'System','Admin': 'Admin','Grievances': 'Grievances','Membership': 'Membership','Unread': 'Unread','No new notifications': 'No new notifications',
       // Dashboard misc
-      'Send Notification': 'Send Notification','Loading new members...': 'Loading new members...','Calculating...': 'Calculating...','Recent Activity': 'Recent Activity','Equipment Gallery': 'Equipment Gallery',
+      'Loading new members...': 'Loading new members...','Calculating...': 'Calculating...','Recent Activity': 'Recent Activity','Equipment Gallery': 'Equipment Gallery',
       // Payment Tab
-      'Payment Management': 'Payment Management','Add Payment': 'Add Payment','Amount Received Breakdown': 'Amount Received Breakdown','Amount Paid Breakdown': 'Amount Paid Breakdown',
-      'Pending Payments Details': 'Pending Payments Details','Due Payments Details': 'Due Payments Details','Profit/Loss Analysis': 'Profit/Loss Analysis','Payment Trends': 'Payment Trends','Loading payments...': 'Loading payments...',
-      'Loading pending payments...': 'Loading pending payments...','View Full Payment History': 'View Full Payment History',
+        'Add Payment': 'Add Payment','Amount Received Breakdown': 'Amount Received Breakdown','Amount Paid Breakdown': 'Amount Paid Breakdown',
+        'Pending Payments Details': 'Pending Payments Details','Due Payments Details': 'Due Payments Details','Profit/Loss Analysis': 'Profit/Loss Analysis','Loading payments...': 'Loading payments...',
+        'Loading pending payments...': 'Loading pending payments...','View Full Payment History': 'View Full Payment History',
       // Members & Tables
       'All Members': 'All Members','Search by Name, Email, Phone, Membership ID...': 'Search by Name, Email, Phone, Membership ID...','Expiring in 3 Days': 'Expiring in 3 Days','Expiring in 1 Day': 'Expiring in 1 Day',
-      'Profile': 'Profile','Membership ID': 'Membership ID','Age': 'Age','Gender': 'Gender','Join Date': 'Join Date','Valid Until': 'Valid Until','Amount Paid': 'Amount Paid',
+      'Profile': 'Profile','Membership ID': 'Membership ID','Age': 'Age','Gender': 'Gender','Join Date': 'Join Date','Valid Until': 'Valid Until',
       // Trainer Management
       'Trainer Management': 'Trainer Management','Approved': 'Approved','Rejected': 'Rejected','Approve Selected': 'Approve Selected','Reject Selected': 'Reject Selected','No trainers found': 'No trainers found',
       // Equipment
-      'Equipment Management': 'Equipment Management','Add Equipment': 'Add Equipment','Bulk Import': 'Bulk Import','Total Equipment': 'Total Equipment','Available': 'Available','Under Maintenance': 'Under Maintenance','Out of Order': 'Out of Order',
+      'Equipment Management': 'Equipment Management','Bulk Import': 'Bulk Import','Total Equipment': 'Total Equipment','Available': 'Available','Under Maintenance': 'Under Maintenance','Out of Order': 'Out of Order',
       // Support & Reviews
-      'Support & Communications Center': 'Support & Communications Center','Raise Grievance': 'Raise Grievance','Notifications': 'Notifications','Reviews': 'Reviews','Grievances': 'Grievances','Communications': 'Communications',
-      'Notification Center': 'Notification Center','All Types': 'All Types','Mark All Read': 'Mark All Read','Loading notifications...': 'Loading notifications...',
+      'Support & Communications Center': 'Support & Communications Center','Raise Grievance': 'Raise Grievance','Notifications': 'Notifications','Reviews': 'Reviews','Communications': 'Communications',
+      'Notification Center': 'Notification Center','All Types': 'All Types','Loading notifications...': 'Loading notifications...',
       'Review Management': 'Review Management','All Ratings': 'All Ratings','All Reviews': 'All Reviews','Pending Reply': 'Pending Reply','Loading reviews...': 'Loading reviews...',
       'Grievance Management': 'Grievance Management','All Priority': 'All Priority','New Grievance': 'New Grievance','Loading grievances...': 'Loading grievances...',
       'Member Communications': 'Member Communications','All Conversations': 'All Conversations','Active': 'Active','Pending Response': 'Pending Response','Resolved': 'Resolved','Search members...': 'Search members...','Broadcast': 'Broadcast',
@@ -197,6 +458,7 @@
       'Attendance': 'उपस्थिति',
       'Payments': 'भुगतान',
       'Equipment': 'उपकरण',
+      'Offers & Coupons': 'ऑफर और कूपन',
       'Support & Reviews': 'समर्थन और समीक्षा',
       'Dashboard Overview': 'डैशबोर्ड अवलोकन',
       'Quick Actions': 'क्विक एक्शन',
@@ -254,7 +516,7 @@
       'Month': 'महीना',
       'Year': 'वर्ष',
       // Month names
-      'Jan': 'जन','Feb': 'फ़र','Mar': 'मार्च','Apr': 'अप्रै','May': 'मई','Jun': 'जून','Jul': 'जुलाई','Aug': 'अग','Sep': 'सित','Oct': 'अक्ट','Nov': 'नव','Dec': 'दिस',
+      'Jan': 'जन','Feb': 'फ़र','Mar': 'मार्च','Apr': 'अप्रै','Jun': 'जून','Jul': 'जुलाई','Aug': 'अग','Sep': 'सित','Oct': 'अक्ट','Nov': 'नव','Dec': 'दिस',
       'January': 'जनवरी','February': 'फ़रवरी','March': 'मार्च','April': 'अप्रैल','May': 'मई','June': 'जून','July': 'जुलाई','August': 'अगस्त','September': 'सितंबर','October': 'अक्टूबर','November': 'नवंबर','December': 'दिसंबर',
       // Common actions, modals, forms
       'Close': 'बंद करें','Apply': 'लागू करें','Reset': 'रीसेट','Delete': 'हटाएं','Remove': 'हटाएं','Update': 'अपडेट करें','Create': 'बनाएं','Submit': 'सबमिट करें',
@@ -268,21 +530,21 @@
       // Notifications top bar
       'All Notifications': 'सभी सूचनाएँ','Mark All Read': 'सभी पढ़ा चिह्नित करें','System': 'सिस्टम','Admin': 'एडमिन','Grievances': 'शिकायतें','Membership': 'सदस्यता','Unread': 'अपठित','No new notifications': 'कोई नई सूचनाएँ नहीं',
       // Dashboard misc
-      'Send Notification': 'सूचना भेजें','Loading new members...': 'नए सदस्यों को लोड किया जा रहा है...','Calculating...': 'गणना हो रही है...','Recent Activity': 'हाल की गतिविधि','Equipment Gallery': 'उपकरण गैलरी',
+      'Loading new members...': 'नए सदस्यों को लोड किया जा रहा है...','Calculating...': 'गणना हो रही है...','Recent Activity': 'हाल की गतिविधि','Equipment Gallery': 'उपकरण गैलरी',
       // Payment Tab
-      'Payment Management': 'भुगतान प्रबंधन','Add Payment': 'भुगतान जोड़ें','Amount Received Breakdown': 'प्राप्त राशि का विवरण','Amount Paid Breakdown': 'भुगतान की गई राशि का विवरण',
-      'Pending Payments Details': 'लंबित भुगतान विवरण','Due Payments Details': 'देय भुगतान विवरण','Profit/Loss Analysis': 'लाभ/हानि विश्लेषण','Payment Trends': 'भुगतान रुझान','Loading payments...': 'भुगतान लोड हो रहे हैं...',
+        'Add Payment': 'भुगतान जोड़ें','Amount Received Breakdown': 'प्राप्त राशि का विवरण','Amount Paid Breakdown': 'भुगतान की गई राशि का विवरण',
+        'Pending Payments Details': 'लंबित भुगतान विवरण','Due Payments Details': 'देय भुगतान विवरण','Profit/Loss Analysis': 'लाभ/हानि विश्लेषण','Loading payments...': 'भुगतान लोड हो रहे हैं...',
       'Loading pending payments...': 'लंबित भुगतान लोड हो रहे हैं...','View Full Payment History': 'पूर्ण भुगतान इतिहास देखें',
       // Members & Tables
       'All Members': 'सभी सदस्य','Search by Name, Email, Phone, Membership ID...': 'नाम, ईमेल, फ़ोन, सदस्यता आईडी से खोजें...','Expiring in 3 Days': '3 दिनों में समाप्त हो रहा है','Expiring in 1 Day': '1 दिन में समाप्त हो रहा है',
-      'Profile': 'प्रोफ़ाइल','Membership ID': 'सदस्यता आईडी','Age': 'आयु','Gender': 'लिंग','Join Date': 'जुड़ने की तिथि','Valid Until': 'मान्य तिथि','Amount Paid': 'भुगतान की राशि',
+      'Profile': 'प्रोफ़ाइल','Membership ID': 'सदस्यता आईडी','Age': 'आयु','Gender': 'लिंग','Join Date': 'जुड़ने की तिथि','Valid Until': 'मान्य तिथि',
       // Trainer Management
       'Trainer Management': 'ट्रेनर प्रबंधन','Approved': 'स्वीकृत','Rejected': 'अस्वीकृत','Approve Selected': 'चयनित स्वीकृत करें','Reject Selected': 'चयनित अस्वीकृत करें','No trainers found': 'कोई ट्रेनर नहीं मिला',
       // Equipment
-      'Equipment Management': 'उपकरण प्रबंधन','Add Equipment': 'उपकरण जोड़ें','Bulk Import': 'बल्क इम्पोर्ट','Total Equipment': 'कुल उपकरण','Available': 'उपलब्ध','Under Maintenance': 'रखरखाव में','Out of Order': 'खराब',
+      'Equipment Management': 'उपकरण प्रबंधन','Bulk Import': 'बल्क इम्पोर्ट','Total Equipment': 'कुल उपकरण','Available': 'उपलब्ध','Under Maintenance': 'रखरखाव में','Out of Order': 'खराब',
       // Support & Reviews
-      'Support & Communications Center': 'समर्थन और संचार केंद्र','Raise Grievance': 'शिकायत दर्ज करें','Notifications': 'सूचनाएँ','Reviews': 'समीक्षाएँ','Grievances': 'शिकायतें','Communications': 'संचार',
-      'Notification Center': 'सूचना केंद्र','All Types': 'सभी प्रकार','Mark All Read': 'सभी पढ़ा चिह्नित करें','Loading notifications...': 'सूचनाएँ लोड हो रही हैं...',
+      'Support & Communications Center': 'समर्थन और संचार केंद्र','Raise Grievance': 'शिकायत दर्ज करें','Notifications': 'सूचनाएँ','Reviews': 'समीक्षाएँ','Communications': 'संचार',
+      'Notification Center': 'सूचना केंद्र','All Types': 'सभी प्रकार','Loading notifications...': 'सूचनाएँ लोड हो रही हैं...',
       'Review Management': 'समीक्षा प्रबंधन','All Ratings': 'सभी रेटिंग','All Reviews': 'सभी समीक्षाएँ','Pending Reply': 'लंबित उत्तर','Loading reviews...': 'समीक्षाएँ लोड हो रही हैं...',
       'Grievance Management': 'शिकायत प्रबंधन','All Priority': 'सभी प्राथमिकता','New Grievance': 'नई शिकायत','Loading grievances...': 'शिकायतें लोड हो रही हैं...',
       'Member Communications': 'सदस्य संचार','All Conversations': 'सभी वार्तालाप','Active': 'सक्रिय','Pending Response': 'लंबित उत्तर','Resolved': 'सुलझाया गया','Search members...': 'सदस्यों को खोजें...','Broadcast': 'प्रसारण',
@@ -343,6 +605,14 @@
       const key = normalizeText(ph);
       const v = dictLookup(dict, key);
       if (v) el.setAttribute('placeholder', v);
+    });
+    
+    // Handle explicit placeholder translation attributes
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (dict[key]) {
+        el.setAttribute('placeholder', dict[key]);
+      }
     });
   }
 
@@ -408,9 +678,9 @@
     const dict = translations[lang] || translations[DEFAULT_LANG];
     const phrases = getPhraseDictFor(lang);
 
-    // 1) Translate explicit keys
-    root.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
+    // 1) Translate explicit keys using data-i18n and data-translate
+    root.querySelectorAll('[data-i18n], [data-translate]').forEach(el => {
+      const key = el.getAttribute('data-i18n') || el.getAttribute('data-translate');
       if (dict[key]) {
         setTextPreserveIcon(el, dict[key]);
       }
@@ -500,12 +770,23 @@
       const lang = select.value;
       setLang(lang);
       applyTranslations();
+      
+      // Trigger custom event for dynamic content updates
+      window.dispatchEvent(new CustomEvent('languageChanged', { 
+        detail: { language: lang } 
+      }));
     });
+  }
+
+  function t(key, defaultValue = '') {
+    const lang = getLang();
+    const dict = translations[lang] || translations[DEFAULT_LANG];
+    return dict[key] || defaultValue || key;
   }
 
   // Expose minimal API
   window.GymI18n = {
-    getLang, setLang, applyTranslations, translations
+    getLang, setLang, applyTranslations, translations, t
   };
 
   // Initialize on DOMContentLoaded

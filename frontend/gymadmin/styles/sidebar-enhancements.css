@@ -16,8 +16,8 @@ body {
 
 /* Hardware acceleration for smooth interactions */
 .sidebar,
-.mobile-sidebar-dropdown,
-.mobile-sidebar-backdrop,
+.mobile-menu-bar,
+.mobile-menu-backdrop,
 .hamburger-menu,
 .menu-link {
   will-change: transform;
@@ -26,6 +26,14 @@ body {
 }
 
 /* =============== CORE SIDEBAR LAYOUT =============== */
+
+/* Dashboard wrapper for proper layout */
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
 .sidebar {
   position: fixed;
   left: 0;
@@ -33,57 +41,205 @@ body {
   width: 270px;
   height: 100vh;
   background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
-  box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+  box-shadow: none; /* Remove shadow to prevent visual gaps */
   z-index: 1000;
-  overflow-y: auto;
+  overflow-y: hidden; /* Prevent scrolling - menu should fit perfectly */
   overflow-x: hidden;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.15s ease;
   contain: layout style paint;
-  scroll-behavior: smooth;
-  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar.collapsed {
   transform: translateX(-100%);
 }
 
-/* =============== DESKTOP SIDEBAR COLLAPSED STATE =============== */
-.sidebar-collapsed .sidebar,
-.sidebar.sidebar-collapsed {
-  left: -270px;
-  transform: translateX(0);
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* =============== SIDEBAR MENU LAYOUT - PERFECT FIT =============== */
+.sidebar .logo {
+  height: 70px; /* Reduced height for logo area */
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 15px;
+  border-bottom: 1px solid #333;
 }
 
-/* Ensure main content and navbar adjust properly when sidebar is collapsed */
-.sidebar-collapsed .main-content,
-body.sidebar-collapsed .main-content {
-  margin-left: 0 !important;
+.sidebar .menu {
+  flex: 1; /* Take remaining space */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Start from top instead of space-evenly */
+  padding: 10px 0; /* Add some padding */
+  margin: 0;
+  list-style: none;
+  min-height: 0; /* Allow shrinking */
+  overflow: hidden; /* Ensure no overflow */
+}
+
+.sidebar .menu-item {
+  flex: none; /* Don't flex items, use fixed height */
+  display: flex;
+  height: calc((100vh - 70px - 40px - 20px) / 9); /* Distribute 9 items evenly in available space */
+  min-height: 45px; /* Minimum height for usability */
+  max-height: 55px; /* Maximum height to prevent oversizing */
+}
+
+.sidebar .toggle-btn {
+  height: 40px; /* Reduced height for toggle button */
+  flex-shrink: 0;
+  position: relative;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 212, 255, 0.1);
+  border: none;
+  color: #00d4ff;
+  width: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background-color 0.08s ease, color 0.08s ease;
+  border-top: 1px solid #333;
+}
+
+.sidebar .toggle-btn:hover {
+  background: rgba(0, 212, 255, 0.2);
+  color: #ffffff;
+}
+
+/* =============== COMPREHENSIVE CONTENT POSITIONING FIX =============== */
+
+/* CRITICAL: main-content container should have NO positioning - it's just a wrapper */
+.main-content {
+  margin: 0 !important;
+  padding: 0 !important;
   width: 100% !important;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100vh !important;
+  position: relative !important;
+  background: transparent !important;
+  z-index: 1 !important;
+  overflow: visible !important;
 }
 
+/* ALL content positioning goes to the actual tab elements */
+.content,
+.tab-content,
+#dashboardTab,
+#memberDisplayTab,
+#trainerTab,
+#settingsTab,
+#attendanceTab,
+#paymentTab,
+#equipmentTab,
+#supportReviewsTab,
+#offersTab {
+  margin-left: 270px !important; /* Exactly match sidebar width */
+  margin-top: 60px !important; /* Match top navbar height */
+  padding: 20px !important;
+  min-height: calc(100vh - 60px) !important;
+  background: #f8f9fa !important;
+  width: calc(100vw - 270px) !important; /* Fill remaining space exactly */
+  box-sizing: border-box !important;
+  transition: margin-left 0.15s ease, width 0.15s ease !important;
+  position: relative !important;
+  z-index: 1 !important;
+  left: 0 !important; /* Ensure no extra offset */
+  top: 0 !important; /* Ensure no extra offset */
+  border: none !important; /* Remove any borders that might cause gaps */
+}
+
+/* Legacy main-content class support - NO POSITIONING */
+
+
+/* Top nav positioning - PERFECT ALIGNMENT WITH SIDEBAR */
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 270px; /* Exactly match sidebar width */
+  width: calc(100vw - 270px); /* Fill remaining space exactly */
+  height: 60px;
+  z-index: 1203;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 30px;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px #333;
+  border-bottom: 1px solid #333;
+  box-sizing: border-box;
+  transition: left 0.15s ease, width 0.15s ease;
+  margin: 0; /* Ensure no extra margins */
+}
+
+/* Top nav collapsed state */
 .sidebar-collapsed .top-nav,
-body.sidebar-collapsed .top-nav {
+body.sidebar-collapsed .top-nav,
+.sidebar.sidebar-collapsed ~ .top-nav {
   left: 0 !important;
   width: 100vw !important;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.15s ease, width 0.15s ease;
+}
+
+/* =============== DESKTOP SIDEBAR COLLAPSED STATE - FIXED =============== */
+.sidebar-collapsed .sidebar,
+.sidebar.sidebar-collapsed,
+body.sidebar-collapsed .sidebar {
+  transform: translateX(-270px) !important; /* Hide completely off-screen using exact width */
+}
+
+/* FIXED: Content adjustment when sidebar is collapsed - ONLY for tabs, NOT wrapper */
+.sidebar-collapsed .content,
+.sidebar-collapsed .tab-content,
+.sidebar-collapsed #dashboardTab,
+.sidebar-collapsed #memberDisplayTab,
+.sidebar-collapsed #trainerTab,
+.sidebar-collapsed #settingsTab,
+.sidebar-collapsed #attendanceTab,
+.sidebar-collapsed #paymentTab,
+.sidebar-collapsed #equipmentTab,
+.sidebar-collapsed #supportReviewsTab,
+.sidebar-collapsed #offersTab,
+body.sidebar-collapsed .content,
+body.sidebar-collapsed .tab-content,
+body.sidebar-collapsed #dashboardTab,
+body.sidebar-collapsed #memberDisplayTab,
+body.sidebar-collapsed #trainerTab,
+body.sidebar-collapsed #settingsTab,
+body.sidebar-collapsed #attendanceTab,
+body.sidebar-collapsed #paymentTab,
+body.sidebar-collapsed #equipmentTab,
+body.sidebar-collapsed #supportReviewsTab,
+body.sidebar-collapsed #offersTab {
+  margin-left: 0 !important;
+  width: 100vw !important;
+  transition: margin-left 0.15s ease, width 0.15s ease !important;
+}
+
+/* Main-content wrapper remains unchanged in collapsed state */
+.sidebar-collapsed .main-content,
+body.sidebar-collapsed .main-content {
+  margin: 0 !important;
+  width: 100% !important;
+  padding: 0 !important;
 }
 
 /* =============== ULTRA-FAST MENU LINK STYLES =============== */
+/* PERFORMANCE OPTIMIZED MENU LINKS - 0.08s transitions for ultra-fast response */
 .sidebar .menu-link {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 15px 20px;
+  padding: 8px 15px; /* Optimized padding for better fit */
   text-decoration: none;
   color: #b8b8b8;
   border-radius: 0;
   margin: 0;
-  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: background-color, color, transform;
+  /* Ultra-fast 0.08s transitions coordinated with UltraFastSidebar performance */
+  transition: background-color 0.08s ease, color 0.08s ease, border-left-color 0.08s ease;
+  will-change: background-color, color, border-left-color;
   backface-visibility: hidden;
   border-left: 4px solid transparent;
   font-weight: 500;
@@ -91,13 +247,15 @@ body.sidebar-collapsed .top-nav {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   contain: layout style;
+  height: 100%; /* Take full height of menu item */
+  width: 100%; /* Take full width */
+  box-sizing: border-box;
 }
 
 .sidebar .menu-link:hover {
   background: linear-gradient(90deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 212, 255, 0.08) 100%);
   color: #00d4ff;
   border-left: 4px solid #00d4ff;
-  transform: translateX(2px);
 }
 
 .sidebar .menu-link.active {
@@ -109,27 +267,24 @@ body.sidebar-collapsed .top-nav {
 }
 
 .sidebar .menu-icon {
-  width: 22px;
+  width: 20px; /* Reduced width for better fit */
   height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 15px;
+  margin-right: 12px; /* Reduced margin */
   color: inherit;
-  font-size: 18px;
-  transition: all 0.15s ease;
+  font-size: 16px; /* Smaller icons for perfect fit */
+  transition: color 0.08s ease;
+  flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 .sidebar .menu-link:hover .menu-icon {
   color: #00d4ff;
-  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-  transform: scale(1.05);
 }
 
 .sidebar .menu-link.active .menu-icon {
   color: #ffffff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-  transform: scale(1.05);
 }
 
 .sidebar .menu-text {
@@ -138,6 +293,7 @@ body.sidebar-collapsed .top-nav {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 14px; /* Slightly smaller text for better fit */
 }
 
 /* =============== MOBILE HAMBURGER MENU =============== */
@@ -152,7 +308,7 @@ body.sidebar-collapsed .top-nav {
   border-radius: 8px;
   padding: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.08s ease, transform 0.08s ease;
   box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
   width: 48px;
   height: 48px;
@@ -162,7 +318,6 @@ body.sidebar-collapsed .top-nav {
 }
 
 .hamburger-menu:hover {
-  transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(0, 212, 255, 0.4);
   background: #0099cc;
 }
@@ -177,15 +332,15 @@ body.sidebar-collapsed .top-nav {
   transition: all 0.2s ease;
 }
 
-/* =============== MOBILE SIDEBAR DROPDOWN =============== */
-.mobile-sidebar-dropdown {
+/* =============== MOBILE MENU BAR =============== */
+.mobile-menu-bar {
   position: fixed;
   top: 0;
   left: -100%;
-  width: 280px;
+  width: 320px;
   height: 100vh;
-  background: #ffffff;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1200;
   overflow-y: auto;
@@ -193,17 +348,61 @@ body.sidebar-collapsed .top-nav {
   display: none;
 }
 
-.mobile-sidebar-dropdown.show {
+.mobile-menu-bar.show {
   left: 0;
+  display: block;
 }
 
-.mobile-sidebar-dropdown .menu-link {
+.mobile-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.mobile-menu-logo {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-menu-close {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-menu-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-menu-nav {
+  padding: 16px 0;
+}
+
+.mobile-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mobile-menu-item {
+  margin: 0;
+}
+
+.mobile-menu-bar .menu-link {
   color: #b8b8b8;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   display: flex;
   align-items: center;
-  padding: 15px 20px;
+  padding: 16px 24px;
   border-radius: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
@@ -211,36 +410,36 @@ body.sidebar-collapsed .top-nav {
   position: relative;
 }
 
-.mobile-sidebar-dropdown .menu-link:hover,
-.mobile-sidebar-dropdown .menu-link.active {
+.mobile-menu-bar .menu-link:hover,
+.mobile-menu-bar .menu-link.active {
   background: linear-gradient(90deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 212, 255, 0.08) 100%);
   color: #00d4ff;
   border-left: 4px solid #00d4ff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.mobile-sidebar-dropdown .menu-icon {
-  margin-right: 15px;
+.mobile-menu-bar .menu-icon {
+  margin-right: 16px;
   color: inherit;
   font-size: 18px;
-  width: 22px;
+  width: 24px;
   text-align: center;
   transition: all 0.3s ease;
 }
 
-.mobile-sidebar-dropdown .menu-link:hover .menu-icon,
-.mobile-sidebar-dropdown .menu-link.active .menu-icon {
+.mobile-menu-bar .menu-link:hover .menu-icon,
+.mobile-menu-bar .menu-link.active .menu-icon {
   color: #00d4ff;
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
-.mobile-sidebar-dropdown .menu-text {
+.mobile-menu-bar .menu-text {
   flex: 1;
   font-weight: inherit;
 }
 
-/* =============== MOBILE BACKDROP =============== */
-.mobile-sidebar-backdrop {
+/* =============== MOBILE MENU BACKDROP =============== */
+.mobile-menu-backdrop {
   position: fixed;
   top: 0;
   left: 0;
@@ -254,8 +453,8 @@ body.sidebar-collapsed .top-nav {
   transition: all 0.3s ease;
 }
 
-.mobile-sidebar-backdrop.show,
-.mobile-sidebar-backdrop.active {
+.mobile-menu-backdrop.show,
+.mobile-menu-backdrop.active {
   opacity: 1;
   visibility: visible;
 }
@@ -267,21 +466,89 @@ body.sidebar-collapsed .top-nav {
   }
   
   .sidebar {
-    display: none;
+    transform: translateX(-100%);
+    display: none !important;
   }
   
-  .mobile-sidebar-dropdown {
-    display: block;
+  /* Mobile menu bar starts hidden, only shows with .show class on hamburger click */
+  .mobile-menu-bar {
+    display: none !important;
   }
   
+  .mobile-menu-bar.show {
+    display: block !important;
+  }
+  
+  /* Mobile: Ensure all content tabs are full width with no sidebar gap */
+  .content,
+  .tab-content,
+  #dashboardTab,
+  #memberDisplayTab,
+  #trainerTab,
+  #settingsTab,
+  #attendanceTab,
+  #paymentTab,
+  #equipmentTab,
+  #supportReviewsTab,
+  #offersTab {
+    margin-left: 0 !important;
+    margin-top: 60px !important;
+    width: 100vw !important;
+    min-height: calc(100vh - 60px) !important;
+    padding: 15px !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Main-content wrapper stays as wrapper only */
   .main-content {
-    margin-left: 0;
-    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  
+  .top-nav {
+    left: 0 !important;
+    width: 100vw !important;
+  }
+  
+  /* Override any collapsed states on mobile - affects only content tabs */
+  .sidebar-collapsed .content,
+  .sidebar-collapsed .tab-content,
+  .sidebar-collapsed #dashboardTab,
+  .sidebar-collapsed #memberDisplayTab,
+  .sidebar-collapsed #trainerTab,
+  .sidebar-collapsed #settingsTab,
+  .sidebar-collapsed #attendanceTab,
+  .sidebar-collapsed #paymentTab,
+  .sidebar-collapsed #equipmentTab,
+  .sidebar-collapsed #supportReviewsTab,
+  .sidebar-collapsed #offersTab,
+  body.sidebar-collapsed .content,
+  body.sidebar-collapsed .tab-content,
+  body.sidebar-collapsed #dashboardTab,
+  body.sidebar-collapsed #memberDisplayTab,
+  body.sidebar-collapsed #trainerTab,
+  body.sidebar-collapsed #settingsTab,
+  body.sidebar-collapsed #attendanceTab,
+  body.sidebar-collapsed #paymentTab,
+  body.sidebar-collapsed #equipmentTab,
+  body.sidebar-collapsed #supportReviewsTab,
+  body.sidebar-collapsed #offersTab {
+    margin-left: 0 !important;
+    width: 100vw !important;
+  }
+  
+  /* Main-content wrapper remains as wrapper on mobile */
+  .sidebar-collapsed .main-content,
+  body.sidebar-collapsed .main-content {
+    margin: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
   }
 }
 
 @media (min-width: 901px) {
-  .mobile-sidebar-dropdown {
+  .mobile-menu-bar {
     display: none !important;
   }
   
@@ -291,24 +558,6 @@ body.sidebar-collapsed .top-nav {
   
   .sidebar {
     display: block;
-  }
-}
-
-/* =============== MAIN CONTENT LAYOUT =============== */
-.main-content {
-  margin-left: 270px;
-  min-height: 100vh;
-  background-color: #f8f9fa;
-  transition: margin-left 0.3s ease;
-  z-index: 10;
-  position: relative;
-  padding-top: 70px; /* Account for fixed navbar height */
-}
-
-@media (max-width: 900px) {
-  .main-content {
-    margin-left: 0;
-    width: 100%;
   }
 }
 
@@ -322,8 +571,7 @@ body.sidebar-collapsed .top-nav {
   contain: layout style;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-  padding: 24px;
+  transition: none;
 }
 
 .tab-content[style*="display: block"],
@@ -338,21 +586,16 @@ body.sidebar-collapsed .top-nav {
 }
 
 .tab-content:not(.active):not([style*="display: block"]) {
-  display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
-
-/* =============== PERFORMANCE OPTIMIZATIONS =============== */
-.menu-link,
-.menu-icon,
-.menu-text {
-  contain: layout style;
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  visibility: hidden;
+  opacity: 0;
 }
 
 /* Hardware acceleration */
 .sidebar,
-.mobile-sidebar-dropdown,
+.mobile-menu-bar,
 .menu-link,
 .hamburger-menu {
   will-change: transform;
@@ -373,21 +616,20 @@ body.sidebar-collapsed .top-nav {
   }
 }
 
-.menu-link:hover {
-  animation: none;
-  transform: translateX(2px) translateZ(0);
-}
+/* REMOVED: Duplicate .menu-link:hover animation - conflicts with optimized version above */
+/* All hover effects now handled by .sidebar .menu-link:hover for consistency */
 
 /* Instant click response */
 .menu-link:active {
-  transform: translateX(1px) scale(0.98) translateZ(0);
-  transition: transform 0.05s ease;
+  opacity: 0.8;
+  transition: opacity 0.05s ease;
 }
 
-/* Optimized transitions for better performance */
+/* OPTIMIZED: Reduced transitions for better performance */
 .sidebar * {
-  transition-property: background-color, color, transform, box-shadow;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-property: background-color, color, border-left-color;
+  transition-duration: 0.08s;
+  transition-timing-function: ease;
 }
 
 /* Prevent layout shifts */
@@ -395,8 +637,8 @@ body.sidebar-collapsed .top-nav {
 .main-content {
   contain: layout;
 }
-.mobile-sidebar-dropdown,
-.mobile-sidebar-backdrop,
+.mobile-menu-bar,
+.mobile-menu-backdrop,
 .hamburger-menu {
   will-change: transform;
   transform: translateZ(0);
@@ -407,15 +649,4 @@ body.sidebar-collapsed .top-nav {
 .menu-link.active {
   contain: layout style paint;
 }
-
-/* Smooth scrolling for sidebar */
-.sidebar {
-  scroll-behavior: smooth;
-}
-
-/* Z-index management */
-.sidebar { z-index: 1000; }
-.mobile-sidebar-backdrop { z-index: 1199; }
-.mobile-sidebar-dropdown { z-index: 1200; }
-.hamburger-menu { z-index: 1300; }
 

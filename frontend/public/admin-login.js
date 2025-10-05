@@ -1,5 +1,42 @@
 document.addEventListener('DOMContentLoaded', function() {
     
+    // Check if user is already authenticated and redirect if so
+    const existingToken = localStorage.getItem('gymAdminToken') || localStorage.getItem('token');
+    const existingGymId = localStorage.getItem('gymId');
+    
+    if (existingToken && existingGymId) {
+        console.log('🔄 User already authenticated, checking token validity...');
+        
+        // Quick token validation
+        fetch('http://localhost:5000/api/gyms/validate-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${existingToken}`
+            },
+            body: JSON.stringify({ gymId: existingGymId })
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('✅ Token still valid, redirecting to dashboard...');
+                window.location.href = '/frontend/gymadmin/gymadmin.html';
+                return;
+            } else {
+                console.log('❌ Token invalid, clearing storage and staying on login page');
+                // Clear invalid tokens
+                localStorage.removeItem('gymAdminToken');
+                localStorage.removeItem('token');
+                localStorage.removeItem('gymId');
+                localStorage.removeItem('currentGymId');
+                sessionStorage.clear();
+            }
+        })
+        .catch(error => {
+            console.log('🔍 Token validation failed, staying on login page:', error);
+            // Don't redirect on validation error, let user login normally
+        });
+    }
+    
     // Form elements
     const loginForm = document.getElementById('adminLoginForm');
     const emailInput = document.getElementById('email');
@@ -348,71 +385,85 @@ document.addEventListener('DOMContentLoaded', function() {
           method: 'none'
         };
         
+        // Set a very short timeout for location to prevent login delays
+        const locationTimeout = setTimeout(() => {
+          console.log('⚡ Location detection timeout, proceeding with fallback');
+          resolve({
+            ...locationInfo,
+            city: 'Quick Login',
+            country: 'Location Skipped',
+            method: 'timeout'
+          });
+        }, 800); // Very short timeout
+        
         // Try to get geolocation with short timeout for instant login
         if (navigator.geolocation) {
-          const timeoutId = setTimeout(() => {
-            console.log('Geolocation timeout (1s), falling back to IP-based location');
-            getIPLocation().then(ipLocation => {
-              resolve({ ...locationInfo, ...ipLocation, method: 'ip' });
-            }).catch(() => {
-              resolve(locationInfo);
-            });
-          }, 1000); // Reduced to 1 second timeout for faster login
-          
           navigator.geolocation.getCurrentPosition(
             async (position) => {
-              clearTimeout(timeoutId);
-              locationInfo.latitude = position.coords.latitude;
-              locationInfo.longitude = position.coords.longitude;
-              locationInfo.method = 'gps';
+              clearTimeout(locationTimeout);
               
-              // Try quick reverse geocoding for proper city/country names
               try {
-                const reverseGeoResponse = await fetch(
-                  `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`,
-                  { method: 'GET' }
-                );
+                locationInfo.latitude = position.coords.latitude;
+                locationInfo.longitude = position.coords.longitude;
+                locationInfo.method = 'gps';
+                
+                // Try quick reverse geocoding for proper city/country names
+                const reverseGeoResponse = await Promise.race([
+                  fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 500))
+                ]);
                 
                 if (reverseGeoResponse.ok) {
                   const geoData = await reverseGeoResponse.json();
-                  locationInfo.city = geoData.city || geoData.locality || geoData.principalSubdivision || 'Unknown';
+                  locationInfo.city = geoData.city || geoData.locality || geoData.principalSubdivision || 'GPS Location';
                   locationInfo.country = geoData.countryName || 'Unknown';
                   locationInfo.region = geoData.principalSubdivision || geoData.region || 'Unknown';
                 } else {
-                  // Fallback to coordinates if reverse geocoding fails
-                  locationInfo.city = `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
-                  locationInfo.country = 'GPS Location';
+                  locationInfo.city = 'GPS Location';
+                  locationInfo.country = 'Coordinates';
                 }
               } catch (geoError) {
-                console.log('Reverse geocoding failed, using coordinates:', geoError);
-                locationInfo.city = `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
-                locationInfo.country = 'GPS Location';
+                console.log('Reverse geocoding failed, using GPS fallback:', geoError);
+                locationInfo.city = 'GPS Location';
+                locationInfo.country = 'Coordinates';
               }
               
               resolve(locationInfo);
             },
             (error) => {
-              clearTimeout(timeoutId);
-              console.log('Geolocation failed:', error.message);
+              clearTimeout(locationTimeout);
+              console.log('Geolocation failed, using IP fallback:', error.message);
+              
               // Quick fallback to IP-based location
               getIPLocation().then(ipLocation => {
                 resolve({ ...locationInfo, ...ipLocation, method: 'ip' });
               }).catch(() => {
-                resolve(locationInfo);
+                resolve({
+                  ...locationInfo,
+                  city: 'IP Detection Failed',
+                  country: 'Unknown',
+                  method: 'failed'
+                });
               });
             },
             {
-              enableHighAccuracy: false, // Faster, less accurate
-              timeout: 800, // Very short timeout
-              maximumAge: 600000 // 10 minutes cache
+              enableHighAccuracy: false,
+              timeout: 600, // Very short timeout
+              maximumAge: 300000 // 5 minutes cache
             }
           );
         } else {
+          clearTimeout(locationTimeout);
           // No geolocation support, try IP-based location quickly
           getIPLocation().then(ipLocation => {
             resolve({ ...locationInfo, ...ipLocation, method: 'ip' });
           }).catch(() => {
-            resolve(locationInfo);
+            resolve({
+              ...locationInfo,
+              city: 'Browser Unsupported',
+              country: 'Unknown',
+              method: 'unsupported'
+            });
           });
         }
       });
@@ -421,10 +472,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // IP-based location fallback - optimized for speed
     async function getIPLocation() {
       try {
-        // Use faster timeout and simpler service
+        // Use faster service with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1000);
+        
         const response = await fetch('https://ipapi.co/json/', { 
-          timeout: 1500 // 1.5 second timeout
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
           const data = await response.json();
           return {
@@ -438,8 +495,10 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch (error) {
         console.log('IP location service failed (quick timeout):', error);
       }
+      
+      // Final fallback
       return {
-        city: 'Unknown',
+        city: 'Service Unavailable',
         country: 'Unknown',
         region: 'Unknown'
       };
@@ -554,6 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // Normal login success
           if (data.token && data.gymId) {
             // Successful login
+            console.log('✅ Login successful:', { hasToken: !!data.token, gymId: data.gymId });
             showAnimatedSuccess();
            
             // Store JWT token and gymId in localStorage with verification
@@ -576,16 +636,13 @@ document.addEventListener('DOMContentLoaded', function() {
               
               // Store the new token in BOTH localStorage and sessionStorage for redundancy
               localStorage.setItem('gymAdminToken', data.token);
+              localStorage.setItem('token', data.token); // Backup key
               sessionStorage.setItem('gymAdminToken', data.token);
               
               // Store the gymId in multiple keys for compatibility
               localStorage.setItem('gymId', data.gymId);
               localStorage.setItem('currentGymId', data.gymId);
               sessionStorage.setItem('gymId', data.gymId);
-              
-              // Also store it with alternative keys as backup
-              localStorage.setItem('authToken', data.token);
-              localStorage.setItem('token', data.token);
               
               // Verify token and gymId were actually stored
               const storedToken = localStorage.getItem('gymAdminToken');
@@ -605,20 +662,42 @@ document.addEventListener('DOMContentLoaded', function() {
               });
               
               if (storedToken === data.token && storedGymId === data.gymId) {
-               
+                console.log('✅ Token and GymId verification successful');
+                
+                // Disable the form to prevent multiple submissions
+                loginButton.disabled = true;
+                emailInput.disabled = true;
+                passwordInput.disabled = true;
                 
                 // Quick redirect for instant login experience
                 setTimeout(() => {
-                  // Correct path to gymadmin dashboard
-                  const dashboardUrl = `http://localhost:5000/frontend/gymadmin/gymadmin.html?token=${encodeURIComponent(data.token)}&gymId=${encodeURIComponent(data.gymId)}`;
-                  window.location.replace(dashboardUrl);
-                }, 300); // Reduced to 300ms for instant feel
+                  try {
+                    // Use window.location.href instead of replace to ensure proper navigation
+                    const dashboardUrl = `/frontend/gymadmin/gymadmin.html`;
+                    console.log('🚀 Redirecting to:', dashboardUrl);
+                    
+                    // Clear any existing page state
+                    window.onbeforeunload = null;
+                    
+                    // Navigate to dashboard
+                    window.location.href = dashboardUrl;
+                  } catch (redirectError) {
+                    console.error('❌ Redirect error:', redirectError);
+                    // Fallback redirect
+                    window.location.href = '/frontend/gymadmin/gymadmin.html';
+                  }
+                }, 500); // Slightly longer delay to ensure success message is seen
               } else {
-                throw new Error('Token or GymId verification failed');
+                throw new Error('Token or GymId verification failed after storage');
               }
             } catch (storageError) {
               console.error('❌ localStorage error:', storageError);
               showErrorMessage('Failed to store authentication token. Please try again.');
+              
+              // Reset form state
+              loginButton.disabled = false;
+              emailInput.disabled = false;
+              passwordInput.disabled = false;
             }
           }
         } else {

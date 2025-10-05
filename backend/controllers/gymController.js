@@ -423,6 +423,59 @@ exports.login = async (req, res) => {
   }
 };
 
+// Token validation endpoint to check if user is already authenticated
+exports.validateToken = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    const { gymId } = req.body;
+    
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+    
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    if (!decoded || !decoded.admin || !decoded.admin.id) {
+      return res.status(401).json({ success: false, message: 'Invalid token structure' });
+    }
+    
+    // Check if gym exists and is approved
+    const gym = await Gym.findById(decoded.admin.id);
+    if (!gym) {
+      return res.status(404).json({ success: false, message: 'Gym not found' });
+    }
+    
+    if (gym.status !== 'approved') {
+      return res.status(403).json({ success: false, message: 'Gym not approved' });
+    }
+    
+    // Verify gymId matches
+    if (gymId && gym.id !== gymId) {
+      return res.status(401).json({ success: false, message: 'GymId mismatch' });
+    }
+    
+    // Token is valid
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Token valid',
+      gymId: gym.id,
+      gymName: gym.gymName 
+    });
+    
+  } catch (error) {
+    console.error('Token validation error:', error);
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, message: 'Token expired' });
+    } else {
+      return res.status(500).json({ success: false, message: 'Server error during validation' });
+    }
+  }
+};
+
 // Request Password Change OTP (moved from gymadminController)
 exports.requestPasswordChangeOTP = async (req, res) => {
     const { email } = req.body;

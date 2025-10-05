@@ -21,76 +21,13 @@ class AttendanceManager {
         this.loadAttendanceForDate();
     }
 
-    // Token utility functions (copied from gymadmin.js)
-    async waitForToken(tokenKey, maxTries, delayMs) {
-        
-        let token = null;
-        let tries = 0;
-        
-        // Function to check multiple storage locations
-        function checkAllStorageLocations() {
-            // First check URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlToken = urlParams.get('token');
-            if (urlToken) {
-                // Store it in localStorage for future use
-                localStorage.setItem(tokenKey, urlToken);
-                // Clean the URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-                return { location: 'URL parameters', token: urlToken };
-            }
-            
-            // Check localStorage
-            let found = localStorage.getItem(tokenKey);
-            if (found) return { location: 'localStorage', token: found };
-            
-            // Check sessionStorage
-            found = sessionStorage.getItem(tokenKey);
-            if (found) return { location: 'sessionStorage', token: found };
-            
-            // Check alternative key names
-            const altKeys = ['authToken', 'token', 'gymAuthToken', 'adminToken'];
-            for (const altKey of altKeys) {
-                found = localStorage.getItem(altKey);
-                if (found) return { location: `localStorage[${altKey}]`, token: found };
-                
-                found = sessionStorage.getItem(altKey);
-                if (found) return { location: `sessionStorage[${altKey}]`, token: found };
-            }
-            
-            return null;
-        }
-        
-        while (!token && tries < maxTries) {
-            const result = checkAllStorageLocations();
-            if (result) {
-                token = result.token;
-                // If found in alternative location, also store it in the expected location
-                if (result.location !== 'localStorage') {
-                    localStorage.setItem(tokenKey, token);
-                }
-                break;
-            }
-            
-            await new Promise(res => setTimeout(res, delayMs));
-            tries++;
-        }
-        
-        if (token) {
-        } else {
-        }
-        
-        return token;
-    }
-
+    // Use unified auth manager for token operations
     async getAuthToken() {
-        const token = await this.waitForToken('gymAdminToken', 10, 100);
-        if (!token) {
-            console.error('No authentication token found');
-            return null;
+        if (window.unifiedAuthManager) {
+            return await window.unifiedAuthManager.waitForToken();
         }
-        // Remove 'Bearer ' prefix if it exists in the stored token
-        return token.replace(/^Bearer\s+/, '');
+        // Fallback for backward compatibility
+        return localStorage.getItem('gymAdminToken');
     }
 
     bindEvents() {
@@ -215,7 +152,22 @@ class AttendanceManager {
                 }
             });
             if (membersResponse.ok) {
-                this.membersData = await membersResponse.json();
+                const contentType = membersResponse.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        this.membersData = await membersResponse.json();
+                        console.log(`✅ Successfully loaded ${this.membersData.length || 0} members`);
+                    } catch (jsonError) {
+                        console.warn('Failed to parse members JSON response:', jsonError);
+                        this.membersData = [];
+                    }
+                } else {
+                    console.warn('Members API returned non-JSON response');
+                    this.membersData = [];
+                }
+            } else {
+                console.warn(`Members API returned status ${membersResponse.status}: ${membersResponse.statusText}`);
+                this.membersData = [];
             }
 
             // Fetch gymId from admin profile if not already set
@@ -227,8 +179,23 @@ class AttendanceManager {
                         }
                     });
                     if (profileResponse.ok) {
-                        const profile = await profileResponse.json();
-                        this.gymId = profile.gymId || profile._id || profile.gym?._id || null;
+                        const contentType = profileResponse.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            try {
+                                const profile = await profileResponse.json();
+                                this.gymId = profile.gymId || profile._id || profile.gym?._id || null;
+                                console.log(`✅ Successfully loaded gym profile, gymId: ${this.gymId}`);
+                            } catch (jsonError) {
+                                console.warn('Failed to parse profile JSON response:', jsonError);
+                                this.gymId = null;
+                            }
+                        } else {
+                            console.warn('Profile API returned non-JSON response');
+                            this.gymId = null;
+                        }
+                    } else {
+                        console.warn(`Profile API returned status ${profileResponse.status}: ${profileResponse.statusText}`);
+                        this.gymId = null;
                     }
                 } catch (e) {
                     this.gymId = null;
@@ -245,16 +212,35 @@ class AttendanceManager {
                 }
             });
             if (trainersResponse.ok) {
-                this.trainersData = await trainersResponse.json();
+                const contentType = trainersResponse.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        this.trainersData = await trainersResponse.json();
+                        console.log(`✅ Successfully loaded ${this.trainersData.length || 0} trainers`);
+                    } catch (jsonError) {
+                        console.warn('Failed to parse trainers JSON response:', jsonError);
+                        this.trainersData = [];
+                    }
+                } else {
+                    console.warn('Trainers API returned non-JSON response');
+                    this.trainersData = [];
+                }
+            } else {
+                console.warn(`Trainers API returned status ${trainersResponse.status}: ${trainersResponse.statusText}`);
+                this.trainersData = [];
             }
         } catch (error) {
             console.error('Error loading data:', error);
+            // Ensure data arrays are initialized even on error
+            this.membersData = this.membersData || [];
+            this.trainersData = this.trainersData || [];
             this.showToast('Error loading data', 'error');
         }
     }
 
     async loadAttendanceForDate() {
         const dateStr = this.formatDateLocal(this.currentDate);
+        console.log(`🔍 Loading attendance for date: ${dateStr}`);
         
         try {
             const token = await this.getAuthToken();
@@ -263,14 +249,32 @@ class AttendanceManager {
                 return;
             }
 
+            console.log(`🌐 Fetching attendance from: /api/attendance/${dateStr}`);
             const response = await fetch(`/api/attendance/${dateStr}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            
+            console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+            console.log(`📡 Response content-type: ${response.headers.get('content-type')}`);
+            
             if (response.ok) {
-                this.attendanceData = await response.json();
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        this.attendanceData = await response.json();
+                        console.log(`✅ Successfully loaded attendance data:`, this.attendanceData);
+                    } catch (jsonError) {
+                        console.warn('Failed to parse attendance JSON response:', jsonError);
+                        this.attendanceData = {};
+                    }
+                } else {
+                    console.warn('Attendance API returned non-JSON response');
+                    this.attendanceData = {};
+                }
             } else {
+                console.warn(`Attendance API returned status ${response.status}: ${response.statusText}`);
                 this.attendanceData = {};
             }
             
@@ -278,6 +282,9 @@ class AttendanceManager {
             this.updateStats();
         } catch (error) {
             console.error('Error loading attendance:', error);
+            this.attendanceData = {};
+            this.renderAttendance();
+            this.updateStats();
             this.showToast('Error loading attendance data', 'error');
         }
     }
@@ -981,63 +988,64 @@ class AttendanceManager {
             });
 
             if (response.ok) {
-                const data = await response.json();
-                console.log('Attendance history response:', data);
-                
-                // Initialize attendance history for this person if not exists
-                if (!this.attendanceHistory) this.attendanceHistory = {};
-                if (!this.attendanceHistory[personId]) this.attendanceHistory[personId] = {};
-                
-                // Don't clear existing data - we'll merge new data
-                // this.attendanceHistory[personId] = {};
-                
-                // Handle backend response format
-                if (data.history && Array.isArray(data.history)) {
-                    console.log(`Found ${data.history.length} attendance records for ${personId}`);
-                    data.history.forEach(record => {
-                        const dateKey = record.date.split('T')[0];
-                        this.attendanceHistory[personId][dateKey] = {
-                            date: dateKey,
-                            status: record.status,
-                            checkInTime: record.checkInTime,
-                            checkOutTime: record.checkOutTime
-                        };
-                        console.log(`Stored record for ${dateKey}: ${record.status}`);
-                    });
-                    
-                    // Store membership info if available
-                    if (data.membershipInfo) {
-                        if (!this.membershipInfo) this.membershipInfo = {};
-                        this.membershipInfo[personId] = data.membershipInfo;
-                        console.log('Membership info stored:', this.membershipInfo[personId]);
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        const data = await response.json();
+                        console.log('Attendance history response:', data);
+                        
+                        // Initialize attendance history for this person if not exists
+                        if (!this.attendanceHistory) this.attendanceHistory = {};
+                        if (!this.attendanceHistory[personId]) this.attendanceHistory[personId] = {};
+                        
+                        // Handle backend response format
+                        if (data.history && Array.isArray(data.history)) {
+                            console.log(`Found ${data.history.length} attendance records for ${personId}`);
+                            data.history.forEach(record => {
+                                const dateKey = record.date.split('T')[0];
+                                this.attendanceHistory[personId][dateKey] = {
+                                    date: dateKey,
+                                    status: record.status,
+                                    checkInTime: record.checkInTime,
+                                    checkOutTime: record.checkOutTime
+                                };
+                                console.log(`Stored record for ${dateKey}: ${record.status}`);
+                            });
+                            
+                            // Store membership info if available
+                            if (data.membershipInfo) {
+                                if (!this.membershipInfo) this.membershipInfo = {};
+                                this.membershipInfo[personId] = data.membershipInfo;
+                                console.log('Membership info stored:', this.membershipInfo[personId]);
+                            }
+                        } else {
+                            // Fallback for old format
+                            const history = Array.isArray(data) ? data : [];
+                            history.forEach(record => {
+                                const dateKey = record.date.split('T')[0];
+                                this.attendanceHistory[personId][dateKey] = {
+                                    date: dateKey,
+                                    status: record.status,
+                                    checkInTime: record.checkInTime,
+                                    checkOutTime: record.checkOutTime
+                                };
+                            });
+                        }
+                        
+                        console.log(`Total records loaded for ${personId}:`, Object.keys(this.attendanceHistory[personId]).length);
+                        console.log('Attendance history data:', this.attendanceHistory[personId]);
+                        
+                    } catch (jsonError) {
+                        console.warn('Failed to parse attendance history JSON response:', jsonError);
+                        return;
                     }
                 } else {
-                    // Fallback for old format
-                    const history = Array.isArray(data) ? data : [];
-                    history.forEach(record => {
-                        const dateKey = record.date.split('T')[0];
-                        this.attendanceHistory[personId][dateKey] = {
-                            date: dateKey,
-                            status: record.status,
-                            checkInTime: record.checkInTime,
-                            checkOutTime: record.checkOutTime
-                        };
-                    });
+                    console.warn('Attendance history API returned non-JSON response');
+                    return;
                 }
-                
-                console.log(`Total records loaded for ${personId}:`, Object.keys(this.attendanceHistory[personId]).length);
-                console.log('Attendance history data:', this.attendanceHistory[personId]);
-                
-            } else if (response.status === 404) {
-                // API endpoint not found, try alternative approach
-                console.log('History endpoint not found, using alternative method');
-                await this.fetchAttendanceHistoryAlternative(personId, startDate, endDate);
             } else {
-                console.error(`Error response from API: ${response.status} - ${response.statusText}`);
-                const errorText = await response.text();
-                console.error('Error details:', errorText);
-                // Try alternative method as fallback
-                await this.fetchAttendanceHistoryAlternative(personId, startDate, endDate);
+                console.warn(`Attendance history API returned status ${response.status}: ${response.statusText}`);
+                return;
             }
         } catch (error) {
             console.error('Error fetching attendance history:', error);
@@ -1583,14 +1591,27 @@ class AttendanceManager {
             });
 
             if (response.ok) {
-                const result = await response.json();
-                this.hideToast(loadingToast);
-                
-                if (result.verified) {
-                    this.showToast(`${biometricType} verified! Attendance marked.`, 'success');
-                    this.loadData(); // Refresh attendance data
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        const result = await response.json();
+                        this.hideToast(loadingToast);
+                        
+                        if (result.verified) {
+                            this.showToast(`${biometricType} verified! Attendance marked.`, 'success');
+                            this.loadData(); // Refresh attendance data
+                        } else {
+                            this.showToast('Biometric verification failed', 'error');
+                        }
+                    } catch (jsonError) {
+                        console.warn('Failed to parse verification JSON response:', jsonError);
+                        this.hideToast(loadingToast);
+                        this.showToast('Biometric verification error', 'error');
+                    }
                 } else {
-                    this.showToast('Biometric verification failed', 'error');
+                    console.warn('Verification API returned non-JSON response');
+                    this.hideToast(loadingToast);
+                    this.showToast('Biometric verification error', 'error');
                 }
             } else {
                 throw new Error('Verification request failed');

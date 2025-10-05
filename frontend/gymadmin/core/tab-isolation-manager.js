@@ -23,19 +23,12 @@ class TabIsolationManager {
     }
 
     /**
-     * Setup tab click and keyboard event listeners
+     * Setup non-conflicting event listeners (click handling delegated to UltraFastSidebar)
      */
     setupTabEventListeners() {
-        // Use event delegation for tab clicks
-        document.addEventListener('click', (e) => {
-            const tabTrigger = e.target.closest('[data-tab]');
-            if (tabTrigger) {
-                e.preventDefault();
-                const tabId = tabTrigger.getAttribute('data-tab');
-                this.switchToTab(tabId);
-            }
-        });
-
+        // REMOVED: Tab click delegation (handled by UltraFastSidebar for performance)
+        // The UltraFastSidebar will call TabIsolationManager.switchToTab() when needed
+        
         // Keyboard navigation support
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -104,8 +97,8 @@ class TabIsolationManager {
                 await this.deactivateTab(this.activeTab);
             }
 
-            // Update UI state
-            this.updateTabUI(tabId);
+            // UI updates delegated to UltraFastSidebar for immediate response
+            // this.updateTabUI(tabId); // Commented out - UltraFastSidebar handles this
 
             // Initialize tab if needed
             await this.initializeTab(tabId);
@@ -280,7 +273,6 @@ class TabIsolationManager {
      * Preload tab-specific data
      */
     async preloadTabData(tabId) {
-        const cacheKey = `tab_data_${tabId}`;
         
         // Check cache first
         if (window.asyncFetchManager && this.tabModules.get(tabId).cacheResults) {
@@ -353,6 +345,18 @@ class TabIsolationManager {
      * Update tab UI state
      */
     updateTabUI(tabId) {
+        // UI updates are now handled by UltraFastSidebar for better performance
+        // This method is kept for backward compatibility but defers to UltraFastSidebar
+        
+        if (window.ultraFastSidebar && typeof window.ultraFastSidebar.setActiveState === 'function') {
+            const activeLink = document.querySelector(`[data-tab="${tabId}"]`);
+            if (activeLink) {
+                window.ultraFastSidebar.setActiveState(activeLink, tabId);
+            }
+            return;
+        }
+        
+        // Fallback: Basic UI updates if UltraFastSidebar not available
         // Remove active class from all tabs
         document.querySelectorAll('[data-tab].active').forEach(tab => {
             tab.classList.remove('active');

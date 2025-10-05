@@ -5,12 +5,48 @@ class EquipmentManager {
         this.currentEquipment = null;
         this.selectedPhotos = [];
         this.gymId = this.getGymId();
-        this.token = this.getAuthToken();
+        this.token = null; // Will be set asynchronously
+        
+        // Memory leak prevention - track event listeners
+        this.eventListeners = [];
+        this.boundHandlers = new Map();
+        
+        // Authentication helper reference
+        this.AuthHelper = window.AuthHelper;
+        
+        // API manager reference
+        this.api = window.asyncFetchManager;
+        
+        // Lazy loading manager reference
+        this.lazyLoader = window.LazyLoadManager;
+        
         this.init();
     }
 
+    // Tracked event listener system for memory leak prevention
+    addTrackedEventListener(element, event, handler, options = {}) {
+        const boundHandler = handler.bind && typeof handler.bind === 'function' ? handler : handler;
+        this.boundHandlers.set(handler, boundHandler);
+        this.eventListeners.push({ element, event, handler: boundHandler, options });
+        element.addEventListener(event, boundHandler, options);
+    }
+
+    // Cleanup method to remove all tracked event listeners
+    cleanup() {
+        this.eventListeners.forEach(({ element, event, handler, options }) => {
+            element.removeEventListener(event, handler, options);
+        });
+        this.eventListeners = [];
+        this.boundHandlers.clear();
+    }
+
     getGymId() {
-        // Try multiple sources for gym ID
+        // Use centralized GymIdManager if available
+        if (window.GymIdManager) {
+            return window.GymIdManager.getCurrentGymId();
+        }
+        
+        // Fallback to original logic
         let gymId = localStorage.getItem('gymId');
         if (!gymId) {
             gymId = localStorage.getItem('currentGymId');
@@ -21,8 +57,13 @@ class EquipmentManager {
         return gymId;
     }
 
-    getAuthToken() {
-        // Try multiple token names
+    async getAuthToken() {
+        // Use AuthHelper for standardized authentication
+        if (this.AuthHelper) {
+            return await this.AuthHelper.getToken();
+        }
+        
+        // Fallback to localStorage if AuthHelper not available
         let token = localStorage.getItem('gymAdminToken');
         if (!token) {
             token = localStorage.getItem('token');
@@ -33,77 +74,98 @@ class EquipmentManager {
         return token;
     }
 
-    init() {
+    async init() {
+        // Immediate initialization - critical UI setup
         this.bindEvents();
-        this.loadEquipmentData();
+        
+        // Defer heavy data loading until needed
+        if (this.lazyLoader) {
+            this.lazyLoader.deferUntilIdle('equipment-data-load', () => this.loadEquipmentData());
+        } else {
+            // Fallback - load after a short delay
+            setTimeout(() => this.loadEquipmentData(), 300);
+        }
         
         // Refresh auth data periodically
-        setInterval(() => {
-            this.token = this.getAuthToken();
+        setInterval(async () => {
+            this.token = await this.getAuthToken();
             this.gymId = this.getGymId();
         }, 30000); // Refresh every 30 seconds
     }
 
     bindEvents() {
         // Main buttons
-        document.getElementById('addEquipmentBtn')?.addEventListener('click', () => this.openAddEquipmentModal());
-        document.getElementById('bulkImportBtn')?.addEventListener('click', () => this.openBulkImportModal());
+        const addBtn = document.getElementById('addEquipmentBtn');
+        if (addBtn) this.addTrackedEventListener(addBtn, 'click', () => this.openAddEquipmentModal());
+        
+        const bulkBtn = document.getElementById('bulkImportBtn');
+        if (bulkBtn) this.addTrackedEventListener(bulkBtn, 'click', () => this.openBulkImportModal());
 
         // Modal controls
-        document.getElementById('closeEquipmentModal')?.addEventListener('click', () => this.closeEquipmentModal());
-        document.getElementById('closeEquipmentDetailModal')?.addEventListener('click', () => this.closeEquipmentDetailModal());
-        document.getElementById('closePhotoGalleryModal')?.addEventListener('click', () => this.closePhotoGalleryModal());
+        const closeModal = document.getElementById('closeEquipmentModal');
+        if (closeModal) this.addTrackedEventListener(closeModal, 'click', () => this.closeEquipmentModal());
+        
+        const closeDetailModal = document.getElementById('closeEquipmentDetailModal');
+        if (closeDetailModal) this.addTrackedEventListener(closeDetailModal, 'click', () => this.closeEquipmentDetailModal());
+        
+        const closePhotoModal = document.getElementById('closePhotoGalleryModal');
+        if (closePhotoModal) this.addTrackedEventListener(closePhotoModal, 'click', () => this.closePhotoGalleryModal());
 
         // Form events
-        document.getElementById('equipmentForm')?.addEventListener('submit', (e) => this.handleFormSubmit(e));
-        document.getElementById('cancelEquipmentBtn')?.addEventListener('click', () => this.closeEquipmentModal());
+        const equipForm = document.getElementById('equipmentForm');
+        if (equipForm) this.addTrackedEventListener(equipForm, 'submit', (e) => this.handleFormSubmit(e));
+        
+        const cancelBtn = document.getElementById('cancelEquipmentBtn');
+        if (cancelBtn) this.addTrackedEventListener(cancelBtn, 'click', () => this.closeEquipmentModal());
 
         // Photo upload events
-        document.getElementById('equipmentPhotoUpload')?.addEventListener('click', () => this.triggerPhotoUpload());
-        document.getElementById('equipmentPhotos')?.addEventListener('change', (e) => this.handlePhotoSelection(e));
+        const photoUpload = document.getElementById('equipmentPhotoUpload');
+        if (photoUpload) this.addTrackedEventListener(photoUpload, 'click', () => this.triggerPhotoUpload());
+        
+        const photoInput = document.getElementById('equipmentPhotos');
+        if (photoInput) this.addTrackedEventListener(photoInput, 'change', (e) => this.handlePhotoSelection(e));
 
         // Drag and drop for photos
         const uploadArea = document.getElementById('equipmentPhotoUpload');
         if (uploadArea) {
-            uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
-            uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-            uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
+            this.addTrackedEventListener(uploadArea, 'dragover', (e) => this.handleDragOver(e));
+            this.addTrackedEventListener(uploadArea, 'dragleave', (e) => this.handleDragLeave(e));
+            this.addTrackedEventListener(uploadArea, 'drop', (e) => this.handleDrop(e));
         }
 
         // Search and filters
-        document.getElementById('equipmentSearchInput')?.addEventListener('input', (e) => this.handleSearch(e));
-        document.getElementById('equipmentCategoryFilter')?.addEventListener('change', (e) => this.handleFilter());
-        document.getElementById('equipmentStatusFilter')?.addEventListener('change', (e) => this.handleFilter());
-        document.getElementById('equipmentSortBy')?.addEventListener('change', (e) => this.handleSort());
+        const searchInput = document.getElementById('equipmentSearchInput');
+        if (searchInput) this.addTrackedEventListener(searchInput, 'input', (e) => this.handleSearch(e));
+        
+        const categoryFilter = document.getElementById('equipmentCategoryFilter');
+        if (categoryFilter) this.addTrackedEventListener(categoryFilter, 'change', () => this.handleFilter());
+        
+        const statusFilter = document.getElementById('equipmentStatusFilter');
+        if (statusFilter) this.addTrackedEventListener(statusFilter, 'change', () => this.handleFilter());
+        
+        const sortBy = document.getElementById('equipmentSortBy');
+        if (sortBy) this.addTrackedEventListener(sortBy, 'change', () => this.handleSort());
 
         // Photo gallery navigation
-        document.getElementById('prevPhoto')?.addEventListener('click', () => this.showPrevPhoto());
-        document.getElementById('nextPhoto')?.addEventListener('click', () => this.showNextPhoto());
+        const prevPhoto = document.getElementById('prevPhoto');
+        if (prevPhoto) this.addTrackedEventListener(prevPhoto, 'click', () => this.showPrevPhoto());
+        
+        const nextPhoto = document.getElementById('nextPhoto');
+        if (nextPhoto) this.addTrackedEventListener(nextPhoto, 'click', () => this.showNextPhoto());
     }
 
     async loadEquipmentData() {
         try {
             this.showLoadingState();
             
-            if (!this.token) {
+            // Get fresh token using AuthHelper
+            const token = await this.getAuthToken();
+            if (!token) {
                 throw new Error('No authentication token found');
             }
             
             // Use the gym profile endpoint to get gym data including equipment
-            const response = await fetch('/api/gyms/profile/me', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Authentication failed. Please login again.');
-                }
-                throw new Error(`Server error: ${response.status}`);
-            }
+            const response = await this.api.get('/api/gyms/profile/me');
             
             const gymData = await response.json();
             
@@ -788,7 +850,13 @@ class EquipmentManager {
     }
 
     showErrorMessage(message) {
-        // Create a temporary error message
+        // Use centralized ErrorManager if available
+        if (window.ErrorManager) {
+            window.ErrorManager.showError(message);
+            return;
+        }
+        
+        // Fallback to original implementation
         const messageDiv = document.createElement('div');
         messageDiv.className = 'error-message';
         messageDiv.textContent = message;

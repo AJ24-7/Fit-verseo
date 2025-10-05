@@ -12,6 +12,9 @@ class AsyncFetchManager {
         // In-flight request promises to prevent duplicates
         this.inflightRequests = new Map();
         
+        // Authentication helper reference
+        this.AuthHelper = window.AuthHelper;
+        
         // Cache configuration
         this.cacheConfig = {
             // Default cache TTL in milliseconds
@@ -129,22 +132,43 @@ class AsyncFetchManager {
     /**
      * Create fetch promise with enhanced error handling and timeout
      */
-    createFetchPromise(url, options) {
+    async createFetchPromise(url, options) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        
+        // Add authentication headers
+        const headers = await this.addAuthHeaders(options.headers || {});
         
         const fetchOptions = {
             ...options,
             signal: controller.signal,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            }
+            headers
         };
         
         // Use original fetch to avoid circular calls
         return (window._originalFetch || fetch)(url, fetchOptions)
             .finally(() => clearTimeout(timeoutId));
+    }
+
+    /**
+     * Add authentication headers to request
+     */
+    async addAuthHeaders(headers = {}) {
+        const authHeaders = { 
+            'Content-Type': 'application/json',
+            ...headers 
+        };
+        
+        try {
+            const token = this.AuthHelper ? await this.AuthHelper.getToken() : localStorage.getItem('gymAdminToken');
+            if (token) {
+                authHeaders['Authorization'] = `Bearer ${token}`;
+            }
+        } catch (error) {
+            console.warn('Failed to get authentication token:', error);
+        }
+
+        return authHeaders;
     }
 
     /**
@@ -311,6 +335,119 @@ class AsyncFetchManager {
             cacheSize: this.cache.size,
             inflightRequests: this.inflightRequests.size
         };
+    }
+
+    /**
+     * Convenience methods for common HTTP verbs with standardized API calls
+     */
+    async get(url, config = {}) {
+        return this.fetch(url, { method: 'GET' });
+    }
+
+    async post(url, data, config = {}) {
+        const response = await this.fetch(url, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        
+        if (config.successMessage) {
+            this.showSuccess(config.successMessage);
+        }
+        
+        return response;
+    }
+
+    async put(url, data, config = {}) {
+        const response = await this.fetch(url, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+        
+        if (config.successMessage) {
+            this.showSuccess(config.successMessage);
+        }
+        
+        return response;
+    }
+
+    async delete(url, config = {}) {
+        const response = await this.fetch(url, { method: 'DELETE' });
+        
+        if (config.successMessage) {
+            this.showSuccess(config.successMessage);
+        }
+        
+        return response;
+    }
+
+    async patch(url, data, config = {}) {
+        const response = await this.fetch(url, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+        
+        if (config.successMessage) {
+            this.showSuccess(config.successMessage);
+        }
+        
+        return response;
+    }
+
+    /**
+     * UI feedback methods
+     */
+    showSuccess(message) {
+        this.showToast(message, 'success');
+    }
+
+    showError(message) {
+        this.showToast(message, 'error');
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 5px;
+            z-index: 10001;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 300px;
+            word-wrap: break-word;
+            transition: transform 0.3s ease;
+            transform: translateX(100%);
+        `;
+
+        const colors = {
+            success: { bg: '#28a745', color: 'white' },
+            error: { bg: '#dc3545', color: 'white' },
+            info: { bg: '#17a2b8', color: 'white' }
+        };
+
+        const color = colors[type] || colors.info;
+        toast.style.background = color.bg;
+        toast.style.color = color.color;
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+            toast.style.transform = 'translateX(0)';
+        }, 10);
+
+        // Auto remove
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 4000);
     }
 
     /**

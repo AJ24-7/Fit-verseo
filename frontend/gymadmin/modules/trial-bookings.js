@@ -8,22 +8,78 @@ class TrialBookingsManager {
             status: '',
             date: ''
         };
+        
+        // Memory leak prevention - track event listeners
+        this.eventListeners = [];
+        this.boundHandlers = new Map();
+        
+        // Authentication helper reference
+        this.AuthHelper = window.AuthHelper;
+        
+        // API manager reference
+        this.api = window.asyncFetchManager;
+        
+        // Lazy loading manager reference
+        this.lazyLoader = window.LazyLoadManager;
+        
         this.init();
     }
 
+    getGymId() {
+        // Use centralized GymIdManager if available
+        if (window.GymIdManager) {
+            return window.GymIdManager.getCurrentGymId();
+        }
+        
+        // Fallback to localStorage
+        return localStorage.getItem('gymId');
+    }
+
+    // Tracked event listener system for memory leak prevention
+    addTrackedEventListener(element, event, handler, options = {}) {
+        const boundHandler = handler.bind && typeof handler.bind === 'function' ? handler : handler;
+        this.boundHandlers.set(handler, boundHandler);
+        this.eventListeners.push({ element, event, handler: boundHandler, options });
+        element.addEventListener(event, boundHandler, options);
+    }
+
+    // Cleanup method to remove all tracked event listeners
+    cleanup() {
+        this.eventListeners.forEach(({ element, event, handler, options }) => {
+            element.removeEventListener(event, handler, options);
+        });
+        this.eventListeners = [];
+        this.boundHandlers.clear();
+    }
+
     async init() {
-        console.log('Initializing Trial Bookings Manager...');
-        await this.loadTrialBookings();
+        console.log('Initializing Trial Bookings Manager with lazy loading...');
+        
+        // Immediate initialization - critical UI setup
         this.initializeEventListeners();
-        this.updateStatistics();
-        this.renderTrialBookings();
+        
+        // Defer heavy operations until idle time
+        if (this.lazyLoader) {
+            this.lazyLoader.deferUntilIdle('trial-bookings-data', async () => {
+                await this.loadTrialBookings();
+                this.updateStatistics();
+                this.renderTrialBookings();
+            });
+        } else {
+            // Fallback - stagger operations
+            setTimeout(async () => {
+                await this.loadTrialBookings();
+                this.updateStatistics();
+                this.renderTrialBookings();
+            }, 200);
+        }
     }
 
     initializeEventListeners() {
         // Search input
         const searchInput = document.getElementById('trialSearchInput');
         if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
+            this.addTrackedEventListener(searchInput, 'input', (e) => {
                 this.currentFilters.search = e.target.value.toLowerCase();
                 this.applyFilters();
             });
@@ -32,7 +88,7 @@ class TrialBookingsManager {
         // Status filter
         const statusFilter = document.getElementById('trialStatusFilter');
         if (statusFilter) {
-            statusFilter.addEventListener('change', (e) => {
+            this.addTrackedEventListener(statusFilter, 'change', (e) => {
                 this.currentFilters.status = e.target.value;
                 this.applyFilters();
             });
@@ -41,7 +97,7 @@ class TrialBookingsManager {
         // Date filter
         const dateFilter = document.getElementById('trialDateFilter');
         if (dateFilter) {
-            dateFilter.addEventListener('change', (e) => {
+            this.addTrackedEventListener(dateFilter, 'change', (e) => {
                 this.currentFilters.date = e.target.value;
                 this.applyFilters();
             });
@@ -56,7 +112,7 @@ class TrialBookingsManager {
         document.querySelectorAll('.menu-link').forEach(link => {
             const menuText = link.querySelector('.menu-text');
             if (menuText && menuText.textContent.trim() === 'Trial Bookings') {
-                link.addEventListener('click', (e) => {
+                this.addTrackedEventListener(link, 'click', (e) => {
                     e.preventDefault();
                     this.showTrialBookingsTab();
                 });
@@ -96,18 +152,12 @@ class TrialBookingsManager {
         try {
             this.showLoading();
             
-            const gymId = localStorage.getItem('gymId');
+            const gymId = this.getGymId();
             if (!gymId) {
                 throw new Error('Gym ID not found');
             }
 
-            const response = await fetch(`/api/gyms/trial-bookings/${gymId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
-                }
-            });
+            const response = await this.api.get(`/api/gyms/trial-bookings/${gymId}`);
 
             if (!response.ok) {
                 throw new Error(`Failed to load trial bookings: ${response.statusText}`);
@@ -562,13 +612,8 @@ class TrialBookingsManager {
 
     async updateBookingStatus(bookingId, newStatus) {
         try {
-            const response = await fetch(`/api/gyms/trial-bookings/${bookingId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
-                },
-                body: JSON.stringify({ status: newStatus })
+            const response = await this.api.put(`/api/gyms/trial-bookings/${bookingId}/status`, { status: newStatus }, {
+                successMessage: `Booking status updated to ${newStatus}`
             });
 
             if (!response.ok) {
@@ -609,7 +654,13 @@ class TrialBookingsManager {
     }
 
     showError(message) {
-        // Create a simple error toast
+        // Use centralized ErrorManager if available
+        if (window.ErrorManager) {
+            window.ErrorManager.showError(message);
+            return;
+        }
+        
+        // Fallback to original implementation
         const toast = document.createElement('div');
         toast.style.cssText = `
             position: fixed;
@@ -688,7 +739,7 @@ class DashboardTrialBookingsManager {
         // Status filter for dashboard
         const dashboardStatusFilter = document.getElementById('dashboardTrialStatusFilter');
         if (dashboardStatusFilter) {
-            dashboardStatusFilter.addEventListener('change', (e) => {
+            this.addTrackedEventListener(dashboardStatusFilter, 'change', (e) => {
                 this.currentFilter = e.target.value;
                 this.applyDashboardFilters();
             });
@@ -699,12 +750,12 @@ class DashboardTrialBookingsManager {
         try {
             this.showDashboardLoading();
             
-            const gymId = localStorage.getItem('gymId');
+            const gymId = this.getGymId();
             if (!gymId) {
                 throw new Error('Gym ID not found');
             }
 
-            const token = localStorage.getItem('gymAdminToken');
+            const token = this.AuthHelper ? await this.AuthHelper.getToken() : localStorage.getItem('gymAdminToken');
             if (!token) {
                 throw new Error('Authentication token not found');
             }
@@ -894,7 +945,7 @@ class DashboardTrialBookingsManager {
 
     async updateBookingStatus(bookingId, newStatus) {
         try {
-            const token = localStorage.getItem('gymAdminToken');
+            const token = this.AuthHelper ? await this.AuthHelper.getToken() : localStorage.getItem('gymAdminToken');
             const response = await fetch(`/api/gyms/trial-bookings/${bookingId}/status`, {
                 method: 'PUT',
                 headers: {
@@ -959,7 +1010,7 @@ class DashboardTrialBookingsManager {
         
         document.body.appendChild(modal);
         
-        modal.addEventListener('click', (e) => {
+        this.addTrackedEventListener(modal, 'click', (e) => {
             if (e.target === modal) {
                 modal.remove();
             }
@@ -1240,11 +1291,13 @@ class DashboardTrialBookingsManager {
             confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             confirmBtn.disabled = true;
 
+            const token = this.AuthHelper ? await this.AuthHelper.getToken() : localStorage.getItem('gymAdminToken');
+            
             const response = await fetch(`/api/gyms/trial-bookings/${bookingId}/confirm`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     sendEmail,

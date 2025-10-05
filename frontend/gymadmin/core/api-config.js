@@ -271,7 +271,7 @@ class APIConfig {
                 // Only redirect to login if we're not already there
                 if (!window.location.href.includes('admin-login.html')) {
                     setTimeout(() => {
-                        window.location.href = '/frontend/public/admin-login.html';
+                        window.location.href = '../public/admin-login.html';
                     }, 1000);
                 }
             }

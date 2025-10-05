@@ -85,7 +85,10 @@ router.get('/', gymadminAuth, async (req, res) => {
 // ⭐ Gym Admin Login [POST] /login
 router.post('/login', require('../controllers/gymController').login);
 
-// 📍 Update location info after login [POST] /update-location
+// � Validate Token [POST] /validate-token
+router.post('/validate-token', require('../controllers/gymController').validateToken);
+
+// �📍 Update location info after login [POST] /update-location
 router.post('/update-location', async (req, res) => {
   try {
     const { token, locationInfo } = req.body;

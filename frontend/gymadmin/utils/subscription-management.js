@@ -96,13 +96,23 @@ class SubscriptionManager {
             };
 
             const response = await fetch(endpoint, mergedOptions);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'API request failed');
+            
+            // Check if response is actually JSON before parsing
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'API request failed');
+                }
+                
+                return data;
+            } else {
+                // Response is not JSON, probably an HTML error page
+                const text = await response.text();
+                console.error('API returned non-JSON response:', text.substring(0, 200) + '...');
+                throw new Error('API returned non-JSON response (likely HTML error page)');
             }
-
-            return data;
         } catch (error) {
             console.error('API call failed:', error);
             throw error;

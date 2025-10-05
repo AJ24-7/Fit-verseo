@@ -27,22 +27,51 @@ class UltraFastSidebar {
     
     // Cache sidebar elements
     this.cache.set('sidebar', document.querySelector('.sidebar'));
-    this.cache.set('mobileSidebar', document.querySelector('.mobile-sidebar-dropdown'));
-    this.cache.set('backdrop', document.querySelector('.mobile-sidebar-backdrop'));
+    this.cache.set('mobileMenuBar', document.querySelector('.mobile-menu-bar'));
+    this.cache.set('backdrop', document.querySelector('.mobile-menu-backdrop'));
     this.cache.set('hamburger', document.querySelector('.hamburger-menu'));
     
     // Cache desktop sidebar toggle elements
     this.cache.set('toggleBtn', document.getElementById('toggleBtn'));
-    this.cache.set('mainContent', document.getElementById('mainContent'));
+    // Since there's no single mainContent element, we'll handle individual tabs
+    this.cache.set('dashboardTab', document.getElementById('dashboardTab'));
+    this.cache.set('memberDisplayTab', document.getElementById('memberDisplayTab'));
+    this.cache.set('trainerTab', document.getElementById('trainerTab'));
+    this.cache.set('attendanceTab', document.getElementById('attendanceTab'));
+    this.cache.set('paymentTab', document.getElementById('paymentTab'));
+    this.cache.set('equipmentTab', document.getElementById('equipmentTab'));
+    this.cache.set('offersTab', document.getElementById('offersTab'));
+    this.cache.set('supportReviewsTab', document.getElementById('supportReviewsTab'));
+    this.cache.set('settingsTab', document.getElementById('settingsTab'));
     this.cache.set('topNav', document.getElementById('topNav'));
     
     console.log(`📋 Cached ${this.cache.size} DOM elements for instant access`);
+    
+    // Ensure mobile menu bar is initially hidden
+    this.ensureMobileMenuBarClosed();
+  }
+
+  ensureMobileMenuBarClosed() {
+    const mobileMenuBar = this.cache.get('mobileMenuBar');
+    const backdrop = this.cache.get('backdrop');
+    
+    if (mobileMenuBar) {
+      mobileMenuBar.classList.remove('show');
+      mobileMenuBar.style.display = 'none';
+    }
+    
+    if (backdrop) {
+      backdrop.classList.remove('show', 'active');
+    }
+    
+    document.body.style.overflow = '';
+    console.log('📱 Mobile menu bar initialized as closed');
   }
 
   bindEvents() {
     // Use event delegation for maximum performance
     const sidebar = this.cache.get('sidebar');
-    const mobileSidebar = this.cache.get('mobileSidebar');
+    const mobileMenuBar = this.cache.get('mobileMenuBar');
     
     if (sidebar) {
       sidebar.addEventListener('click', this.handleSidebarClick.bind(this), {
@@ -51,8 +80,8 @@ class UltraFastSidebar {
       });
     }
     
-    if (mobileSidebar) {
-      mobileSidebar.addEventListener('click', this.handleSidebarClick.bind(this), {
+    if (mobileMenuBar) {
+      mobileMenuBar.addEventListener('click', this.handleSidebarClick.bind(this), {
         passive: false,
         capture: true
       });
@@ -66,28 +95,36 @@ class UltraFastSidebar {
       });
     }
     
-    // Mobile hamburger menu
+    // Mobile hamburger menu for menu bar
     const hamburger = this.cache.get('hamburger');
     if (hamburger) {
-      hamburger.addEventListener('click', this.toggleMobileSidebar.bind(this), {
+      hamburger.addEventListener('click', this.toggleMobileMenuBar.bind(this), {
         passive: false
       });
     }
     
-    // Close mobile sidebar on backdrop click
+    // Close mobile menu bar on backdrop click
     const backdrop = this.cache.get('backdrop');
     if (backdrop) {
-      backdrop.addEventListener('click', this.closeMobileSidebar.bind(this), {
+      backdrop.addEventListener('click', this.closeMobileMenuBar.bind(this), {
         passive: true
       });
     }
     
-    // ESC key to close mobile sidebar
+    // ESC key to close mobile menu bar
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.cache.get('mobileSidebar')?.classList.contains('show')) {
-        this.closeMobileSidebar();
+      if (e.key === 'Escape' && this.cache.get('mobileMenuBar')?.classList.contains('show')) {
+        this.closeMobileMenuBar();
       }
     }, { passive: true });
+    
+    // Close button for mobile menu bar
+    const closeMobileMenuBtn = document.getElementById('closeMobileMenu');
+    if (closeMobileMenuBtn) {
+      closeMobileMenuBtn.addEventListener('click', this.closeMobileMenuBar.bind(this), {
+        passive: false
+      });
+    }
   }
 
   handleSidebarClick(e) {
@@ -111,13 +148,13 @@ class UltraFastSidebar {
     // Ultra-fast tab switch
     this.switchTab(tabId);
     
-    // Close mobile sidebar instantly
-    this.closeMobileSidebar();
+    // Close mobile menu bar instantly
+    this.closeMobileMenuBar();
     
-    // Set debounce to prevent rapid clicks
+    // Set debounce to prevent rapid clicks (reduced from 50ms to 25ms)
     this.clickDebounce = setTimeout(() => {
       this.clickDebounce = null;
-    }, 50);
+    }, 25);
   }
 
   setActiveState(activeLink, tabId) {
@@ -126,33 +163,31 @@ class UltraFastSidebar {
       cancelAnimationFrame(this.animationFrame);
     }
     
-    this.animationFrame = requestAnimationFrame(() => {
-      // Remove active class from all links instantly
-      const allLinks = document.querySelectorAll('.menu-link');
-      for (let i = 0; i < allLinks.length; i++) {
-        if (allLinks[i].classList.contains('active')) {
-          allLinks[i].classList.remove('active');
-        }
+    // Immediate DOM updates for better responsiveness
+    const allLinks = document.querySelectorAll('.menu-link');
+    for (let i = 0; i < allLinks.length; i++) {
+      if (allLinks[i].classList.contains('active')) {
+        allLinks[i].classList.remove('active');
       }
-      
-      // Set active state instantly
-      activeLink.classList.add('active');
-      
-      // Find and activate corresponding mobile/desktop link
-      const correspondingLink = this.cache.get(`link_${tabId}`);
-      if (correspondingLink && correspondingLink !== activeLink) {
-        correspondingLink.classList.add('active');
+    }
+    
+    // Set active state instantly
+    activeLink.classList.add('active');
+    
+    // Find and activate corresponding mobile/desktop link
+    const correspondingLinks = document.querySelectorAll(`[data-tab="${tabId}"]`);
+    correspondingLinks.forEach(link => {
+      if (link !== activeLink) {
+        link.classList.add('active');
       }
-      
-      this.animationFrame = null;
     });
   }
 
   switchTab(tabId) {
     if (this.isTransitioning) return;
     
-    this.isTransitioning = true;
     const startTime = performance.now();
+    this.isTransitioning = true;
     
     // Get target tab from cache
     const targetTab = this.cache.get(`tab_${tabId}`);
@@ -162,21 +197,11 @@ class UltraFastSidebar {
       this.isTransitioning = false;
       return;
     }
-    
-    // Hide all tabs in a single batch operation
-    const allTabs = document.querySelectorAll('.tab-content, [id$="Tab"]');
-    const fragment = document.createDocumentFragment();
-    
-    // Use Web API for fastest DOM manipulation
-    allTabs.forEach(tab => {
-      if (tab.style.display !== 'none') {
-        tab.style.display = 'none';
-        tab.classList.remove('active', 'show', 'visible');
-      }
-    });
-    
-    // Show target tab immediately
+
+    // Show target tab instantly FIRST for immediate visual feedback
     targetTab.style.display = 'block';
+    targetTab.style.opacity = '1';
+    targetTab.style.visibility = 'visible';
     targetTab.classList.add('active');
     targetTab.scrollTop = 0;
     
@@ -184,26 +209,131 @@ class UltraFastSidebar {
     this.activeTab = tabId;
     this.isTransitioning = false;
     
-    // Performance logging
     const endTime = performance.now();
     console.log(`⚡ Tab switch completed in ${(endTime - startTime).toFixed(2)}ms`);
+
+    // Hide all other tabs after showing target (non-blocking)
+    requestAnimationFrame(() => {
+      const allTabs = document.querySelectorAll('.tab-content, [id$="Tab"]');
+      
+      allTabs.forEach(tab => {
+        if (tab !== targetTab && tab.style.display !== 'none') {
+          tab.style.display = 'none';
+          tab.style.opacity = '0';
+          tab.style.visibility = 'hidden';
+          tab.classList.remove('active', 'show', 'visible');
+          
+          // Also hide nested tab content (like payment-tab, offers-tab)
+          const nestedTabs = tab.querySelectorAll('.payment-tab, .offers-tab');
+          nestedTabs.forEach(nested => {
+            nested.classList.remove('active');
+            nested.style.display = 'none';
+          });
+        }
+      });
+    });
     
-    // Trigger tab initialization (non-blocking)
-    this.initializeTab(tabId);
+    // Defer heavy initialization to avoid blocking UI
+    setTimeout(() => {
+      // Call TabIsolationManager for advanced tab initialization (non-blocking)
+      if (window.tabIsolationManager && typeof window.tabIsolationManager.switchToTab === 'function') {
+        window.tabIsolationManager.switchToTab(tabId, false).catch(error => {
+          console.warn('TabIsolationManager failed, continuing with basic switch:', error);
+        });
+      }
+      
+      // Trigger tab initialization (non-blocking)
+      this.initializeTab(tabId);
+    }, 0);
   }
 
   initializeTab(tabId) {
-    // Use idle callback for non-critical initialization
-    (window.requestIdleCallback || setTimeout)(() => {
+    // IMMEDIATE UI fixes for payment tab - no delays
+    if (tabId === 'paymentTab') {
+      const paymentTabContent = document.querySelector('#paymentTab .payment-tab');
+      if (paymentTabContent) {
+        paymentTabContent.classList.add('active');
+        paymentTabContent.style.display = 'block';
+        paymentTabContent.style.opacity = '1';
+        paymentTabContent.style.visibility = 'visible';
+      }
+    }
+    
+    // Use setTimeout for deferred initialization instead of idle callback
+    setTimeout(() => {
       const initMap = {
-        'dashboardTab': () => window.initializeDashboard?.(),
-        'membersTab': () => window.initializeMembersTab?.(),
+        'dashboardTab': () => {
+          if (typeof window.initializeDashboardComponents === 'function') {
+            window.initializeDashboardComponents();
+          } else {
+            console.log('📊 Dashboard tab activated');
+          }
+        },
+        'memberDisplayTab': () => {
+          if (typeof window.fetchAndDisplayMembers === 'function') {
+            window.fetchAndDisplayMembers();
+          }
+        },
         'trainerTab': () => window.showTrainerTab?.(),
-        'attendanceTab': () => window.initializeAttendanceTab?.(),
-        'paymentTab': () => window.ensurePaymentManager?.(),
-        'equipmentTab': () => window.initializeEquipmentTab?.(),
-        'settingsTab': () => window.updatePasskeySettingsUI?.(),
-        'supportReviewsTab': () => window.initializeSupportTab?.()
+        'attendanceTab': () => {
+          if (typeof window.attendanceManager !== 'undefined') {
+            window.attendanceManager.loadData();
+            window.attendanceManager.loadAttendanceForDate();
+          }
+          window.initializeAttendanceTab?.();
+        },
+        'paymentTab': () => {
+          // Initialize payment tab by activating the nested payment-tab div
+          const paymentTabContent = document.querySelector('#paymentTab .payment-tab');
+          if (paymentTabContent) {
+            paymentTabContent.classList.add('active');
+            paymentTabContent.style.display = 'block';
+          }
+          window.ensurePaymentManager?.();
+          if (typeof window.ensurePaymentManager === 'function') {
+            const mgr = window.ensurePaymentManager();
+            if (mgr && typeof mgr.handlePaymentMenuClick === 'function') {
+              // Payment manager handles its own initialization
+            }
+          }
+        },
+        'equipmentTab': () => {
+          if (typeof window.equipmentManager !== 'undefined') {
+            window.equipmentManager.loadEquipmentData();
+          }
+          window.initializeEquipmentTab?.();
+        },
+        'settingsTab': () => {
+          window.updatePasskeySettingsUI?.();
+          if (window.setupLanguageSettings) window.setupLanguageSettings();
+        },
+        'supportReviewsTab': () => {
+          window.initializeSupportTab?.();
+          if (window.supportReviewsManager && typeof window.supportReviewsManager.switchTab === 'function') {
+            window.supportReviewsManager.switchTab('notifications');
+          }
+        },
+        'offersTab': () => {
+          // Ensure offers tab content is visible
+          const offersTabContent = document.querySelector('#offersTab .offers-tab');
+          if (offersTabContent) {
+            offersTabContent.style.display = 'block';
+            offersTabContent.style.opacity = '1';
+            offersTabContent.style.visibility = 'visible';
+          }
+          
+          // Load offers manager if not already loaded
+          if (window.loadOffersManager && !window.offersManagerLoaded) {
+            window.loadOffersManager();
+          }
+          
+          // Initialize offers manager if available
+          setTimeout(() => {
+            if (window.offersManager && typeof window.offersManager.initializeElements === 'function') {
+              window.offersManager.initializeElements();
+            }
+          }, 100);
+        }
       };
       
       const initFunction = initMap[tabId];
@@ -217,53 +347,73 @@ class UltraFastSidebar {
     });
   }
 
-  toggleMobileSidebar() {
-    const mobileSidebar = this.cache.get('mobileSidebar');
-    const backdrop = this.cache.get('backdrop');
+  toggleMobileMenuBar() {
+    const mobileMenuBar = this.cache.get('mobileMenuBar');
     
-    if (!mobileSidebar) return;
+    console.log('🍔 Hamburger menu clicked - toggling mobile menu bar');
     
-    if (mobileSidebar.classList.contains('show')) {
-      this.closeMobileSidebar();
+    if (!mobileMenuBar) {
+      console.warn('❌ Mobile menu bar element not found');
+      return;
+    }
+    
+    if (mobileMenuBar.classList.contains('show')) {
+      console.log('📱 Closing mobile menu bar');
+      this.closeMobileMenuBar();
     } else {
-      this.openMobileSidebar();
+      console.log('📱 Opening mobile menu bar');
+      this.openMobileMenuBar();
     }
   }
 
-  openMobileSidebar() {
-    const mobileSidebar = this.cache.get('mobileSidebar');
+  openMobileMenuBar() {
+    const mobileMenuBar = this.cache.get('mobileMenuBar');
     const backdrop = this.cache.get('backdrop');
     
-    if (mobileSidebar && backdrop) {
-      mobileSidebar.classList.add('show');
+    if (mobileMenuBar && backdrop) {
+      // IMMEDIATE: Show menu without any delays
+      mobileMenuBar.style.display = 'block';
+      mobileMenuBar.classList.add('show');
       backdrop.classList.add('show', 'active');
       document.body.style.overflow = 'hidden';
+      console.log('✅ Mobile menu bar opened instantly');
+    } else {
+      console.warn('❌ Mobile menu bar or backdrop not found');
     }
   }
 
-  closeMobileSidebar() {
-    const mobileSidebar = this.cache.get('mobileSidebar');
+  closeMobileMenuBar() {
+    const mobileMenuBar = this.cache.get('mobileMenuBar');
     const backdrop = this.cache.get('backdrop');
     
-    if (mobileSidebar && backdrop) {
-      mobileSidebar.classList.remove('show');
+    if (mobileMenuBar && backdrop) {
+      mobileMenuBar.classList.remove('show');
       backdrop.classList.remove('show', 'active');
       document.body.style.overflow = '';
+      
+      // Hide the menu bar after animation completes
+      setTimeout(() => {
+        if (!mobileMenuBar.classList.contains('show')) {
+          mobileMenuBar.style.display = 'none';
+        }
+      }, 300);
+      
+      console.log('✅ Mobile menu bar closed successfully');
+    } else {
+      console.warn('❌ Mobile menu bar or backdrop not found');
     }
   }
 
-  // Desktop sidebar toggle (collapse/expand with proper main content adjustment)
+  // Desktop sidebar toggle (collapse/expand with CSS-only positioning)
   toggleDesktopSidebar() {
     if (window.innerWidth <= 900) return; // Only work on desktop
     
     const sidebar = this.cache.get('sidebar');
-    const mainContent = this.cache.get('mainContent');
-    const topNav = this.cache.get('topNav');
     const toggleBtn = this.cache.get('toggleBtn');
     
-    if (!sidebar || !mainContent || !topNav || !toggleBtn) return;
+    if (!sidebar || !toggleBtn) return;
     
-    // Toggle classes with hardware acceleration
+    // Toggle classes - let CSS handle all positioning
     const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
     document.body.classList.toggle('sidebar-collapsed', isCollapsed);
     
@@ -281,22 +431,7 @@ class UltraFastSidebar {
       });
     }
     
-    // Smooth content adjustment with hardware acceleration
-    requestAnimationFrame(() => {
-      if (isCollapsed) {
-        // Collapsed state: full width content
-        mainContent.style.marginLeft = '0';
-        topNav.style.left = '0';
-        topNav.style.width = '100vw';
-      } else {
-        // Expanded state: normal sidebar width
-        mainContent.style.marginLeft = '270px';
-        topNav.style.left = '270px';
-        topNav.style.width = 'calc(100vw - 270px)';
-      }
-    });
-    
-    console.log(`⚡ Desktop sidebar ${isCollapsed ? 'collapsed' : 'expanded'}`);
+    console.log(`⚡ Desktop sidebar ${isCollapsed ? 'collapsed' : 'expanded'} - CSS handles positioning`);
   }
 
   // Public API method to switch tabs programmatically
@@ -612,33 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
   
-  // Settings tab language integration functions
-  window.applyLanguageSettings = () => {
-    const activeOption = document.querySelector('.language-option.active');
-    if (activeOption) {
-      const lang = activeOption.getAttribute('data-lang');
-      window.advancedLanguageSystem.changeLanguage(lang);
-      
-      // Show success message
-      showNotification(`Language changed to ${lang === 'hi' ? 'Hindi' : 'English'}`, 'success');
-    }
-  };
-  
-  window.resetLanguageSettings = () => {
-    window.advancedLanguageSystem.changeLanguage('en');
-    
-    // Update UI
-    document.querySelectorAll('.language-option').forEach(option => {
-      option.classList.toggle('active', option.getAttribute('data-lang') === 'en');
-    });
-    
-    showNotification('Language reset to English', 'info');
-  };
-  
-  window.showLanguageInfo = () => {
-    showNotification('Select your preferred language for the dashboard interface. Changes apply immediately.', 'info');
-  };
-  
   // Helper function for notifications
   window.showNotification = (message, type = 'info') => {
     // Create notification element
@@ -682,6 +790,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }, 300);
     }, 3000);
+  };
+  
+  // Settings tab language integration functions
+  window.applyLanguageSettings = () => {
+    const activeOption = document.querySelector('.language-option.active');
+    if (activeOption) {
+      const lang = activeOption.getAttribute('data-lang');
+      window.advancedLanguageSystem.changeLanguage(lang);
+      
+      // Show success message
+      window.showNotification(`Language changed to ${lang === 'hi' ? 'Hindi' : 'English'}`, 'success');
+    }
+  };
+  
+  window.resetLanguageSettings = () => {
+    window.advancedLanguageSystem.changeLanguage('en');
+    
+    // Update UI
+    document.querySelectorAll('.language-option').forEach(option => {
+      option.classList.toggle('active', option.getAttribute('data-lang') === 'en');
+    });
+    
+    window.showNotification('Language reset to English', 'info');
+  };
+  
+  window.showLanguageInfo = () => {
+    window.showNotification('Select your preferred language for the dashboard interface. Changes apply immediately.', 'info');
   };
   
   // Setup language settings when settings tab is opened

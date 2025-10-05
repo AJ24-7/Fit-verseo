@@ -66,6 +66,7 @@ const equipmentRoutes = require('./backend/routes/equipmentRoutes');
 const qrCodeRoutes = require('./backend/routes/qrCodeRoutes');
 const biometricRoutes = require('./backend/routes/biometricRoutes');
 const securityRoutes = require('./backend/routes/securityRoutes');
+const offersRoutes = require('./backend/routes/offersRoutes');
 const testRoutes = require('./backend/routes/testRoutes');
 if (typeof testRoutes !== 'function') {
   console.error('ERROR: testRoutes is not a function!', testRoutes);
@@ -460,6 +461,11 @@ app.use('/api/biometric', (req, res, next) => {
 app.use('/api/security', (req, res, next) => {
   next();
 }, securityRoutes);
+
+// Offers and Coupons Management routes
+app.use('/api/admin', (req, res, next) => {
+  next();
+}, offersRoutes);
 
 
 

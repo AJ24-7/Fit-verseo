@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
       await registerAllTabsWithIsolation();
 
       // Setup the existing tab handling with performance enhancements
-      setupEnhancedTabHandling();
+      // setupEnhancedTabHandling(); // DISABLED: UltraFastSidebar handles all sidebar functionality
 
       // Initialize dashboard components
       await initializeDashboardComponents();
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     window.__TABS_REGISTERED_WITH_ISOLATION__ = true;
 
-    // Dashboard Tab
+    // Dashboard Tab - Critical priority, load immediately
     window.tabIsolationManager.registerTab('dashboardTab', {
       name: 'Dashboard',
       priority: 'critical',
@@ -89,16 +89,26 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    // Payment Tab
+    // Payment Tab - High priority, lazy load on demand
     window.tabIsolationManager.registerTab('paymentTab', {
       name: 'Payments',
       priority: 'high',
       contentSelector: '#paymentTab',
-      preloadData: true,
+      preloadData: false, // Changed to lazy load
       init: async () => {
-        await window.__loadTabScripts?.(['payment.js', 'cash-validation.js']);
-        if (window.ensurePaymentManager) {
-          window.ensurePaymentManager();
+        if (window.LazyLoadManager) {
+          await window.LazyLoadManager.loadModule('payment-system', async () => {
+            await window.__loadTabScripts?.(['payment.js', 'cash-validation.js']);
+            if (window.ensurePaymentManager) {
+              window.ensurePaymentManager();
+            }
+          }, { priority: 'high' });
+        } else {
+          // Fallback
+          await window.__loadTabScripts?.(['payment.js', 'cash-validation.js']);
+          if (window.ensurePaymentManager) {
+            window.ensurePaymentManager();
+          }
         }
       },
       onActivate: () => {
@@ -182,268 +192,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📑 All tabs registered with performance isolation');
   }
 
-  /**
-   * Utility function to get the current gym ID
-   * @returns {string|null} The current gym ID
-   */
-  function getGymId() {
-    try {
-      // Try to get from current gym profile (priority order)
-      if (window.currentGymProfile) {
-        return window.currentGymProfile._id || window.currentGymProfile.id;
-      }
-      
-      // Try to get from window.currentGymProfile global
-      if (window.currentGymProfile) {
-        return window.currentGymProfile._id;
-      }
-      
-      // Fallback to localStorage
-      return localStorage.getItem('gymId') || localStorage.getItem('currentGymId');
-    } catch (error) {
-      console.warn('Error getting gym ID:', error);
-      return null;
-    }
-  }
 
-  /**
-   * Setup enhanced tab handling with performance managers
-   */
-  function setupEnhancedTabHandling() {
-    // Central tab handling using data-tab attributes with performance optimizations
-    const mainTabs = {
-      dashboardTab: document.getElementById('dashboardTab'),
-      memberDisplayTab: document.getElementById('memberDisplayTab'),
-      trainerTab: document.getElementById('trainerTab'),
-      attendanceTab: document.getElementById('attendanceTab'),
-      paymentTab: document.getElementById('paymentTab'),
-      equipmentTab: document.getElementById('equipmentTab'),
-      supportReviewsTab: document.getElementById('supportReviewsTab'),
-      settingsTab: document.getElementById('settingsTab')
-    };
-
-    // ⚡ Optimized Tab Management
-    window.hideAllMainTabs = () => {
-      // High-performance tab hiding
-      const allTabs = document.querySelectorAll('[id$="Tab"], [id$="tab"], .tab-content');
-      allTabs.forEach(tab => {
-        if (tab.style.display !== 'none') {
-          tab.style.display = 'none';
-          tab.classList.remove('active', 'show', 'visible');
-        }
-      });
-    };
-
-    // ⚡ High-Performance Sidebar Handler
-    const initializeSidebar = () => {
-      const sidebar = document.querySelector('.sidebar');
-      const mobileSidebar = document.querySelector('#mobileSidebarDropdown');
-      
-      if (!sidebar) return;
-
-      // Single optimized event handler for both desktop and mobile
-      const handleSidebarClick = (e) => {
-        const link = e.target.closest('.menu-link');
-        if (!link) return;
-        
-        const tabId = link.getAttribute('data-tab');
-        if (!tabId) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        // Immediate visual feedback
-        updateActiveState(link);
-        
-        // Fast tab switching without delays
-        switchTab(tabId);
-        
-        // Close mobile sidebar if it's open
-        if (mobileSidebar) {
-          mobileSidebar.classList.remove('show');
-          document.getElementById('mobileSidebarBackdrop')?.classList.remove('show');
-        }
-      };
-
-      // Optimized active state management
-      const updateActiveState = (activeLink) => {
-        // Use requestAnimationFrame for smooth visual updates
-        requestAnimationFrame(() => {
-          // Remove active class from all links (both desktop and mobile)
-          document.querySelectorAll('.menu-link.active').forEach(link => {
-            link.classList.remove('active');
-          });
-          
-          // Add active class to clicked link and its mobile counterpart
-          activeLink.classList.add('active');
-          
-          // Find corresponding link in other sidebar (desktop/mobile)
-          const tabId = activeLink.getAttribute('data-tab');
-          const otherLink = document.querySelector(`.menu-link[data-tab=\"${tabId}\"]:not(.active)`);
-          if (otherLink) {
-            otherLink.classList.add('active');
-          }
-        });
-      };
-
-      // Optimized tab switching - removed complex logic for speed
-      const switchTab = (tabId) => {
-        // Use DocumentFragment to batch DOM operations
-        const fragment = document.createDocumentFragment();
-        
-        // Hide all tabs with better performance
-        const allTabs = document.querySelectorAll('[id$="Tab"], [id$="tab"], .tab-content');
-        allTabs.forEach(tab => {
-          if (tab.style.display !== 'none') {
-            tab.style.display = 'none';
-            // Remove any overlapping classes
-            tab.classList.remove('active', 'show', 'visible');
-          }
-        });
-
-        // Show target tab with immediate visibility
-        const targetTab = document.getElementById(tabId);
-        if (targetTab) {
-          requestAnimationFrame(() => {
-            targetTab.style.display = 'block';
-            targetTab.classList.add('active');
-            
-            // Ensure proper scrolling and layout
-            targetTab.scrollTop = 0;
-            
-            // Trigger any tab-specific initialization
-            triggerTabInit(tabId);
-          });
-        } else {
-          console.warn(`Tab ${tabId} not found`);
-        }
-      };
-
-      // Lazy initialization for tab-specific functionality
-      const triggerTabInit = (tabId) => {
-        // Use setTimeout to prevent blocking UI updates
-        setTimeout(() => {
-          switch(tabId) {
-            case 'trainerTab':
-              if (typeof window.showTrainerTab === 'function') window.showTrainerTab();
-              break;
-            case 'settingsTab':
-              if (typeof window.updatePasskeySettingsUI === 'function') window.updatePasskeySettingsUI();
-              break;
-            case 'paymentTab':
-              if (window.ensurePaymentManager && typeof window.ensurePaymentManager === 'function') {
-                window.ensurePaymentManager();
-              }
-              break;
-            case 'membersTab':
-              if (typeof window.initializeMembersTab === 'function') window.initializeMembersTab();
-              break;
-            case 'attendanceTab':
-              if (typeof window.initializeAttendanceTab === 'function') window.initializeAttendanceTab();
-              break;
-            case 'equipmentTab':
-              if (typeof window.initializeEquipmentTab === 'function') window.initializeEquipmentTab();
-              break;
-            case 'supportTab':
-              if (typeof window.initializeSupportTab === 'function') window.initializeSupportTab();
-              break;
-          }
-        }, 0);
-      };
-
-      // Add optimized event listeners
-      sidebar.addEventListener('click', handleSidebarClick, { passive: false });
-      if (mobileSidebar) {
-        mobileSidebar.addEventListener('click', handleSidebarClick, { passive: false });
-      }
-    };
-
-    // ⚡ Mobile Sidebar Controls
-    const initializeMobileSidebar = () => {
-      const hamburger = document.getElementById('hamburgerMenuBtn');
-      const mobileDropdown = document.getElementById('mobileSidebarDropdown');
-      const backdrop = document.getElementById('mobileSidebarBackdrop');
-      const closeBtn = document.getElementById('closeMobileSidebar');
-
-      if (!hamburger || !mobileDropdown || !backdrop) return;
-
-      // Open mobile sidebar
-      hamburger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        mobileDropdown.classList.add('show');
-        backdrop.classList.add('show');
-        document.body.style.overflow = 'hidden'; // Prevent body scroll
-      });
-
-      // Close mobile sidebar
-      const closeMobileSidebar = () => {
-        mobileDropdown.classList.remove('show');
-        backdrop.classList.remove('show');
-        document.body.style.overflow = ''; // Restore body scroll
-      };
-
-      closeBtn?.addEventListener('click', closeMobileSidebar);
-      backdrop.addEventListener('click', closeMobileSidebar);
-
-      // Close on escape key
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && mobileDropdown.classList.contains('show')) {
-          closeMobileSidebar();
-        }
-      });
-    };
-
-  // === Enhanced Tab System Initialization ===
-  window.initializeTabSystem = () => {
-    // Ensure default tab is visible
-    const defaultTab = document.getElementById('dashboardTab') || 
-                      document.querySelector('[id$="Tab"]:first-child') ||
-                      document.querySelector('.tab-content:first-child');
-    
-    if (defaultTab) {
-      defaultTab.style.display = 'block';
-      defaultTab.classList.add('active');
-    }
-
-    // Set default active menu item
-    const defaultMenuItem = document.querySelector('.menu-link[data-tab="dashboardTab"]') ||
-                           document.querySelector('.menu-link:first-child');
-    
-    if (defaultMenuItem) {
-      defaultMenuItem.classList.add('active');
-    }
-
-    console.log('✅ Tab system initialized with optimized performance');
-  };
-
-  // Global function for external tab switching
-  window.switchToTab = (tabId) => {
-    const link = document.querySelector(`[data-tab="${tabId}"]`);
-    if (link) {
-      link.click();
-    } else {
-      console.warn(`No menu link found for tab: ${tabId}`);
-    }
-  };
-
-  // Initialize enhanced tab system
-  window.initializeTabSystem();
-
-  // Initialize mobile sidebar and main sidebar
-  initializeMobileSidebar();
-  initializeSidebar();
-
-    // Initial tab setup
-    const anyVisible = Object.values(mainTabs).some(t => t && t.style.display !== 'none');
-    if (!anyVisible && mainTabs.dashboardTab) {
-      hideAllMainTabs();
-      mainTabs.dashboardTab.style.display = 'block';
-    }
-  }
-
-  /**
-   * Initialize dashboard components with performance optimizations
-   */
+  
   async function initializeDashboardComponents() {
     // Prevent multiple initialization
     if (window.__DASHBOARD_COMPONENTS_INITIALIZED__) {
@@ -493,11 +243,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize notification system (only once)
     if (window.NotificationSystem && !window.notificationSystem) {
-      window.notificationSystem = new NotificationSystem();
+      // Use the window-scoped constructor to avoid ReferenceError in strict/module contexts
+      window.notificationSystem = new window.NotificationSystem();
     }
 
     console.log('🎯 Dashboard components initialized with performance optimizations');
   }
+
+  // Expose initialization functions globally for tab switching
+  window.initializeDashboardComponents = initializeDashboardComponents;
+
+  // Add fallback functions for undefined functions to prevent errors
+  window.fetchAndRenderActivities = window.fetchAndRenderActivities || function() {
+    console.log('📊 Activities functionality will be loaded when needed');
+  };
+
+  window.fetchPendingTrainers = window.fetchPendingTrainers || function() {
+    console.log('👨‍💼 Trainer functionality will be loaded when needed');
+    return Promise.resolve([]);
+  };
+
+  window.fetchMembersData = window.fetchMembersData || function() {
+    console.log('👥 Members data functionality will be loaded when needed');
+  };
+
+  window.fetchGymPhotos = window.fetchGymPhotos || function() {
+    console.log('📸 Gym photos functionality will be loaded when needed');
+  };
+
+  window.showNotification = window.showNotification || function(message, type = 'info') {
+    if (window.ErrorManager) {
+      window.ErrorManager.showError(message, { type });
+    } else {
+      console.log(`📢 ${type.toUpperCase()}: ${message}`);
+    }
+  };
+
+  window.handleBiometricEnrollmentRedirect = window.handleBiometricEnrollmentRedirect || function() {
+    console.log('🔒 Biometric enrollment functionality will be loaded when needed');
+  };
+
+  window.handleBiometricDeviceSetupRedirect = window.handleBiometricDeviceSetupRedirect || function() {
+    console.log('🔧 Biometric device setup functionality will be loaded when needed');
+  };
 
   /**
    * Initialize profile dropdown menu
@@ -592,8 +380,20 @@ document.addEventListener('DOMContentLoaded', function() {
     settingsTab: document.getElementById('settingsTab')
   };
 
-  // REMOVED: Legacy sidebar event delegation - now handled by UltraFastSidebar system
-  // UltraFastSidebar provides optimized event handling with proper performance
+  // Sidebar event handling delegated to UltraFastSidebar class for optimal performance
+
+  // Helper: hide all main tabs safely (prevents ReferenceError when called)
+  function hideAllMainTabs() {
+    try {
+      Object.values(mainTabs).forEach(t => {
+        if (t && typeof t.style !== 'undefined') {
+          t.style.display = 'none';
+        }
+      });
+    } catch (err) {
+      console.warn('hideAllMainTabs error', err);
+    }
+  }
 
   // Initial visible tab (ensure only one shown)
   // If a tab already visible (inline style), keep it; else default to dashboard if present
@@ -725,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const closeSaveActivitiesConfirmDialog = document.getElementById('closeSaveActivitiesConfirmDialog');
 
   // --- Fetch and Render Activities ---
-  async function fetchAndRenderActivities() {
+  window.fetchAndRenderActivities = async function fetchAndRenderActivities() {
     try {
       // Use global gym profile if available, otherwise fetch it
       let data = window.currentGymProfile;
@@ -813,16 +613,16 @@ document.addEventListener('DOMContentLoaded', function() {
       renderActivitiesList();
     } catch (err) {
       console.error('Error fetching activities:', err);
-      if (activitiesList) activitiesList.innerHTML = '<div style="color:#b71c1c;">Failed to load activities.</div>';
+      if (activitiesList) activitiesList.innerHTML = `<div style="color:#b71c1c;">${window.GymI18n?.t('activities.failed', 'Failed to load activities.')}</div>`;
     }
   }
 
   // --- Render Activities in Dashboard ---
-  function renderActivitiesList() {
+  let renderActivitiesList = function() {
     if (!activitiesList) return;
         
     if (!currentActivities?.length) {
-      activitiesList.innerHTML = '<div style="color:#888;font-size:1em;text-align:center;padding:20px;">No activities added yet.</div>';
+      activitiesList.innerHTML = `<div style="color:#888;font-size:1em;text-align:center;padding:20px;">${window.GymI18n?.t('activities.none', 'No activities added yet.')}</div>`;
       return;
     }
     
@@ -830,11 +630,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const validActivities = currentActivities.filter(a => typeof a?.name === 'string');
     
     if (!validActivities.length) {
-      activitiesList.innerHTML = '<div style="color:#888;font-size:1em;text-align:center;padding:20px;">No valid activities found.</div>';
+      activitiesList.innerHTML = `<div style="color:#888;font-size:1em;text-align:center;padding:20px;">${window.GymI18n?.t('activities.invalid', 'No valid activities found.')}</div>`;
       return;
     }
         
-    const isDark = document.body.getAttribute('data-theme') === 'dark';
     activitiesList.innerHTML = '<div class="activities-grid">' +
       validActivities.map(a => `
         <div class="activity-badge" tabindex="0" title="${a.description || a.name}">
@@ -856,7 +655,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       };
     });
-  }
+  };
 
   // --- Open Add Activities Modal ---
   if (addActivitiesBtn && addActivitiesModal) {
@@ -994,7 +793,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (activitiesGrid) {
       // Adjust activities grid based on container width
-      const containerWidth = activitiesGrid.offsetWidth;
       let minSize;
       
       if (windowWidth <= 480) {
@@ -1021,7 +819,12 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // Initial render
-  fetchAndRenderActivities();
+  window.fetchAndRenderActivities();
+  
+  // Listen for refresh events
+  window.addEventListener('refreshActivities', function() {
+    window.fetchAndRenderActivities();
+  });
 });
 // --- Dialog Utility (Global) ---
 function showDialog({ title = '', message = '', confirmText = 'OK', cancelText = '', iconHtml = '', customFooter = '', onConfirm = null, onCancel = null }) {
@@ -1216,7 +1019,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderPendingTrainers(trainers) {
     if (!pendingGrid) return;
     if (!Array.isArray(trainers) || trainers.length === 0) {
-      pendingGrid.innerHTML = '<div style="color:#888;text-align:center;width:100%;padding:32px 0;">No pending trainers found.</div>';
+      pendingGrid.innerHTML = `<div style="color:#888;text-align:center;width:100%;padding:32px 0;">${window.GymI18n?.t('trainers.pending.none', 'No pending trainers found.')}</div>`;
       return;
     }
     pendingGrid.innerHTML = trainers.map(createTrainerCard).join('');
@@ -1225,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderApprovedTrainers(trainers) {
     if (!approvedGrid) return;
     if (!Array.isArray(trainers) || trainers.length === 0) {
-      approvedGrid.innerHTML = '<div style="color:#888;text-align:center;width:100%;padding:32px 0;">No approved trainers found.</div>';
+      approvedGrid.innerHTML = `<div style="color:#888;text-align:center;width:100%;padding:32px 0;">${window.GymI18n?.t('trainers.approved.none', 'No approved trainers found.')}</div>`;
       return;
     }
     approvedGrid.innerHTML = trainers.map(createTrainerCard).join('');
@@ -1234,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderRejectedTrainers(trainers) {
     if (!rejectedGrid) return;
     if (!Array.isArray(trainers) || trainers.length === 0) {
-      rejectedGrid.innerHTML = '<div style="color:#888;text-align:center;width:100%;padding:32px 0;">No rejected trainers found.</div>';
+      rejectedGrid.innerHTML = `<div style="color:#888;text-align:center;width:100%;padding:32px 0;">${window.GymI18n?.t('trainers.rejected.none', 'No rejected trainers found.')}</div>`;
       return;
     }
     rejectedGrid.innerHTML = trainers.map(createTrainerCard).join('');
@@ -1506,7 +1309,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Render plans in dashboard
   function renderPlans() {
     if (!plansList) return;
-    plansList.innerHTML = plans.map((plan, idx) => `
+    plansList.innerHTML = plans.map((plan) => `
       <div class="plan-card" data-plan="${plan.name}" style="background:#f6f8fc;border-radius:12px;padding:22px 16px;box-shadow:0 2px 10px ${plan.color}11;display:flex;flex-direction:column;align-items:center;">
         <i class="fas ${plan.icon}" style="font-size:2.2em;color:${plan.color};margin-bottom:8px;"></i>
         <div style="font-weight:700;font-size:1.15em;margin-bottom:6px;">${plan.name}</div>
@@ -1733,7 +1536,7 @@ function showPlanIconColorPicker(idx) {
     planEditorForm.onsubmit = async function(e) {
       e.preventDefault();
       // Collect values (from plans state, which now includes icon/color)
-      const newPlans = plans.map((plan, idx) => ({
+      const newPlans = plans.map((plan) => ({
         ...plan
       }));
       // Save to backend
@@ -1791,9 +1594,9 @@ function showPlanIconColorPicker(idx) {
     const discount = (months >= plan.discountMonths) ? plan.discount : 0;
     const discounted = price * (1 - discount / 100);
     if (discount > 0) {
-      resultSpan.innerHTML = `Total: <s>₹${price}</s> <span style='color:#38b000;'>₹${discounted.toFixed(0)}</span> <span style='color:#ffbe0b;'>(-${discount}% off)</span>`;
+      resultSpan.innerHTML = `${window.GymI18n?.t('total.text', 'Total:')} <s>₹${price}</s> <span style='color:#38b000;'>₹${discounted.toFixed(0)}</span> <span style='color:#ffbe0b;'>(-${discount}% off)</span>`;
     } else {
-      resultSpan.innerHTML = `Total: ₹${price}`;
+      resultSpan.innerHTML = `${window.GymI18n?.t('total.text', 'Total:')} ₹${price}`;
     }
   }
   if (calcBtn) calcBtn.onclick = updateDiscountedFees;
@@ -2442,13 +2245,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const closeAddMemberModal = document.getElementById('closeAddMemberModal');
   const addMemberForm = document.getElementById('addMemberForm');
   const addMemberSuccessMsg = document.getElementById('addMemberSuccessMsg');
-  const memberProfileImageInput = document.getElementById('memberProfileImage');
   const memberImageTag = document.getElementById('memberImageTag');
-  const uploadMemberImageBtn = document.getElementById('uploadMemberImageBtn');
 
   // Form elements for payment calculation
   const planSelected = document.getElementById('planSelected');
-  const monthlyPlan = document.getElementById('monthlyPlan');
   const paymentAmount = document.getElementById('paymentAmount');
 
 
@@ -2954,7 +2754,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const { gymName, plan, monthlyPlan, memberEmail, memberName, membershipId, validDate } = getMemberFormMeta(formData);
      
       // Debug: Log FormData contents
-      for (let [key, value] of formData.entries()) {
+      for (let [] of formData.entries()) {
       }
       try {
         const res = await fetch('http://localhost:5000/api/members', {
@@ -3251,7 +3051,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Remove legacy error message display (all errors now use dialog)
-    function showAddMemberError() {}
   }
     
 });
@@ -3498,9 +3297,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       const formData = new FormData(renewMembershipForm);
-      const memberId = formData.get('memberId');
-      
-      if (!memberId) {
+      let memberId = formData.get('memberId');
+      if (memberId && typeof memberId === 'object' && memberId.toString) {
+        memberId = memberId.toString();
+      }
+      if (!memberId || typeof memberId !== 'string' || !memberId.trim()) {
         showDialog({
           title: 'Error',
           message: 'Member ID is missing. Please try again.',
@@ -3526,7 +3327,7 @@ document.addEventListener('DOMContentLoaded', function() {
           allowanceExpiryDate: is7DayAllowance ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
         };
         
-        const response = await fetch(`http://localhost:5000/api/members/renew/${memberId}`, {
+        const response = await fetch(`http://localhost:5000/api/members/renew/${encodeURIComponent(memberId)}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -3682,13 +3483,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
                 
         // Specifically check for our target token
-        const targetToken = localStorage.getItem('gymAdminToken');
        
         
         // Check for any token-like keys
-        const tokenKeys = Object.keys(localStorage).filter(key => 
-            key.toLowerCase().includes('token') || key.toLowerCase().includes('auth')
-        );
     }
     
     async function waitForToken(tokenKey, maxTries, delayMs) {
@@ -3761,7 +3558,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function handleMissingToken() {
         console.error("No authentication token found after retry. Redirecting to login.");
-        window.location.replace('/public/admin-login.html');
+        window.location.replace('../public/admin-login.html');
     }
     
     async function fetchAdminProfile(token) {
@@ -3783,7 +3580,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (responseData.status === 401 || responseData.status === 403) {
             console.error('Unauthorized access. Clearing tokens.');
             localStorage.removeItem('gymAdminToken');
-            window.location.replace('/public/admin-login.html');
+            window.location.replace('../public/admin-login.html');
         } else {
             throw new Error(responseData.data.message || 'Failed to fetch profile');
         }
@@ -3832,13 +3629,25 @@ document.addEventListener('DOMContentLoaded', function() {
             
             adminAvatarElement.src = logoUrl;
             adminAvatarElement.onerror = function() {
-                this.onerror = null; // Prevent infinite loop
-                this.src = 'http://localhost:5000/uploads/gym-logos/default-logo.png';
+        // Ensure activities are rendered after profile is loaded
+        setTimeout(() => {
+            if (typeof window.fetchAndRenderActivities === 'function') {
+                window.fetchAndRenderActivities();
+            } else {
+                // Dispatch custom event to trigger activities rendering when function becomes available
+                window.dispatchEvent(new CustomEvent('refreshActivities'));
+            }
+        }, 100);
             };
            
         }
         // Ensure activities are rendered after profile is loaded
-        if (typeof fetchAndRenderActivities === 'function') fetchAndRenderActivities();
+        if (typeof window.fetchAndRenderActivities === 'function') {
+            window.fetchAndRenderActivities();
+        } else {
+            // Dispatch custom event to trigger activities rendering when function becomes available
+            window.dispatchEvent(new CustomEvent('refreshActivities'));
+        }
         
         // Refresh QR generator with correct gym ID if it exists
         if (window.qrGenerator && typeof window.qrGenerator.refreshGymId === 'function') {
@@ -4313,7 +4122,7 @@ function clearUploadPhotoMsgAndCloseModal() {
             logoutLink.addEventListener('click', function(event) {
                 event.preventDefault(); // Prevent default anchor behavior
                localStorage.removeItem('gymAdminToken');
-                window.location.href = '/public/admin-login.html'; // Redirect to login page
+                window.location.href = '../public/admin-login.html'; // Redirect to login page
             });
         }
 
@@ -4711,142 +4520,37 @@ function clearUploadPhotoMsgAndCloseModal() {
         });
     }
 
-// OPTIMIZED: Sidebar toggle logic now handled by UltraFastSidebar system for better performance
-// The sidebar toggle functionality is provided by the performance-sidebar.js UltraFastSidebar class
 
 
 
-// Hide sidebar when clicking outside on mobile
-document.addEventListener('click', (event) => {
-    if (
-        window.innerWidth <= 900 &&
-        sidebar.classList.contains('sidebar-open') &&
-        !sidebar.contains(event.target) &&
-        !mobileMenuBtn?.contains(event.target)
-    ) {
-        sidebar.classList.remove('sidebar-open');
-    }
-});
 
-// --- Display Tab Logic ---
-const sidebarMenuLinks = document.querySelectorAll('.sidebar .menu-link');
-const membersMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-users'));
-const trainersMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-user-tie'));
-const dashboardMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-tachometer-alt'));
-const settingsMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-cog'));
-const attendanceMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-calendar-check'));
-const paymentsMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-credit-card'));
-const equipmentMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-dumbbell'));
-const supportMenuLink = Array.from(sidebarMenuLinks).find(link => link.querySelector('.fa-headset'));
-const memberDisplayTab = document.getElementById('memberDisplayTab');
-const trainerTab = document.getElementById('trainerTab');
-const settingsTab = document.getElementById('settingsTab');
-const attendanceTab = document.getElementById('attendanceTab');
-const paymentTab = document.getElementById('paymentTab');
-const equipmentTab = document.getElementById('equipmentTab');
-const supportReviewsTab = document.getElementById('supportReviewsTab');
-const dashboardContent = document.querySelector('.content');
-
-// Use the optimized global hideAllMainTabs function
-
-if (attendanceMenuLink && attendanceTab) {
-  attendanceMenuLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    hideAllMainTabs();
-    attendanceTab.style.display = 'block';
-    // Initialize attendance manager if it exists
-    if (typeof window.attendanceManager !== 'undefined') {
-      window.attendanceManager.loadData();
-      window.attendanceManager.loadAttendanceForDate();
-    }
-    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
-    attendanceMenuLink.classList.add('active');
-  });
-}
-
-if (paymentsMenuLink) {
-  paymentsMenuLink.addEventListener('click', function(e) {
-    // Delegate to PaymentManager passkey + lazy init flow
-    if (typeof window.ensurePaymentManager === 'function') {
-      const mgr = window.ensurePaymentManager();
-      if (mgr && typeof mgr.handlePaymentMenuClick === 'function') {
-        mgr.handlePaymentMenuClick(e);
-        return; // Prevent duplicate handling
-      }
-    }
-    // Fallback: default behavior if payment module not loaded
-    if (paymentTab) {
-      e.preventDefault();
-      hideAllMainTabs();
-      paymentTab.style.display = 'block';
-      sidebarMenuLinks.forEach(link => link.classList.remove('active'));
-      paymentsMenuLink.classList.add('active');
-    }
-  });
-}
-
-if (equipmentMenuLink && equipmentTab) {
-  equipmentMenuLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    hideAllMainTabs();
-    equipmentTab.style.display = 'block';
-    // Initialize equipment manager if it exists
-    if (typeof window.equipmentManager !== 'undefined') {
-      window.equipmentManager.loadEquipmentData();
-    }
-    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
-    equipmentMenuLink.classList.add('active');
-  });
-}
-
-if (supportMenuLink && supportReviewsTab) {
-  supportMenuLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    hideAllMainTabs();
-    supportReviewsTab.style.display = 'block';
-    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
-    supportMenuLink.classList.add('active');
-  });
-}
-
-if (trainersMenuLink && trainerTab) {
-  trainersMenuLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    hideAllMainTabs();
-    trainerTab.style.display = 'block';
-    if (typeof window.showTrainerTab === 'function') window.showTrainerTab();
-    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
-    trainersMenuLink.classList.add('active');
-  });
-}
-if (membersMenuLink && memberDisplayTab) {
-  membersMenuLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    hideAllMainTabs();
-    memberDisplayTab.style.display = 'block';
-    if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
-    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
-    membersMenuLink.classList.add('active');
-  });
-}
-if (dashboardMenuLink && dashboardContent) {
-  dashboardMenuLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    hideAllMainTabs();
-    dashboardContent.style.display = 'block';
-    sidebarMenuLinks.forEach(link => link.classList.remove('active'));
-    dashboardMenuLink.classList.add('active');
-  });
-}
-
-// Settings navigation is now handled in the dynamic sidebar menu highlight section below
-// On page load, show only dashboard
 document.addEventListener('DOMContentLoaded', function() {
   hideAllMainTabs();
   if (dashboardContent) dashboardContent.style.display = 'block';
   
   // Initialize stat cards with loading states
   initializeStatCards();
+});
+
+// Failsafe: ensure stat cards initialize after full load
+window.addEventListener('load', () => {
+  try {
+    if (typeof initializeStatCards === 'function') {
+      // If any card is still in loading state after 2.5s, re-trigger updates
+      setTimeout(() => {
+        const anyLoading = document.querySelector('.stat-card.loading');
+        if (anyLoading) {
+          updateMembersStatsCard?.();
+          updatePaymentsStatsCard?.();
+          updateTrainersStatsCard?.();
+          // Attendance loading is handled separately; ensure it’s not stuck
+          setStatCardLoading?.('.stat-card.attendance', false);
+        }
+      }, 2500);
+    }
+  } catch (e) {
+    console.warn('Stat card load failsafe encountered an issue:', e);
+  }
 });
 
 // --- Stat Card Loading Utilities ---
@@ -5111,59 +4815,10 @@ async function updateTrainersStatsCard() {
 }
 // Note: Stat card initialization is now handled in the main DOMContentLoaded listener above
 
-// Dynamic sidebar menu highlight
-sidebarMenuLinks.forEach(link => {
-  link.addEventListener('click', function(e) {
-    // Only handle tab switching links (not external/settings etc.)
-    const menuText = link.querySelector('.menu-text')?.textContent.trim();
-    if (menuText === 'Dashboard') {
-      // Show dashboard, hide others
-      hideAllMainTabs();
-      dashboardContent.style.display = 'block';
-      // Remove active from all, add to dashboard
-      sidebarMenuLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-    } else if (menuText === 'Members') {
-      // Show members, hide others
-      hideAllMainTabs();
-      memberDisplayTab.style.display = 'block';
-      // Remove active from all, add to members
-      sidebarMenuLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-      // Fetch members if needed
-      if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
-    } else if (menuText === 'Support & Reviews') {
-      // Show support & reviews, hide others
-      hideAllMainTabs();
-      const supportReviewsTab = document.getElementById('supportReviewsTab');
-      if (supportReviewsTab) supportReviewsTab.style.display = 'block';
-      // Remove active from all, add to support & reviews
-      sidebarMenuLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-      // Initialize support reviews if available
-      if (window.supportReviewsManager && typeof window.supportReviewsManager.switchTab === 'function') {
-        window.supportReviewsManager.switchTab('notifications');
-      }
-    } else if (menuText === 'Settings') {
-      // Show settings, hide others
-      hideAllMainTabs();
-      settingsTab.style.display = 'block';
-      // Remove active from all, add to settings
-      sidebarMenuLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-      
-      // Update passkey settings UI when settings tab is opened
-      if (window.paymentManager && typeof window.paymentManager.updatePasskeySettingsUI === 'function') {
-        window.paymentManager.updatePasskeySettingsUI();
-      }
-    } else {
-      // For other tabs, just highlight
-      sidebarMenuLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-    }
-    e.preventDefault();
-  });
-});
+// Dynamic sidebar menu highlight: REMOVED - Now handled by UltraFastSidebar class
+// All sidebar interaction logic moved to performance-sidebar.js for optimal performance
+// This eliminates conflicts and ensures instant hover/click response
+console.log('🚀 Sidebar highlighting delegated to UltraFastSidebar - performance optimized');
 
 // Initialize dashboard customization on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -5206,6 +4861,7 @@ let allMembersCache = [];
 // --- Enhanced Member Search & Filter Logic ---
 async function fetchAndDisplayMembers() {
   const token = localStorage.getItem('gymAdminToken');
+  const membersTableBody = document.getElementById('membersTableBody');
   if (!membersTableBody) return;
   membersTableBody.innerHTML = '<tr><td colspan="13" style="text-align:center;">Loading...</td></tr>';
   
@@ -5287,8 +4943,9 @@ function handleMemberSearchAndFilter() {
   }
   renderMembersTable(filtered);
 }
-
 function renderMembersTable(members) {
+  const membersTableBody = document.getElementById('membersTableBody');
+  if (!membersTableBody) return;
   if (!membersTableBody) return;
   if (!Array.isArray(members) || !members.length) {
     membersTableBody.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#888;">No members found.</td></tr>';
@@ -5474,7 +5131,7 @@ function openMembersDetailCard() {
       if (membersDetailLoading) membersDetailLoading.style.display = 'none';
       if (membersDetailContent) membersDetailContent.style.display = 'block';
       // Unique log for this instance
-      console.log('[fetchAndRenderMembersDetail] (mobile sidebar version) rendered at', new Date().toISOString());
+      console.log('[fetchAndRenderMembersDetail] rendered at', new Date().toISOString());
     } catch (err) {
       if (membersDetailLoading) membersDetailLoading.style.display = 'none';
       if (membersDetailError) {
@@ -5484,70 +5141,150 @@ function openMembersDetailCard() {
     }
   }
 }
-window.openMembersDetailCard = openMembersDetailCard;
-
 // --- Member Detail Card: Show details for clicked member row ---
-if (membersTableBody) {
-  membersTableBody.addEventListener('click', function(e) {
-    // Check if the clicked element is a renew membership button
-    if (e.target.classList.contains('renew-membership-btn')) {
-      e.stopPropagation(); // Prevent row click event
-      
-      const memberId = e.target.getAttribute('data-member-id');
-      if (!memberId) {
-        console.error('Member ID not found on renew button');
+document.addEventListener('DOMContentLoaded', function() {
+  const membersTableBody = document.getElementById('membersTableBody');
+  if (membersTableBody) {
+    membersTableBody.addEventListener('click', function(e) {
+  if (membersTableBody) {
+    membersTableBody.addEventListener('click', function(e) {
+      // Check if the clicked element is a renew membership button
+      if (e.target.classList.contains('renew-membership-btn')) {
+        e.stopPropagation(); // Prevent row click event
+        
+        const memberId = e.target.getAttribute('data-member-id');
+        if (!memberId) {
+          console.error('Member ID not found on renew button');
+          return;
+        }
+        
+        // Find member data from cache
+        const memberData = allMembersCache.find(m => m._id === memberId);
+        if (!memberData) {
+          showDialog({
+            title: 'Error',
+            message: 'Member data not found. Please refresh the page and try again.',
+            confirmText: 'OK',
+            iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+          });
+          return;
+        }
+        
+        // Open renewal modal with member data
+        if (typeof window.openRenewalModal === 'function') {
+          window.openRenewalModal(memberData);
+        } else {
+          console.error('openRenewalModal function not available');
+        }
         return;
       }
       
-      // Find member data from cache
-      const memberData = allMembersCache.find(m => m._id === memberId);
-      if (!memberData) {
-        showDialog({
-          title: 'Error',
-          message: 'Member data not found. Please refresh the page and try again.',
-          confirmText: 'OK',
-          iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
-        });
+      // Original row click functionality for member details
+      let tr = e.target;
+      while (tr && tr.tagName !== 'TR') tr = tr.parentElement;
+      if (tr) {
+        // Get all cells in the row
+        const cells = tr.querySelectorAll('td');
+        // Extract member info from the row (order must match table columns)
+        const member = {
+          _id: tr.getAttribute('data-member-id') || '',
+          profileImage: cells[0]?.querySelector('img')?.src || '',
+          memberName: cells[1]?.textContent.trim() || '',
+          membershipId: cells[2]?.textContent.trim() || '',
+          age: cells[3]?.textContent.trim() || '',
+          gender: cells[4]?.textContent.trim() || '',
+          phone: cells[5]?.textContent.trim() || '',
+          email: cells[6]?.textContent.trim() || '',
+          address: cells[7]?.textContent.trim() || '',
+          planSelected: cells[8]?.textContent.trim() || '',
+          monthlyPlan: cells[9]?.textContent.trim() || '',
+          activityPreference: cells[10]?.textContent.trim() || ''
+        };
+        showMemberDetailCard(member);
+      }
+    });
+      }
+      
+      // Check if the clicked element is a seven-day allowance button
+      if (e.target.classList.contains('seven-day-allowance-btn')) {
+        e.stopPropagation(); // Prevent row click event
+        
+        const memberId = e.target.getAttribute('data-member-id');
+        if (!memberId) {
+          console.error('Member ID not found on seven-day allowance button');
+          return;
+        }
+        
+        // Find member data from cache
+        const memberData = allMembersCache.find(m => m._id === memberId);
+        if (!memberData) {
+          showDialog({
+            title: 'Error',
+            message: 'Member data not found. Please refresh the page and try again.',
+            confirmText: 'OK',
+            iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+          });
+          return;
+        }
+        
+        // Grant 7-day allowance
+        grantSevenDayAllowance(memberData);
         return;
       }
       
-      // Open renewal modal with member data
-      if (typeof window.openRenewalModal === 'function') {
-        window.openRenewalModal(memberData);
-      } else {
-        console.error('openRenewalModal function not available');
+      // Check if the clicked element is a mark paid button
+      if (e.target.classList.contains('mark-paid-btn')) {
+        e.stopPropagation(); // Prevent row click event
+        
+        const memberId = e.target.getAttribute('data-member-id');
+        if (!memberId) {
+          console.error('Member ID not found on mark paid button');
+          return;
+        }
+        
+        // Find member data from cache
+        const memberData = allMembersCache.find(m => m._id === memberId);
+        if (!memberData) {
+          showDialog({
+            title: 'Error',
+            message: 'Member data not found. Please refresh the page and try again.',
+            confirmText: 'OK',
+            iconHtml: '<i class="fas fa-exclamation-triangle" style="color:#e53935;font-size:2.2em;"></i>'
+          });
+          return;
+        }
+        
+        // Mark payment as received
+        markPaymentAsReceived(memberData);
+        return;
       }
-      return;
-    }
-    
-    // Original row click functionality for member details
-    let tr = e.target;
-    while (tr && tr.tagName !== 'TR') tr = tr.parentElement;
-    if (tr) {
-      // Get all cells in the row
-      const cells = tr.querySelectorAll('td');
-      // Extract member info from the row (order must match table columns)
-      const member = {
-        _id: tr.getAttribute('data-member-id') || '',
-        profileImage: cells[0]?.querySelector('img')?.src || '',
-        memberName: cells[1]?.textContent.trim() || '',
-        membershipId: cells[2]?.textContent.trim() || '',
-        age: cells[3]?.textContent.trim() || '',
-        gender: cells[4]?.textContent.trim() || '',
-        phone: cells[5]?.textContent.trim() || '',
-        email: cells[6]?.textContent.trim() || '',
-        address: cells[7]?.textContent.trim() || '',
-        planSelected: cells[8]?.textContent.trim() || '',
-        monthlyPlan: cells[9]?.textContent.trim() || '',
-        activityPreference: cells[10]?.textContent.trim() || '',
-        joinDate: cells[11]?.textContent.trim() || '',
-        validUntil: cells[12]?.textContent.trim() || '',
-        paymentAmount: cells[13]?.textContent.trim() || ''
-      };
-      showMemberDetailCard(member);
-    }
-  });
-}
+      
+      // Original row click functionality for member details
+      let tr = e.target;
+      while (tr && tr.tagName !== 'TR') tr = tr.parentElement;
+      if (tr) {
+        // Get all cells in the row
+        const cells = tr.querySelectorAll('td');
+        // Extract member info from the row (order must match table columns)
+        const member = {
+          _id: tr.getAttribute('data-member-id') || '',
+          profileImage: cells[0]?.querySelector('img')?.src || '',
+          memberName: cells[1]?.textContent.trim() || '',
+          membershipId: cells[2]?.textContent.trim() || '',
+          age: cells[3]?.textContent.trim() || '',
+          gender: cells[4]?.textContent.trim() || '',
+          phone: cells[5]?.textContent.trim() || '',
+          email: cells[6]?.textContent.trim() || '',
+          address: cells[7]?.textContent.trim() || '',
+          planSelected: cells[8]?.textContent.trim() || '',
+          monthlyPlan: cells[9]?.textContent.trim() || '',
+          activityPreference: cells[10]?.textContent.trim() || ''
+        };
+        showMemberDetailCard(member);
+      }
+    });
+  }
+});
 
 function showMemberDetailCard(member) {
   const modal = document.getElementById('membersDetailCard');
@@ -5751,59 +5488,10 @@ function showMemberUpdateMessage(message, type) {
   clearTimeout(msgDiv._hideTimeout);
   msgDiv._hideTimeout = setTimeout(() => { msgDiv.style.display = 'none'; }, 3000);
 }
+// Mobile sidebar functionality is now fully handled by UltraFastSidebar system
+
+// === Members Detail Card Management ===
 document.addEventListener('DOMContentLoaded', function() {
-  // Mobile sidebar logic with backdrop and animation
-  const hamburger = document.getElementById('hamburgerMenuBtn');
-  const dropdown = document.getElementById('mobileSidebarDropdown');
-  const closeBtn = document.getElementById('closeMobileSidebar');
-  const backdrop = document.getElementById('mobileSidebarBackdrop');
-
-  function openMobileSidebar() {
-    dropdown.classList.add('open');
-    backdrop.classList.add('active');
-    hamburger.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeMobileSidebar() {
-    dropdown.classList.remove('open');
-    backdrop.classList.remove('active');
-    hamburger.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
-  if (hamburger && dropdown && backdrop) {
-    hamburger.addEventListener('click', function(e) {
-      e.stopPropagation();
-      openMobileSidebar();
-    });
-    backdrop.addEventListener('click', function() {
-      closeMobileSidebar();
-    });
-  }
-  if (closeBtn && dropdown && backdrop) {
-    closeBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      closeMobileSidebar();
-    });
-  }
-  // Prevent click inside sidebar from closing it
-  if (dropdown) {
-    dropdown.addEventListener('click', function(e) {
-      e.stopPropagation();
-    });
-  }
-  // Hide sidebar if clicking outside (failsafe for edge cases)
-  document.addEventListener('click', function(e) {
-    if (
-      dropdown.classList.contains('open') &&
-      !dropdown.contains(e.target) &&
-      e.target !== hamburger &&
-      !backdrop.contains(e.target)
-    ) {
-      closeMobileSidebar();
-    }
-  });
-  document.addEventListener('DOMContentLoaded', function() {
   const membersTableBody = document.getElementById('membersTableBody');
   const membersDetailCard = document.getElementById('membersDetailCard');
   const closeMembersDetailCard = document.getElementById('closeMembersDetailCard');
@@ -5918,7 +5606,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   function renderMemberListItem(member) {
-    // Mobile sidebar version: show plan as a badge and add member's email if available
+    // Show plan as a badge and add member's email if available
     const img = member.profileImageUrl
       ? `<img src="${member.profileImageUrl}" alt="${member.name || member.memberName || ''}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:10px;">`
       : `<span style="display:inline-block;width:36px;height:36px;border-radius:50%;background:#eee;margin-right:10px;"></span>`;
@@ -5929,102 +5617,9 @@ document.addEventListener('DOMContentLoaded', function() {
     return `<li style="display:flex;align-items:center;margin-bottom:10px;">${img}<div><div style="font-weight:500;">${name} <span style="background:#e3f2fd;color:#1976d2;border-radius:4px;padding:2px 6px;font-size:0.85em;margin-left:6px;">${plan}</span></div>${email}<div style="font-size:0.95em;color:#888;">${joinDate ? 'Joined: ' + joinDate : ''}</div></div></li>`;
   }
 });
-  // --- Mobile Sidebar Menu Link Logic ---
-  // Map menu text to tab IDs (update as needed)
-  const tabMap = {
-    'Dashboard': 'dashboardTab',
-    'Members': 'memberDisplayTab',
-    'Trainers': 'trainerTab',
-    'Attendance': 'attendanceTab',
-    'Payments': 'paymentTab',
-    'Equipment': 'equipmentTab',
-    'Support & Reviews': 'supportReviewsTab',
-    'Settings': 'settingsTab',
-    // Add more mappings as you implement more tabs
-  };
-  // Get all mobile menu links
-  const mobileMenuLinks = dropdown.querySelectorAll('.menu-link');
-  mobileMenuLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      // Remove active from all
-      mobileMenuLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-      // Also update desktop sidebar highlight if present
-      const desktopLinks = document.querySelectorAll('.sidebar .menu-link');
-      desktopLinks.forEach(l => {
-        if (l.textContent.trim() === link.textContent.trim()) {
-          l.classList.add('active');
-        } else {
-          l.classList.remove('active');
-        }
-      });
-      // Show/hide tabs
-      const tabName = link.querySelector('.menu-text')?.textContent.trim();
-      Object.entries(tabMap).forEach(([menu, tabId]) => {
-        const tab = document.getElementById(tabId);
-        if (tab) tab.style.display = (menu === tabName) ? 'block' : 'none';
-      });
-      // Hide dashboard content if not dashboard
-      const dashboardContent = document.querySelector('.content');
-      if (tabName === 'Dashboard') {
-        hideAllMainTabs();
-        if (dashboardContent) dashboardContent.style.display = 'block';
 
-      } else if (tabName === 'Members') {
-        hideAllMainTabs();
-        const memberTab = document.getElementById('memberDisplayTab');
-        if (memberTab) memberTab.style.display = 'block';
+// Mobile sidebar menu navigation is now handled by UltraFastSidebar in performance-sidebar.js
 
-        if (typeof fetchAndDisplayMembers === 'function') fetchAndDisplayMembers();
-      } else if (tabName === 'Attendance') {
-        hideAllMainTabs();
-        const attendanceTab = document.getElementById('attendanceTab');
-        if (attendanceTab) attendanceTab.style.display = 'block';
-
-        // Initialize attendance manager if it exists
-        if (typeof window.attendanceManager !== 'undefined') {
-          window.attendanceManager.loadData();
-          window.attendanceManager.loadAttendanceForDate();
-        }
-      } else if (tabName === 'Payments') {
-        hideAllMainTabs();
-        const paymentTab = document.getElementById('paymentTab');
-        if (paymentTab) paymentTab.style.display = 'block';
-
-        // Initialize payment manager if it exists
-        if (typeof window.paymentManager !== 'undefined') {
-          window.paymentManager.loadPaymentData();
-        }
-      } else if (tabName === 'Equipment') {
-        hideAllMainTabs();
-        const equipmentTab = document.getElementById('equipmentTab');
-        if (equipmentTab) equipmentTab.style.display = 'block';
-
-        // Initialize equipment manager if it exists
-        if (typeof window.equipmentManager !== 'undefined') {
-          window.equipmentManager.loadEquipmentData();
-        }
-      } else if (tabName === 'Support & Reviews') {
-        hideAllMainTabs();
-        const supportReviewsTab = document.getElementById('supportReviewsTab');
-        if (supportReviewsTab) supportReviewsTab.style.display = 'block';
-
-      } else if (tabName === 'Settings') {
-        hideAllMainTabs();
-        const settingsTab = document.getElementById('settingsTab');
-        if (settingsTab) settingsTab.style.display = 'block';
-
-      } else {
-
-      }
-      // Close sidebar after click
-      closeMobileSidebar();
-    });
-  });
-
-  // On load and on resize, no margin updates needed - CSS handles it
-});
 // === Dynamic New Members Section ===
 document.addEventListener('DOMContentLoaded', function () {
   const newMembersTableBody = document.getElementById('newMembersTableBody');
@@ -6080,7 +5675,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
       });
     })
-    .catch(err => {
+    .catch(() => {
       newMembersTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Failed to load members.</td></tr>';
     });
 });
@@ -6093,7 +5688,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const recentActivityList = document.getElementById('recentActivityList');
   const refreshActivitiesBtn = document.getElementById('refreshActivitiesBtn');
   const viewAllActivitiesBtn = document.getElementById('viewAllActivitiesBtn');
-  const dashboardEquipmentGallery = document.getElementById('dashboardEquipmentGallery');
   
   // Activity Types Configuration
   const activityTypes = {
@@ -6654,20 +6248,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (equipmentMenuItem) {
         equipmentMenuItem.click();
       } else {
-        // Fallback: manual tab switching
-        const equipmentTab = document.getElementById('equipmentTab');
-        const dashboardContent = document.querySelector('.content');
-        
-        if (equipmentTab && dashboardContent) {
-          dashboardContent.style.display = 'none';
-          equipmentTab.style.display = 'block';
-          
-          // Update sidebar active state
-          const sidebarLinks = document.querySelectorAll('.menu-link');
-          sidebarLinks.forEach(link => link.classList.remove('active'));
-          const equipmentLink = document.querySelector('.menu-link[data-tab="equipmentTab"]') || 
-                                document.querySelector('a[href="#equipment"]');
-          if (equipmentLink) equipmentLink.classList.add('active');
+        // Tab switching now handled by UltraFastSidebar
+        if (window.ultraFastSidebar) {
+          window.ultraFastSidebar.switchToTab('equipmentTab');
         }
       }
     });
@@ -6706,5 +6289,48 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Auto-refresh activities every 2 minutes
   setInterval(loadRecentActivities, 120000);
+});
+
+// === Language Change Handler for Dynamic Content ===
+window.addEventListener('languageChanged', function(event) {
+  console.log('🌐 Language changed to:', event.detail.language);
+  
+  // Re-render activities if they're loaded
+  const activitiesList = document.getElementById('activitiesList');
+  if (activitiesList && activitiesList.innerHTML.trim()) {
+    // Check if it contains error or empty state messages
+    if (activitiesList.textContent.includes('Failed to load') || 
+        activitiesList.textContent.includes('No activities') || 
+        activitiesList.textContent.includes('No valid activities')) {
+      // Re-render empty/error states with new language
+      if (typeof window.fetchAndRenderActivities === 'function') {
+        window.fetchAndRenderActivities();
+      }
+    }
+  }
+
+  // Re-render trainer lists if they're loaded
+  const pendingGrid = document.getElementById('pendingTrainersGrid');
+  const approvedGrid = document.getElementById('approvedTrainersGrid');
+  const rejectedGrid = document.getElementById('rejectedTrainersGrid');
+  
+  if (pendingGrid && pendingGrid.textContent.includes('No pending trainers')) {
+    renderTrainers();
+  }
+  if (approvedGrid && approvedGrid.textContent.includes('No approved trainers')) {
+    renderTrainers();
+  }
+  if (rejectedGrid && rejectedGrid.textContent.includes('No rejected trainers')) {
+    renderTrainers();
+  }
+
+  // Re-calculate membership plan prices if visible
+  const planEditorModal = document.getElementById('planEditorModal');
+  if (planEditorModal && planEditorModal.style.display !== 'none') {
+    const priceInputs = planEditorModal.querySelectorAll('input[type="number"]');
+    priceInputs.forEach(input => {
+      if (input.oninput) input.oninput();
+    });
+  }
 });
 

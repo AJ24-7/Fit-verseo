@@ -1,0 +1,1809 @@
+/* Offers tab content: keep styling but inherit layout (margins/width) from global rules */
+#offersTab.content.tab-content {
+  min-height: auto !important;
+  padding: 24px !important; /* visual padding only */
+  box-sizing: border-box !important;
+}
+
+/* Hide offers tab when parent is not shown */
+#offersTab:not([style*="display: block"]) {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Ensure content is visible when tab is active */
+#offersTab[style*="display: block"] {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Page Header - Match Dashboard Tab Style */
+#offersTab .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+#offersTab .page-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#offersTab .page-title i {
+  color: #3b82f6;
+  font-size: 2rem;
+}
+
+#offersTab .page-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Section Headers */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Enhanced Button Styles - Comprehensive */
+.add-payment-btn, .view-reports-btn, .btn-primary, .btn-secondary, .btn-danger {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  position: relative;
+  outline: none;
+}
+
+.add-payment-btn, .btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.add-payment-btn:hover, .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.view-reports-btn, .btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+}
+
+.view-reports-btn:hover, .btn-secondary:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-danger:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(220, 53, 69, 0.4);
+}
+
+/* Template and Action Buttons */
+.template-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.template-btn.preview {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.template-btn.preview:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.template-btn.use {
+  background: #1976d2;
+  color: white;
+}
+
+.template-btn.use:hover {
+  background: #1565c0;
+  transform: translateY(-1px);
+}
+
+/* Campaign and Coupon Action Buttons */
+.campaign-btn, .coupon-action-btn {
+  padding: 8px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: #f8f9fa;
+  color: #495057;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.campaign-btn:hover, .coupon-action-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.coupon-action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+}
+
+.coupon-action-btn.edit {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.coupon-action-btn.edit:hover {
+  background: #bbdefb;
+}
+
+.coupon-action-btn.copy {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.coupon-action-btn.copy:hover {
+  background: #e1bee7;
+}
+
+.coupon-action-btn.delete {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.coupon-action-btn.delete:hover {
+  background: #ffcdd2;
+}
+
+/* Offers Statistics Grid - Match Payment Tab */
+.offers-stats-grid, .payment-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin: 0 0 24px 0;
+}
+
+/* Tab Navigation - Match Payment Tab Style */
+.payment-tabs-container {
+  margin-bottom: 32px;
+}
+
+.payment-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f8fafc;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.payment-tab-btn {
+  flex: 1;
+  padding: 14px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+
+.payment-tab-btn:hover {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.payment-tab-btn.active {
+  background: white;
+  color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab-count {
+  background: #e2e8f0;
+  color: #64748b;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.payment-tab-btn.active .tab-count {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+/* Tab Content */
+.payment-tab-content {
+  display: none;
+}
+
+.payment-tab-content.active {
+  display: block;
+  animation: fadeInSlideUp 0.3s ease-out;
+}
+
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced Templates Grid */
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.template-card {
+  background: #fff;
+  border: 1px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.template-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  border-color: #1976d2;
+}
+
+.template-card.seasonal {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.template-card.christmas {
+  background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+  color: white;
+}
+
+.template-card.winter {
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  color: white;
+}
+
+.template-card.newyear {
+  background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+  color: white;
+}
+
+.template-card.joining {
+  background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
+  color: white;
+}
+
+.template-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 20px 0 0 0;
+}
+
+.template-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 12px;
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+}
+
+.template-card:not(.seasonal):not(.christmas):not(.winter):not(.newyear):not(.joining) .template-icon {
+  background: rgba(25, 118, 210, 0.1);
+  color: #1976d2;
+}
+
+.template-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1a202c;
+}
+
+.template-description {
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.template-features {
+  margin-bottom: 20px;
+  padding: 0 20px 20px;
+}
+
+.template-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.template-features li {
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.template-features li::before {
+  content: '✓';
+  color: #4caf50;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.template-card.seasonal .template-features li::before,
+.template-card.christmas .template-features li::before,
+.template-card.winter .template-features li::before,
+.template-card.newyear .template-features li::before,
+.template-card.joining .template-features li::before {
+  color: rgba(255,255,255,0.9);
+}
+
+.template-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px 20px;
+}
+
+/* Enhanced Campaign Cards */
+.campaigns-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.campaign-card {
+  background: #fff;
+  border: 1px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border-left: 4px solid #1976d2;
+}
+
+.campaign-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #1976d2;
+  transform: translateX(4px);
+}
+
+.campaign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.campaign-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #1a202c;
+}
+
+.campaign-type {
+  color: #6c757d;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.campaign-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.campaign-status.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.campaign-status.paused {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.campaign-status.expired {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.campaign-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.campaign-metric {
+  text-align: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.campaign-metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.campaign-metric-label {
+  font-size: 12px;
+  color: #6c757d;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.campaign-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Enhanced Coupons Table */
+.table-container, .coupons-table-container {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e1e8ed;
+  margin-top: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.coupons-table, .payment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.coupons-table th, .payment-table th {
+  background: #f8f9fa;
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  font-size: 14px;
+}
+
+.coupons-table td, .payment-table td {
+  padding: 16px;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: middle;
+}
+
+.coupons-table tr:hover, .payment-table tr:hover {
+  background: rgba(25, 118, 210, 0.02);
+}
+
+.coupon-code {
+  font-family: 'Monaco', 'Menlo', monospace;
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.coupon-type {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.coupon-type.percentage {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.coupon-type.fixed {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.coupon-discount {
+  font-weight: 600;
+  color: #d32f2f;
+}
+
+.coupon-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.usage-bar {
+  width: 60px;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.usage-fill {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.3s ease;
+}
+
+.coupon-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.coupon-status.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.coupon-status.expired {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.coupon-status.disabled {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.coupon-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Filters - Match Payment Tab Style */
+.payment-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-input, .filter-select, .date-range-select {
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.filter-input:focus, .filter-select:focus, .date-range-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Enhanced Form Controls */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-control, .form-input, .form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus, .form-input:focus, .form-select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Modal Enhancements */
+.modal-content {
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+/* Charts and Analytics */
+.payment-charts, .analytics-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.chart-container {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.chart-container h3 {
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-placeholder {
+  height: 300px;
+  background: #f8fafc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  border: 2px dashed #e2e8f0;
+}
+
+/* Summary Cards */
+.payment-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.summary-card {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.summary-card h4 {
+  margin-bottom: 16px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Loading States */
+.loading-template, .loading-spinner {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.empty-state i {
+  font-size: 48px;
+  color: #dee2e6;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.empty-state p {
+  margin-bottom: 20px;
+  color: #6c757d;
+}
+
+/* Notification System */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 100000;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notification.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.notification.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.notification.info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+/* Success and Error Messages */
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #c3e6cb;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #f5c6cb;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .payment-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .campaign-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .coupons-table-container, .table-container {
+    overflow-x: auto;
+  }
+  
+  .coupons-table {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .payment-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .campaign-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .coupons-table-container, .table-container {
+    overflow-x: auto;
+  }
+  
+  .coupons-table {
+    min-width: 600px;
+  }
+  
+  .analytics-charts, .payment-charts {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .section-actions {
+    flex-direction: column;
+  }
+}
+
+
+
+
+
+/* Page Header - Match Dashboard Tab Style */
+#offersTab .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+#offersTab .page-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#offersTab .page-title i {
+  color: #3b82f6;
+  font-size: 2rem;
+}
+
+#offersTab .page-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Section Headers */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Button Styles - Match Payment Tab */
+.add-payment-btn, .view-reports-btn, .btn-primary, .btn-secondary {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.add-payment-btn, .btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.add-payment-btn:hover, .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.view-reports-btn, .btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+}
+
+.view-reports-btn:hover, .btn-secondary:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+/* Offers Statistics Grid - Match Payment Tab */
+.offers-stats-grid, .payment-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin: 0 0 24px 0;
+}
+
+/* Tab Navigation - Match Payment Tab Style */
+.payment-tabs-container {
+  margin-bottom: 32px;
+}
+
+.payment-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f8fafc;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.payment-tab-btn {
+  flex: 1;
+  padding: 14px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+
+.payment-tab-btn:hover {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.payment-tab-btn.active {
+  background: white;
+  color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab-count {
+  background: #e2e8f0;
+  color: #64748b;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.payment-tab-btn.active .tab-count {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+/* Tab Content */
+.payment-tab-content {
+  display: none;
+}
+
+.payment-tab-content.active {
+  display: block;
+  animation: fadeInSlideUp 0.3s ease-out;
+}
+
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Filters - Match Payment Tab Style */
+.payment-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-input, .filter-select, .date-range-select {
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.filter-input:focus, .filter-select:focus, .date-range-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Payment Table Container */
+.payment-table-container {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.payment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.payment-table thead {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.payment-table th {
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.payment-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.payment-table tr:hover {
+  background: rgba(59, 130, 246, 0.02);
+}
+
+/* Charts - Match Payment Tab */
+.payment-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.chart-container {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.chart-container h3 {
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-placeholder {
+  height: 300px;
+  background: #f8fafc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  border: 2px dashed #e2e8f0;
+}
+
+/* Summary - Match Payment Tab */
+.payment-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.summary-card {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.summary-card h4 {
+  margin-bottom: 16px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+
+/* Remove old offers tab styles - DELETED: any legacy selectors for old offers tab layout */
+
+/* Template Cards */
+/* Remove old offers tab styles - DELETED: any legacy selectors for old offers tab layout */
+
+
+.template-features li {
+  padding: 4px 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.9;
+}
+
+.template-features li::before {
+  content: "✓";
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.template-card.seasonal .template-features li::before,
+.template-card.christmas .template-features li::before,
+.template-card.winter .template-features li::before,
+.template-card.newyear .template-features li::before,
+.template-card.joining .template-features li::before {
+  color: rgba(255,255,255,0.9);
+}
+
+.template-actions {
+  padding: 0 20px 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.template-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.template-btn.preview {
+  background: rgba(255,255,255,0.2);
+  color: inherit;
+}
+
+.template-btn.use {
+  background: rgba(255,255,255,0.9);
+  color: #333;
+}
+
+.template-card:not(.seasonal):not(.christmas):not(.winter):not(.newyear):not(.joining) .template-btn.preview {
+  background: rgba(25, 118, 210, 0.1);
+  color: #1976d2;
+}
+
+.template-card:not(.seasonal):not(.christmas):not(.winter):not(.newyear):not(.joining) .template-btn.use {
+  background: #1976d2;
+  color: white;
+}
+
+.template-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Campaign Cards */
+.campaign-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border-left: 4px solid #1976d2;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.campaign-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+.campaign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.campaign-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.campaign-type {
+  font-size: 14px;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.campaign-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.campaign-status.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.campaign-status.paused {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.campaign-status.expired {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.campaign-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.campaign-metric {
+  text-align: center;
+}
+
+.campaign-metric-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.campaign-metric-label {
+  font-size: 12px;
+  color: #6c757d;
+  text-transform: uppercase;
+}
+
+.campaign-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.campaign-btn {
+  padding: 6px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: #fff;
+  color: #6c757d;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.campaign-btn:hover {
+  background: #f8f9fa;
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+/* Coupons Table */
+.coupons-table-container {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.coupons-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.coupons-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.coupons-table td {
+  padding: 16px;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+.coupons-table tr:hover {
+  background: rgba(25, 118, 210, 0.02);
+}
+
+.coupon-code {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #1976d2;
+  background: rgba(25, 118, 210, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.coupon-type {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.coupon-type.percentage {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.coupon-type.fixed {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.coupon-discount {
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.coupon-usage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.usage-bar {
+  flex: 1;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.usage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #2e7d32);
+  transition: width 0.3s ease;
+}
+
+.coupon-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.coupon-status.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.coupon-status.expired {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.coupon-status.disabled {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.coupon-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.coupon-action-btn {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: #f8f9fa;
+  color: #6c757d;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.coupon-action-btn:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.coupon-action-btn.edit:hover {
+  background: #1976d2;
+  color: white;
+}
+
+.coupon-action-btn.delete:hover {
+  background: #dc3545;
+  color: white;
+}
+
+/* Modal Enhancements */
+.modal-content {
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-input, .form-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #e0e6eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus, .form-select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .offers-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .campaign-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .coupons-table-container {
+    overflow-x: auto;
+  }
+  
+  .coupons-table {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .offers-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .campaign-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .coupons-table-container {
+    overflow-x: auto;
+  }
+  
+  .coupons-table {
+    min-width: 600px;
+  }
+}
+
+/* Loading States */
+.loading-template {
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e9ecef;
+  border-top-color: #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.empty-state i {
+  font-size: 48px;
+  color: #6c757d;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: #6c757d;
+  margin-bottom: 24px;
+}
+
+/* Layout for collapsed/expanded sidebar is inherited from sidebar-enhancements.css */
+
+/* Success States */
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #c3e6cb;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #f5c6cb;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Analytics Charts */
+.analytics-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+
+
+
+
+@media (max-width: 768px) {
+  .analytics-charts {
+    grid-template-columns: 1fr;
+  }
+}

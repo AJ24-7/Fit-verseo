@@ -144,7 +144,7 @@ class SystemTestSuite {
                     try {
                         // This won't actually redirect in test mode
                         manager.clearAuth();
-                        return redirectPath === '/public/admin-login.html' || redirectPath === null;
+                        return redirectPath === '../public/admin-login.html' || redirectPath === null;
                     } finally {
                         window.location.replace = originalReplace;
                     }

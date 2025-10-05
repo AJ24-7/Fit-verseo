@@ -224,7 +224,7 @@ class UnifiedAuthManager {
         this.clearAuth();
         
         // Use relative path instead of hardcoded localhost
-        const loginPath = '/public/admin-login.html';
+        const loginPath = '../public/admin-login.html';
         
         // Use replace to prevent back button issues
         window.location.replace(loginPath);
