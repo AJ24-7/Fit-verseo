@@ -98,14 +98,16 @@
   </div>
 
   <main class="login-wrapper">
-    <header class="brand-header" style="display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0 20px 0;">
-      <img src="../gymadmin/public/Gym-Wale.png" alt="Gym-Wale Logo" style="height:48px;width:48px;border-radius:12px;box-shadow:0 4px 12px rgba(79, 70, 229, 0.15);">
-      <h1 style="font-size:2.2rem;font-weight:800;color:rgb(15, 3, 185);letter-spacing:1.5px;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,0.1);">Gym-Wale</h1>
-    </header>
-    
+    <!-- Left Panel - Login Form -->
     <section class="login-container" role="main" aria-label="Admin Login Form">
+      <!-- Mobile Header (hidden on desktop) -->
+      <header class="brand-header">
+        <img src="../gymadmin/public/Gym-Wale.png" alt="Gym-Wale Logo">
+        <h1><span class="gym-text">Gym</span><span class="wale-text">-Wale</span></h1>
+      </header>
+      
       <h2>Welcome Back</h2>
-      <p style="text-align:center;color:var(--text-secondary);margin-bottom:28px;font-weight:500;">Please sign in to your admin account</p>
+      <p>Please enter your admin credentials to access the dashboard</p>
       
       <form id="adminLoginForm" autocomplete="off" novalidate>
         <div class="form-group">
@@ -136,7 +138,9 @@
               autocomplete="current-password"
               aria-describedby="password-error"
             />
-           
+            <button type="button" class="toggle-password" tabindex="-1">
+              <i class="fas fa-eye"></i>
+            </button>
           </div>
           <div class="error-message" id="password-error" role="alert">Password must be at least 8 characters</div>
         </div>
@@ -149,8 +153,39 @@
         <a href="#" class="forgot-password" id="forgotPassword">Forgot your password?</a>
       </form>
       
-      <div id="login-feedback" aria-live="polite" style="margin-top:20px;text-align:center;font-size:1.05em;"></div>
+      <div id="login-feedback" aria-live="polite"></div>
+    </section>
+
+    <!-- Right Panel - Dashboard Info Section -->
+    <section class="brand-section">
+      <!-- Animated falling icons background -->
+      <div class="brand-floating-icons">
+        <div class="brand-floating-icon"><i class="fas fa-dumbbell"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-heart"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-running"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-bicycle"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-trophy"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-users"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-stopwatch"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-id-card"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-qrcode"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-mobile-alt"></i></div>
+        <div class="brand-floating-icon"><i class="fas fa-calendar-check"></i></div>
+      </div>
       
+      <div class="brand-content">
+        <div class="brand-logo">
+          <img src="../gymadmin/public/Gym-Wale.png" alt="Gym-Wale Logo">
+        </div>
+        <h1 class="brand-title">
+          <span class="gym-text">Gym</span><span class="wale-text">-Wale</span>
+        </h1>
+        <p class="brand-subtitle">Admin Dashboard</p>
+        <p class="brand-description">
+          Secure, smart, and powerful gym management system for comprehensive fitness center administration.
+        </p>
+      </div>
     </section>
   </main>
   <div id="global-success-message" class="success-message" style="display:none;text-align:center;margin-top:20px;"></div>

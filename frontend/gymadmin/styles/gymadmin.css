@@ -3934,12 +3934,12 @@ tr:last-child td {
   }
 }
 
-/* Responsive Dashboard Content */
+/* Responsive Dashboard Content - UPDATED FOR SIDEBAR-ENHANCEMENTS.CSS COMPATIBILITY */
 .content {
-    transition: margin-left 0.3s;
+    transition: left 0.15s ease, width 0.15s ease; /* Updated transition for fixed positioning */
     display: none; /* Hidden by default */
-    width: 100%;
     background-color: #f8f9fa;
+    /* Width and positioning now handled by sidebar-enhancements.css */
 }
 
 .content.active,
@@ -3998,15 +3998,12 @@ tr:last-child td {
    to ensure consistent sidebar behavior and avoid conflicts */
 
 
-/* Fixed tab content visibility system */
+/* Fixed tab content visibility system - UPDATED FOR SIDEBAR-ENHANCEMENTS.CSS COMPATIBILITY */
 .content.tab-content {
     display: none;
-    width: 100%;
-    min-height: calc(100vh - 140px);
+    /* Width, height, position, and padding now handled by sidebar-enhancements.css */
     box-sizing: border-box;
     background: #ffffff;
-    position: relative;
-    padding: 24px;
 }
 
 .content.tab-content.active {
@@ -4023,7 +4020,7 @@ tr:last-child td {
     opacity: 1 !important;
 }
 
-/* Force visibility for specific tabs that might have issues */
+/* Force visibility for specific tabs that might have issues - UPDATED FOR SIDEBAR-ENHANCEMENTS.CSS COMPATIBILITY */
 #memberDisplayTab.content.tab-content[style*="display: block"],
 #paymentTab.content.tab-content[style*="display: block"],
 #trainerTab.content.tab-content[style*="display: block"],
@@ -4035,8 +4032,7 @@ tr:last-child td {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
-    height: auto !important;
-    min-height: 400px !important;
+    /* Height properties now handled by sidebar-enhancements.css fixed positioning */
 }
 
 /* Dashboard should be visible by default */

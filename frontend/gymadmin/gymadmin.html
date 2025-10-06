@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles/sidebar-enhancements.css">
   <link rel="stylesheet" href="styles/gymadmin.css">
+  <link rel="stylesheet" href="styles/modal-fixes.css">
   
   <!-- Tab-specific styles - load on demand for better performance -->
   <link rel="stylesheet" href="styles/attendance.css" media="print" onload="this.media='all'">
@@ -25,8 +26,9 @@
     
   <!-- Core Application Logic - Optimized Single Entry Point -->
   <script src="essential-functions.js"></script>
-  <script defer src="optimized-module-loader.js"></script>
-  <script defer src="gymadmin.js"></script>
+  <script src="performance-sidebar.js"></script>
+  <script src="optimized-module-loader.js"></script>
+  <script src="gymadmin.js"></script>
   
   <!-- Debug scripts removed -->
 
@@ -237,7 +239,7 @@
             <div class="page-header">
                 <h1 class="page-title"><i class="fas fa-tachometer-alt"></i> <span data-i18n="header.dashboard.title">Dashboard Overview</span></h1>
                 <div class="page-actions">
-                    <button id="openNotificationModalBtn">
+                    <button id="openNotificationModalBtn" data-modal="notificationModal">
                         <i class="fas fa-bell"></i> Send Notification
                     </button>
                     <!-- Admin notification system will be inserted here automatically -->
@@ -350,35 +352,35 @@
                       </div>
                     </div>
                     <div class="quick-actions-grid" id="quickActionsGrid">
-                      <div class="quick-action-badge" data-action="add-member" id="addMemberBtn">
+                      <div class="quick-action-badge" data-action="add-member" id="addMemberBtn" data-modal="addMemberModal">
                         <i class="fas fa-user-plus"></i>
                         <span data-i18n="quick.actions.addMember">Add Member</span>
                       </div>
-                      <div class="quick-action-badge" data-action="record-payment" id="recordPaymentBtn">
+                      <div class="quick-action-badge" data-action="record-payment" id="recordPaymentBtn" data-modal="addPaymentModal">
                         <i class="fas fa-money-bill-wave"></i>
                         <span data-i18n="quick.actions.recordPayment">Record Payment</span>
                       </div>
-                      <div class="quick-action-badge" data-action="add-trainer" id="addTrainerBtn">
+                      <div class="quick-action-badge" data-action="add-trainer" id="addTrainerBtn" data-modal="addTrainerModal">
                         <i class="fas fa-user-tie"></i>
                         <span data-i18n="quick.actions.addTrainer">Add Trainer</span>
                       </div>
-                      <div class="quick-action-badge" data-action="add-equipment" id="uploadEquipmentBtn">
+                      <div class="quick-action-badge" data-action="add-equipment" id="uploadEquipmentBtn" data-modal="equipmentModal">
                         <i class="fas fa-dumbbell"></i>
                         <span data-i18n="quick.actions.addEquipment">Add Equipment</span>
                       </div>
-                      <div class="quick-action-badge" data-action="generate-qr" id="generateQRCodeBtn">
+                      <div class="quick-action-badge" data-action="generate-qr" id="generateQRCodeBtn" data-modal="qrCodeGeneratorModal">
                         <i class="fas fa-qrcode"></i>
                         <span data-i18n="quick.actions.generateQR">Generate QR Code</span>
                       </div>
-                      <div class="quick-action-badge" data-action="biometric-enroll" id="biometricEnrollBtn">
+                      <div class="quick-action-badge" data-action="biometric-enroll" id="biometricEnrollBtn" data-modal="biometricEnrollmentModal">
                         <i class="fas fa-fingerprint"></i>
                         <span data-i18n="quick.actions.enrollBiometric">Biometric Enrollment</span>
                       </div>
-                      <div class="quick-action-badge" data-action="device-setup" id="deviceSetupBtn">
+                      <div class="quick-action-badge" data-action="device-setup" id="deviceSetupBtn" data-modal="deviceSetupModal">
                         <i class="fas fa-cogs"></i>
                         <span data-i18n="quick.actions.deviceSetup">Setup Devices</span>
                       </div>
-                      <div class="quick-action-badge" data-action="send-notification" id="sendNotificationQuickBtn">
+                      <div class="quick-action-badge" data-action="send-notification" id="sendNotificationQuickBtn" data-modal="notificationModal">
                         <i class="fas fa-bell"></i>
                         <span data-i18n="quick.actions.sendNotification">Send Notification</span>
                       </div>
@@ -4165,7 +4167,7 @@
             Allow members and trainers to mark attendance using fingerprint scanning
           </small>
         </div>
-        <label class="switch" style="margin-left: 16px;" for="toggleFingerprintAttendance">
+        <label class="switch" style="margin-left: 16px;">
           <input type="checkbox" id="toggleFingerprintAttendance">
           <span class="slider round"></span>
         </label>
@@ -4690,57 +4692,9 @@
   </div>
 </div>
 
-<!-- Member Display Tab (moved inside main-content) -->
-<div id="memberDisplayTab" class="content tab-content" style="display:none;">
-  <div class="page-header">
-    <h1 class="page-title"><i class="fas fa-users"></i> All Members</h1>
-    <div class="member-action-btn-group">
-      <button id="addMemberBtnTab" class="member-action-btn add-member-action-btn">
-        <i class="fas fa-user-plus"></i><span class="btn-text"> Add Member</span>
-      </button>
-      <button id="removeMemberBtnTab" class="member-action-btn remove-member-action-btn">
-        <i class="fas fa-user-minus"></i><span class="btn-text"> Remove Members</span>
-      </button>
-      <!-- Remove Member dropdown and modal will be created and managed by JS only -->
-    </div>
-  </div>
-  <div class="search-bar" style="display:flex;align-items:center;gap:12px;margin-bottom:18px;background:#f8f9fa;padding:10px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-    <span class="search-icon" style="color:var(--primary);font-size:1.2rem;margin-right:6px;"><i class="fas fa-search"></i></span>
-    <input type="text" id="memberSearchInput" placeholder="Search by Name, Email, Phone, Membership ID..." style="flex:1;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;outline:none;transition:border 0.2s;">
-    <select id="membershipExpiryFilter" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;background:#fff;">
-      <option value="">All Members</option>
-      <option value="3days">Expiring in 3 Days</option>
-      <option value="1day">Expiring in 1 Day</option>
-    </select>
-  </div>
-  <div id="membersTableContainer">
-    <table id="membersTable" style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>Profile</th>
-          <th>Name</th>
-          <th>Membership ID</th>
-          <th>Age</th>
-          <th>Gender</th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th>Address</th>
-          <th>Plan</th>
-          <th>Monthly</th>
-          <th>Activity</th>
-          <th>Join Date</th>
-          <th>Valid Until</th>
-          <th>Amount Paid</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="membersTableBody">
-        <!-- Members will be loaded here -->
-       
-      </tbody>
-    </table>
-  </div>
-</div>
+
+
+
 <!-- Interactive Members Detail Card (moved inside main-content) -->
 <div id="membersDetailCard" class="modal">
   <div class="modal-content member-detail-modal">
@@ -4756,6 +4710,62 @@
     </div>
   </div>
 </div>
+
+        <!-- Member Display Tab -->
+        <div id="memberDisplayTab" class="content tab-content" style="display:none;">
+          <div class="page-header">
+            <h1 class="page-title"><i class="fas fa-users"></i> All Members</h1>
+            <div class="member-action-btn-group">
+              <button id="addMemberBtnTab" class="member-action-btn add-member-action-btn">
+                <i class="fas fa-user-plus"></i><span class="btn-text"> Add Member</span>
+              </button>
+              <button id="removeMemberBtnTab" class="member-action-btn remove-member-action-btn">
+                <i class="fas fa-user-minus"></i><span class="btn-text"> Remove Members</span>
+              </button>
+              <!-- Remove Member dropdown and modal will be created and managed by JS only -->
+            </div>
+          </div>
+          <div class="search-bar" style="display:flex;align-items:center;gap:12px;margin-bottom:18px;background:#f8f9fa;padding:10px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <span class="search-icon" style="color:var(--primary);font-size:1.2rem;margin-right:6px;"><i class="fas fa-search"></i></span>
+            <input type="text" id="memberSearchInput" placeholder="Search by Name, Email, Phone, Membership ID..." style="flex:1;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;outline:none;transition:border 0.2s;">
+            <div style="display:flex;gap:8px;">
+              <select id="memberStatusFilter" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;background:white;cursor:pointer;">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="pending">Pending</option>
+                <option value="expired">Expired</option>
+              </select>
+              <select id="membershipTypeFilter" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;background:white;cursor:pointer;">
+                <option value="">All Plans</option>
+                <option value="basic">Basic</option>
+                <option value="standard">Standard</option>
+                <option value="premium">Premium</option>
+                <option value="vip">VIP</option>
+              </select>
+            </div>
+          </div>
+          <div class="members-table-container">
+            <table class="members-table" id="membersTable">
+              <thead>
+                <tr>
+                  <th>Photo</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Plan</th>
+                  <th>Status</th>
+                  <th>Join Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="membersTableBody">
+                <!-- Members will be loaded here -->
+               
+              </tbody>
+            </table>
+          </div>
+        </div>
 
     </div> <!-- End of main-content -->
 

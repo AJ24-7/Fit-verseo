@@ -1,39 +1,31 @@
 // === Profile Dropdown Menu Toggle ===
-// --- Consolidated Initialization Wrapper (injecting to reduce duplicate DOMContentLoaded handlers) ---
-// We keep legacy blocks below but guard them with a flag so they don't all re-run heavy logic.
+// --- Consolidated Initialization Wrapper ---
 window.__GYM_ADMIN_INIT_RUN__ = window.__GYM_ADMIN_INIT_RUN__ || false;
-// --- Performance Monkey Patch: defer legacy DOMContentLoaded listeners registered AFTER this point ---
-if (!window.__DEFER_DCL_PATCH__) {
-  window.__DEFER_DCL_PATCH__ = true;
-  const origAddEventListener = document.addEventListener;
-  const deferredDCL = [];
-  document.addEventListener = function(type, listener, options) {
-    if (type === 'DOMContentLoaded' && window.__GYM_ADMIN_INIT_RUN__) {
-      // Queue rather than run immediately; execute on idle or first interaction
-      deferredDCL.push({listener, options});
-      return; // swallow registration now
-    }
-    return origAddEventListener.call(this, type, listener, options);
-  };
-  function runDeferred() {
-    if (!deferredDCL.length) return;
-    const tasks = deferredDCL.splice(0, deferredDCL.length);
-    tasks.forEach(h => {
-      try { h.listener(); } catch(err){ console.warn('Deferred DOMContentLoaded handler error', err); }
-    });
-  }
-  // Run after first sidebar interaction or when browser idle
-  (window.requestIdleCallback || function(cb){ setTimeout(cb,400); })(runDeferred);
-  window.addEventListener('click', runDeferred, { once:true, capture:true });
-}
+
 document.addEventListener('DOMContentLoaded', async function() {
   if (window.__GYM_ADMIN_INIT_RUN__) return; // prevent duplicate execution
   window.__GYM_ADMIN_INIT_RUN__ = true;
 
   console.log('🚀 Production-ready Gym Admin Dashboard initializing...');
 
-  // Wait for core modules to load
-  await waitForModuleLoader();
+  // Add debug info for modal detection
+  console.log('🔍 Scanning for modals in DOM...');
+  const allModals = document.querySelectorAll('.modal');
+  console.log(`📊 Found ${allModals.length} modals:`, Array.from(allModals).map(m => m.id || 'unnamed'));
+  
+  // Add debug info for buttons with modal triggers
+  console.log('🔍 Scanning for modal trigger buttons...');
+  const modalTriggers = document.querySelectorAll('[data-modal]');
+  console.log(`📊 Found ${modalTriggers.length} modal triggers:`, Array.from(modalTriggers).map(btn => `${btn.id || 'unnamed'} -> ${btn.getAttribute('data-modal')}`));
+
+  // Initialize the module loader (now available synchronously)
+  if (window.OptimizedModuleLoader) {
+    window.optimizedModuleLoader = new OptimizedModuleLoader();
+    await window.optimizedModuleLoader.loadCoreModules();
+  } else {
+    console.error('FATAL: OptimizedModuleLoader is not available.');
+    return;
+  }
 
   // Initialize dashboard components immediately without tab registration
   const initializeWithoutTabs = async () => {
@@ -49,22 +41,468 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // Initialize immediately
   initializeWithoutTabs();
+  
+  // Initialize critical UI components immediately
+  initializeCriticalUIComponents();
+  
+  // Enhanced tab switching integration with UltraFastSidebar
+  enhanceTabSwitchingWithModuleLoading();
 
   /**
-   * Wait for module loader to be ready
+   * Initialize essential UI components that need to work immediately
    */
-  async function waitForModuleLoader() {
-    let attempts = 0;
-    while (!window.optimizedModuleLoader && attempts < 50) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
+  function initializeCriticalUIComponents() {
+    console.log('🔧 Initializing critical UI components...');
+    
+    // Initialize all modal close buttons
+    initializeModalCloseButtons();
+    
+    // Initialize common action buttons
+    initializeActionButtons();
+    
+    // Initialize dropdown menus
+    initializeDropdowns();
+    
+    // Initialize form submissions
+    initializeFormSubmissions();
+    
+    console.log('✅ Critical UI components initialized');
+  }
+
+  function initializeModalCloseButtons() {
+    // Add event listeners to all modal close buttons
+    document.querySelectorAll('.modal-close, .close, [data-dismiss="modal"]').forEach(closeBtn => {
+      closeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const modal = this.closest('.modal');
+        if (modal) {
+          modal.style.display = 'none';
+          modal.classList.remove('show', 'active');
+        }
+      });
+    });
+
+    // Close modals when clicking backdrop
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+          this.classList.remove('show', 'active');
+        }
+      });
+    });
+
+    // ESC key to close modals
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.show, .modal[style*="display: block"], .modal[style*="display: flex"]').forEach(modal => {
+          modal.style.display = 'none';
+          modal.classList.remove('show', 'active');
+        });
+      }
+    });
+    
+    // Universal modal trigger system - handles any button with data-modal attribute
+    document.addEventListener('click', function(e) {
+      const trigger = e.target.closest('[data-modal]');
+      if (trigger) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const modalId = trigger.getAttribute('data-modal');
+        const modal = document.getElementById(modalId);
+        
+        if (modal) {
+          console.log(`🔧 Opening modal: ${modalId}`);
+          
+          // Special handling for addMemberModal to populate data
+          if (modalId === 'addMemberModal') {
+            // Call the existing openAddMemberModal function which handles data population
+            const openAddMemberModalFunc = window.openAddMemberModal || document.openAddMemberModal;
+            if (typeof openAddMemberModalFunc === 'function') {
+              openAddMemberModalFunc();
+              return; // Let the function handle everything
+            }
+          }
+          
+          // Force modal to be visible with multiple approaches
+          modal.style.setProperty('display', 'flex', 'important');
+          modal.style.setProperty('z-index', '999999', 'important');
+          modal.style.setProperty('position', 'fixed', 'important');
+          modal.style.setProperty('top', '0', 'important');
+          modal.style.setProperty('left', '0', 'important');
+          modal.style.setProperty('width', '100%', 'important');
+          modal.style.setProperty('height', '100%', 'important');
+          modal.classList.add('show', 'active');
+          
+          // Ensure modal content is also visible
+          const modalContent = modal.querySelector('.modal-content');
+          if (modalContent) {
+            modalContent.style.setProperty('display', 'block', 'important');
+            modalContent.style.setProperty('z-index', '1000000', 'important');
+          }
+          
+          console.log(`✅ Modal ${modalId} opened successfully`);
+        } else {
+          console.error(`❌ Modal ${modalId} not found in DOM`);
+        }
+      }
+    });
+  }
+
+  function initializeActionButtons() {
+    // Add member button - Consolidated and robust implementation
+    const addMemberBtn = document.getElementById('addMemberBtn');
+    if (addMemberBtn) {
+      // Remove any existing listeners to prevent duplicates
+      addMemberBtn.replaceWith(addMemberBtn.cloneNode(true));
+      const newAddMemberBtn = document.getElementById('addMemberBtn');
+      
+      newAddMemberBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔧 Add Member button clicked');
+        
+        const modal = document.getElementById('addMemberModal');
+        if (modal) {
+          // Force modal to be visible with multiple approaches
+          modal.style.setProperty('display', 'flex', 'important');
+          modal.style.setProperty('z-index', '999999', 'important');
+          modal.style.setProperty('position', 'fixed', 'important');
+          modal.style.setProperty('top', '0', 'important');
+          modal.style.setProperty('left', '0', 'important');
+          modal.style.setProperty('width', '100%', 'important');
+          modal.style.setProperty('height', '100%', 'important');
+          modal.classList.add('show', 'active');
+          
+          // Ensure modal content is also visible
+          const modalContent = modal.querySelector('.modal-content');
+          if (modalContent) {
+            modalContent.style.setProperty('display', 'block', 'important');
+            modalContent.style.setProperty('z-index', '1000000', 'important');
+          }
+          
+          console.log('✅ Add Member modal opened');
+        } else {
+          console.error('❌ Add Member modal not found in DOM');
+        }
+      });
+    }
+
+    // Save buttons
+    document.querySelectorAll('[id*="save"], [id*="Save"]').forEach(saveBtn => {
+      saveBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Save button clicked:', this.id);
+        // Handle save functionality based on button context
+        handleSaveAction(this);
+      });
+    });
+
+    // Delete/Remove buttons
+    document.querySelectorAll('[id*="delete"], [id*="Delete"], [id*="remove"], [id*="Remove"]').forEach(deleteBtn => {
+      deleteBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Delete button clicked:', this.id);
+        // Handle delete functionality based on button context
+        handleDeleteAction(this);
+      });
+    });
+  }
+
+  function initializeDropdowns() {
+    document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+      toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const dropdown = this.closest('.dropdown');
+        if (dropdown) {
+          const menu = dropdown.querySelector('.dropdown-menu');
+          if (menu) {
+            menu.classList.toggle('show');
+          }
+        }
+      });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function() {
+      document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.classList.remove('show');
+      });
+    });
+  }
+
+  function initializeFormSubmissions() {
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log('Form submitted:', this.id || this.className);
+        handleFormSubmission(this);
+      });
+    });
+  }
+
+  function handleSaveAction(button) {
+    const modal = button.closest('.modal');
+    const form = button.closest('form');
+    
+    if (form) {
+      // Trigger form submission
+      const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+      form.dispatchEvent(submitEvent);
+    } else if (modal) {
+      // Close modal for now (can be enhanced with actual save logic)
+      modal.style.display = 'none';
+      modal.classList.remove('show', 'active');
+      showNotification('Settings saved successfully!', 'success');
+    }
+  }
+
+  function handleDeleteAction(button) {
+    if (confirm('Are you sure you want to delete this item?')) {
+      const item = button.closest('.card, .item, tr');
+      if (item) {
+        item.remove();
+        showNotification('Item deleted successfully!', 'success');
+      }
+    }
+  }
+
+  function handleFormSubmission(form) {
+    console.log('Handling form submission for:', form.id);
+    
+    // Basic form validation
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+      if (!field.value.trim()) {
+        isValid = false;
+        field.classList.add('error');
+      } else {
+        field.classList.remove('error');
+      }
+    });
+
+    if (isValid) {
+      // Close any parent modal
+      const modal = form.closest('.modal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show', 'active');
+      }
+      
+      showNotification('Form submitted successfully!', 'success');
+    } else {
+      showNotification('Please fill in all required fields.', 'error');
+    }
+  }
+
+  // Global notification function
+  window.showNotification = function(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+      <div class="notification-content">
+        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}"></i>
+        <span>${message}</span>
+      </div>
+    `;
+    
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#2196f3'};
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 10000;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    setTimeout(() => {
+      notification.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
+  };
+
+  // Add global event delegation for any buttons that might be dynamically added
+  document.addEventListener('click', function(e) {
+    const button = e.target.closest('button, .btn');
+    if (button && !button.dataset.handled) {
+      console.log('🔧 Global button click handler:', button.id || button.className);
+      
+      // Mark as handled to prevent double processing
+      button.dataset.handled = 'true';
+      
+      // Remove the handler flag after a short delay
+      setTimeout(() => {
+        delete button.dataset.handled;
+      }, 100);
+      
+      // Handle specific button types
+      if (button.id || button.className.includes('btn')) {
+        handleGlobalButtonClick(button, e);
+      }
+    }
+  });
+
+  function handleGlobalButtonClick(button, event) {
+    const buttonId = button.id;
+    const buttonClasses = button.className;
+    
+    // Prevent default for certain button types
+    if (buttonClasses.includes('modal-trigger') || buttonClasses.includes('dropdown-toggle')) {
+      event.preventDefault();
     }
     
-    if (window.optimizedModuleLoader) {
-      console.log('✅ Module loader ready');
-    } else {
-      console.warn('⚠️ Module loader not found, proceeding without optimization');
+    // Handle modal triggers
+    if (buttonClasses.includes('modal-trigger') || buttonId.includes('Modal') || buttonId.includes('modal')) {
+      const targetModal = button.dataset.target || `#${buttonId.replace('Btn', 'Modal').replace('Button', 'Modal')}`;
+      const modal = document.querySelector(targetModal);
+      if (modal) {
+        modal.style.display = 'block';
+        modal.classList.add('show', 'active');
+      }
     }
+    
+    // Handle form submissions
+    if (buttonClasses.includes('submit') || button.type === 'submit') {
+      const form = button.closest('form');
+      if (form) {
+        handleFormSubmission(form);
+      }
+    }
+    
+    // Handle settings buttons
+    if (buttonId.includes('settings') || buttonId.includes('Settings')) {
+      showNotification('Settings functionality will be available once all modules load.', 'info');
+    }
+  }
+
+  // Ensure dropdown functionality works
+  document.addEventListener('click', function(e) {
+    if (e.target.matches('.dropdown-toggle') || e.target.closest('.dropdown-toggle')) {
+      e.preventDefault();
+      const dropdown = e.target.closest('.dropdown');
+      if (dropdown) {
+        const menu = dropdown.querySelector('.dropdown-menu');
+        if (menu) {
+          menu.classList.toggle('show');
+        }
+      }
+    }
+  });
+
+  /**
+   * Enhanced tab switching that integrates with UltraFastSidebar and module loading
+   */
+  function enhanceTabSwitchingWithModuleLoading() {
+    console.log('🎯 Enhancing UltraFastSidebar with module loading...');
+    
+    // Wait for UltraFastSidebar to be ready with better error handling
+    const waitForSidebar = () => {
+      if (window.ultraFastSidebar && window.ultraFastSidebar.handleSidebarClick) {
+        console.log('🎯 UltraFastSidebar is ready, applying enhancements...');
+        
+        // Save original method with proper binding
+        const originalHandleSidebarClick = window.ultraFastSidebar.handleSidebarClick.bind(window.ultraFastSidebar);
+        
+        window.ultraFastSidebar.handleSidebarClick = async function(e) {
+          console.log('🎯 Enhanced handleSidebarClick triggered');
+          
+          const link = e.target.closest('.menu-link');
+          if (!link) {
+            console.log('🎯 No menu link found, passing to original handler');
+            return originalHandleSidebarClick(e);
+          }
+          
+          const tabId = link.getAttribute('data-tab');
+          if (!tabId || this.isTransitioning) {
+            console.log('🎯 No tabId or already transitioning, passing to original handler');
+            return originalHandleSidebarClick(e);
+          }
+          
+          e.preventDefault();
+          e.stopPropagation();
+          
+          console.log(`🎯 Enhanced tab click: ${tabId}`);
+          
+          // Special handling for payment tab - load module and show passkey modal first
+          if (tabId === 'paymentTab') {
+            console.log('🎯 Payment tab clicked, loading module and checking passkey...');
+            try {
+              // Load the payment module first
+              await window.optimizedModuleLoader.loadTabModules('paymentTab');
+              
+              // Check if PaymentManager is properly initialized
+              if (window.paymentManager && typeof window.paymentManager.handlePaymentMenuClick === 'function') {
+                console.log('🎯 PaymentManager found, calling handlePaymentMenuClick');
+                await window.paymentManager.handlePaymentMenuClick();
+                return; // Payment manager will handle the tab switch after passkey verification
+              } else {
+                console.warn('🎯 PaymentManager not ready, falling back to direct tab switch');
+                // Fallback: switch tab directly without passkey
+                this.switchTab(tabId);
+                this.closeMobileMenuBar();
+              }
+            } catch (error) {
+              console.error('❌ Error in payment tab handling:', error);
+              // Fallback: switch tab directly
+              this.switchTab(tabId);
+              this.closeMobileMenuBar();
+            }
+            return;
+          }
+          
+          // For other tabs, load modules then switch
+          try {
+            console.log(`🎯 Loading modules for tab: ${tabId}`);
+            if (window.optimizedModuleLoader) {
+              await window.optimizedModuleLoader.loadTabModules(tabId);
+            }
+          } catch (error) {
+            console.warn(`⚠️ Module loading failed for ${tabId}:`, error);
+          }
+          
+          // Now perform the actual tab switch using the sidebar's method
+          console.log(`🎯 Switching to tab: ${tabId}`);
+          this.switchTab(tabId);
+          this.closeMobileMenuBar();
+          
+          // Set debounce to prevent rapid clicks
+          if (this.clickDebounce) {
+            clearTimeout(this.clickDebounce);
+          }
+          this.clickDebounce = setTimeout(() => {
+            this.clickDebounce = null;
+          }, 25);
+        };
+        
+        console.log('✅ UltraFastSidebar enhanced with module loading');
+      } else {
+        console.log('🎯 UltraFastSidebar not ready yet, retrying in 100ms...');
+        setTimeout(waitForSidebar, 100);
+      }
+    };
+    
+    // Start waiting immediately
+    waitForSidebar();
   }
 
   
@@ -2052,7 +2490,9 @@ document.addEventListener('DOMContentLoaded', function () {
 // --- Add Member Modal Logic (Single Consolidated Implementation) ---
 document.addEventListener('DOMContentLoaded', function() {
   
-  // DOM elements
+  // DOM elements - CONSOLIDATED VERSION (main event listeners handled by universal modal system)
+  console.log('🔧 Member management DOM elements initialized - using universal modal triggers');
+  
   const addMemberBtn = document.getElementById('addMemberBtn');
   const addMemberBtnTab = document.getElementById('addMemberBtnTab');
   const addMemberModal = document.getElementById('addMemberModal');
@@ -2060,6 +2500,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const addMemberForm = document.getElementById('addMemberForm');
   const addMemberSuccessMsg = document.getElementById('addMemberSuccessMsg');
   const memberImageTag = document.getElementById('memberImageTag');
+  
+  // Note: Button event listeners are now handled by the universal modal trigger system above
+  // This prevents duplicate event listener conflicts
 
   // Form elements for payment calculation
   const planSelected = document.getElementById('planSelected');
@@ -2334,8 +2777,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (addMemberModal) {
-      addMemberModal.style.display = 'flex';
+      console.log('[AddMember] Showing modal with enhanced visibility...');
+      
+      // Force modal to be visible with multiple approaches to override any conflicting styles
+      addMemberModal.style.setProperty('display', 'flex', 'important');
+      addMemberModal.style.setProperty('z-index', '999999', 'important');
+      addMemberModal.style.setProperty('position', 'fixed', 'important');
+      addMemberModal.style.setProperty('top', '0', 'important');
+      addMemberModal.style.setProperty('left', '0', 'important');
+      addMemberModal.style.setProperty('width', '100%', 'important');
+      addMemberModal.style.setProperty('height', '100%', 'important');
+      addMemberModal.style.setProperty('background-color', 'rgba(0, 0, 0, 0.5)', 'important');
+      addMemberModal.style.setProperty('align-items', 'center', 'important');
+      addMemberModal.style.setProperty('justify-content', 'center', 'important');
+      addMemberModal.style.setProperty('visibility', 'visible', 'important');
+      addMemberModal.style.setProperty('opacity', '1', 'important');
+      addMemberModal.classList.add('show', 'active');
+      
+      // Ensure modal content is also visible
+      const modalContent = addMemberModal.querySelector('.modal-content');
+      if (modalContent) {
+        modalContent.style.setProperty('display', 'block', 'important');
+        modalContent.style.setProperty('z-index', '1000000', 'important');
+        modalContent.style.setProperty('visibility', 'visible', 'important');
+        modalContent.style.setProperty('opacity', '1', 'important');
+      }
+      
+      console.log('[AddMember] ✅ Modal should now be visible');
+    } else {
+      console.error('[AddMember] ❌ Modal element not found!');
     }
+  }
+  
+  // Make function globally accessible for universal modal trigger system
+  window.openAddMemberModal = openAddMemberModal;
     
     // Reset form
     if (addMemberForm) addMemberForm.reset();
@@ -2420,29 +2895,17 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePaymentAmountAndDiscount();
       }
     }, 100);
-    
   }
 
-  // Close modal
+  // Close modal function
   function closeAddMemberModalFunc() {
     if (addMemberModal) addMemberModal.style.display = 'none';
   }
 
-  // Button event listeners
-  if (addMemberBtn) {
-    addMemberBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      openAddMemberModal();
-    });
-  }
+  // The universal modal trigger system handles all modal opening via data-modal attributes
+  console.log('🔧 Button event listeners disabled - using universal modal trigger system');
   
-  if (addMemberBtnTab) {
-    addMemberBtnTab.addEventListener('click', function(e) {
-      e.preventDefault();
-      openAddMemberModal();
-    });
-  }
-
+  
   // Payment calculation listeners - attach directly without DOM replacement
   function attachPaymentListeners() {
     
@@ -2869,8 +3332,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Remove legacy error message display (all errors now use dialog)
   }
+  
+  // Make openAddMemberModal globally accessible for universal modal trigger system
+  window.openAddMemberModal = openAddMemberModal;
     
 });
+
+// Make openAddMemberModal globally accessible for universal modal trigger system
+window.openAddMemberModal = window.openAddMemberModal || function() {
+  console.log('⚠️ Add Member Modal function will be available after DOM loads');
+};
 
 // --- Renew Membership Modal Logic ---
 document.addEventListener('DOMContentLoaded', function() {

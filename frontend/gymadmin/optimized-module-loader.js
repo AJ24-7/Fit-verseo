@@ -33,17 +33,95 @@ class OptimizedModuleLoader {
         ];
         
         this.tabModules = {
+            dashboardTab: [], // Dashboard functionality is in main gymadmin.js
             memberDisplayTab: [], // Member functions are in main gymadmin.js
-            attendanceTab: ['modules/attendance.js', 'modules/attendance-stats.js'],
-            equipmentTab: ['modules/equipment.js'],
-            paymentTab: ['modules/payment.js', 'modules/cash-validation.js'],
-            settingsTab: ['modules/settings.js', 'modules/gym-profile.js'],
-            supportReviewsTab: ['modules/support-reviews.js'],
-            trainerTab: ['modules/trainer-management.js'],
-            offersTab: ['modules/offers-manager.js']
+            attendanceTab: {
+                files: ['modules/attendance.js', 'modules/attendance-stats.js'],
+                init: () => {
+                    console.log('✅ Attendance tab modules loaded');
+                }
+            },
+            equipmentTab: {
+                files: ['modules/equipment.js'],
+                init: () => {
+                    console.log('✅ Equipment tab modules loaded');
+                }
+            },
+            paymentTab: {
+                files: ['modules/payment.js', 'modules/cash-validation.js'],
+                init: () => {
+                    // Add a small delay to ensure the script is fully loaded and parsed
+                    setTimeout(() => {
+                        console.log('🔧 Initializing PaymentManager...');
+                        
+                        // Check if PaymentManager class is available and properly defined
+                        if (typeof window.PaymentManager === 'function' && !window.paymentManager) {
+                            try {
+                                console.log('🔧 Creating new PaymentManager instance...');
+                                window.paymentManager = new PaymentManager();
+                                window.paymentManager.initializeAdminPasskey();
+                                console.log('✅ PaymentManager initialized and passkey system activated.');
+                            } catch (error) {
+                                console.error('❌ Error initializing PaymentManager:', error);
+                                console.log('🔧 Attempting fallback initialization...');
+                                
+                                // Fallback: Check if PaymentManager has initialization methods
+                                if (window.PaymentManager && typeof window.PaymentManager.prototype === 'object') {
+                                    try {
+                                        // Try creating instance again with different approach
+                                        window.paymentManager = Object.create(PaymentManager.prototype);
+                                        PaymentManager.call(window.paymentManager);
+                                        window.paymentManager.initializeAdminPasskey();
+                                        console.log('✅ PaymentManager initialized using fallback method.');
+                                    } catch (fallbackError) {
+                                        console.error('❌ Fallback initialization also failed:', fallbackError);
+                                    }
+                                }
+                            }
+                        } else if (!window.PaymentManager) {
+                            console.warn('⚠️ PaymentManager class not found after loading payment.js');
+                        } else if (window.paymentManager) {
+                            console.log('✅ PaymentManager already initialized');
+                        }
+                    }, 100); // 100ms delay to ensure script parsing is complete
+                }
+            },
+            settingsTab: {
+                files: ['modules/settings.js'],
+                init: () => {
+                    console.log('✅ Settings tab modules loaded');
+                }
+            },
+            supportReviewsTab: {
+                files: ['modules/support-reviews.js', 'modules/enhanced-support-integration.js'],
+                init: () => {
+                    console.log('✅ Support & Reviews tab modules loaded');
+                }
+            },
+            trainerTab: {
+                files: ['modules/trainer-management.js'],
+                init: () => {
+                    console.log('✅ Trainer tab modules loaded');
+                }
+            },
+            offersTab: {
+                files: ['modules/offers-manager.js'],
+                init: () => {
+                    console.log('✅ Offers tab modules loaded');
+                }
+            }
         };
         
-        console.log('🚀 Optimized Module Loader initialized');
+        this.init();
+    }
+
+    init() {
+        // Listen for tab switches to load modules (triggered by UltraFastSidebar)
+        document.addEventListener('tabSwitched', (e) => {
+            this.loadTabModules(e.detail.tabId);
+        });
+        
+        console.log('🔧 OptimizedModuleLoader initialized - ready to load modules on demand');
     }
 
     /**
@@ -64,6 +142,63 @@ class OptimizedModuleLoader {
         }
         
         console.log('✅ Core modules loaded');
+        
+        // Trigger any deferred initializations
+        this.triggerDeferredInitializations();
+    }
+
+    async loadTabModules(tabId) {
+        console.log(`📦 loadTabModules called for: ${tabId}`);
+        const moduleConfig = this.tabModules[tabId];
+        if (!moduleConfig) {
+            console.log(`📝 No modules configured for tab: ${tabId}`);
+            return;
+        }
+        console.log(`📦 Module config found for ${tabId}:`, moduleConfig);
+
+        const modulesToLoad = Array.isArray(moduleConfig) ? moduleConfig : moduleConfig.files;
+
+        if (modulesToLoad && modulesToLoad.length > 0) {
+            console.log(`📦 Loading modules for tab: ${tabId}`);
+            for (const modulePath of modulesToLoad) {
+                try {
+                    await this.loadModule(modulePath);
+                } catch (error) {
+                    console.warn(`⚠️ Failed to load module ${modulePath} for tab ${tabId}:`, error);
+                    // Continue loading other modules even if one fails
+                }
+            }
+        } else {
+            console.log(`📝 No module files specified for tab: ${tabId}`);
+        }
+
+        if (moduleConfig.init && typeof moduleConfig.init === 'function') {
+            try {
+                // Check if already initialized to prevent duplicates
+                if (!moduleConfig.initialized) {
+                    moduleConfig.init();
+                    moduleConfig.initialized = true;
+                }
+            } catch (error) {
+                console.error(`❌ Error during tab-specific initialization for ${tabId}:`, error);
+            }
+        }
+    }
+
+    /**
+     * Trigger any deferred initializations
+     */
+    triggerDeferredInitializations() {
+        console.log('🔧 Triggering deferred initializations...');
+        
+        // Dispatch a custom event for any remaining initialization
+        const event = new CustomEvent('coreModulesLoaded');
+        document.dispatchEvent(event);
+        
+        // Ensure all DOMContentLoaded handlers run
+        setTimeout(() => {
+            console.log('🔧 Running final initialization checks...');
+        }, 100);
     }
 
     /**
@@ -71,6 +206,7 @@ class OptimizedModuleLoader {
      */
     async loadModule(modulePath) {
         if (this.loadedModules.has(modulePath)) {
+            console.log(`📝 Module already loaded: ${modulePath}`);
             return Promise.resolve();
         }
 
@@ -80,13 +216,14 @@ class OptimizedModuleLoader {
 
         const loadPromise = new Promise((resolve, reject) => {
             const script = document.createElement('script');
+            // Use the path directly since we're already in the gymadmin directory
             script.src = modulePath;
-            script.defer = true;
+            script.async = true;
             
             script.onload = () => {
                 this.loadedModules.add(modulePath);
                 this.loadingPromises.delete(modulePath);
-                console.log(`✅ Loaded: ${modulePath}`);
+                console.log(`✅ Module loaded successfully: ${modulePath}`);
                 resolve();
             };
             
@@ -101,24 +238,6 @@ class OptimizedModuleLoader {
 
         this.loadingPromises.set(modulePath, loadPromise);
         return loadPromise;
-    }
-
-    /**
-     * Load tab-specific modules
-     */
-    async loadTabModules(tabId) {
-        const modules = this.tabModules[tabId];
-        if (!modules) {
-            console.log(`No modules defined for tab: ${tabId}`);
-            return;
-        }
-
-        console.log(`📋 Loading modules for ${tabId}:`, modules);
-        
-        const loadPromises = modules.map(module => this.loadModule(module));
-        await Promise.allSettled(loadPromises);
-        
-        console.log(`✅ Tab modules loaded for ${tabId}`);
     }
 
     /**

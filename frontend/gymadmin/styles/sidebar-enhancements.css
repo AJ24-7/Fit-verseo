@@ -124,7 +124,7 @@ body {
   overflow: visible !important;
 }
 
-/* ALL content positioning goes to the actual tab elements */
+/* ALL content positioning goes to the actual tab elements - FIXED POSITIONING WITH HIGH SPECIFICITY */
 .content,
 .tab-content,
 #dashboardTab,
@@ -135,20 +135,30 @@ body {
 #paymentTab,
 #equipmentTab,
 #supportReviewsTab,
-#offersTab {
-  margin-left: 270px !important; /* Exactly match sidebar width */
-  margin-top: 60px !important; /* Match top navbar height */
-  padding: 20px !important;
-  min-height: calc(100vh - 60px) !important;
-  background: #f8f9fa !important;
+#offersTab,
+.content.tab-content,
+#dashboardTab.content.tab-content,
+#memberDisplayTab.content.tab-content,
+#trainerTab.content.tab-content,
+#settingsTab.content.tab-content,
+#attendanceTab.content.tab-content,
+#paymentTab.content.tab-content,
+#equipmentTab.content.tab-content,
+#supportReviewsTab.content.tab-content,
+#offersTab.content.tab-content {
+  position: fixed !important; /* Use fixed positioning for precise control */
+  top: 60px !important; /* Start after top navbar */
+  left: 270px !important; /* Start after sidebar */
   width: calc(100vw - 270px) !important; /* Fill remaining space exactly */
+  height: calc(100vh - 60px) !important; /* Fill remaining height */
+  margin: 0 !important; /* Remove all margins */
+  padding: 20px !important;
+  background: #f8f9fa !important;
   box-sizing: border-box !important;
-  transition: margin-left 0.15s ease, width 0.15s ease !important;
-  position: relative !important;
+  transition: left 0.15s ease, width 0.15s ease !important;
   z-index: 1 !important;
-  left: 0 !important; /* Ensure no extra offset */
-  top: 0 !important; /* Ensure no extra offset */
-  border: none !important; /* Remove any borders that might cause gaps */
+  border: none !important;
+  overflow-y: auto !important; /* Allow scrolling within tab content */
 }
 
 /* Legacy main-content class support - NO POSITIONING */
@@ -190,7 +200,7 @@ body.sidebar-collapsed .sidebar {
   transform: translateX(-270px) !important; /* Hide completely off-screen using exact width */
 }
 
-/* FIXED: Content adjustment when sidebar is collapsed - ONLY for tabs, NOT wrapper */
+/* FIXED: Content adjustment when sidebar is collapsed - HIGH SPECIFICITY SELECTORS */
 .sidebar-collapsed .content,
 .sidebar-collapsed .tab-content,
 .sidebar-collapsed #dashboardTab,
@@ -212,10 +222,14 @@ body.sidebar-collapsed #attendanceTab,
 body.sidebar-collapsed #paymentTab,
 body.sidebar-collapsed #equipmentTab,
 body.sidebar-collapsed #supportReviewsTab,
-body.sidebar-collapsed #offersTab {
-  margin-left: 0 !important;
-  width: 100vw !important;
-  transition: margin-left 0.15s ease, width 0.15s ease !important;
+body.sidebar-collapsed #offersTab,
+.sidebar-collapsed .content.tab-content,
+body.sidebar-collapsed .content.tab-content,
+.sidebar-collapsed #dashboardTab.content.tab-content,
+body.sidebar-collapsed #dashboardTab.content.tab-content {
+  left: 0 !important; /* Start from left edge when sidebar collapsed */
+  width: 100vw !important; /* Full width when sidebar collapsed */
+  transition: left 0.15s ease, width 0.15s ease !important;
 }
 
 /* Main-content wrapper remains unchanged in collapsed state */
@@ -479,23 +493,36 @@ body.sidebar-collapsed .main-content {
     display: block !important;
   }
   
+  /* CRITICAL MOBILE FIX: Use higher specificity to override desktop positioning */
   /* Mobile: Ensure all content tabs are full width with no sidebar gap */
   .content,
   .tab-content,
+  .content.tab-content,
   #dashboardTab,
+  #dashboardTab.content.tab-content,
   #memberDisplayTab,
+  #memberDisplayTab.content.tab-content,
   #trainerTab,
+  #trainerTab.content.tab-content,
   #settingsTab,
+  #settingsTab.content.tab-content,
   #attendanceTab,
+  #attendanceTab.content.tab-content,
   #paymentTab,
+  #paymentTab.content.tab-content,
   #equipmentTab,
+  #equipmentTab.content.tab-content,
   #supportReviewsTab,
-  #offersTab {
-    margin-left: 0 !important;
-    margin-top: 60px !important;
-    width: 100vw !important;
-    min-height: calc(100vh - 60px) !important;
+  #supportReviewsTab.content.tab-content,
+  #offersTab,
+  #offersTab.content.tab-content {
+    position: fixed !important; /* Ensure fixed positioning on mobile */
+    left: 0 !important; /* Start from left edge on mobile - NO GAP */
+    top: 60px !important; /* Start after top navbar */
+    width: 100vw !important; /* Full width on mobile */
+    height: calc(100vh - 60px) !important; /* Full height minus navbar */
     padding: 15px !important;
+    margin: 0 !important;
     box-sizing: border-box !important;
   }
   
@@ -534,7 +561,7 @@ body.sidebar-collapsed .main-content {
   body.sidebar-collapsed #equipmentTab,
   body.sidebar-collapsed #supportReviewsTab,
   body.sidebar-collapsed #offersTab {
-    margin-left: 0 !important;
+    left: 0 !important;
     width: 100vw !important;
   }
   
@@ -585,12 +612,24 @@ body.sidebar-collapsed .main-content {
   display: block !important;
 }
 
-.tab-content:not(.active):not([style*="display: block"]) {
-  position: absolute;
-  top: -9999px;
-  left: -9999px;
+/* FIXED: More lenient tab hiding rule - only hide if display is explicitly none */
+.tab-content:not([style*="display: block"]):not(.active),
+.tab-content[style*="display: none"] {
+  display: none !important;
   visibility: hidden;
   opacity: 0;
+}
+
+/* Ensure tabs with display: block are always visible regardless of active class */
+.tab-content[style*="display: block"],
+#dashboardTab[style*="display: block"],
+[id$="Tab"][style*="display: block"] {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
 }
 
 /* Hardware acceleration */

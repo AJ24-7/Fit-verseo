@@ -15,9 +15,14 @@ class PaymentManager {
 
   // Initialize admin passkey system (available if called elsewhere)
   initializeAdminPasskey() {
+    console.log('🔧 PaymentManager initializeAdminPasskey called');
     this.setupPasskeyModal();
     this.setupPasskeySettings();
-    this.interceptPaymentTabAccess();
+    // Add a small delay to ensure DOM is ready
+    setTimeout(() => {
+      this.interceptPaymentTabAccess();
+      console.log('✅ Payment tab access interception set up');
+    }, 100);
   }
 
   // Setup passkey modal functionality
@@ -434,11 +439,18 @@ class PaymentManager {
 
   // Show passkey modal
   showPasskeyModal(isSetupMode = false) {
+    console.log('🔧 Showing passkey modal, isSetupMode:', isSetupMode);
+    
     const modal = document.getElementById('adminPasskeyModal');
     const paymentTab = document.getElementById('paymentTab');
     
     if (modal) {
+      console.log('🔧 Modal element found, applying show styles');
+      
+      // Use both methods to ensure visibility
+      modal.style.display = 'flex';
       modal.classList.add('active');
+      
       this.clearAllDigits();
       this.hidePasskeyError();
       
@@ -467,8 +479,12 @@ class PaymentManager {
       // Focus first input
       const firstInput = document.querySelector('.passkey-digit');
       if (firstInput) {
-        setTimeout(() => firstInput.focus(), 100);
+        setTimeout(() => firstInput.focus(), 200);
       }
+      
+      console.log('✅ Passkey modal should now be visible');
+    } else {
+      console.error('❌ adminPasskeyModal element not found in DOM');
     }
 
     // Blur background
@@ -479,13 +495,15 @@ class PaymentManager {
 
   // Hide passkey modal
   hidePasskeyModal() {
-    console.log('Hiding passkey modal...');
+    console.log('🔧 Hiding passkey modal...');
     
     const modal = document.getElementById('adminPasskeyModal');
     const paymentTab = document.getElementById('paymentTab');
     
     if (modal) {
+      modal.style.display = 'none';
       modal.classList.remove('active');
+      console.log('✅ Passkey modal hidden');
     }
 
     // Remove blur
@@ -694,43 +712,44 @@ class PaymentManager {
       return;
     }
 
-    // Use the main app's navigation system to properly show payment tab
-    if (typeof window.hideAllMainTabs === 'function') {
-      window.hideAllMainTabs();
-      console.log('hideAllMainTabs called from showPaymentTab');
-    }
-
-    // Show payment tab using main navigation system
-    const paymentTab = document.getElementById('paymentTab');
-    if (paymentTab) {
-      paymentTab.style.display = 'block';
-      paymentTab.classList.add('active');
-      console.log('Payment tab displayed');
+    // Use the UltraFastSidebar system to properly show payment tab
+    if (window.ultraFastSidebar && typeof window.ultraFastSidebar.switchTab === 'function') {
+      window.ultraFastSidebar.switchTab('paymentTab');
+      console.log('Payment tab switched using UltraFastSidebar');
+    } else {
+      // Fallback to manual tab switching if UltraFastSidebar is not available
+      console.log('UltraFastSidebar not available, using fallback method');
+      
+      // Hide all tabs first
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+        tab.classList.remove('active');
+      });
+      
+      // Show payment tab
+      const paymentTab = document.getElementById('paymentTab');
+      if (paymentTab) {
+        paymentTab.style.display = 'block';
+        paymentTab.classList.add('active');
+        console.log('Payment tab displayed');
+      }
       
       // Update navigation state - activate payment menu link
       document.querySelectorAll('.menu-link').forEach(link => link.classList.remove('active'));
       
       const paymentMenuLink = Array.from(document.querySelectorAll('.menu-link')).find(link => 
-        link.querySelector('.fa-credit-card') || 
-        link.textContent.trim().toLowerCase().includes('payment')
+        link.getAttribute('data-tab') === 'paymentTab'
       );
       
       if (paymentMenuLink) {
         paymentMenuLink.classList.add('active');
         console.log('Payment menu link activated');
       }
-      
-      // Update main content margins if function exists
-      if (typeof window.updateMainContentMargins === 'function') {
-        window.updateMainContentMargins();
-      }
-      
-      // Load payment data
-      this.loadPaymentData();
-      console.log('Payment data loading initiated');
-    } else {
-      console.error('Payment tab element not found');
     }
+    
+    // Load payment data
+    this.loadPaymentData();
+    console.log('Payment data loading initiated');
   }
 
   // Show passkey error
