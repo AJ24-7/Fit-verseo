@@ -26,172 +26,46 @@ if (!window.__DEFER_DCL_PATCH__) {
   (window.requestIdleCallback || function(cb){ setTimeout(cb,400); })(runDeferred);
   window.addEventListener('click', runDeferred, { once:true, capture:true });
 }
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   if (window.__GYM_ADMIN_INIT_RUN__) return; // prevent duplicate execution
   window.__GYM_ADMIN_INIT_RUN__ = true;
 
   console.log('🚀 Production-ready Gym Admin Dashboard initializing...');
 
-  // Wait for performance managers to be available
-  const initializeWithManagers = async () => {
+  // Wait for core modules to load
+  await waitForModuleLoader();
+
+  // Initialize dashboard components immediately without tab registration
+  const initializeWithoutTabs = async () => {
     try {
-      // Register all tabs with the isolation manager
-      await registerAllTabsWithIsolation();
-
-      // Setup the existing tab handling with performance enhancements
-      // setupEnhancedTabHandling(); // DISABLED: UltraFastSidebar handles all sidebar functionality
-
-      // Initialize dashboard components
+      // Initialize dashboard components only
       await initializeDashboardComponents();
 
-      console.log('✅ Dashboard initialization complete with performance optimizations');
+      console.log('✅ Dashboard initialization complete - tab management handled by sidebar and isolation managers');
     } catch (error) {
       console.error('❌ Dashboard initialization failed:', error);
     }
   };
 
-  // Check if managers are ready, otherwise wait
-  if (window.tabIsolationManager && window.skeletonLoadingManager) {
-    initializeWithManagers();
-  } else {
-    const checkManagers = () => {
-      if (window.tabIsolationManager && window.skeletonLoadingManager) {
-        initializeWithManagers();
-      } else {
-        setTimeout(checkManagers, 100);
-      }
-    };
-    checkManagers();
-  }
+  // Initialize immediately
+  initializeWithoutTabs();
 
   /**
-   * Register all tabs with isolation manager for performance
+   * Wait for module loader to be ready
    */
-  async function registerAllTabsWithIsolation() {
-    if (!window.tabIsolationManager) return;
-    
-    // Prevent multiple registrations
-    if (window.__TABS_REGISTERED_WITH_ISOLATION__) {
-      console.log('📑 Tabs already registered with isolation, skipping');
-      return;
+  async function waitForModuleLoader() {
+    let attempts = 0;
+    while (!window.optimizedModuleLoader && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
     }
-    window.__TABS_REGISTERED_WITH_ISOLATION__ = true;
-
-    // Dashboard Tab - Critical priority, load immediately
-    window.tabIsolationManager.registerTab('dashboardTab', {
-      name: 'Dashboard',
-      priority: 'critical',
-      contentSelector: '#dashboardTab',
-      preloadData: true,
-      init: async () => {
-        console.log('📊 Initializing dashboard tab');
-        // Dashboard is always loaded, just ensure visibility
-      }
-    });
-
-    // Payment Tab - High priority, lazy load on demand
-    window.tabIsolationManager.registerTab('paymentTab', {
-      name: 'Payments',
-      priority: 'high',
-      contentSelector: '#paymentTab',
-      preloadData: false, // Changed to lazy load
-      init: async () => {
-        if (window.LazyLoadManager) {
-          await window.LazyLoadManager.loadModule('payment-system', async () => {
-            await window.__loadTabScripts?.(['payment.js', 'cash-validation.js']);
-            if (window.ensurePaymentManager) {
-              window.ensurePaymentManager();
-            }
-          }, { priority: 'high' });
-        } else {
-          // Fallback
-          await window.__loadTabScripts?.(['payment.js', 'cash-validation.js']);
-          if (window.ensurePaymentManager) {
-            window.ensurePaymentManager();
-          }
-        }
-      },
-      onActivate: () => {
-        if (window.paymentManager) {
-          window.paymentManager.resume?.();
-        }
-      },
-      onDeactivate: () => {
-        if (window.paymentManager) {
-          window.paymentManager.pause?.();
-        }
-      }
-    });
-
-    // Attendance Tab
-    window.tabIsolationManager.registerTab('attendanceTab', {
-      name: 'Attendance',
-      priority: 'normal',
-      contentSelector: '#attendanceTab',
-      init: async () => {
-        await window.__loadTabScripts?.(['attendance.js', 'attendance-stats.js']);
-      }
-    });
-
-    // Equipment Tab
-    window.tabIsolationManager.registerTab('equipmentTab', {
-      name: 'Equipment',
-      priority: 'normal',
-      contentSelector: '#equipmentTab',
-      init: async () => {
-        await window.__loadTabScripts?.(['equipment.js']);
-      }
-    });
-
-    // Settings Tab
-    window.tabIsolationManager.registerTab('settingsTab', {
-      name: 'Settings',
-      priority: 'low',
-      contentSelector: '#settingsTab',
-      init: async () => {
-        await window.__loadTabScripts?.(['settings.js', 'gym-profile.js']);
-        if (window.updatePasskeySettingsUI) {
-          window.updatePasskeySettingsUI();
-        }
-      }
-    });
-
-    // Support Tab
-    window.tabIsolationManager.registerTab('supportReviewsTab', {
-      name: 'Support',
-      priority: 'low',
-      contentSelector: '#supportReviewsTab',
-      init: async () => {
-        await window.__loadTabScripts?.(['enhanced-support-integration.js', 'support-reviews.js']);
-      }
-    });
-
-    // Trainer Tab
-    window.tabIsolationManager.registerTab('trainerTab', {
-      name: 'Trainers',
-      priority: 'normal',
-      contentSelector: '#trainerTab',
-      init: async () => {
-        await window.__loadTabScripts?.(['trainer-management.js']);
-        if (window.showTrainerTab) {
-          window.showTrainerTab();
-        }
-      }
-    });
-
-    // Member Display Tab
-    window.tabIsolationManager.registerTab('memberDisplayTab', {
-      name: 'Members',
-      priority: 'normal',
-      contentSelector: '#memberDisplayTab',
-      init: async () => {
-        // Member tab initialization if needed
-      }
-    });
-
-    console.log('📑 All tabs registered with performance isolation');
+    
+    if (window.optimizedModuleLoader) {
+      console.log('✅ Module loader ready');
+    } else {
+      console.warn('⚠️ Module loader not found, proceeding without optimization');
+    }
   }
-
 
   
   async function initializeDashboardComponents() {
@@ -249,9 +123,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('🎯 Dashboard components initialized with performance optimizations');
   }
-
-  // Expose initialization functions globally for tab switching
-  window.initializeDashboardComponents = initializeDashboardComponents;
 
   // Add fallback functions for undefined functions to prevent errors
   window.fetchAndRenderActivities = window.fetchAndRenderActivities || function() {
@@ -340,19 +211,6 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
-      // Ctrl/Cmd + number keys for tab switching
-      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '8') {
-        e.preventDefault();
-        const tabIndex = parseInt(e.key) - 1;
-        const tabs = document.querySelectorAll('[data-tab]');
-        if (tabs[tabIndex]) {
-          const tabId = tabs[tabIndex].getAttribute('data-tab');
-          if (window.tabIsolationManager) {
-            window.tabIsolationManager.switchToTab(tabId);
-          }
-        }
-      }
-
       // Escape key to close modals/dropdowns
       if (e.key === 'Escape') {
         document.querySelectorAll('.modal.show').forEach(modal => {
@@ -365,46 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Execute the initialization
-  initializeWithManagers();
-
-  // Central tab handling using data-tab attributes (preferred) or fallback mapping
-  const mainTabs = {
-    dashboardTab: document.getElementById('dashboardTab'),
-    memberDisplayTab: document.getElementById('memberDisplayTab'),
-    trainerTab: document.getElementById('trainerTab'),
-    attendanceTab: document.getElementById('attendanceTab'),
-    paymentTab: document.getElementById('paymentTab'),
-    equipmentTab: document.getElementById('equipmentTab'),
-    supportReviewsTab: document.getElementById('supportReviewsTab'),
-    settingsTab: document.getElementById('settingsTab')
-  };
-
-  // Sidebar event handling delegated to UltraFastSidebar class for optimal performance
-
-  // Helper: hide all main tabs safely (prevents ReferenceError when called)
-  function hideAllMainTabs() {
-    try {
-      Object.values(mainTabs).forEach(t => {
-        if (t && typeof t.style !== 'undefined') {
-          t.style.display = 'none';
-        }
-      });
-    } catch (err) {
-      console.warn('hideAllMainTabs error', err);
-    }
-  }
-
-  // Initial visible tab (ensure only one shown)
-  // If a tab already visible (inline style), keep it; else default to dashboard if present
-  const anyVisible = Object.values(mainTabs).some(t => t && t.style.display !== 'none');
-  if (!anyVisible && mainTabs.dashboardTab) {
-    hideAllMainTabs();
-    mainTabs.dashboardTab.style.display = 'block';
-  }
-
-  // Light performance hint: defer expensive data loads until tab first shown
-  // Use IntersectionObserver or simple lazy markers later if needed.
+  // All tab handling is now managed by sidebar.js and tab-isolation.js
 
   // --- Simple global fetch cache to dedupe identical endpoint calls ---
   if (!window.__fetchCache) {
@@ -1079,13 +898,8 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
   }
 
-  // Fetch and display pending trainers when tab is shown
-  window.showTrainerTab = async function() {
-    showSection('pending');
-    const trainers = await fetchPendingTrainers();
-    renderPendingTrainers(trainers);
-  };
-
+  // Initial section display
+  showSection('pending');
 
  // End Trainer Tab Logic
   const availBtns = [
@@ -2654,11 +2468,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Event handler functions
-  function handlePlanChange(event) {
+  function handlePlanChange() {
     updatePaymentAmountAndDiscount();
   }
 
-  function handleMonthChange(event) {
+  function handleMonthChange() {
     updatePaymentAmountAndDiscount();
   }
 
@@ -2754,7 +2568,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const { gymName, plan, monthlyPlan, memberEmail, memberName, membershipId, validDate } = getMemberFormMeta(formData);
      
       // Debug: Log FormData contents
-      for (let [] of formData.entries()) {
+      console.log('📋 Form data being submitted:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
       }
       try {
         const res = await fetch('http://localhost:5000/api/members', {
@@ -3014,6 +2830,7 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .then(data => {
         if (data.success) {
+          console.log('[AddMember] Welcome email sent successfully');
         } else {
           console.error('[AddMember] Email sending failed:', data.message);
         }
@@ -3257,11 +3074,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function handleRenewalPlanChange(event) {
+  function handleRenewalPlanChange() {
     updateRenewalPaymentAmount();
   }
 
-  function handleRenewalMonthChange(event) {
+  function handleRenewalMonthChange() {
     updateRenewalPaymentAmount();
   }
 
@@ -3545,7 +3362,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (token) {
+            console.log('✅ Token found after waiting');
         } else {
+            console.warn('⚠️ No token found after maximum retries');
         }
         
         return token;
@@ -3574,7 +3393,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return { ok: response.ok, status: response.status, statusText: response.statusText, data, raw: response };
     }
     
-    function handleProfileFetchError(responseData, adminNameElement, adminAvatarElement) {
+    function handleProfileFetchError(responseData) {
         console.error(`Error fetching profile: ${responseData.status} ${responseData.statusText}`);
         console.error('Detailed server response:', responseData.data);
         if (responseData.status === 401 || responseData.status === 403) {
@@ -3865,7 +3684,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         alert(data.message || 'Failed to remove photo');
                     }
-                } catch (err) {
+                } catch (error) {
+                    console.error('Network error while removing photo:', error);
                     alert('Network error while removing photo');
                 }
                 deletePhotoConfirmModal.style.display = 'none';
@@ -4525,9 +4345,6 @@ function clearUploadPhotoMsgAndCloseModal() {
 
 
 document.addEventListener('DOMContentLoaded', function() {
-  hideAllMainTabs();
-  if (dashboardContent) dashboardContent.style.display = 'block';
-  
   // Initialize stat cards with loading states
   initializeStatCards();
 });
@@ -4877,8 +4694,8 @@ async function fetchAndDisplayMembers() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         gymId = payload.admin?.gymId || payload.admin?.id;
-      } catch (e) {
-        console.warn('Could not extract gym ID from token');
+      } catch (error) {
+        console.warn('Could not extract gym ID from token:', error);
       }
     }
     

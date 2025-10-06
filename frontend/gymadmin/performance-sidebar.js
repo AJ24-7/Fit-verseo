@@ -10,18 +10,21 @@ class UltraFastSidebar {
     this.cache = new Map();
     this.setupCaching();
     this.bindEvents();
-    
-    console.log('⚡ Ultra-Fast Sidebar System initialized');
   }
 
   setupCaching() {
     // Cache all menu links
     const menuLinks = document.querySelectorAll('.menu-link');
+    
     menuLinks.forEach(link => {
       const tabId = link.getAttribute('data-tab');
       if (tabId) {
         this.cache.set(`link_${tabId}`, link);
-        this.cache.set(`tab_${tabId}`, document.getElementById(tabId));
+        // Cache tab content using correct selector
+        const tabContent = document.getElementById(tabId);
+        if (tabContent) {
+            this.cache.set(`tab_${tabId}`, tabContent);
+        }
       }
     });
     
@@ -33,19 +36,7 @@ class UltraFastSidebar {
     
     // Cache desktop sidebar toggle elements
     this.cache.set('toggleBtn', document.getElementById('toggleBtn'));
-    // Since there's no single mainContent element, we'll handle individual tabs
-    this.cache.set('dashboardTab', document.getElementById('dashboardTab'));
-    this.cache.set('memberDisplayTab', document.getElementById('memberDisplayTab'));
-    this.cache.set('trainerTab', document.getElementById('trainerTab'));
-    this.cache.set('attendanceTab', document.getElementById('attendanceTab'));
-    this.cache.set('paymentTab', document.getElementById('paymentTab'));
-    this.cache.set('equipmentTab', document.getElementById('equipmentTab'));
-    this.cache.set('offersTab', document.getElementById('offersTab'));
-    this.cache.set('supportReviewsTab', document.getElementById('supportReviewsTab'));
-    this.cache.set('settingsTab', document.getElementById('settingsTab'));
     this.cache.set('topNav', document.getElementById('topNav'));
-    
-    console.log(`📋 Cached ${this.cache.size} DOM elements for instant access`);
     
     // Ensure mobile menu bar is initially hidden
     this.ensureMobileMenuBarClosed();
@@ -65,7 +56,6 @@ class UltraFastSidebar {
     }
     
     document.body.style.overflow = '';
-    console.log('📱 Mobile menu bar initialized as closed');
   }
 
   bindEvents() {
@@ -137,13 +127,11 @@ class UltraFastSidebar {
     if (!link) return;
     
     const tabId = link.getAttribute('data-tab');
+    
     if (!tabId || this.isTransitioning) return;
     
     e.preventDefault();
     e.stopPropagation();
-    
-    // Immediate visual feedback (no delays)
-    this.setActiveState(link, tabId);
     
     // Ultra-fast tab switch
     this.switchTab(tabId);
@@ -151,7 +139,7 @@ class UltraFastSidebar {
     // Close mobile menu bar instantly
     this.closeMobileMenuBar();
     
-    // Set debounce to prevent rapid clicks (reduced from 50ms to 25ms)
+    // Set debounce to prevent rapid clicks
     this.clickDebounce = setTimeout(() => {
       this.clickDebounce = null;
     }, 25);
@@ -177,191 +165,166 @@ class UltraFastSidebar {
     // Find and activate corresponding mobile/desktop link
     const correspondingLinks = document.querySelectorAll(`[data-tab="${tabId}"]`);
     correspondingLinks.forEach(link => {
-      if (link !== activeLink) {
+      if (link !== activeLink && !link.classList.contains('active')) {
         link.classList.add('active');
       }
     });
   }
 
   switchTab(tabId) {
-    if (this.isTransitioning) return;
+    if (this.isTransitioning || this.activeTab === tabId) return;
     
-    const startTime = performance.now();
     this.isTransitioning = true;
-    
-    // Get target tab from cache
+
+    // Get active link and target tab from cache
+    const activeLink = this.cache.get(`link_${tabId}`);
     const targetTab = this.cache.get(`tab_${tabId}`);
     
-    if (!targetTab) {
-      console.warn(`❌ Tab ${tabId} not found in cache`);
+    if (!targetTab || !activeLink) {
+      console.warn(`Tab ${tabId} or its link not found in cache`);
       this.isTransitioning = false;
       return;
     }
 
-    // Show target tab instantly FIRST for immediate visual feedback
+    // 1. Set active class on the link immediately
+    this.setActiveState(activeLink, tabId);
+
+    // 2. Hide all other main tab content containers
+    const allTabs = document.querySelectorAll('.content.tab-content');
+    allTabs.forEach(tab => {
+        if (tab.id !== tabId) {
+            tab.style.display = 'none';
+            tab.classList.remove('active');
+        }
+    });
+
+    // 3. Show the target tab instantly
     targetTab.style.display = 'block';
-    targetTab.style.opacity = '1';
-    targetTab.style.visibility = 'visible';
     targetTab.classList.add('active');
     targetTab.scrollTop = 0;
+    
+    // TEMP DEBUG: Add visual indicator and force positioning
+    targetTab.style.backgroundColor = '#f0f8ff';
+    targetTab.style.border = '3px solid #007bff';
+    targetTab.style.minHeight = '400px';
+    targetTab.style.position = 'relative';
+    targetTab.style.zIndex = '1000';
+    targetTab.style.top = '0';
+    targetTab.style.left = '0';
+    targetTab.style.width = '100%';
+    targetTab.style.color = '#000';
+    targetTab.style.fontSize = '16px';
+    
+    // Add a test content overlay to force visibility
+    const testDiv = document.createElement('div');
+    testDiv.id = 'debugTestContent';
+    testDiv.innerHTML = `
+      <h1 style="color: red; background: yellow; padding: 20px; margin: 20px; border: 5px solid red;">
+        🔥 TAB IS WORKING: ${tabId} 🔥
+      </h1>
+      <p style="color: black; background: white; padding: 10px; font-size: 18px;">
+        If you can see this, the tab system is working but the original content might have CSS issues.
+      </p>
+    `;
+    testDiv.style.position = 'absolute';
+    testDiv.style.top = '10px';
+    testDiv.style.left = '10px';
+    testDiv.style.zIndex = '9999';
+    testDiv.style.background = 'rgba(255,255,0,0.9)';
+    testDiv.style.padding = '20px';
+    testDiv.style.border = '5px solid red';
+    targetTab.appendChild(testDiv);
+    
+    // Force scroll to tab
+    setTimeout(() => {
+      targetTab.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 100);
+    
+    // DEBUG: Also check and fix parent container
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      console.log('🔍 DEBUG: Main content container:', {
+        display: window.getComputedStyle(mainContent).display,
+        height: mainContent.offsetHeight,
+        width: mainContent.offsetWidth,
+        overflow: window.getComputedStyle(mainContent).overflow
+      });
+      // Force main content to be visible
+      mainContent.style.display = 'block';
+      mainContent.style.height = 'auto';
+      mainContent.style.minHeight = '100vh';
+      mainContent.style.overflow = 'visible';
+    }
+    
+    // DEBUG: Log detailed tab state after switching
+    console.log(`🔍 DEBUG: Tab ${tabId} switch complete:`, {
+      element: targetTab,
+      display: targetTab.style.display,
+      computedDisplay: window.getComputedStyle(targetTab).display,
+      visibility: window.getComputedStyle(targetTab).visibility,
+      opacity: window.getComputedStyle(targetTab).opacity,
+      classes: targetTab.className,
+      offsetHeight: targetTab.offsetHeight,
+      offsetWidth: targetTab.offsetWidth,
+      scrollHeight: targetTab.scrollHeight,
+      clientHeight: targetTab.clientHeight,
+      hasContent: targetTab.children.length > 0,
+      innerHTML: targetTab.innerHTML.substring(0, 200) + '...',
+      // Position debugging
+      getBoundingClientRect: targetTab.getBoundingClientRect(),
+      computedPosition: window.getComputedStyle(targetTab).position,
+      computedTop: window.getComputedStyle(targetTab).top,
+      computedLeft: window.getComputedStyle(targetTab).left,
+      computedZIndex: window.getComputedStyle(targetTab).zIndex,
+      parent: targetTab.parentElement,
+      parentDisplay: targetTab.parentElement ? window.getComputedStyle(targetTab.parentElement).display : 'no parent'
+    });
+    
+    // Log each child element to see if they're visible
+    console.log(`🔍 DEBUG: ${tabId} children:`, 
+      Array.from(targetTab.children).map(child => ({
+        tagName: child.tagName,
+        className: child.className,
+        offsetHeight: child.offsetHeight,
+        offsetWidth: child.offsetWidth,
+        display: window.getComputedStyle(child).display,
+        visibility: window.getComputedStyle(child).visibility
+      }))
+    );
     
     // Update active tab reference
     this.activeTab = tabId;
     this.isTransitioning = false;
     
-    const endTime = performance.now();
-    console.log(`⚡ Tab switch completed in ${(endTime - startTime).toFixed(2)}ms`);
-
-    // Hide all other tabs after showing target (non-blocking)
-    requestAnimationFrame(() => {
-      const allTabs = document.querySelectorAll('.tab-content, [id$="Tab"]');
-      
-      allTabs.forEach(tab => {
-        if (tab !== targetTab && tab.style.display !== 'none') {
-          tab.style.display = 'none';
-          tab.style.opacity = '0';
-          tab.style.visibility = 'hidden';
-          tab.classList.remove('active', 'show', 'visible');
-          
-          // Also hide nested tab content (like payment-tab, offers-tab)
-          const nestedTabs = tab.querySelectorAll('.payment-tab, .offers-tab');
-          nestedTabs.forEach(nested => {
-            nested.classList.remove('active');
-            nested.style.display = 'none';
-          });
-        }
+    // 4. Defer heavy initialization to TabIsolationManager
+    if (window.tabIsolationManager && typeof window.tabIsolationManager.switchToTab === 'function') {
+      window.tabIsolationManager.switchToTab(tabId, false).catch(error => {
+        console.warn('TabIsolationManager failed to initialize tab:', error);
       });
-    });
-    
-    // Defer heavy initialization to avoid blocking UI
-    setTimeout(() => {
-      // Call TabIsolationManager for advanced tab initialization (non-blocking)
-      if (window.tabIsolationManager && typeof window.tabIsolationManager.switchToTab === 'function') {
-        window.tabIsolationManager.switchToTab(tabId, false).catch(error => {
-          console.warn('TabIsolationManager failed, continuing with basic switch:', error);
-        });
-      }
-      
-      // Trigger tab initialization (non-blocking)
-      this.initializeTab(tabId);
-    }, 0);
-  }
-
-  initializeTab(tabId) {
-    // IMMEDIATE UI fixes for payment tab - no delays
-    if (tabId === 'paymentTab') {
-      const paymentTabContent = document.querySelector('#paymentTab .payment-tab');
-      if (paymentTabContent) {
-        paymentTabContent.classList.add('active');
-        paymentTabContent.style.display = 'block';
-        paymentTabContent.style.opacity = '1';
-        paymentTabContent.style.visibility = 'visible';
-      }
     }
     
-    // Use setTimeout for deferred initialization instead of idle callback
-    setTimeout(() => {
-      const initMap = {
-        'dashboardTab': () => {
-          if (typeof window.initializeDashboardComponents === 'function') {
-            window.initializeDashboardComponents();
-          } else {
-            console.log('📊 Dashboard tab activated');
-          }
-        },
-        'memberDisplayTab': () => {
-          if (typeof window.fetchAndDisplayMembers === 'function') {
-            window.fetchAndDisplayMembers();
-          }
-        },
-        'trainerTab': () => window.showTrainerTab?.(),
-        'attendanceTab': () => {
-          if (typeof window.attendanceManager !== 'undefined') {
-            window.attendanceManager.loadData();
-            window.attendanceManager.loadAttendanceForDate();
-          }
-          window.initializeAttendanceTab?.();
-        },
-        'paymentTab': () => {
-          // Initialize payment tab by activating the nested payment-tab div
-          const paymentTabContent = document.querySelector('#paymentTab .payment-tab');
-          if (paymentTabContent) {
-            paymentTabContent.classList.add('active');
-            paymentTabContent.style.display = 'block';
-          }
-          window.ensurePaymentManager?.();
-          if (typeof window.ensurePaymentManager === 'function') {
-            const mgr = window.ensurePaymentManager();
-            if (mgr && typeof mgr.handlePaymentMenuClick === 'function') {
-              // Payment manager handles its own initialization
-            }
-          }
-        },
-        'equipmentTab': () => {
-          if (typeof window.equipmentManager !== 'undefined') {
-            window.equipmentManager.loadEquipmentData();
-          }
-          window.initializeEquipmentTab?.();
-        },
-        'settingsTab': () => {
-          window.updatePasskeySettingsUI?.();
-          if (window.setupLanguageSettings) window.setupLanguageSettings();
-        },
-        'supportReviewsTab': () => {
-          window.initializeSupportTab?.();
-          if (window.supportReviewsManager && typeof window.supportReviewsManager.switchTab === 'function') {
-            window.supportReviewsManager.switchTab('notifications');
-          }
-        },
-        'offersTab': () => {
-          // Ensure offers tab content is visible
-          const offersTabContent = document.querySelector('#offersTab .offers-tab');
-          if (offersTabContent) {
-            offersTabContent.style.display = 'block';
-            offersTabContent.style.opacity = '1';
-            offersTabContent.style.visibility = 'visible';
-          }
-          
-          // Load offers manager if not already loaded
-          if (window.loadOffersManager && !window.offersManagerLoaded) {
-            window.loadOffersManager();
-          }
-          
-          // Initialize offers manager if available
-          setTimeout(() => {
-            if (window.offersManager && typeof window.offersManager.initializeElements === 'function') {
-              window.offersManager.initializeElements();
-            }
-          }, 100);
-        }
-      };
-      
-      const initFunction = initMap[tabId];
-      if (initFunction && typeof initFunction === 'function') {
-        try {
-          initFunction();
-        } catch (error) {
-          console.warn(`⚠️ Tab ${tabId} initialization error:`, error);
-        }
-      }
+    // 5. Notify optimized module loader about tab switch
+    const tabSwitchedEvent = new CustomEvent('tabSwitched', {
+      detail: { tabId: tabId }
     });
+    document.dispatchEvent(tabSwitchedEvent);
+    
+    // 6. Also trigger module loading directly if available
+    if (window.optimizedModuleLoader && typeof window.optimizedModuleLoader.loadTabModules === 'function') {
+      window.optimizedModuleLoader.loadTabModules(tabId).catch(error => {
+        console.warn('Module loader failed for tab:', error);
+      });
+    }
   }
 
   toggleMobileMenuBar() {
     const mobileMenuBar = this.cache.get('mobileMenuBar');
     
-    console.log('🍔 Hamburger menu clicked - toggling mobile menu bar');
-    
-    if (!mobileMenuBar) {
-      console.warn('❌ Mobile menu bar element not found');
-      return;
-    }
+    if (!mobileMenuBar) return;
     
     if (mobileMenuBar.classList.contains('show')) {
-      console.log('📱 Closing mobile menu bar');
       this.closeMobileMenuBar();
     } else {
-      console.log('📱 Opening mobile menu bar');
       this.openMobileMenuBar();
     }
   }
@@ -371,14 +334,10 @@ class UltraFastSidebar {
     const backdrop = this.cache.get('backdrop');
     
     if (mobileMenuBar && backdrop) {
-      // IMMEDIATE: Show menu without any delays
       mobileMenuBar.style.display = 'block';
       mobileMenuBar.classList.add('show');
       backdrop.classList.add('show', 'active');
       document.body.style.overflow = 'hidden';
-      console.log('✅ Mobile menu bar opened instantly');
-    } else {
-      console.warn('❌ Mobile menu bar or backdrop not found');
     }
   }
 
@@ -386,7 +345,7 @@ class UltraFastSidebar {
     const mobileMenuBar = this.cache.get('mobileMenuBar');
     const backdrop = this.cache.get('backdrop');
     
-    if (mobileMenuBar && backdrop) {
+    if (mobileMenuBar && backdrop && mobileMenuBar.classList.contains('show')) {
       mobileMenuBar.classList.remove('show');
       backdrop.classList.remove('show', 'active');
       document.body.style.overflow = '';
@@ -399,8 +358,6 @@ class UltraFastSidebar {
       }, 300);
       
       console.log('✅ Mobile menu bar closed successfully');
-    } else {
-      console.warn('❌ Mobile menu bar or backdrop not found');
     }
   }
 
@@ -435,13 +392,9 @@ class UltraFastSidebar {
   }
 
   // Public API method to switch tabs programmatically
-  switchToTab(tabId) {
+  switchToTabProgrammatically(tabId) {
     if (this.cache.has(`tab_${tabId}`)) {
-      const link = this.cache.get(`link_${tabId}`);
-      if (link) {
-        this.setActiveState(link, tabId);
-        this.switchTab(tabId);
-      }
+      this.switchTab(tabId);
     }
   }
 }
@@ -655,8 +608,22 @@ class AdvancedLanguageSystem {
 
   translateDashboardContent(lang, translations) {
     // Translate dashboard overview title
-    const dashboardTitle = document.querySelector('h2:contains("डैशबोर्ड अवलोकन")') || 
-                          document.querySelector('h2');
+    const h2Elements = document.querySelectorAll('h2');
+    let dashboardTitle = null;
+    
+    // Find h2 element with Hindi text or fallback to first h2
+    for (const h2 of h2Elements) {
+      if (h2.textContent.includes('डैशबोर्ड अवलोकन') || h2.textContent.includes('Dashboard Overview')) {
+        dashboardTitle = h2;
+        break;
+      }
+    }
+    
+    // Fallback to first h2 if no specific match found
+    if (!dashboardTitle && h2Elements.length > 0) {
+      dashboardTitle = h2Elements[0];
+    }
+    
     if (dashboardTitle && !dashboardTitle.getAttribute('data-translated')) {
       dashboardTitle.setAttribute('data-translated', 'true');
       dashboardTitle.textContent = translations['dashboard_overview'] || 'Dashboard Overview';
@@ -719,7 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.advancedLanguageSystem = new AdvancedLanguageSystem();
   
   // Global API exposure
-  window.switchTab = (tabId) => window.ultraFastSidebar.switchToTab(tabId);
+  window.switchTab = (tabId) => window.ultraFastSidebar.switchToTabProgrammatically(tabId);
   window.changeLanguage = (lang) => window.advancedLanguageSystem.changeLanguage(lang);
   
   // Language settings integration
@@ -826,6 +793,4 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(window.setupLanguageSettings, 100);
     }
   });
-  
-  console.log('🚀 All performance systems initialized successfully!');
 });

@@ -3998,20 +3998,48 @@ tr:last-child td {
    to ensure consistent sidebar behavior and avoid conflicts */
 
 
-/* Ensure all tab content is properly displayed */
+/* Fixed tab content visibility system */
 .content.tab-content {
     display: none;
     width: 100%;
     min-height: calc(100vh - 140px);
     box-sizing: border-box;
+    background: #ffffff;
+    position: relative;
+    padding: 24px;
 }
 
-.content.tab-content[style*="display: block"],
 .content.tab-content.active {
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
-/* Fix for dashboard tab specifically */
+/* Ensure tabs show when explicitly set to display:block via JavaScript */
+.content.tab-content[style*="display: block"],
+.content.tab-content[style*="display:block"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Force visibility for specific tabs that might have issues */
+#memberDisplayTab.content.tab-content[style*="display: block"],
+#paymentTab.content.tab-content[style*="display: block"],
+#trainerTab.content.tab-content[style*="display: block"],
+#equipmentTab.content.tab-content[style*="display: block"],
+#settingsTab.content.tab-content[style*="display: block"],
+#attendanceTab.content.tab-content[style*="display: block"],
+#supportReviewsTab.content.tab-content[style*="display: block"],
+#offersTab.content.tab-content[style*="display: block"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 400px !important;
+}
+
+/* Dashboard should be visible by default */
 #dashboardTab.content.tab-content {
     display: block !important;
 }

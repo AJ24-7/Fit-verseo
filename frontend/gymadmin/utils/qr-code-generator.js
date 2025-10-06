@@ -370,8 +370,17 @@ class QRCodeGenerator {
 
             let qrCodes = [];
             if (response.ok) {
-                qrCodes = await response.json();
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    qrCodes = await response.json();
+                } else {
+                    console.warn('QR codes API returned non-JSON response, using fallback');
+                    // Fallback to local storage
+                    const key = `gymQRCodes_${this.currentGymId}`;
+                    qrCodes = JSON.parse(localStorage.getItem(key) || '[]');
+                }
             } else {
+                console.warn(`QR codes API returned ${response.status}, using fallback`);
                 // Fallback to local storage (gym-specific)
                 const key = `gymQRCodes_${this.currentGymId}`;
                 qrCodes = JSON.parse(localStorage.getItem(key) || '[]');
@@ -379,7 +388,7 @@ class QRCodeGenerator {
 
             this.renderActiveQRCodes(qrCodes);
         } catch (error) {
-            console.error('Error loading active QR codes:', error);
+            console.warn('Error loading active QR codes, using fallback:', error.message);
             // Fallback to local storage (gym-specific)
             const key = `gymQRCodes_${this.currentGymId}`;
             const qrCodes = JSON.parse(localStorage.getItem(key) || '[]');

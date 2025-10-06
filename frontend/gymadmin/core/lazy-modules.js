@@ -2,12 +2,14 @@
 // Production-focused: load only when user opens the corresponding tab.
 (function(){
   const tabScripts = {
+    memberDisplayTab: [], // Member functions are in main gymadmin.js
     equipmentTab: ['modules/equipment.js'],
     attendanceTab: ['modules/attendance.js','modules/attendance-stats.js'],
     supportReviewsTab: ['modules/support-reviews.js','modules/enhanced-support-integration.js'],
     settingsTab: ['modules/settings.js','modules/gym-profile.js','modules/enhanced-biometric-manager.js'],
     trainerTab: ['modules/trainer-management.js'],
     paymentTab: ['modules/payment.js','modules/cash-validation.js','modules/cash-validation-dialog.js'],
+    offersTab: ['modules/offers-manager.js'],
     trialBookingsTab: ['modules/trial-bookings.js']
   };
 

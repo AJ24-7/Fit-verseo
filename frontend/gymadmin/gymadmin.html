@@ -5,22 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gym-Wale | Admin Dashboard</title>
   
-  <!-- Critical CSS for immediate rendering -->
-  <style>
-    /* Critical tab visibility and performance */
-    .content.tab-content { display: none; width: 100%; box-sizing: border-box; }
-    .content.tab-content[style*="display: block"], .content.tab-content.active { display: block !important; }
-    #dashboardTab { display: block !important; } /* Ensure dashboard is always visible initially */
-    
-    /* Loading states */
-    .loading { opacity: 0.6; pointer-events: none; }
-    .tab-loading { min-height: 200px; display: flex; align-items: center; justify-content: center; }
-    
-    /* Offers tab specific - ensure proper layout */
-    #offersTab.content.tab-content { 
-      min-height: auto !important;
-    }
-  </style>
+  <!-- Inline CSS moved to gymadmin.css -->
   
   <!-- Core styles - load immediately for fast rendering -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -28,120 +13,23 @@
   <link rel="stylesheet" href="styles/gymadmin.css">
   
   <!-- Tab-specific styles - load on demand for better performance -->
-  <link rel="stylesheet" href="styles/attendance.css">
-  <link rel="stylesheet" href="styles/membertab.css">
-  <link rel="stylesheet" href="styles/payment.css">
-  <link rel="stylesheet" href="styles/member-payments.css">
-  <link rel="stylesheet" href="styles/equipment.css">
-  <link rel="stylesheet" href="styles/settings.css">
-  <link rel="stylesheet" href="styles/enhanced-support-styles.css">
-  <link rel="stylesheet" href="styles/trainer-list.css">
-  <link rel="stylesheet" href="styles/offers.css">
+  <link rel="stylesheet" href="styles/attendance.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/membertab.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/payment.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/member-payments.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/equipment.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/settings.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/enhanced-support-styles.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/trainer-list.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/offers.css" media="print" onload="this.media='all'">
     
-    <!-- Core Scripts - Load immediately for fast tab switching -->
-    <script src="core/gym-id-manager.js"></script>
-    <script src="core/error-manager.js"></script>
-    <script src="core/validation-manager.js"></script>
-    <script src="performance-sidebar.js"></script>
-    <script src="utils/i18n.js"></script>
-    <script src="utils/safe-api.js"></script>
-    <script src="gymadmin.js"></script>
-    
-    <!-- Secondary Scripts - Load after core functionality -->
-    <script defer src="core/dom-performance-manager.js"></script>
-    <script defer src="core/async-fetch-manager.js"></script>
-    <script defer src="core/lazy-load-manager.js"></script>
-    <script defer src="core/visibility-chart-manager.js"></script>
-    <script defer src="core/smart-polling-manager.js"></script>
-    <script defer src="core/skeleton-loading-manager.js"></script>
-    <script defer src="core/tab-isolation-manager.js"></script>
-    <script defer src="core/unified-auth-manager.js"></script>
-    <script defer src="core/unified-notification-system.js"></script>
-    <script defer src="core/module-optimizer.js"></script>
-    <script defer src="core/lazy-modules.js"></script>
-    <script defer src="utils/subscription-management.js"></script>
-    <script defer src="utils/quick-actions-customizer.js"></script>
-    <script defer src="utils/auth-helper.js"></script>
-    
-    <!-- Tab-specific modules - Load for functionality -->
-    <script defer src="modules/attendance.js"></script>
-    <script defer src="modules/support-reviews.js"></script>
-    <script defer src="modules/equipment.js"></script>
-    <script defer src="modules/trial-bookings.js"></script>
-    <script defer src="modules/payment.js"></script>
-    <script defer src="modules/settings.js"></script>
-    
-    <!-- Tab-specific scripts - Load only when needed -->
-    <script>
-      // Lazy load offers manager only when offers tab is accessed
-      window.loadOffersManager = function() {
-        if (!window.offersManagerLoaded) {
-          console.log('🔄 Loading offers manager...');
-          const script = document.createElement('script');
-          script.src = 'modules/offers-manager.js';
-          script.defer = true;
-          script.onload = function() {
-            console.log('✅ Offers manager script loaded');
-            // Initialize immediately after loading
-            setTimeout(() => {
-              if (window.offersManager && typeof window.offersManager.initializeElements === 'function') {
-                console.log('🎯 Initializing offers manager elements...');
-                window.offersManager.initializeElements();
-              }
-            }, 100);
-          };
-          script.onerror = function() {
-            console.error('❌ Failed to load offers manager script');
-          };
-          document.head.appendChild(script);
-          window.offersManagerLoaded = true;
-        } else if (window.offersManager && typeof window.offersManager.initializeElements === 'function') {
-          // Already loaded, just initialize
-          console.log('🔄 Re-initializing offers manager...');
-          window.offersManager.initializeElements();
-        }
-      };
-    </script>
-    
-    <!-- Fast initialization -->
-    <script>
-      // Immediate dashboard visibility and fast initialization
-      document.addEventListener('DOMContentLoaded', function() {
-        // Ensure dashboard is visible immediately
-        const dashboardTab = document.getElementById('dashboardTab');
-        if (dashboardTab) {
-          dashboardTab.style.display = 'block';
-          dashboardTab.classList.add('active');
-        }
-        
-        // Mark dashboard menu item as active
-        const dashboardLink = document.querySelector('[data-tab="dashboardTab"]');
-        if (dashboardLink) {
-          dashboardLink.classList.add('active');
-        }
-        
-        // Initialize sidebar system immediately
-        if (window.ultraFastSidebar) {
-          window.ultraFastSidebar.initialize();
-        }
-        
-        console.log('Dashboard initialized and visible');
-      });
-      
-      // Lazy load offers manager on hover and click
-      document.addEventListener('DOMContentLoaded', function() {
-        const offersLinks = document.querySelectorAll('[data-tab="offersTab"]');
-        offersLinks.forEach(link => {
-          // Load on hover (preload)
-          link.addEventListener('mouseenter', window.loadOffersManager, { once: true });
-          // Ensure loading on click (guarantee)
-          link.addEventListener('click', function() {
-            console.log('🖱️ Offers tab clicked, ensuring manager is loaded...');
-            window.loadOffersManager();
-          });
-        });
-      });
-    </script>
+  <!-- Core Application Logic - Optimized Single Entry Point -->
+  <script src="essential-functions.js"></script>
+  <script defer src="optimized-module-loader.js"></script>
+  <script defer src="gymadmin.js"></script>
+  
+  <!-- Debug scripts removed -->
+
 </head>
 <body>
 <!-- Hamburger Menu Button for Mobile Menu Bar -->
@@ -345,7 +233,7 @@
     <div class="main-content" id="mainContent">
 
         <!-- Dashboard Tab -->
-        <div id="dashboardTab" class="content tab-content" style="display: block;">
+        <div id="dashboardTab" class="content tab-content active" style="display: block;">
             <div class="page-header">
                 <h1 class="page-title"><i class="fas fa-tachometer-alt"></i> <span data-i18n="header.dashboard.title">Dashboard Overview</span></h1>
                 <div class="page-actions">
@@ -785,8 +673,7 @@
 
                     <div class="payment-stat-card received" id="receivedAmountStatCard" style="cursor:pointer;">
                         <div class="payment-stat-header">
-                            <div class="payment-stat-title">Amount Received</div>
-                              <div class="payment-stat-title" data-i18n="payment.amountReceived">Amount Received</div>
+                            <div class="payment-stat-title" data-i18n="payment.amountReceived">Amount Received</div>
                             <div class="payment-stat-icon received">
                                 <i class="fas fa-arrow-down"></i>
                             </div>
@@ -828,7 +715,7 @@
                     <div class="modal" id="paidAmountsModal" style="display:none;z-index:100000;align-items:flex-start;">
                       <div class="modal-content" style="max-width:520px;margin-top:48px;">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                          <h3 style="margin:0;color:#ef4444;font-weight:600;"><i class="fas fa-money-bill-wave"></i> Amount Paid Breakdown</h3>
+                          <h3 style.margin:0;color:#ef4444;font-weight:600;"><i class="fas fa-money-bill-wave"></i> Amount Paid Breakdown</h3>
                           <button class="modal-close" id="closePaidAmountsModal" style="font-size:1.5rem;">&times;</button>
                         </div>
                         <div id="paidAmountsDetailsContainer" style="min-height:120px;"></div>
@@ -998,11 +885,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Quick Actions Floating Dock -->
 <div id="quickActionsFloatingBar" class="quick-actions-floating-bar" style="display: none;">
@@ -2292,72 +2174,7 @@
         </div>
       </div>
     </div>
-<!-- Member Display Tab (hidden by default) -->
-<div id="memberDisplayTab" class="content tab-content" style="display:none;">
-  <div class="page-header">
-    <h1 class="page-title"><i class="fas fa-users"></i> All Members</h1>
-    <div class="member-action-btn-group">
-      <button id="addMemberBtnTab" class="member-action-btn add-member-action-btn">
-        <i class="fas fa-user-plus"></i><span class="btn-text"> Add Member</span>
-      </button>
-      <button id="removeMemberBtnTab" class="member-action-btn remove-member-action-btn">
-        <i class="fas fa-user-minus"></i><span class="btn-text"> Remove Members</span>
-      </button>
-      <!-- Remove Member dropdown and modal will be created and managed by JS only -->
-    </div>
-  </div>
-  <div class="search-bar" style="display:flex;align-items:center;gap:12px;margin-bottom:18px;background:#f8f9fa;padding:10px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-    <span class="search-icon" style="color:var(--primary);font-size:1.2rem;margin-right:6px;"><i class="fas fa-search"></i></span>
-    <input type="text" id="memberSearchInput" placeholder="Search by Name, Email, Phone, Membership ID..." style="flex:1;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;outline:none;transition:border 0.2s;">
-    <select id="membershipExpiryFilter" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;background:#fff;">
-      <option value="">All Members</option>
-      <option value="3days">Expiring in 3 Days</option>
-      <option value="1day">Expiring in 1 Day</option>
-    </select>
-  </div>
-  <div id="membersTableContainer">
-    <table id="membersTable" style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>Profile</th>
-          <th>Name</th>
-          <th>Membership ID</th>
-          <th>Age</th>
-          <th>Gender</th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th>Address</th>
-          <th>Plan</th>
-          <th>Monthly</th>
-          <th>Activity</th>
-          <th>Join Date</th>
-          <th>Valid Until</th>
-          <th>Amount Paid</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="membersTableBody">
-        <!-- Members will be loaded here -->
-       
-      </tbody>
-    </table>
-  </div>
-</div>
-<!-- Interactive Members Detail Card (hidden by default) -->
-<div id="membersDetailCard" class="modal">
-  <div class="modal-content member-detail-modal">
-    <div class="member-detail-header" style="position:relative;">
-      <button id="editMemberDetailBtn" title="Edit Member" style="position:absolute;left:18px;top:16px;background:none;border:none;cursor:pointer;font-size:1.25rem;color:#fff;z-index:3;transition:color 0.2s;"><i class="fas fa-edit"></i></button>
-      <h2 class="member-detail-title" style="margin-left:32px;">
-        <i class="fas fa-id-card-alt"></i> Member Details
-      </h2>
-      <button id="closeMembersDetailCard" class="modal-close" title="Close">&times;</button>
-    </div>
-    <div id="memberDetailDynamicContent">
-      <!-- Dynamic content injected by JS -->
-    </div>
-  </div>
-</div>
+    
 <!-- Trainer Tab -->
 <div id="trainerTab" class="content tab-content" style="display:none; padding: 24px;">
   <div class="page-header" style="margin-bottom: 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
@@ -3545,7 +3362,164 @@
     </div>
   </div>
 </div>
+<!-- Offer Creation Modal -->
+<div id="offerCreationModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-tags"></i> Create Custom Offer</h2>
+      <span class="modal-close" id="closeOfferModal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form id="offerCreationForm">
+        <div class="form-group">
+          <label for="offerTitle">Offer Title:</label>
+          <input type="text" id="offerTitle" name="title" required>
+        </div>
+        <div class="form-group">
+          <label for="offerDescription">Description:</label>
+          <textarea id="offerDescription" name="description" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="offerType">Discount Type:</label>
+            <select id="offerType" name="discountType" required>
+              <option value="percentage">Percentage (%)</option>
+              <option value="fixed">Fixed Amount (₹)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="offerValue">Value:</label>
+            <input type="number" id="offerValue" name="discountValue" required min="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="offerStartDate">Start Date:</label>
+            <input type="datetime-local" id="offerStartDate" name="startDate" required>
+          </div>
+          <div class="form-group">
+            <label for="offerEndDate">End Date:</label>
+            <input type="datetime-local" id="offerEndDate" name="endDate" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="offerUsageLimit">Usage Limit (optional):</label>
+          <input type="number" id="offerUsageLimit" name="usageLimit" min="1">
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="generateCouponCode" name="generateCoupon"> Generate Coupon Code
+          </label>
+        </div>
+        <div class="form-group" id="couponCodeSection" style="display: none;">
+          <label for="couponCode">Coupon Code:</label>
+          <div class="input-with-button">
+            <input type="text" id="couponCode" name="couponCode" readonly>
+            <button type="button" id="regenerateCouponBtn">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="cancelOfferBtn" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Create Offer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
+<!-- Coupon Generation Modal -->
+<div id="couponGenerationModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-ticket-alt"></i> Generate Coupon</h2>
+      <span class="modal-close" id="closeCouponModal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form id="couponGenerationForm">
+        <div class="form-group">
+          <label for="couponTitle">Coupon Title:</label>
+          <input type="text" id="couponTitle" name="title" required>
+        </div>
+        <div class="form-group">
+          <label for="couponCodeInput">Coupon Code:</label>
+          <div class="input-with-button">
+            <input type="text" id="couponCodeInput" name="code" readonly required>
+            <button type="button" id="generateRandomCouponBtn">
+              <i class="fas fa-dice"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="couponType">Discount Type:</label>
+            <select id="couponType" name="discountType" required>
+              <option value="percentage">Percentage (%)</option>
+              <option value="fixed">Fixed Amount (₹)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="couponValue">Value:</label>
+            <input type="number" id="couponValue" name="discountValue" required min="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="couponMinPurchase">Minimum Purchase (₹):</label>
+            <input type="number" id="couponMinPurchase" name="minPurchase" min="0" value="0">
+          </div>
+          <div class="form-group">
+            <label for="couponUsageLimit">Usage Limit:</label>
+            <input type="number" id="couponUsageLimit" name="usageLimit" min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="couponExpiryDate">Expiry Date:</label>
+          <input type="datetime-local" id="couponExpiryDate" name="expiryDate" required>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="cancelCouponBtn" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Generate Coupon</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Template Preview Modal -->
+<div id="templatePreviewModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-eye"></i> Template Preview</h2>
+      <span class="modal-close" id="closeTemplatePreviewModal">&times;</span>
+    </div>
+    <div class="modal-body" id="templatePreviewContent">
+      <!-- Preview content will be inserted here -->
+    </div>
+    <div class="modal-footer">
+      <button id="customizeTemplateBtn" class="btn-secondary">
+        <i class="fas fa-edit"></i> Customize
+      </button>
+      <button id="launchOfferBtn" class="btn-primary">
+        <i class="fas fa-rocket"></i> Launch This Offer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Coupon Detail Modal -->
+<div id="couponDetailModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-ticket-alt"></i> Coupon Details</h2>
+      <span class="modal-close" id="closeCouponDetailModal">&times;</span>
+    </div>
+    <div class="modal-body" id="couponDetailContent">
+      <!-- Coupon details will be inserted here -->
+    </div>
+  </div>
+</div>
 <!-- Admin Passkey Modal -->
 <div id="adminPasskeyModal" class="admin-passkey-modal">
   <div class="admin-passkey-content">
@@ -3638,7 +3612,7 @@
       <!-- Theme Settings -->
       <div class="settings-section">
         <div class="settings-card">
-          <button type="button" class="section-info-icon" onclick="showThemeInfo()" aria-label="Theme & Appearance Information" title="Theme & Appearance Information" role="button">
+          <button type="button" class="section-info-icon" onclick="showThemeInfo()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { showThemeInfo(); }" aria-label="Theme & Appearance Information" title="Theme & Appearance Information">
               <i class="fas fa-info" aria-hidden="true"></i>
             </button>
             <div class="settings-header">
@@ -3698,9 +3672,9 @@
       <!-- Enhanced Dashboard Customization Section -->
       <div class="settings-section">
         <div class="enhanced-settings-card enhanced-dashboard-section" id="customizeDashboardSection">
-          <div class="section-info-icon" onclick="showCustomizeDashboardInfo()" title="Dashboard Customization Information">
+          <button type="button" class="section-info-icon" onclick="showCustomizeDashboardInfo()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showCustomizeDashboardInfo(); }" ontouchstart="showCustomizeDashboardInfo()" title="Dashboard Customization Information" aria-label="Dashboard Customization Information">
             <i class="fas fa-info"></i>
-          </div>
+          </button>
           
           <div class="enhanced-settings-header">
             <h3 class="enhanced-settings-title">
@@ -3814,9 +3788,9 @@
       <!-- Enhanced Security & Admin Management Section -->
       <div class="settings-section">
         <div class="enhanced-settings-card" id="securityAdminSection">
-          <div class="section-info-icon" onclick="showSecurityInfo()" title="Security & Admin Information">
-            <i class="fas fa-info"></i>
-          </div>
+          <button type="button" class="section-info-icon" onclick="showSecurityInfo()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { showSecurityInfo(); event.preventDefault(); }" ontouchstart="showSecurityInfo()" title="Security & Admin Information" aria-label="Security & Admin Information">
+            <i class="fas fa-info" aria-hidden="true"></i>
+          </button>
           
           <div class="enhanced-settings-header">
             <h3 class="enhanced-settings-title">
@@ -3873,22 +3847,22 @@
                 </div>
                 
                 <div class="form-section">
-                  <label class="enhanced-form-label">New Passkey</label>
+                  <label class="enhanced-form-label" for="passkey-new-0">New Passkey</label>
                   <div class="passkey-input-row">
-                    <input type="password" class="passkey-input-small" maxlength="1" data-group="new" data-index="0">
-                    <input type="password" class="passkey-input-small" maxlength="1" data-group="new" data-index="1">
-                    <input type="password" class="passkey-input-small" maxlength="1" data-group="new" data-index="2">
-                    <input type="password" class="passkey-input-small" maxlength="1" data-group="new" data-index="3">
+                    <input id="passkey-new-0" type="password" class="passkey-input-small" maxlength="1" data-group="new" data-index="0" aria-label="New passkey digit 1">
+                    <input id="passkey-new-1" type="password" class="passkey-input-small" maxlength="1" data-group="new" data-index="1" aria-label="New passkey digit 2">
+                    <input id="passkey-new-2" type="password" class="passkey-input-small" maxlength="1" data-group="new" data-index="2" aria-label="New passkey digit 3">
+                    <input id="passkey-new-3" type="password" class="passkey-input-small" maxlength="1" data-group="new" data-index="3" aria-label="New passkey digit 4">
                   </div>
                 </div>
                 
                 <div class="form-section">
-                  <label class="enhanced-form-label">Confirm New Passkey</label>
-                  <div class="passkey-input-row">
-                    <input type="password" class="passkey-input-small" maxlength="1" data-group="confirm" data-index="0">
-                    <input type="password" class="passkey-input-small" maxlength="1" data-group="confirm" data-index="1">
-                    <input type="password" class="passkey-input-small" maxlength="1" data-group="confirm" data-index="2">
-                    <input type="password" class="passkey-input-small" maxlength="1" data-group="confirm" data-index="3">
+                  <label id="passkey-confirm-label" class="enhanced-form-label" for="passkey-confirm-0">Confirm New Passkey</label>
+                  <div class="passkey-input-row" role="group" aria-labelledby="passkey-confirm-label">
+                    <input id="passkey-confirm-0" type="password" class="passkey-input-small" maxlength="1" data-group="confirm" data-index="0" aria-label="Confirm passkey digit 1">
+                    <input id="passkey-confirm-1" type="password" class="passkey-input-small" maxlength="1" data-group="confirm" data-index="1" aria-label="Confirm passkey digit 2">
+                    <input id="passkey-confirm-2" type="password" class="passkey-input-small" maxlength="1" data-group="confirm" data-index="2" aria-label="Confirm passkey digit 3">
+                    <input id="passkey-confirm-3" type="password" class="passkey-input-small" maxlength="1" data-group="confirm" data-index="3" aria-label="Confirm passkey digit 4">
                   </div>
                 </div>
                 
@@ -4716,6 +4690,75 @@
   </div>
 </div>
 
+<!-- Member Display Tab (moved inside main-content) -->
+<div id="memberDisplayTab" class="content tab-content" style="display:none;">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fas fa-users"></i> All Members</h1>
+    <div class="member-action-btn-group">
+      <button id="addMemberBtnTab" class="member-action-btn add-member-action-btn">
+        <i class="fas fa-user-plus"></i><span class="btn-text"> Add Member</span>
+      </button>
+      <button id="removeMemberBtnTab" class="member-action-btn remove-member-action-btn">
+        <i class="fas fa-user-minus"></i><span class="btn-text"> Remove Members</span>
+      </button>
+      <!-- Remove Member dropdown and modal will be created and managed by JS only -->
+    </div>
+  </div>
+  <div class="search-bar" style="display:flex;align-items:center;gap:12px;margin-bottom:18px;background:#f8f9fa;padding:10px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+    <span class="search-icon" style="color:var(--primary);font-size:1.2rem;margin-right:6px;"><i class="fas fa-search"></i></span>
+    <input type="text" id="memberSearchInput" placeholder="Search by Name, Email, Phone, Membership ID..." style="flex:1;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;outline:none;transition:border 0.2s;">
+    <select id="membershipExpiryFilter" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:1rem;background:#fff;">
+      <option value="">All Members</option>
+      <option value="3days">Expiring in 3 Days</option>
+      <option value="1day">Expiring in 1 Day</option>
+    </select>
+  </div>
+  <div id="membersTableContainer">
+    <table id="membersTable" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Profile</th>
+          <th>Name</th>
+          <th>Membership ID</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Address</th>
+          <th>Plan</th>
+          <th>Monthly</th>
+          <th>Activity</th>
+          <th>Join Date</th>
+          <th>Valid Until</th>
+          <th>Amount Paid</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="membersTableBody">
+        <!-- Members will be loaded here -->
+       
+      </tbody>
+    </table>
+  </div>
+</div>
+<!-- Interactive Members Detail Card (moved inside main-content) -->
+<div id="membersDetailCard" class="modal">
+  <div class="modal-content member-detail-modal">
+    <div class="member-detail-header" style="position:relative;">
+      <button id="editMemberDetailBtn" title="Edit Member" style="position:absolute;left:18px;top:16px;background:none;border:none;cursor:pointer;font-size:1.25rem;color:#fff;z-index:3;transition:color 0.2s;"><i class="fas fa-edit"></i></button>
+      <h2 class="member-detail-title" style="margin-left:32px;">
+        <i class="fas fa-id-card-alt"></i> Member Details
+      </h2>
+      <button id="closeMembersDetailCard" class="modal-close" title="Close">&times;</button>
+    </div>
+    <div id="memberDetailDynamicContent">
+      <!-- Dynamic content injected by JS -->
+    </div>
+  </div>
+</div>
+
+    </div> <!-- End of main-content -->
+
  
  
   <!-- Subscription Modals -->
@@ -5419,14 +5462,8 @@
   </div>
 </div>
  
-   <!-- 7-Day Allowance System -->
-   <script src="modules/seven-day-allowance.js"></script>
-   <!-- QR Code Generator System -->
-   <script src="utils/qr-code-generator.js"></script>
-   <!-- Offers Tab Test Suite (for development) -->
-   <script src="scripts/offers-test-suite.js"></script>
-  <!-- notification-integration.js now loaded lazily via lazy-modules.js when Support/Reviews related tabs are opened -->
-   <!-- Notification Configuration now integrated in unified-notification-system.js -->
+   <!-- All modules are now loaded via optimized-module-loader.js -->
+   <!-- This eliminates conflicts and ensures proper loading order -->
    
    <!-- Enhanced Security Info Modal Functions -->
    <script>

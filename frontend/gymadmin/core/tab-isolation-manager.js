@@ -23,17 +23,14 @@ class TabIsolationManager {
     }
 
     /**
-     * Setup non-conflicting event listeners (click handling delegated to UltraFastSidebar)
+     * Setup non-conflicting event listeners
      */
     setupTabEventListeners() {
-        // REMOVED: Tab click delegation (handled by UltraFastSidebar for performance)
-        // The UltraFastSidebar will call TabIsolationManager.switchToTab() when needed
-        
         // Keyboard navigation support
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 const focusedTab = document.activeElement;
-                if (focusedTab && focusedTab.hasAttribute('data-tab')) {
+                if (focusedTab?.hasAttribute('data-tab')) {
                     e.preventDefault();
                     this.handleTabKeyNavigation(focusedTab, e.key);
                 }
@@ -42,8 +39,11 @@ class TabIsolationManager {
 
         // Handle browser back/forward navigation
         window.addEventListener('popstate', (e) => {
-            if (e.state && e.state.tabId) {
-                this.switchToTab(e.state.tabId, false);
+            if (e.state?.tabId) {
+                // Use the sidebar's public API to switch tabs
+                if (window.ultraFastSidebar) {
+                    window.ultraFastSidebar.switchToTabProgrammatically(e.state?.tabId);
+                }
             }
         });
     }
@@ -72,7 +72,7 @@ class TabIsolationManager {
         console.log(`📑 Registered tab: ${tabId} (${tabConfig.priority} priority)`);
 
         // If this is the active tab, initialize immediately
-        const activeTabElement = document.querySelector(`[data-tab="${tabId}"].active`);
+        const activeTabElement = document.querySelector(`.menu-link[data-tab="${tabId}"].active`);
         if (activeTabElement) {
             this.switchToTab(tabId, false);
         }
@@ -81,29 +81,29 @@ class TabIsolationManager {
     }
 
     /**
-     * Switch to specific tab with full isolation
+     * Switch to specific tab with full isolation.
+     * This is called by UltraFastSidebar.
      */
     async switchToTab(tabId, updateHistory = true) {
-        if (this.activeTab === tabId) {
-            return; // Already active
+        if (this.activeTab === tabId && this.initializedTabs.has(tabId)) {
+            return; // Already active and initialized
         }
 
-        console.log(`🔄 Switching to tab: ${tabId}`);
+        console.log(`🔄 Isolator: Preparing tab: ${tabId}`);
         const startTime = performance.now();
 
         try {
-            // Deactivate current tab
+            // Deactivate current tab's background processes
             if (this.activeTab) {
                 await this.deactivateTab(this.activeTab);
             }
 
-            // UI updates delegated to UltraFastSidebar for immediate response
-            // this.updateTabUI(tabId); // Commented out - UltraFastSidebar handles this
+            // UI updates are handled by UltraFastSidebar
 
             // Initialize tab if needed
             await this.initializeTab(tabId);
 
-            // Activate tab
+            // Activate tab's background processes
             await this.activateTab(tabId);
 
             // Update browser history
@@ -116,10 +116,10 @@ class TabIsolationManager {
             const initTime = performance.now() - startTime;
             this.metrics.initializationTime[tabId] = initTime;
 
-            console.log(`✅ Tab ${tabId} activated in ${initTime.toFixed(2)}ms`);
+            console.log(`✅ Isolator: Tab ${tabId} ready in ${initTime.toFixed(2)}ms`);
 
         } catch (error) {
-            console.error(`Failed to switch to tab ${tabId}:`, error);
+            console.error(`Failed to prepare tab ${tabId}:`, error);
             this.showTabError(tabId, error.message);
         }
     }
@@ -282,18 +282,13 @@ class TabIsolationManager {
     }
 
     /**
-     * Activate tab (show content, start timers, etc.)
+     * Activate tab's background processes (e.g., polling)
      */
     async activateTab(tabId) {
         const tabConfig = this.tabModules.get(tabId);
         if (!tabConfig) return;
 
-        // Show tab content
-        const contentElement = document.querySelector(tabConfig.contentSelector);
-        if (contentElement) {
-            contentElement.style.display = '';
-            contentElement.setAttribute('aria-hidden', 'false');
-        }
+        // Visibility is handled by UltraFastSidebar
 
         // Resume any paused processes specific to this tab
         if (tabConfig.onActivate) {
@@ -311,18 +306,13 @@ class TabIsolationManager {
     }
 
     /**
-     * Deactivate tab (hide content, pause timers, etc.)
+     * Deactivate tab's background processes
      */
     async deactivateTab(tabId) {
         const tabConfig = this.tabModules.get(tabId);
         if (!tabConfig) return;
 
-        // Hide tab content
-        const contentElement = document.querySelector(tabConfig.contentSelector);
-        if (contentElement) {
-            contentElement.style.display = 'none';
-            contentElement.setAttribute('aria-hidden', 'true');
-        }
+        // Visibility is handled by UltraFastSidebar
 
         // Run deactivation logic
         if (tabConfig.onDeactivate) {
@@ -338,50 +328,16 @@ class TabIsolationManager {
             });
         }
 
-        console.log(`💤 Tab ${tabId} deactivated`);
+        console.log(`💤 Tab ${tabId} background processes deactivated`);
     }
 
     /**
-     * Update tab UI state
+     * Update tab UI state - DEPRECATED
+     * UI updates are now handled by UltraFastSidebar.
      */
     updateTabUI(tabId) {
-        // UI updates are now handled by UltraFastSidebar for better performance
-        // This method is kept for backward compatibility but defers to UltraFastSidebar
-        
-        if (window.ultraFastSidebar && typeof window.ultraFastSidebar.setActiveState === 'function') {
-            const activeLink = document.querySelector(`[data-tab="${tabId}"]`);
-            if (activeLink) {
-                window.ultraFastSidebar.setActiveState(activeLink, tabId);
-            }
-            return;
-        }
-        
-        // Fallback: Basic UI updates if UltraFastSidebar not available
-        // Remove active class from all tabs
-        document.querySelectorAll('[data-tab].active').forEach(tab => {
-            tab.classList.remove('active');
-            tab.setAttribute('aria-selected', 'false');
-        });
-
-        // Hide all tab contents
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.style.display = 'none';
-            content.setAttribute('aria-hidden', 'true');
-        });
-
-        // Activate selected tab
-        const selectedTab = document.querySelector(`[data-tab="${tabId}"]`);
-        if (selectedTab) {
-            selectedTab.classList.add('active');
-            selectedTab.setAttribute('aria-selected', 'true');
-        }
-
-        // Show selected content
-        const selectedContent = document.getElementById(tabId);
-        if (selectedContent) {
-            selectedContent.style.display = '';
-            selectedContent.setAttribute('aria-hidden', 'false');
-        }
+        // This method is no longer needed as UltraFastSidebar handles all UI updates.
+        console.warn('updateTabUI is deprecated and should not be called.');
     }
 
     /**
@@ -417,7 +373,10 @@ class TabIsolationManager {
         const nextTab = tabs[nextIndex];
         if (nextTab) {
             nextTab.focus();
-            this.switchToTab(nextTab.getAttribute('data-tab'));
+            // Use the sidebar's public API to switch tabs
+            if(window.ultraFastSidebar) {
+                window.ultraFastSidebar.switchToTabProgrammatically(nextTab.getAttribute('data-tab'));
+            }
         }
     }
 
@@ -445,7 +404,9 @@ class TabIsolationManager {
      */
     retryTab(tabId) {
         this.initializedTabs.delete(tabId);
-        this.switchToTab(tabId);
+        if(window.ultraFastSidebar) {
+            window.ultraFastSidebar.switchToTabProgrammatically(tabId);
+        }
     }
 
     /**
@@ -524,20 +485,27 @@ window.registerTab = (tabId, config) => {
     return window.tabIsolationManager.registerTab(tabId, config);
 };
 
+// This is now the primary way to programmatically switch tabs
 window.switchTab = (tabId) => {
-    return window.tabIsolationManager.switchToTab(tabId);
+    if (window.ultraFastSidebar) {
+        return window.ultraFastSidebar.switchToTabProgrammatically(tabId);
+    }
 };
 
 // Auto-detect initial active tab on page load
 document.addEventListener('DOMContentLoaded', () => {
-    const activeTab = document.querySelector('[data-tab].active');
     const hashTab = location.hash.slice(1);
     
     if (hashTab && document.querySelector(`[data-tab="${hashTab}"]`)) {
-        window.tabIsolationManager.switchToTab(hashTab, false);
-    } else if (activeTab) {
-        const tabId = activeTab.getAttribute('data-tab');
-        window.tabIsolationManager.switchToTab(tabId, false);
+        if (window.ultraFastSidebar) {
+            window.ultraFastSidebar.switchToTabProgrammatically(hashTab);
+        }
+    } else {
+        // Fallback to the first tab or a default if no hash is present
+        const firstTab = document.querySelector('.menu-link[data-tab]');
+        if (firstTab && window.ultraFastSidebar) {
+            window.ultraFastSidebar.switchToTabProgrammatically(firstTab.getAttribute('data-tab'));
+        }
     }
 });
 
