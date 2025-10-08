@@ -164,8 +164,31 @@ class EquipmentManager {
                 throw new Error('No authentication token found');
             }
             
-            // Use the gym profile endpoint to get gym data including equipment
-            const response = await this.api.get('/api/gyms/profile/me');
+            const gymId = this.getGymId();
+            if (!gymId) {
+                throw new Error('Gym ID is not available. Please ensure you are logged in and have selected a gym.');
+            }
+
+            // Use the specific gym endpoint to get gym data including equipment
+            const response = await fetch(`/api/gyms/${gymId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                if (errorText.trim().startsWith('<!DOCTYPE')) {
+                    throw new Error(`Authentication failed. Server returned HTML instead of JSON. Please login again. (Status: ${response.status})`);
+                }
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    throw new Error(errorJson.message || `Server error: ${response.status}`);
+                } catch {
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+            }
             
             const gymData = await response.json();
             

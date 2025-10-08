@@ -195,103 +195,43 @@ class UltraFastSidebar {
   }
 
   switchTab(tabId) {
-    if (this.isTransitioning || this.activeTab === tabId) {
-      return;
+    if (this.activeTab === tabId) {
+      return; // Do nothing if the tab is already active
     }
-    
-    this.isTransitioning = true;
 
-    // Get active link and target tab from cache
-    const activeLink = this.cache.get(`link_${tabId}`);
-    const targetTab = this.cache.get(`tab_${tabId}`);
-    
-    if (!targetTab || !activeLink) {
-      console.warn(`Tab ${tabId} or its link not found in cache`);
-      this.isTransitioning = false;
+    // Get the target tab element from the cache or DOM
+    const targetTab = this.cache.get(`tab_${tabId}`) || document.getElementById(tabId);
+    if (!targetTab) {
+      console.error(`Tab content for '${tabId}' not found.`);
       return;
     }
 
-    // 1. Set active class on the link immediately
-    this.setActiveState(activeLink, tabId);
-
-    // 2. Aggressively hide all tabs first with multiple approaches
-    const allTabs = document.querySelectorAll('.content.tab-content');
-    allTabs.forEach(tab => {
-      if (tab.id !== tabId) {
-        // Force hide with multiple methods to overcome any conflicting styles
-        tab.style.setProperty('display', 'none', 'important');
-        tab.style.setProperty('visibility', 'hidden', 'important');
-        tab.style.setProperty('opacity', '0', 'important');
-        tab.classList.remove('active');
-      }
+    // Hide all tab content panels
+    document.querySelectorAll('.content.tab-content').forEach(tab => {
+      tab.style.display = 'none';
+      tab.classList.remove('active');
     });
 
-    // 3. Show the target tab with multiple reinforcements using !important
-    targetTab.style.setProperty('display', 'block', 'important');
-    targetTab.style.setProperty('visibility', 'visible', 'important');
-    targetTab.style.setProperty('opacity', '1', 'important');
-    targetTab.style.setProperty('position', 'relative', 'important');
-    targetTab.style.setProperty('z-index', '1', 'important');
+    // Show the target tab content panel
+    targetTab.style.display = 'block';
     targetTab.classList.add('active');
-    targetTab.scrollTop = 0;
-    
-    // Also ensure parent containers are visible
-    let parent = targetTab.parentElement;
-    while (parent && parent !== document.body) {
-      if (window.getComputedStyle(parent).display === 'none') {
-        parent.style.display = 'block';
-      }
-      parent = parent.parentElement;
-    }
 
-    // 4. Force a reflow to ensure changes take effect immediately
-    targetTab.offsetHeight;
-
-    // 5. Use a micro-task to ensure any competing systems don't interfere
-    Promise.resolve().then(() => {
-      // Double-check and re-enforce the visibility state
-      if (targetTab.style.display !== 'block') {
-        targetTab.style.display = 'block';
-      }
-      if (!targetTab.classList.contains('active')) {
-        targetTab.classList.add('active');
-      }
-      
-      // Hide any other tabs that might have been re-shown by competing logic
-      document.querySelectorAll('.content.tab-content').forEach(tab => {
-        if (tab.id !== tabId && (tab.style.display === 'block' || tab.classList.contains('active'))) {
-          tab.style.display = 'none';
-          tab.classList.remove('active');
-        }
-      });
+    // Update the active state for the sidebar menu links
+    document.querySelectorAll('.menu-link').forEach(link => {
+      link.classList.remove('active');
     });
-    
-    // Update active tab reference
+    const correspondingLinks = document.querySelectorAll(`[data-tab="${tabId}"]`);
+    correspondingLinks.forEach(link => {
+      link.classList.add('active');
+    });
+
     this.activeTab = tabId;
-    this.isTransitioning = false;
-    
-    // 6. Defer heavy initialization to TabIsolationManager
-    if (window.tabIsolationManager && typeof window.tabIsolationManager.switchToTab === 'function') {
-      window.tabIsolationManager.switchToTab(tabId, false).catch(error => {
-        console.warn('TabIsolationManager failed to initialize tab:', error);
-      });
-    }
-    
-    // 7. Notify optimized module loader about tab switch
+
+    // Notify other parts of the system that the tab has switched
     const tabSwitchedEvent = new CustomEvent('tabSwitched', {
       detail: { tabId: tabId }
     });
     document.dispatchEvent(tabSwitchedEvent);
-    
-    // 8. Also trigger module loading directly if available
-    if (window.optimizedModuleLoader && typeof window.optimizedModuleLoader.loadTabModules === 'function') {
-      window.optimizedModuleLoader.loadTabModules(tabId).catch(error => {
-        console.warn('Module loader failed for tab:', error);
-      });
-    }
-    
-    // 9. Set up a defensive monitor to prevent competing systems from interfering
-    this.setupTabStateMonitor(tabId);
   }
 
   // Defensive mechanism to monitor and maintain correct tab state

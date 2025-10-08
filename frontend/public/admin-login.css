@@ -14,6 +14,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --info-color: #3b82f6;
 }
 
 * {
@@ -1256,52 +1257,6 @@ button[type="submit"]:disabled, .login-btn:disabled, #loginButton:disabled {
   }
 }
 
-/* Enhanced Focus States for Accessibility */
-.modal-content input:focus-visible,
-.modal-content button:focus-visible {
-  outline: 3px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-/* Loading State for Modal Buttons */
-.modal-content .login-btn.loading {
-  color: transparent;
-  pointer-events: none;
-}
-
-.modal-content .login-btn.loading::after {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  top: 50%;
-  left: 50%;
-  margin-left: -10px;
-  margin-top: -10px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s ease-in-out infinite;
-}
-
-/* Smooth Transitions for Form Groups */
-.modal-content .form-group.hidden {
-  opacity: 0;
-  transform: translateY(-10px);
-  height: 0;
-  margin: 0;
-  overflow: hidden;
-  transition: all 0.3s ease-out;
-}
-
-.modal-content .form-group.visible {
-  opacity: 1;
-  transform: translateY(0);
-  height: auto;
-  margin-bottom: 20px;
-  transition: all 0.3s ease-out;
-}
-
 @media (max-width: 480px) {
   .login-wrapper {
     width: 100%;
@@ -1357,54 +1312,58 @@ button:focus-visible,
   position: fixed;
   top: 20px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(79, 70, 229, 0.1);
-  border-radius: 16px;
-  padding: 16px 20px;
-  max-width: 400px;
-  min-width: 300px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 350px;
+  max-width: 90%;
   z-index: 10000;
-  transform: translateX(420px);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0;
+  transform: translateX(110%);
+  transition: transform 0.5s cubic-bezier(0.215, 0.61, 0.355, 1);
+  border-left: 5px solid var(--info-color);
 }
 
 .toast-notification.show {
   transform: translateX(0);
-  opacity: 1;
 }
 
 .toast-notification.success {
-  border-left: 4px solid var(--success-color);
+  border-left-color: var(--success-color);
 }
 
 .toast-notification.error {
-  border-left: 4px solid var(--error-color);
+  border-left-color: var(--error-color);
 }
 
 .toast-notification.warning {
-  border-left: 4px solid var(--warning-color);
+  border-left-color: var(--warning-color);
 }
 
 .toast-notification.info {
-  border-left: 4px solid var(--primary-color);
+  border-left-color: var(--info-color);
 }
 
 .toast-notification .toast-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
+  padding: 12px 16px;
 }
 
 .toast-notification .toast-title {
-  font-weight: 600;
-  color: var(--text-color);
   display: flex;
   align-items: center;
-  gap: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+.toast-notification .toast-title i {
+    margin-right: 10px;
+    font-size: 1.2em;
 }
 
 .toast-notification .toast-close {
@@ -1412,20 +1371,20 @@ button:focus-visible,
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  font-size: 1.5rem;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
 }
 
 .toast-notification .toast-close:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--text-color);
+  opacity: 1;
 }
 
 .toast-notification .toast-message {
-  color: var(--text-secondary);
+  padding: 0 16px 12px;
   font-size: 0.9rem;
-  line-height: 1.4;
+  color: var(--text-secondary);
 }
 
 /* Progress Bar for Timed Notifications */
@@ -1433,22 +1392,26 @@ button:focus-visible,
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
-  background: var(--primary-color);
-  border-radius: 0 0 16px 16px;
-  transition: width linear;
+  height: 4px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .toast-notification.success .toast-progress {
-  background: var(--success-color);
+  background-color: var(--success-color);
 }
 
 .toast-notification.error .toast-progress {
-  background: var(--error-color);
+  background-color: var(--error-color);
 }
 
 .toast-notification.warning .toast-progress {
-  background: var(--warning-color);
+  background-color: var(--warning-color);
+}
+
+@keyframes progress {
+    from { width: 100%; }
+    to { width: 0%; }
 }
 
 /* Enhanced Loading States */

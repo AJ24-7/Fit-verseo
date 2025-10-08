@@ -791,7 +791,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const token = localStorage.getItem('gymAdminToken');
         if (!token) return;
         
-        const res = await fetch('http://localhost:5000/api/gyms/profile/me', {
+        // Get gym ID
+        let gymId = localStorage.getItem('gymId') || localStorage.getItem('currentGymId');
+        if (!gymId && window.currentGymProfile) {
+          gymId = window.currentGymProfile._id || window.currentGymProfile.id;
+        }
+        if (!gymId) {
+          console.error('No gym ID found for fetching activities');
+          return;
+        }
+        
+        const res = await fetch(`http://localhost:5000/api/gyms/${gymId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         data = await res.json();
@@ -2608,7 +2618,18 @@ document.addEventListener('DOMContentLoaded', function() {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+        // Get gym ID
+        let gymId = localStorage.getItem('gymId') || localStorage.getItem('currentGymId');
+        if (!gymId && window.currentGymProfile) {
+          gymId = window.currentGymProfile._id || window.currentGymProfile.id;
+        }
+        if (!gymId) {
+          console.error('[AddMember] No gym ID found for activities fetch');
+          activitiesCache = [];
+          return;
+        }
+
+        const response = await fetch(`http://localhost:5000/api/gyms/${gymId}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -3838,8 +3859,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     async function fetchAdminProfile(token) {
+        // Get gym ID
+        let gymId = localStorage.getItem('gymId') || localStorage.getItem('currentGymId');
+        if (!gymId && window.currentGymProfile) {
+            gymId = window.currentGymProfile._id || window.currentGymProfile.id;
+        }
+        if (!gymId) {
+            console.error('No gym ID found for admin profile fetch');
+            throw new Error('Gym ID not available');
+        }
        
-        const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+        const response = await fetch(`http://localhost:5000/api/gyms/${gymId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -4605,7 +4635,17 @@ function clearUploadPhotoMsgAndCloseModal() {
             // Profile update submission function
             async function submitProfileUpdate(formData) {
                 try {
-                    const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+                    // Get gym ID
+                    let gymId = localStorage.getItem('gymId') || localStorage.getItem('currentGymId');
+                    if (!gymId && window.currentGymProfile) {
+                        gymId = window.currentGymProfile._id || window.currentGymProfile.id;
+                    }
+                    if (!gymId) {
+                        showProfileUpdateMessage('Gym ID not available. Please login again.', 'error');
+                        return;
+                    }
+                    
+                    const response = await fetch(`http://localhost:5000/api/gyms/${gymId}`, {
                         method: 'PUT',
                         headers: {
                             'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
@@ -6207,8 +6247,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      // Fetch real equipment data from backend
-      const response = await fetch('/api/gyms/profile/me', {
+      // Get gym ID
+      let gymId = localStorage.getItem('gymId') || localStorage.getItem('currentGymId');
+      if (!gymId && window.currentGymProfile) {
+        gymId = window.currentGymProfile._id || window.currentGymProfile.id;
+      }
+      
+      if (!gymId) {
+        console.warn('No gym ID found for equipment loading');
+        showDashboardEquipmentError('Gym ID not available');
+        return;
+      }
+
+      // Fetch real equipment data from backend using gym ID
+      const response = await fetch(`/api/gyms/${gymId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -6217,6 +6269,10 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        if (errorText.trim().startsWith('<!DOCTYPE')) {
+          throw new Error(`Authentication failed. Server returned HTML instead of JSON. Please login again. (Status: ${response.status})`);
+        }
         throw new Error(`Server error: ${response.status}`);
       }
 
