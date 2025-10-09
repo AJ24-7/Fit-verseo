@@ -270,7 +270,7 @@ class OffersManager {
   switchToTab(tabName) {
     const offersTabElement = document.getElementById('offersTab');
     if (!offersTabElement) return;
-
+  
     // Update active tab button within the offers tab
     offersTabElement.querySelectorAll('.payment-tab-btn').forEach(btn => {
       btn.classList.remove('active');
@@ -279,19 +279,17 @@ class OffersManager {
     if (activeButton) {
         activeButton.classList.add('active');
     }
-
+  
     // Show corresponding tab content within the offers tab
-    offersTabElement.querySelectorAll('.payment-tab-content').forEach(content => {
-      content.style.display = 'none';
+    offersTabElement.querySelectorAll('.offer-tab-content').forEach(content => {
       content.classList.remove('active');
     });
-
+  
     const targetTab = offersTabElement.querySelector(`#${tabName}Tab`);
     if (targetTab) {
-      targetTab.style.display = 'block';
       targetTab.classList.add('active');
       this.currentTab = tabName;
-
+  
       // Load data for the activated tab
       if (tabName === 'campaigns') {
         this.loadActiveCampaigns();
@@ -482,7 +480,7 @@ class OffersManager {
     return `
       <div class="template-preview">
         <div class="preview-header" style="text-align: center; margin-bottom: 24px;">
-          <div class="preview-icon" style="width: 80px; height: 80px; margin: 0 auto 16px; background: linear-gradient(135deg, #1976d2, #42a5f5); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px;">
+          <div class="preview-icon" style="width: 80px; height: 80px; margin: 0 auto 16px; background: linear-gradient(135deg, #1976d2, #42a5f5); border-radius: 50%; display: flex; align-items: center[...]
             <i class="${template.icon}"></i>
           </div>
           <h2 style="margin-bottom: 8px;">${template.title}</h2>

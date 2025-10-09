@@ -4149,10 +4149,10 @@ function hideAllMainTabs() {
         offersTab,
         supportReviewsTab
     ];
-    tabs.forEach(tab => {
+     tabs.forEach(tab => {
         if (tab) {
-            // Clear any existing display styles completely
-            tab.style.cssText = 'display: none !important;';
+            // Use style.display directly, avoid !important
+            tab.style.display = 'none';
             // Remove any conflicting classes
             tab.classList.remove('show', 'active');
         }
@@ -4246,10 +4246,16 @@ if (offersMenuLink && offersTab) {
     offersMenuLink.addEventListener('click', (e) => {
         e.preventDefault();
         hideAllMainTabs();
-        // Force show the offers tab with proper display
-        offersTab.style.cssText = 'display: block ; padding: 24px;';
+        // Simply show the main offers tab container
+        offersTab.style.display = 'block';
+        sidebarMenuLinks.forEach(l => l.classList.remove('active'));
+        offersMenuLink.classList.add('active');
         if (sidebar.classList.contains('show-on-mobile')) {
             sidebar.classList.remove('show-on-mobile');
+        }
+        // Ensure the offers manager initializes its own state
+        if (window.offersManager && typeof window.offersManager.switchToTab === 'function') {
+            window.offersManager.switchToTab('templates');
         }
     });
 }

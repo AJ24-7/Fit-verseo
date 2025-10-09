@@ -1,8 +1,11 @@
+.offer-tab-content {
+  display: none;
+}
 
-
-
-
-
+.offer-tab-content.active {
+  display: block;
+  animation: fadeInSlideUp 0.3s ease-out;
+}
 
 /* Page Header - Match Dashboard Tab Style */
 #offersTab .page-header {
@@ -268,11 +271,11 @@
 }
 
 /* Tab Content */
-.payment-tab-content {
+.offer-tab-content {
   display: none;
 }
 
-.payment-tab-content.active {
+.offer-tab-content.active {
   display: block;
   animation: fadeInSlideUp 0.3s ease-out;
 }
