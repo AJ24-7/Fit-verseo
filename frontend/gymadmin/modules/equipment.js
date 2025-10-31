@@ -157,6 +157,7 @@ class EquipmentManager {
     async loadEquipmentData() {
         try {
             this.showLoadingState();
+            this.showStatCardsLoading(); // Show skeleton on stat cards
             
             // Get fresh token using AuthHelper
             const token = await this.getAuthToken();
@@ -315,16 +316,66 @@ class EquipmentManager {
         return statusMap[status] || 'Available';
     }
 
+    showStatCardsLoading() {
+        // Show skeleton loading on all equipment stat cards
+        const statCards = [
+            'totalEquipmentStatCard',
+            'availableEquipmentStatCard', 
+            'maintenanceEquipmentStatCard',
+            'outOfOrderEquipmentStatCard'
+        ];
+        
+        statCards.forEach(cardId => {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.add('loading');
+            }
+        });
+    }
+
+    hideStatCardsLoading() {
+        // Hide skeleton loading on all equipment stat cards
+        const statCards = [
+            'totalEquipmentStatCard',
+            'availableEquipmentStatCard',
+            'maintenanceEquipmentStatCard',
+            'outOfOrderEquipmentStatCard'
+        ];
+        
+        statCards.forEach(cardId => {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.remove('loading');
+            }
+        });
+    }
+
     updateStatistics() {
         const total = this.equipmentData.length;
         const available = this.equipmentData.filter(eq => eq.status === 'available' || !eq.status).length;
         const maintenance = this.equipmentData.filter(eq => eq.status === 'maintenance').length;
         const outOfOrder = this.equipmentData.filter(eq => eq.status === 'out-of-order').length;
 
+        // Calculate percentages
+        const availablePercentage = total > 0 ? ((available / total) * 100).toFixed(1) : 0;
+
+        // Update stat card values
         document.getElementById('totalEquipmentCount').textContent = total;
         document.getElementById('availableEquipmentCount').textContent = available;
         document.getElementById('maintenanceEquipmentCount').textContent = maintenance;
         document.getElementById('outOfOrderEquipmentCount').textContent = outOfOrder;
+
+        // Update stat change indicators
+        const availableCard = document.getElementById('availableEquipmentStatCard');
+        if (availableCard) {
+            const changeElement = availableCard.querySelector('.stat-change');
+            if (changeElement && availablePercentage > 0) {
+                changeElement.innerHTML = `<i class="fas fa-arrow-up"></i> ${availablePercentage}%`;
+            }
+        }
+
+        // Hide skeleton loading after updating
+        this.hideStatCardsLoading();
     }
 
     getFilteredEquipment() {

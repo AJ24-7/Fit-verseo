@@ -188,15 +188,8 @@
     animation: modalSlideIn 0.3s ease-out forwards;
 }
 
-/* ========== SUPPORT TAB LAYOUT STYLES ========== */
 
-/* Support Tab Container - Following other tabs pattern */
-#supportReviewsTab {
-    padding: 90px 24px 24px 24px; /* 90px top for fixed header (70px) + spacing (20px) */
-    min-height: calc(100vh - 140px);
-    background: var(--bg-color, #f8f9fa);
-    box-sizing: border-box;
-}
+
 
 /* Support Action Buttons - Consistent with page-actions */
 .support-action-btn {
@@ -1918,12 +1911,7 @@ textarea.form-control {
         gap: 8px;
     }
     
-    .page-actions button,
-    .support-action-btn {
-        width: 100%;
-        justify-content: center;
-    }
-    
+  
     .support-modal-content {
         margin: 10px;
         max-width: calc(100vw - 20px);

@@ -218,17 +218,16 @@ class PaymentManager {
     );
     
     if (paymentsMenuLink) {
-      // Remove existing event listeners by cloning the node
-      const newPaymentsMenuLink = paymentsMenuLink.cloneNode(true);
-      paymentsMenuLink.parentNode.replaceChild(newPaymentsMenuLink, paymentsMenuLink);
-      
-      newPaymentsMenuLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
+      // Add event listener with capture phase to intercept BEFORE tab switcher
+      paymentsMenuLink.addEventListener('click', (e) => {
         console.log('Payment menu link clicked, checking authorization...');
         
         if (!this.isPaymentTabAuthorized) {
+          // Stop the event from reaching tab switcher
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          
           // Check if passkey exists or if setup was skipped
           const storedPasskey = localStorage.getItem(`gymAdminPasskey_${this.getCurrentGymAdminId()}`);
           const skipExpiry = localStorage.getItem(`passkeySetupSkipped_${this.getCurrentGymAdminId()}`);
@@ -248,29 +247,11 @@ class PaymentManager {
             this.showPasskeyModal();
           }
         } else {
-          console.log('Already authorized, showing payment tab with main navigation');
-          // Use the main app's navigation system
-          if (typeof window.hideAllMainTabs === 'function') {
-            window.hideAllMainTabs();
-          }
-          
-          const paymentTab = document.getElementById('paymentTab');
-          if (paymentTab) {
-            paymentTab.style.display = 'block';
-          }
-          
-          if (typeof window.updateMainContentMargins === 'function') {
-            window.updateMainContentMargins();
-          }
-          
-          // Update navigation state
-          document.querySelectorAll('.menu-link').forEach(link => link.classList.remove('active'));
-          newPaymentsMenuLink.classList.add('active');
-          
-          // Load payment data
-          this.loadPaymentData();
+          // Already authorized - let the tab switcher handle it normally
+          console.log('Already authorized, allowing tab switcher to handle navigation');
+          // Don't prevent default - let tab switcher work
         }
-      });
+      }, true); // Use capture phase to run before tab switcher's listener
     }
   }
 
@@ -747,43 +728,24 @@ class PaymentManager {
       return;
     }
 
-    // Use the main app's navigation system to properly show payment tab
-    if (typeof window.hideAllMainTabs === 'function') {
-      window.hideAllMainTabs();
-      console.log('hideAllMainTabs called from showPaymentTab');
+    // CRITICAL: Use the tab switcher API for proper navigation
+    console.log('Using tab switcher to show payment tab');
+    if (window.tabSwitcher && typeof window.tabSwitcher.showPayments === 'function') {
+      window.tabSwitcher.showPayments();
+    } else {
+      console.warn('Tab switcher not available, using fallback direct display');
+      // Fallback: direct display (not recommended but prevents errors)
+      const paymentTab = document.getElementById('paymentTab');
+      if (paymentTab) {
+        paymentTab.style.display = 'block';
+      }
     }
-
-    // Show payment tab using main navigation system
-    const paymentTab = document.getElementById('paymentTab');
-    if (paymentTab) {
-      paymentTab.style.display = 'block';
-      paymentTab.classList.add('active');
-      console.log('Payment tab displayed');
-      
-      // Update navigation state - activate payment menu link
-      document.querySelectorAll('.menu-link').forEach(link => link.classList.remove('active'));
-      
-      const paymentMenuLink = Array.from(document.querySelectorAll('.menu-link')).find(link => 
-        link.querySelector('.fa-credit-card') || 
-        link.textContent.trim().toLowerCase().includes('payment')
-      );
-      
-      if (paymentMenuLink) {
-        paymentMenuLink.classList.add('active');
-        console.log('Payment menu link activated');
-      }
-      
-      // Update main content margins if function exists
-      if (typeof window.updateMainContentMargins === 'function') {
-        window.updateMainContentMargins();
-      }
-      
-      // Load payment data
+    
+    // Load payment data after navigation
+    setTimeout(() => {
       this.loadPaymentData();
       console.log('Payment data loading initiated');
-    } else {
-      console.error('Payment tab element not found');
-    }
+    }, 100);
   }
 
   // Show passkey error

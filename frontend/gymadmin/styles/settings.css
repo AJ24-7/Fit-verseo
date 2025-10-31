@@ -1,11 +1,5 @@
 /* ===== SETTINGS TAB STYLES ===== */
 
-/* Settings Tab Container - Must account for fixed header */
-#settingsTab {
-    padding: 90px 24px 24px 24px !important; /* 90px top for fixed header (70px) + spacing (20px) */
-    box-sizing: border-box;
-}
-
 /* CRITICAL: Fix dropdown z-index issues for settings tab */
 .user-profile-dropdown,
 .notification-dropdown,

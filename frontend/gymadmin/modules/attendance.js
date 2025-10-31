@@ -146,7 +146,7 @@ class AttendanceManager {
             }
 
             // Load members data
-            const membersResponse = await fetch('/api/members', {
+            const membersResponse = await fetch('http://localhost:5000/api/members', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -173,7 +173,7 @@ class AttendanceManager {
             // Fetch gymId from admin profile if not already set
             if (!this.gymId) {
                 try {
-                    const profileResponse = await fetch('/api/gyms/profile/me', {
+                    const profileResponse = await fetch('http://localhost:5000/api/gyms/profile/me', {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
@@ -203,7 +203,7 @@ class AttendanceManager {
             }
 
             // Load trainers data (status=approved, gym=<gymId>)
-            let trainersUrl = '/api/trainers?status=approved';
+            let trainersUrl = 'http://localhost:5000/api/trainers?status=approved';
             if (this.gymId) trainersUrl += `&gym=${this.gymId}`;
 
             const trainersResponse = await fetch(trainersUrl, {
@@ -249,8 +249,8 @@ class AttendanceManager {
                 return;
             }
 
-            console.log(`🌐 Fetching attendance from: /api/attendance/${dateStr}`);
-            const response = await fetch(`/api/attendance/${dateStr}`, {
+            console.log(`🌐 Fetching attendance from: http://localhost:5000/api/attendance/${dateStr}`);
+            const response = await fetch(`http://localhost:5000/api/attendance/${dateStr}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -429,7 +429,7 @@ class AttendanceManager {
         }
 
         try {
-            const response = await fetch('/api/attendance', {
+            const response = await fetch('http://localhost:5000/api/attendance', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -697,7 +697,7 @@ class AttendanceManager {
         if (expiredMembers.length === 0) return;
 
         try {
-            const response = await fetch('/api/members/remove-expired', {
+            const response = await fetch('http://localhost:5000/api/members/remove-expired', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -981,7 +981,7 @@ class AttendanceManager {
 
             console.log(`Fetching attendance history for ${personId} from ${startDate} to ${endDate}`);
 
-            const response = await fetch(`/api/attendance/history/${personId}?startDate=${startDate}&endDate=${endDate}`, {
+            const response = await fetch(`http://localhost:5000/api/attendance/history/${personId}?startDate=${startDate}&endDate=${endDate}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1076,7 +1076,7 @@ class AttendanceManager {
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 const dateStr = d.toISOString().split('T')[0];
                 
-                const promise = fetch(`/api/attendance/${dateStr}`, {
+                const promise = fetch(`http://localhost:5000/api/attendance/${dateStr}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -1527,7 +1527,7 @@ class AttendanceManager {
             await this.simulateDelay(1500);
             
             // Call API to enroll biometric data
-            const response = await fetch('/api/biometric/enroll', {
+            const response = await fetch('http://localhost:5000/api/biometric/enroll', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1575,7 +1575,7 @@ class AttendanceManager {
             // Simulate biometric verification
             await this.simulateDelay(2000);
             
-            const response = await fetch('/api/biometric/verify-attendance', {
+            const response = await fetch('http://localhost:5000/api/biometric/verify-attendance', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

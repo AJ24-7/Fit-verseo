@@ -62,18 +62,18 @@ class OffersManager {
   }
   
   setupTabCleanup() {
-    // Listen for tab switching to close any open modals
-    const sidebarLinks = document.querySelectorAll('.sidebar .menu-link');
-    const mobileLinks = document.querySelectorAll('#mobileSidebarDropdown .menu-link');
+    // CRITICAL FIX: Don't add event listeners to sidebar links!
+    // This was interfering with the main gymadmin.js tab navigation
+    // Instead, use a custom event or rely on hideAllMainTabs() to clean up
     
-    [...sidebarLinks, ...mobileLinks].forEach(link => {
-      link.addEventListener('click', (e) => {
-        // Check if not clicking on offers tab
-        if (!link.querySelector('.fa-tags')) {
-          console.log('🧹 Cleaning up offers modals before switching tabs');
-          this.closeModal(); // Close all modals
-        }
-      });
+    // Listen for custom event when tabs are being switched
+    document.addEventListener('tabSwitching', (e) => {
+      const targetTab = e.detail?.targetTab;
+      // If switching AWAY from offers tab, close any open modals
+      if (targetTab && targetTab !== 'offersTab') {
+        console.log('🧹 Cleaning up offers modals - switching away from offers tab');
+        this.closeModal(); // Close all modals
+      }
     });
   }
 

@@ -22,6 +22,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
            
     <script defer src="core/skeleton-loading-manager.js"></script>
+    <script defer src="modules/tab-switcher.js"></script>
+    <script defer src="core/unified-notification-system.js"></script>
     <script defer src="gymadmin.js"></script>
     <script defer src="modules/settings.js"></script>
     <script defer src="utils/subscription-management.js"></script>
@@ -40,6 +42,7 @@
     <script defer src="modules/cash-validation-dialog.js"></script>
     <script defer src="utils/quick-actions-customizer.js"></script>
     <script defer src="modules/trainer-management.js"></script>
+    
 </head>
 <body>
 <!-- Hamburger Menu for Mobile (move outside sidebar, just after <body>) -->
@@ -193,7 +196,7 @@
                 <div class="page-header">
                     <h1 class="page-title"><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h1>
                     <div class="page-actions">
-                        <button id="openNotificationModalBtn">
+                        <button id="openNotificationModalBtn" class="btn-primary">
                             <i class="fas fa-bell"></i> Send Notification
                         </button>
                         <!-- Admin notification system will be inserted here automatically -->
@@ -2433,18 +2436,17 @@
 <!-- Support & Reviews Tab -->
 <div id="supportReviewsTab" class="tab-content" style="display:none;">
   <div class="tab-inner-content">
-  <!-- Header Section - Consistent with other tabs -->
   <div class="page-header">
     <h1 class="page-title">
       <i class="fas fa-headset"></i>
       Support & Communications Center
     </h1>
     <div class="page-actions">
-      <button id="supportRaiseGrievanceBtn" class="support-action-btn primary">
+      <button id="supportRaiseGrievanceBtn" class="btn-primary">
         <i class="fas fa-exclamation-triangle"></i>
         Raise Grievance
       </button>
-      <button id="supportSendNotificationBtn" class="support-action-btn secondary">
+      <button id="supportSendNotificationBtn" class="btn-secondary">
         <i class="fas fa-bullhorn"></i>
         Send Notification
       </button>
@@ -2905,52 +2907,103 @@
     <h1 class="page-title">
       <i class="fas fa-dumbbell"></i> Equipment Management
     </h1>
-    <div class="equipment-header-actions">
-      <button id="addEquipmentBtn" class="add-equipment-btn">
+    <div class="page-actions">
+      <button id="addEquipmentBtn" class="btn-primary">
         <i class="fas fa-plus"></i> Add Equipment
       </button>
-      <button id="bulkImportBtn" class="bulk-import-btn">
+      <button id="bulkImportBtn" class="btn-secondary">
         <i class="fas fa-upload"></i> Bulk Import
       </button>
     </div>
   </div>
 
   <!-- Equipment Statistics -->
-  <div class="equipment-stats-grid">
-    <div class="equipment-stat-card">
-      <div class="stat-icon">
-        <i class="fas fa-dumbbell"></i>
+  <div class="stats-cards">
+    <div class="stat-card equipment-total loading" id="totalEquipmentStatCard">
+      <div class="stat-card-header">
+        <div class="stat-title">Total Equipment</div>
+        <div class="stat-icon-dashboard">
+          <i class="fas fa-dumbbell"></i>
+        </div>
       </div>
-      <div class="stat-content">
-        <h3 id="totalEquipmentCount">0</h3>
-        <p>Total Equipment</p>
+      <div class="stat-value" id="totalEquipmentCount">0</div>
+      <div class="stat-change neutral">
+        <i class="fas fa-minus"></i>
+        All items
       </div>
-    </div>
-    <div class="equipment-stat-card">
-      <div class="stat-icon available">
-        <i class="fas fa-check-circle"></i>
-      </div>
-      <div class="stat-content">
-        <h3 id="availableEquipmentCount">0</h3>
-        <p>Available</p>
-      </div>
-    </div>
-    <div class="equipment-stat-card">
-      <div class="stat-icon maintenance">
-        <i class="fas fa-tools"></i>
-      </div>
-      <div class="stat-content">
-        <h3 id="maintenanceEquipmentCount">0</h3>
-        <p>Under Maintenance</p>
+      <div class="stat-card-skeleton">
+        <div class="skeleton-header">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-icon"></div>
+        </div>
+        <div class="skeleton-value"></div>
+        <div class="skeleton-change"></div>
       </div>
     </div>
-    <div class="equipment-stat-card">
-      <div class="stat-icon out-of-order">
-        <i class="fas fa-exclamation-triangle"></i>
+
+    <div class="stat-card equipment-available loading" id="availableEquipmentStatCard">
+      <div class="stat-card-header">
+        <div class="stat-title">Available</div>
+        <div class="stat-icon-dashboard">
+          <i class="fas fa-check-circle"></i>
+        </div>
       </div>
-      <div class="stat-content">
-        <h3 id="outOfOrderEquipmentCount">0</h3>
-        <p>Out of Order</p>
+      <div class="stat-value" id="availableEquipmentCount">0</div>
+      <div class="stat-change positive">
+        <i class="fas fa-arrow-up"></i>
+        0%
+      </div>
+      <div class="stat-card-skeleton">
+        <div class="skeleton-header">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-icon"></div>
+        </div>
+        <div class="skeleton-value"></div>
+        <div class="skeleton-change"></div>
+      </div>
+    </div>
+
+    <div class="stat-card equipment-maintenance loading" id="maintenanceEquipmentStatCard">
+      <div class="stat-card-header">
+        <div class="stat-title">Under Maintenance</div>
+        <div class="stat-icon-dashboard">
+          <i class="fas fa-tools"></i>
+        </div>
+      </div>
+      <div class="stat-value" id="maintenanceEquipmentCount">0</div>
+      <div class="stat-change neutral">
+        <i class="fas fa-wrench"></i>
+        In service
+      </div>
+      <div class="stat-card-skeleton">
+        <div class="skeleton-header">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-icon"></div>
+        </div>
+        <div class="skeleton-value"></div>
+        <div class="skeleton-change"></div>
+      </div>
+    </div>
+
+    <div class="stat-card equipment-out-of-order loading" id="outOfOrderEquipmentStatCard">
+      <div class="stat-card-header">
+        <div class="stat-title">Out of Order</div>
+        <div class="stat-icon-dashboard">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+      </div>
+      <div class="stat-value" id="outOfOrderEquipmentCount">0</div>
+      <div class="stat-change negative">
+        <i class="fas fa-arrow-down"></i>
+        Needs attention
+      </div>
+      <div class="stat-card-skeleton">
+        <div class="skeleton-header">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-icon"></div>
+        </div>
+        <div class="skeleton-value"></div>
+        <div class="skeleton-change"></div>
       </div>
     </div>
   </div>
@@ -3243,11 +3296,11 @@
       Offers & Coupons Management
     </h1>
     <div class="page-actions">
-      <button id="offersCreateOfferBtn" class="support-action-btn primary">
+      <button id="offersCreateOfferBtn" class="btn-primary">
         <i class="fas fa-plus"></i>
         Create Custom Offer
       </button>
-      <button id="offersGenerateCouponBtn" class="support-action-btn secondary">
+      <button id="offersGenerateCouponBtn" class="btn-secondary">
         <i class="fas fa-ticket-alt"></i>
         Generate Coupon
       </button>
@@ -5410,7 +5463,7 @@
     </div><!-- Close main-content -->
  
    <!-- 7-Day Allowance System -->
-   <script src="seven-day-allowance.js"></script>
+   <script src="modules/seven-day-allowance.js"></script>
    <!-- QR Code Generator System -->
    <script src="qr-code-generator.js"></script>
    <!-- Notification integration with enhanced form handler compatibility -->
