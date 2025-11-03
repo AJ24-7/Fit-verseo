@@ -339,34 +339,50 @@ body[data-theme="dark"] .user-profile-animated .user-name {
     height: 100%;
 }
 
+/* User Actions Container - Ensure relative positioning for dropdown */
+.user-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1000;
+}
+
 /* Profile Dropdown Menu - Enhanced with Better Positioning */
 .profile-dropdown-menu {
   position: absolute !important;
-  top: calc(100% + 8px) !important;
+  top: calc(100% + 12px) !important;
   right: 0 !important;
-  min-width: 200px;
+  min-width: 220px;
   max-width: 300px;
   background: var(--card-bg, #fff);
   color: var(--text-primary, #333);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
   padding: 8px 0;
   z-index: 999999 !important;
+  display: none !important;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transform: translateY(-10px) scale(0.95);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s 0.25s;
   border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
 }
 
 /* Show dropdown when active */
 .profile-dropdown-menu.open,
 .profile-dropdown-menu.show {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: translateY(0) scale(1);
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s 0s;
 }
 .profile-dropdown-menu .dropdown-item {
   display: flex;
@@ -4436,6 +4452,14 @@ html #notificationDropdown.show {
     align-items: center;
     cursor: pointer;
     height: 100%;
+    position: relative;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.user-profile:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .user-avatar {

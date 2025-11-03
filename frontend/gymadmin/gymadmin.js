@@ -4,50 +4,69 @@ document.addEventListener('DOMContentLoaded', function() {
   const profileDropdownMenu = document.getElementById('profileDropdownMenu');
   
   if (userProfileToggle && profileDropdownMenu) {
-    // Force correct positioning and z-index
-    function ensureDropdownVisibility() {
-      profileDropdownMenu.style.position = 'fixed';
-      profileDropdownMenu.style.zIndex = '2147483647';
-      profileDropdownMenu.style.top = '70px';
-      profileDropdownMenu.style.right = '20px';
-      profileDropdownMenu.style.pointerEvents = 'auto';
+    // Make user-profile container relative for absolute positioning
+    const userProfileContainer = userProfileToggle.closest('.user-actions');
+    if (userProfileContainer) {
+      userProfileContainer.style.position = 'relative';
     }
     
+    // Toggle dropdown on click
     userProfileToggle.addEventListener('click', function(e) {
       e.stopPropagation();
-      ensureDropdownVisibility();
-      profileDropdownMenu.classList.toggle('open');
       
-      // Ensure visibility after toggle
-      if (profileDropdownMenu.classList.contains('open')) {
-        profileDropdownMenu.style.visibility = 'visible';
+      // Close all other dropdowns if any
+      document.querySelectorAll('.profile-dropdown-menu').forEach(dropdown => {
+        if (dropdown !== profileDropdownMenu) {
+          dropdown.classList.remove('open', 'show');
+          dropdown.style.display = 'none';
+        }
+      });
+      
+      // Toggle this dropdown
+      const isOpen = profileDropdownMenu.classList.contains('open');
+      
+      if (isOpen) {
+        // Close it
+        profileDropdownMenu.classList.remove('open', 'show');
+        // Small delay to allow animation before hiding
+        setTimeout(() => {
+          if (!profileDropdownMenu.classList.contains('open')) {
+            profileDropdownMenu.style.display = 'none';
+          }
+        }, 250);
+      } else {
+        // Open it
         profileDropdownMenu.style.display = 'block';
+        // Force reflow for animation
+        profileDropdownMenu.offsetHeight;
+        profileDropdownMenu.classList.add('open', 'show');
       }
     });
     
     // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
       if (!profileDropdownMenu.contains(e.target) && !userProfileToggle.contains(e.target)) {
-        profileDropdownMenu.classList.remove('open');
+        if (profileDropdownMenu.classList.contains('open')) {
+          profileDropdownMenu.classList.remove('open', 'show');
+          setTimeout(() => {
+            if (!profileDropdownMenu.classList.contains('open')) {
+              profileDropdownMenu.style.display = 'none';
+            }
+          }, 250);
+        }
       }
     });
     
-    // Ensure dropdown is properly positioned on page load
-    ensureDropdownVisibility();
-    
-    // Watch for tab changes and ensure dropdown stays visible
-    const observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-          ensureDropdownVisibility();
-        }
-      });
-    });
-    
-    // Observe the dropdown for any style changes
-    observer.observe(profileDropdownMenu, { 
-      attributes: true, 
-      attributeFilter: ['style', 'class'] 
+    // Close dropdown when pressing Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && profileDropdownMenu.classList.contains('open')) {
+        profileDropdownMenu.classList.remove('open', 'show');
+        setTimeout(() => {
+          if (!profileDropdownMenu.classList.contains('open')) {
+            profileDropdownMenu.style.display = 'none';
+          }
+        }, 250);
+      }
     });
   }
 });

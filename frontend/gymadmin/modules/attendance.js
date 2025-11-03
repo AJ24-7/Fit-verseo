@@ -234,7 +234,9 @@ class AttendanceManager {
             // Ensure data arrays are initialized even on error
             this.membersData = this.membersData || [];
             this.trainersData = this.trainersData || [];
-            this.showToast('Error loading data', 'error');
+            if (window.unifiedNotificationSystem) {
+                window.unifiedNotificationSystem.showToast('Error loading data', 'error');
+            }
         }
     }
 
@@ -285,7 +287,9 @@ class AttendanceManager {
             this.attendanceData = {};
             this.renderAttendance();
             this.updateStats();
-            this.showToast('Error loading attendance data', 'error');
+            if (window.unifiedNotificationSystem) {
+                window.unifiedNotificationSystem.showToast('Error loading attendance data', 'error');
+            }
         }
     }
 
@@ -424,7 +428,9 @@ class AttendanceManager {
         const token = await this.getAuthToken();
         if (!token) {
             console.error('No token found');
-            this.showToast('Authentication required', 'error');
+            if (window.unifiedNotificationSystem) {
+                window.unifiedNotificationSystem.showToast('Authentication required', 'error');
+            }
             return;
         }
 
@@ -478,13 +484,17 @@ class AttendanceManager {
                 this.renderAttendance();
                 this.updateStats();
                 
-                this.showToast(`Attendance marked as ${status}`, 'success');
+                if (window.unifiedNotificationSystem) {
+                    window.unifiedNotificationSystem.showToast(`Attendance marked as ${status}`, 'success');
+                }
             } else {
                 throw new Error('Failed to mark attendance');
             }
         } catch (error) {
             console.error('Error marking attendance:', error);
-            this.showToast('Error marking attendance', 'error');
+            if (window.unifiedNotificationSystem) {
+                window.unifiedNotificationSystem.showToast('Error marking attendance', 'error');
+            }
         }
     }
 
@@ -539,9 +549,13 @@ class AttendanceManager {
 
         try {
             await Promise.all(promises);
-            this.showToast(`Bulk attendance marked as ${status}`, 'success');
+            if (window.unifiedNotificationSystem) {
+                window.unifiedNotificationSystem.showToast(`Bulk attendance marked as ${status}`, 'success');
+            }
         } catch (error) {
-            this.showToast('Error in bulk attendance marking', 'error');
+            if (window.unifiedNotificationSystem) {
+                window.unifiedNotificationSystem.showToast('Error in bulk attendance marking', 'error');
+            }
         }
     }
 
@@ -615,7 +629,9 @@ class AttendanceManager {
             document.body.removeChild(link);
         }
 
-        this.showToast('Attendance data exported successfully', 'success');
+        if (window.unifiedNotificationSystem) {
+            window.unifiedNotificationSystem.showToast('Attendance data exported successfully', 'success');
+        }
     }
 
     generateCSV(data, date) {
@@ -667,22 +683,28 @@ class AttendanceManager {
     }
 
     showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 100);
-        
-        setTimeout(() => {
-            toast.classList.remove('show');
+        // Use unified notification system if available
+        if (window.unifiedNotificationSystem) {
+            window.unifiedNotificationSystem.showToast(message, type);
+        } else {
+            // Fallback to custom toast implementation
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
             setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 300);
-        }, 3000);
+                toast.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
     }
 
     // Auto-remove expired members
@@ -708,7 +730,9 @@ class AttendanceManager {
 
             if (response.ok) {
                 this.loadData(); // Reload data
-                this.showToast(`${expiredMembers.length} expired members removed`, 'info');
+                if (window.unifiedNotificationSystem) {
+                    window.unifiedNotificationSystem.showToast(`${expiredMembers.length} expired members removed`, 'info');
+                }
             }
         } catch (error) {
             console.error('Error removing expired members:', error);
@@ -1547,7 +1571,9 @@ class AttendanceManager {
                 progressBar.style.width = '100%';
                 progressBar.style.backgroundColor = '#4CAF50';
                 
-                this.showToast(`${biometricType} enrollment completed for ${personType}`, 'success');
+                if (window.unifiedNotificationSystem) {
+                    window.unifiedNotificationSystem.showToast(`${biometricType} enrollment completed for ${personType}`, 'success');
+                }
                 
                 setTimeout(() => {
                     modal.remove();
@@ -1560,7 +1586,9 @@ class AttendanceManager {
         } catch (error) {
             statusElement.textContent = 'Enrollment failed';
             progressBar.style.backgroundColor = '#f44336';
-            this.showToast('Biometric enrollment failed', 'error');
+            if (window.unifiedNotificationSystem) {
+                window.unifiedNotificationSystem.showToast('Biometric enrollment failed', 'error');
+            }
             console.error('Enrollment error:', error);
         } finally {
             scannerIcon.classList.remove('scanning');
@@ -1569,7 +1597,9 @@ class AttendanceManager {
 
     // Verify biometric and mark attendance
     async verifyBiometricAttendance(personId, personType, biometricType) {
-        const loadingToast = this.showToast('Verifying biometric data...', 'info', 0);
+        if (window.unifiedNotificationSystem) {
+            window.unifiedNotificationSystem.showToast('Verifying biometric data...', 'info');
+        }
         
         try {
             // Simulate biometric verification
@@ -1595,31 +1625,37 @@ class AttendanceManager {
                 if (contentType && contentType.includes('application/json')) {
                     try {
                         const result = await response.json();
-                        this.hideToast(loadingToast);
                         
                         if (result.verified) {
-                            this.showToast(`${biometricType} verified! Attendance marked.`, 'success');
+                            if (window.unifiedNotificationSystem) {
+                                window.unifiedNotificationSystem.showToast(`${biometricType} verified! Attendance marked.`, 'success');
+                            }
                             this.loadData(); // Refresh attendance data
                         } else {
-                            this.showToast('Biometric verification failed', 'error');
+                            if (window.unifiedNotificationSystem) {
+                                window.unifiedNotificationSystem.showToast('Biometric verification failed', 'error');
+                            }
                         }
                     } catch (jsonError) {
                         console.warn('Failed to parse verification JSON response:', jsonError);
-                        this.hideToast(loadingToast);
-                        this.showToast('Biometric verification error', 'error');
+                        if (window.unifiedNotificationSystem) {
+                            window.unifiedNotificationSystem.showToast('Biometric verification error', 'error');
+                        }
                     }
                 } else {
                     console.warn('Verification API returned non-JSON response');
-                    this.hideToast(loadingToast);
-                    this.showToast('Biometric verification error', 'error');
+                    if (window.unifiedNotificationSystem) {
+                        window.unifiedNotificationSystem.showToast('Biometric verification error', 'error');
+                    }
                 }
             } else {
                 throw new Error('Verification request failed');
             }
             
         } catch (error) {
-            this.hideToast(loadingToast);
-            this.showToast('Biometric verification error', 'error');
+            if (window.unifiedNotificationSystem) {
+                window.unifiedNotificationSystem.showToast('Biometric verification error', 'error');
+            }
             console.error('Verification error:', error);
         }
     }

@@ -416,6 +416,24 @@
     setTimeout(()=>{ if(refs.trainerDetailDrawer) refs.trainerDetailDrawer.style.display='none'; }, 320);
   }
 
+  // Detail drawer action handler
+  function detailAction(type){
+    const id = type === 'approve' 
+      ? refs.trainerDetailApproveBtn?.getAttribute('data-id')
+      : refs.trainerDetailRejectBtn?.getAttribute('data-id');
+    
+    if(!id) {
+      notify('Unable to identify trainer', 'error');
+      return;
+    }
+    
+    if(type === 'approve') {
+      approveTrainer(id);
+    } else if(type === 'reject') {
+      rejectTrainerPrompt(id);
+    }
+  }
+
   function formatAvailability(av){
     if(!av) return '<span style="color:#90a4ae;">Not specified</span>';
     if(typeof av==='string') return av;

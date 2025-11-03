@@ -309,12 +309,27 @@
         });
         
         showTabWithSkeleton(offersTab, 'dashboard-stats', () => {
-            if (typeof window.initializeOffersManager === 'function') {
-                window.initializeOffersManager();
+            // Initialize offers manager if not already done
+            if (!window.offersManager) {
+                console.log('🔧 Initializing offers manager...');
+                if (typeof window.initializeOffersManager === 'function') {
+                    window.initializeOffersManager();
+                }
             }
             
-            if (window.offersManager && typeof window.offersManager.switchToTab === 'function') {
-                return window.offersManager.switchToTab('templates');
+            // Force reload data and switch to templates tab
+            if (window.offersManager) {
+                console.log('✅ Offers manager ready, loading initial data...');
+                // Update counters immediately
+                window.offersManager.updateOffersCountBadge();
+                // Load all data
+                window.offersManager.loadInitialData();
+                // Switch to templates tab
+                setTimeout(() => {
+                    window.offersManager.switchTab('templates');
+                }, 100);
+            } else {
+                console.error('❌ Offers manager not available');
             }
         });
         

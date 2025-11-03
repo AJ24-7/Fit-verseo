@@ -1122,7 +1122,20 @@ header {
         font-size: 1.5rem;
     }
 }
-
+.use-coupon-btn{
+    background: var(--success-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+ 
 /* ===============================================
    TRIAL LIMITS STYLES
    =============================================== */

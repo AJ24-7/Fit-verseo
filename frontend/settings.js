@@ -249,6 +249,10 @@ function loadTabData(tabName) {
         case 'payments':
             loadPaymentsData();
             break;
+        case 'coupons':
+            loadUserCoupons();
+            initializeCouponFilters();
+            break;
         case 'notifications':
             loadNotificationSettings();
             break;
@@ -263,6 +267,49 @@ function loadTabData(tabName) {
             refreshSupportTickets();
             break;
     }
+}
+
+// Initialize coupon filter buttons
+function initializeCouponFilters() {
+    const filterButtons = document.querySelectorAll('.coupons-filter .filter-btn');
+    
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Update active button
+            filterButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter coupons
+            const filter = this.dataset.filter;
+            filterCoupons(filter);
+        });
+    });
+}
+
+// Filter coupons based on status
+function filterCoupons(filter) {
+    const couponCards = document.querySelectorAll('.settings-coupon-card');
+    
+    couponCards.forEach(card => {
+        const status = card.dataset.status;
+        
+        switch(filter) {
+            case 'all':
+                card.style.display = 'block';
+                break;
+            case 'active':
+                card.style.display = status === 'active' ? 'block' : 'none';
+                break;
+            case 'expired':
+                card.style.display = status === 'expired' ? 'block' : 'none';
+                break;
+            case 'used':
+                card.style.display = status === 'used' ? 'block' : 'none';
+                break;
+            default:
+                card.style.display = 'block';
+        }
+    });
 }
 
 // Load user data
@@ -348,11 +395,250 @@ async function loadBookingsData() {
         // Load trial bookings and limits
         loadTrialBookingsAndLimits(token);
         
+        // Load user coupons
+        loadUserCoupons();
+        
     } catch (error) {
         console.error('Error loading bookings:', error);
         showError('Failed to load bookings data.');
     }
 }
+
+// Load user coupons from backend
+async function loadUserCoupons() {
+    try {
+        const token = getValidToken();
+        if (!token || !currentUser) {
+            console.log('No valid token or user for loading coupons');
+            return;
+        }
+
+        console.log('Loading user coupons...');
+        
+        const response = await fetch(`${BASE_URL}/api/user/${currentUser.id || currentUser._id}/coupons`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const container = document.getElementById('settings-coupons-list');
+        
+        if (response.ok) {
+            const data = await response.json();
+            const coupons = data.coupons || [];
+            console.log('Loaded coupons from backend:', coupons);
+            
+            displayUserCoupons(coupons);
+            updateCouponsStats(coupons);
+        } else {
+            console.warn('Failed to load coupons from backend, trying localStorage...');
+            loadCouponsFromLocalStorage();
+        }
+    } catch (error) {
+        console.error('Error loading user coupons:', error);
+        loadCouponsFromLocalStorage();
+    }
+}
+
+// Fallback to localStorage if backend fails
+function loadCouponsFromLocalStorage() {
+    try {
+        const storedCoupons = localStorage.getItem('userCoupons');
+        if (storedCoupons) {
+            const coupons = JSON.parse(storedCoupons);
+            console.log('Loaded coupons from localStorage:', coupons);
+            displayUserCoupons(coupons);
+            updateCouponsStats(coupons);
+        } else {
+            displayUserCoupons([]);
+        }
+    } catch (error) {
+        console.error('Error loading coupons from localStorage:', error);
+        displayUserCoupons([]);
+    }
+}
+
+// Display user coupons with validity and expiry info
+function displayUserCoupons(coupons) {
+    const container = document.getElementById('settings-coupons-list');
+    
+    if (!container) {
+        console.error('Coupons container not found');
+        return;
+    }
+
+    if (!coupons || coupons.length === 0) {
+        container.innerHTML = `
+            <div class="no-coupons-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-gift"></i>
+                </div>
+                <h3>No Coupons Yet</h3>
+                <p>You haven't claimed any coupons yet. Check out gym offers to find great deals!</p>
+                <a href="gymdetails.html" class="primary-btn">
+                    <i class="fas fa-search"></i> Browse Offers
+                </a>
+            </div>
+        `;
+        return;
+    }
+
+    const now = new Date();
+    
+    const couponHTML = coupons.map(coupon => {
+        const validUntil = coupon.validUntil ? new Date(coupon.validUntil) : null;
+        const isExpired = validUntil && validUntil < now;
+        const isUsed = coupon.usedAt || coupon.status === 'used';
+        const daysRemaining = validUntil ? Math.ceil((validUntil - now) / (1000 * 60 * 60 * 24)) : null;
+        const isExpiringSoon = daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7;
+        
+        // Determine status
+        let status = 'active';
+        let statusClass = 'status-active';
+        let statusIcon = 'fa-check-circle';
+        let statusText = 'Active';
+        
+        if (isUsed) {
+            status = 'used';
+            statusClass = 'status-used';
+            statusIcon = 'fa-check-circle';
+            statusText = 'Used';
+        } else if (isExpired) {
+            status = 'expired';
+            statusClass = 'status-expired';
+            statusIcon = 'fa-times-circle';
+            statusText = 'Expired';
+        } else if (isExpiringSoon) {
+            statusClass = 'status-expiring';
+            statusIcon = 'fa-exclamation-triangle';
+            statusText = `${daysRemaining} days left`;
+        } else if (daysRemaining !== null) {
+            statusText = `Valid for ${daysRemaining} days`;
+        }
+        
+        // Format dates
+        const claimedDate = coupon.claimedAt ? new Date(coupon.claimedAt).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        }) : 'N/A';
+        
+        const expiryDate = validUntil ? validUntil.toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        }) : 'No expiry';
+        
+        return `
+            <div class="settings-coupon-card ${statusClass}" data-status="${status}">
+                <div class="coupon-card-header">
+                    <div class="coupon-info">
+                        <div class="coupon-badge">
+                            <i class="fas fa-percentage"></i>
+                            ${coupon.discount}% OFF
+                        </div>
+                        <h3 class="coupon-title">${coupon.title || coupon.offerTitle || 'Special Offer'}</h3>
+                        <p class="coupon-gym-name">
+                            <i class="fas fa-dumbbell"></i>
+                            ${coupon.gymName || 'Unknown Gym'}
+                        </p>
+                    </div>
+                    <div class="coupon-status-badge ${statusClass}">
+                        <i class="fas ${statusIcon}"></i>
+                        ${statusText}
+                    </div>
+                </div>
+                
+                <div class="coupon-code-section">
+                    <div class="coupon-code-display">
+                        <span class="code-label">Coupon Code:</span>
+                        <span class="code-value">${coupon.code || coupon.couponCode || 'N/A'}</span>
+                        <button class="copy-code-btn" onclick="copyCouponCode('${coupon.code || coupon.couponCode}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                ${coupon.description ? `
+                    <div class="coupon-description">
+                        <p>${coupon.description}</p>
+                    </div>
+                ` : ''}
+                
+                <div class="coupon-validity-info">
+                    <div class="validity-item">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Claimed: ${claimedDate}</span>
+                    </div>
+                    <div class="validity-item">
+                        <i class="fas fa-calendar-times"></i>
+                        <span>Valid Until: ${expiryDate}</span>
+                    </div>
+                    ${isExpiringSoon ? `
+                        <div class="expiring-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Expires in ${daysRemaining} days!</span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                ${!isExpired && !isUsed ? `
+                    <div class="coupon-actions">
+                        <button class="use-coupon-btn" onclick="window.location.href='gymdetails.html?gym=${coupon.gymId || ''}'">
+                            <i class="fas fa-arrow-right"></i> Use Now
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = couponHTML;
+}
+
+// Update coupons stats
+function updateCouponsStats(coupons) {
+    const now = new Date();
+    
+    const activeCoupons = coupons.filter(c => {
+        const validUntil = c.validUntil ? new Date(c.validUntil) : null;
+        const isExpired = validUntil && validUntil < now;
+        const isUsed = c.usedAt || c.status === 'used';
+        return !isExpired && !isUsed;
+    }).length;
+    
+    const totalSavings = coupons.reduce((sum, c) => {
+        return sum + (c.savings || 0);
+    }, 0);
+    
+    const usedCoupons = coupons.filter(c => c.usedAt || c.status === 'used').length;
+    
+    // Update stat elements
+    const activeElement = document.getElementById('settings-active-coupons');
+    const savingsElement = document.getElementById('settings-total-savings');
+    const usedElement = document.getElementById('settings-used-coupons');
+    
+    if (activeElement) activeElement.textContent = activeCoupons;
+    if (savingsElement) savingsElement.textContent = `₹${totalSavings}`;
+    if (usedElement) usedElement.textContent = usedCoupons;
+}
+
+// Copy coupon code to clipboard
+window.copyCouponCode = function(code) {
+    if (!code || code === 'N/A') {
+        showError('No code to copy');
+        return;
+    }
+    
+    navigator.clipboard.writeText(code).then(() => {
+        showSuccess('Coupon code copied!');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        showError('Failed to copy code');
+    });
+};
 
 // Load gym bookings
 async function loadGymBookings(token) {

@@ -171,9 +171,15 @@ class OffersManager {
   setupRealtimeUpdates() {
     // Listen for storage changes to update UI in real-time
     window.addEventListener('storage', (e) => {
-      if (e.key && (e.key.includes('Campaigns') || e.key.includes('Coupons'))) {
+      if (e.key && (e.key.includes('Campaigns') || e.key.includes('Coupons') || e.key.includes('gymOffers'))) {
         console.log('🔄 Storage change detected, updating UI...');
-        setTimeout(() => this.updateOffersCountBadge(), 100);
+        setTimeout(() => {
+          this.updateOffersCountBadge();
+          // Reload current tab data to show updates
+          if (this.currentTab) {
+            this.loadTabData(this.currentTab);
+          }
+        }, 100);
       }
     });
     
@@ -181,7 +187,81 @@ class OffersManager {
     document.addEventListener('offersUpdated', () => {
       console.log('🔄 Offers updated event received, refreshing UI...');
       this.updateOffersCountBadge();
+      if (this.currentTab) {
+        this.loadTabData(this.currentTab);
+      }
     });
+    
+    // Listen for offer claimed event from gym details page
+    window.addEventListener('offerClaimed', (e) => {
+      console.log('🎉 Offer claimed event received:', e.detail);
+      
+      if (e.detail && e.detail.offerId) {
+        // Update specific campaign claim count in real-time
+        this.updateCampaignClaimCount(e.detail.offerId, e.detail.usageCount);
+      }
+      
+      this.updateOffersCountBadge();
+      // Reload campaigns to show updated claim counts
+      if (this.currentTab === 'campaigns') {
+        this.loadActiveCampaigns();
+      }
+    });
+    
+    // Listen for backend claim updates
+    window.addEventListener('offerClaimUpdated', (e) => {
+      console.log('📡 Backend claim update received:', e.detail);
+      
+      if (e.detail && e.detail.offerId) {
+        this.updateCampaignClaimCount(e.detail.offerId, e.detail.usageCount);
+      }
+    });
+  }
+  
+  // Update campaign claim count in real-time
+  updateCampaignClaimCount(offerId, usageCount) {
+    try {
+      // Update in local storage
+      const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
+      const campaignIndex = campaigns.findIndex(c => 
+        (c.id || c._id || c.backendId) === offerId
+      );
+      
+      if (campaignIndex !== -1) {
+        const newCount = usageCount || (campaigns[campaignIndex].usageCount || 0) + 1;
+        campaigns[campaignIndex].usageCount = newCount;
+        campaigns[campaignIndex].claimsCount = newCount;
+        campaigns[campaignIndex].claimedCount = newCount;
+        campaigns[campaignIndex].usedCount = newCount;
+        
+        localStorage.setItem('activeCampaigns', JSON.stringify(campaigns));
+        
+        // Update UI card if visible
+        const campaignCard = document.querySelector(`[data-campaign-id="${offerId}"]`);
+        if (campaignCard) {
+          const claimsValue = campaignCard.querySelector('.metric-value');
+          if (claimsValue) {
+            claimsValue.textContent = newCount;
+          }
+          
+          const progressText = campaignCard.querySelector('.progress-info span:last-child');
+          if (progressText) {
+            const maxUses = campaigns[campaignIndex].maxUses || 100;
+            progressText.textContent = `${newCount}/${maxUses}`;
+            
+            const progressFill = campaignCard.querySelector('.progress-fill');
+            if (progressFill) {
+              const progressPercent = Math.min((newCount / maxUses) * 100, 100);
+              progressFill.style.width = `${progressPercent}%`;
+            }
+          }
+        }
+        
+        console.log(`✅ Updated claim count for offer ${offerId}: ${newCount}`);
+      }
+    } catch (error) {
+      console.error('Error updating campaign claim count:', error);
+    }
   }
 
   async syncOffersWithBackend() {
@@ -368,7 +448,7 @@ class OffersManager {
   }
 
   switchTab(tabName) {
-    if (!tabName || this.currentTab === tabName) return;
+    if (!tabName) return;
     
     console.log(`🔄 Switching from ${this.currentTab} to ${tabName} tab`);
     
@@ -384,7 +464,6 @@ class OffersManager {
     const targetBtn = offersTabElement.querySelector(`[data-tab="${tabName}"]`);
     if (targetBtn) {
       targetBtn.classList.add('active');
-      targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     // Update tab content with animation - only within offers tab
@@ -403,11 +482,16 @@ class OffersManager {
 
     this.currentTab = tabName;
     
-    // Update counters immediately before loading tab data
+    // Update counters IMMEDIATELY with forced refresh
     this.updateOffersCountBadge();
     
-    // Load tab data with smart loading (don't reload if already loaded)
-    this.loadTabDataSmart(tabName);
+    // Load tab data - ALWAYS reload to ensure fresh data
+    this.loadTabData(tabName);
+    
+    // Force another counter update after data load
+    setTimeout(() => {
+      this.updateOffersCountBadge();
+    }, 100);
     
     console.log(`✅ Successfully switched to ${tabName} tab`);
   }
@@ -462,9 +546,11 @@ class OffersManager {
     // Check if we have any existing data, if not create sample data
     this.ensureSampleData();
     
+    // Wait a brief moment for DOM to be fully ready (after tab switch animation)
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     // Load templates first and ensure they're available for counting
     await this.loadOfferTemplates();
-    console.log('✅ Templates loaded, count:', this.templates ? this.templates.length : 0);
     
     // Then load other data in parallel
     await Promise.all([
@@ -572,7 +658,7 @@ class OffersManager {
     // Get gym info from window.currentGymProfile (same as gym-profile.js)
     const gymData = window.currentGymProfile || {};
     
-    let gymLogo = 'frontend/gymadmin/public/Gym-Wale.png'; // Default fallback
+    let gymLogo = '/gymadmin/public/Gym-Wale.png'; // Default fallback - server serves /gymadmin path
     if (gymData.logoUrl) {
       gymLogo = gymData.logoUrl.startsWith('http') 
         ? gymData.logoUrl 
@@ -589,7 +675,7 @@ class OffersManager {
         </div>
         
         <div class="template-gym-branding">
-          <img src="${gymLogo}" alt="${gymName}" class="gym-logo" onerror="this.src='frontend/gymadmin/public/Gym-Wale.png'">
+          <img src="${gymLogo}" alt="${gymName}" class="gym-logo" onerror="this.src='/gymadmin/public/Gym-Wale.png'">
           <span class="gym-name">${gymName}</span>
         </div>
         
@@ -938,23 +1024,26 @@ class OffersManager {
     
     const campaign = {
       id: backendId,
-      _id: backendId, // For backend compatibility
+      _id: backendId,
       backendId: backendId,
       templateId: template.id,
       title: template.title,
       description: template.description,
       discount: template.discount,
       discountType: template.discountType,
-      discountValue: template.discount, // For gym details compatibility
+      discountValue: template.discount,
+      value: template.discount,
       features: template.features,
       icon: template.icon,
       type: template.type,
       offerType: template.type,
+      templateStyle: template.type,
       
       // Campaign settings
       targetAudience: settings.targetAudience || 'new',
       totalClaimLimit: settings.totalClaimLimit || 100,
-      maxUses: settings.totalClaimLimit || 100, // Backend compatibility
+      maxUses: settings.totalClaimLimit || 100,
+      claimLimit: settings.totalClaimLimit || 100,
       perUserLimit: settings.perUserLimit || 1,
       
       // Status and tracking
@@ -964,20 +1053,25 @@ class OffersManager {
       startDate: new Date().toISOString(),
       endDate: validUntil.toISOString(),
       validUntil: validUntil.toISOString(),
+      expiresAt: validUntil.toISOString(),
       
-      // Usage tracking
+      // Usage tracking - multiple field names for compatibility
       claimsCount: 0,
-      usageCount: 0, // Backend compatibility
+      claimedCount: 0,
+      usageCount: 0,
+      usedCount: 0,
       viewsCount: 0,
-      views: 0, // Backend compatibility
+      views: 0,
       
       // Display settings
       showOnGymProfile: settings.displaySettings?.showOnGymProfile || settings.showOnGymProfile || false,
       showOnHomepage: settings.displaySettings?.showOnHomepage || settings.showOnHomepage || false,
       enableNotifications: settings.displaySettings?.enableNotifications || settings.enableNotifications || false,
+      displayOnProfile: settings.showOnGymProfile || false,
       
       // Gym association
       gymId: this.getGymId(),
+      gym: this.getGymId(),
       
       // Additional metadata
       duration: settings.duration || '30',
@@ -991,8 +1085,11 @@ class OffersManager {
     campaigns.push(campaign);
     localStorage.setItem('activeCampaigns', JSON.stringify(campaigns));
     
-    // Also store in a format compatible with gym details page
+    // Store for gym details compatibility
     this.storeForGymDetails(campaign);
+    
+    // Trigger notification to gym details page
+    this.notifyGymDetailsOfNewOffer();
     
     return campaign;
   }
@@ -1003,28 +1100,39 @@ class OffersManager {
       const gymOffersKey = `gymOffers_${this.getGymId()}`;
       const existingOffers = JSON.parse(localStorage.getItem(gymOffersKey) || '[]');
       
-      // Convert to gym details format
+      // Convert to gym details format with ALL necessary fields
       const gymOffer = {
         _id: campaign.id,
         id: campaign.id,
+        backendId: campaign.backendId || campaign.id, // CRITICAL: Include backendId for filtering!
         title: campaign.title,
         description: campaign.description,
         type: campaign.discountType,
         discountType: campaign.discountType,
-        discountValue: campaign.discount,
-        value: campaign.discount,
-        maxUses: campaign.maxUses,
-        usageCount: campaign.usageCount || 0,
+        discountValue: campaign.discount || campaign.value,
+        value: campaign.discount || campaign.value,
+        maxUses: campaign.maxUses || campaign.claimLimit || 100,
+        claimLimit: campaign.maxUses || campaign.claimLimit || 100,
+        usageCount: campaign.usageCount || campaign.claimedCount || 0,
+        claimedCount: campaign.usageCount || campaign.claimedCount || 0,
         validUntil: campaign.validUntil,
         endDate: campaign.endDate,
+        expiresAt: campaign.validUntil,
         startDate: campaign.startDate,
         status: 'active',
         isActive: true,
+        isTemplate: false, // CRITICAL: Mark as not a template
         gymId: campaign.gymId,
-        features: campaign.features,
+        gym: campaign.gymId,
+        features: campaign.features || [],
         icon: campaign.icon,
-        targetAudience: campaign.targetAudience,
-        showOnGymProfile: campaign.showOnGymProfile
+        templateStyle: campaign.type || campaign.templateStyle,
+        templateId: campaign.templateId, // Include template reference
+        targetAudience: campaign.targetAudience || 'new',
+        showOnGymProfile: campaign.showOnGymProfile || campaign.displayOnProfile || false,
+        displayOnProfile: campaign.showOnGymProfile || campaign.displayOnProfile || false,
+        backgroundImage: campaign.backgroundImage || '',
+        perUserLimit: campaign.perUserLimit || 1
       };
       
       // Add to gym offers if not already present
@@ -1209,22 +1317,59 @@ class OffersManager {
   }
 
   static updateCampaignClaims(offerId) {
+    // Update in activeCampaigns
     const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
-    const campaign = campaigns.find(c => c.id === offerId);
+    const campaignIndex = campaigns.findIndex(c => c.id === offerId || c._id === offerId);
     
-    if (campaign) {
-      campaign.claimsCount = (campaign.claimsCount || 0) + 1;
+    if (campaignIndex >= 0) {
+      campaigns[campaignIndex].claimsCount = (campaigns[campaignIndex].claimsCount || 0) + 1;
+      campaigns[campaignIndex].claimedCount = (campaigns[campaignIndex].claimedCount || 0) + 1;
+      campaigns[campaignIndex].usageCount = (campaigns[campaignIndex].usageCount || 0) + 1;
       localStorage.setItem('activeCampaigns', JSON.stringify(campaigns));
+      console.log('✅ Updated campaign claims in activeCampaigns');
     }
+    
+    // Also update in gymOffers for gym details page
+    const gymId = localStorage.getItem('adminGymId') || localStorage.getItem('gymId');
+    if (gymId) {
+      const gymOffersKey = `gymOffers_${gymId}`;
+      const gymOffers = JSON.parse(localStorage.getItem(gymOffersKey) || '[]');
+      const offerIndex = gymOffers.findIndex(o => o.id === offerId || o._id === offerId);
+      
+      if (offerIndex >= 0) {
+        gymOffers[offerIndex].claimedCount = (gymOffers[offerIndex].claimedCount || 0) + 1;
+        gymOffers[offerIndex].usageCount = (gymOffers[offerIndex].usageCount || 0) + 1;
+        localStorage.setItem(gymOffersKey, JSON.stringify(gymOffers));
+        console.log('✅ Updated offer claims in gymOffers');
+      }
+    }
+    
+    // Dispatch event to notify UI components
+    window.dispatchEvent(new CustomEvent('offerClaimed', { detail: { offerId } }));
   }
 
   static trackOfferView(offerId) {
+    // Update in activeCampaigns
     const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
-    const campaign = campaigns.find(c => c.id === offerId);
+    const campaignIndex = campaigns.findIndex(c => c.id === offerId || c._id === offerId);
     
-    if (campaign) {
-      campaign.viewsCount = (campaign.viewsCount || 0) + 1;
+    if (campaignIndex >= 0) {
+      campaigns[campaignIndex].viewsCount = (campaigns[campaignIndex].viewsCount || 0) + 1;
+      campaigns[campaignIndex].views = (campaigns[campaignIndex].views || 0) + 1;
       localStorage.setItem('activeCampaigns', JSON.stringify(campaigns));
+    }
+    
+    // Also update in gymOffers
+    const gymId = localStorage.getItem('adminGymId') || localStorage.getItem('gymId');
+    if (gymId) {
+      const gymOffersKey = `gymOffers_${gymId}`;
+      const gymOffers = JSON.parse(localStorage.getItem(gymOffersKey) || '[]');
+      const offerIndex = gymOffers.findIndex(o => o.id === offerId || o._id === offerId);
+      
+      if (offerIndex >= 0) {
+        gymOffers[offerIndex].views = (gymOffers[offerIndex].views || 0) + 1;
+        localStorage.setItem(gymOffersKey, JSON.stringify(gymOffers));
+      }
     }
   }
 
@@ -1544,16 +1689,20 @@ class OffersManager {
         </div>
         
         <div class="campaign-actions">
-          <button class="campaign-btn secondary" onclick="offersManager.editCampaign('${offerId}')">
+          <button class="campaign-btn secondary" onclick="offersManager.editCampaign('${offerId}')" title="Edit Campaign">
             <i class="fas fa-edit"></i> Edit
           </button>
           <button class="campaign-btn ${status === 'active' ? 'pause' : 'play'}" 
-                  onclick="offersManager.toggleCampaign('${offerId}')">
+                  onclick="offersManager.toggleCampaign('${offerId}')" 
+                  title="${status === 'active' ? 'Pause Campaign' : 'Resume Campaign'}">
             <i class="fas fa-${status === 'active' ? 'pause' : 'play'}"></i> 
             ${status === 'active' ? 'Pause' : 'Resume'}
           </button>
-          <button class="campaign-btn analytics" onclick="offersManager.viewCampaignAnalytics('${offerId}')">
+          <button class="campaign-btn analytics" onclick="offersManager.viewCampaignAnalytics('${offerId}')" title="View Analytics">
             <i class="fas fa-chart-line"></i> Analytics
+          </button>
+          <button class="campaign-btn danger" onclick="offersManager.deleteCampaign('${offerId}')" title="Delete Campaign">
+            <i class="fas fa-trash"></i> Delete
           </button>
         </div>
       </div>`;
@@ -1570,26 +1719,391 @@ class OffersManager {
     return icons[offerType] || 'tag';
   }
 
-  editCampaign(campaignId) {
+  async editCampaign(campaignId) {
     console.log('Editing campaign:', campaignId);
-    this.showSuccess('Campaign editing feature coming soon!');
+    
+    try {
+      // Get campaign details
+      const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
+      const campaign = campaigns.find(c => c.id === campaignId || c._id === campaignId);
+      
+      if (!campaign) {
+        this.showError('Campaign not found');
+        return;
+      }
+
+      // Show edit modal
+      this.showEditCampaignModal(campaign);
+      
+    } catch (error) {
+      console.error('Error editing campaign:', error);
+      this.showError('Failed to load campaign for editing');
+    }
   }
 
-  toggleCampaign(campaignId) {
-    const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
-    const campaign = campaigns.find(c => c.id === campaignId);
+  showEditCampaignModal(campaign) {
+    const modal = document.createElement('div');
+    modal.className = 'support-modal show';
+    modal.innerHTML = `
+      <div class="support-modal-content large">
+        <div class="support-modal-header">
+          <h3><i class="fas fa-edit"></i> Edit Campaign</h3>
+          <button class="close-modal" onclick="this.closest('.support-modal').remove()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="support-modal-body">
+          <form id="editCampaignForm">
+            <input type="hidden" id="editCampaignId" value="${campaign.id || campaign._id}">
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Campaign Title</label>
+                <input type="text" id="editTitle" value="${campaign.title}" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Description</label>
+                <textarea id="editDescription" rows="3" required>${campaign.description}</textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Discount Type</label>
+                <select id="editDiscountType" required>
+                  <option value="percentage" ${campaign.type === 'percentage' ? 'selected' : ''}>Percentage</option>
+                  <option value="fixed" ${campaign.type === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
+                  <option value="bogo" ${campaign.type === 'bogo' ? 'selected' : ''}>Buy One Get One</option>
+                  <option value="free_trial" ${campaign.type === 'free_trial' ? 'selected' : ''}>Free Trial</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Discount Value</label>
+                <input type="number" id="editDiscountValue" value="${campaign.value}" min="0" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Max Claims</label>
+                <input type="number" id="editMaxClaims" value="${campaign.maxUses || 100}" min="1">
+              </div>
+              
+              <div class="form-group">
+                <label>End Date</label>
+                <input type="date" id="editEndDate" value="${new Date(campaign.endDate).toISOString().split('T')[0]}" required>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="support-modal-footer">
+          <button class="btn-secondary" onclick="this.closest('.support-modal').remove()">
+            Cancel
+          </button>
+          <button class="btn-primary" onclick="offersManager.saveEditedCampaign()">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </div>
+      </div>
+    `;
     
-    if (campaign) {
-      campaign.status = campaign.status === 'active' ? 'paused' : 'active';
+    document.body.appendChild(modal);
+  }
+
+  async saveEditedCampaign() {
+    try {
+      const campaignId = document.getElementById('editCampaignId').value;
+      const title = document.getElementById('editTitle').value;
+      const description = document.getElementById('editDescription').value;
+      const type = document.getElementById('editDiscountType').value;
+      const value = parseFloat(document.getElementById('editDiscountValue').value);
+      const maxUses = parseInt(document.getElementById('editMaxClaims').value);
+      const endDate = document.getElementById('editEndDate').value;
+
+      if (!title || !description || !value || !endDate) {
+        this.showError('Please fill all required fields');
+        return;
+      }
+
+      // Update local storage
+      const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
+      const campaignIndex = campaigns.findIndex(c => (c.id || c._id) === campaignId);
+      
+      if (campaignIndex !== -1) {
+        campaigns[campaignIndex] = {
+          ...campaigns[campaignIndex],
+          title,
+          description,
+          type,
+          value,
+          maxUses,
+          endDate: new Date(endDate),
+          updatedAt: new Date()
+        };
+        
+        localStorage.setItem('activeCampaigns', JSON.stringify(campaigns));
+
+        // Try to update in backend
+        try {
+          const token = this.getAdminToken();
+          const gymId = this.getGymId();
+          
+          if (token && gymId) {
+            const response = await fetch(`http://localhost:5000/api/offers/offers/${campaignId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                title,
+                description,
+                type,
+                value,
+                maxUses,
+                endDate: new Date(endDate),
+                gymId
+              })
+            });
+
+            if (response.ok) {
+              console.log('✅ Campaign updated in backend');
+            }
+          }
+        } catch (backendError) {
+          console.warn('Backend update failed, but local update succeeded:', backendError);
+        }
+
+        // Close modal and refresh
+        document.querySelector('.support-modal')?.remove();
+        await this.loadActiveCampaigns();
+        this.showSuccess('Campaign updated successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving campaign:', error);
+      this.showError('Failed to update campaign');
+    }
+  }
+
+  async toggleCampaign(campaignId) {
+    try {
+      // Get campaign
+      const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
+      const campaign = campaigns.find(c => (c.id || c._id) === campaignId);
+      
+      if (!campaign) {
+        this.showError('Campaign not found');
+        return;
+      }
+
+      const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+      const action = newStatus === 'active' ? 'resume' : 'pause';
+
+      // Update local storage
+      campaign.status = newStatus;
       localStorage.setItem('activeCampaigns', JSON.stringify(campaigns));
-      this.loadActiveCampaigns();
-      this.showSuccess(`Campaign ${campaign.status === 'active' ? 'resumed' : 'paused'} successfully!`);
+
+      // Try to update backend
+      try {
+        const token = this.getAdminToken();
+        if (token) {
+          const response = await fetch(`http://localhost:5000/api/offers/offers/${campaignId}/toggle`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ action })
+          });
+
+          if (response.ok) {
+            console.log(`✅ Campaign ${action}d in backend`);
+          }
+        }
+      } catch (backendError) {
+        console.warn('Backend toggle failed, but local update succeeded:', backendError);
+      }
+
+      // Refresh display
+      await this.loadActiveCampaigns();
+      this.showSuccess(`Campaign ${action}d successfully!`);
+      
+    } catch (error) {
+      console.error('Error toggling campaign:', error);
+      this.showError('Failed to toggle campaign status');
+    }
+  }
+
+  async deleteCampaign(campaignId) {
+    // Use unified confirmation dialog
+    if (typeof window.showConfirmation === 'function') {
+      const confirmed = await window.showConfirmation(
+        'Delete Campaign',
+        'Are you sure you want to delete this campaign? This action cannot be undone.',
+        'Delete',
+        'Cancel'
+      );
+      
+      if (!confirmed) return;
+    } else {
+      // Fallback to standard confirm
+      if (!confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
+        return;
+      }
+    }
+
+    try {
+      // Delete from local storage
+      let campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
+      campaigns = campaigns.filter(c => (c.id || c._id) !== campaignId);
+      localStorage.setItem('activeCampaigns', JSON.stringify(campaigns));
+
+      // Try to delete from backend
+      try {
+        const token = this.getAdminToken();
+        if (token) {
+          const response = await fetch(`http://localhost:5000/api/offers/offers/${campaignId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            console.log('✅ Campaign deleted from backend');
+          }
+        }
+      } catch (backendError) {
+        console.warn('Backend deletion failed, but local deletion succeeded:', backendError);
+      }
+
+      // Refresh display and update counters
+      await this.loadActiveCampaigns();
+      this.updateOffersCountBadge();
+      this.showSuccess('Campaign deleted successfully!');
+      
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      this.showError('Failed to delete campaign');
     }
   }
 
   viewCampaignAnalytics(campaignId) {
     console.log('Viewing analytics for campaign:', campaignId);
-    this.switchTab('analytics');
+    
+    // Get campaign data
+    const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
+    const campaign = campaigns.find(c => (c.id || c._id) === campaignId);
+    
+    if (!campaign) {
+      this.showError('Campaign not found');
+      return;
+    }
+
+    // Show analytics modal
+    this.showCampaignAnalyticsModal(campaign);
+  }
+
+  showCampaignAnalyticsModal(campaign) {
+    const usagePercent = campaign.maxUses ? (campaign.usageCount / campaign.maxUses * 100).toFixed(1) : 0;
+    const daysRemaining = Math.ceil((new Date(campaign.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+    
+    const modal = document.createElement('div');
+    modal.className = 'support-modal show';
+    modal.innerHTML = `
+      <div class="support-modal-content large">
+        <div class="support-modal-header">
+          <h3><i class="fas fa-chart-line"></i> Campaign Analytics: ${campaign.title}</h3>
+          <button class="close-modal" onclick="this.closest('.support-modal').remove()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="support-modal-body">
+          <div class="analytics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #667eea;">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">${campaign.usageCount || 0}</div>
+                <div class="stat-label">Total Claims</div>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #f093fb;">
+                <i class="fas fa-percentage"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">${usagePercent}%</div>
+                <div class="stat-label">Usage Rate</div>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #4facfe;">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">${daysRemaining}</div>
+                <div class="stat-label">Days Remaining</div>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #43e97b;">
+                <i class="fas fa-chart-bar"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">${campaign.status}</div>
+                <div class="stat-label">Status</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-section">
+            <label>Campaign Progress</label>
+            <div class="progress-bar-large" style="height: 30px; background: #f0f0f0; border-radius: 15px; overflow: hidden;">
+              <div style="width: ${usagePercent}%; height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s;"></div>
+            </div>
+            <p style="margin-top: 10px; color: #666;">${campaign.usageCount || 0} of ${campaign.maxUses || 'unlimited'} claims used</p>
+          </div>
+
+          <div class="campaign-details" style="margin-top: 30px;">
+            <h4>Campaign Details</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Discount:</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${campaign.value}${campaign.type === 'percentage' ? '%' : '₹'} OFF</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Type:</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${campaign.type}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Created:</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${new Date(campaign.createdAt).toLocaleDateString()}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Expires:</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${new Date(campaign.endDate).toLocaleDateString()}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="support-modal-footer">
+          <button class="btn-secondary" onclick="this.closest('.support-modal').remove()">
+            Close
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
   }
 
   async loadCoupons() {
@@ -1651,39 +2165,72 @@ class OffersManager {
       const gymId = this.getGymId();
       const adminToken = this.getAdminToken();
       
+      console.log('🔍 Loading coupons - gymId:', gymId, 'hasToken:', !!adminToken);
+      
       if (!adminToken) {
-        console.warn('No admin token found, loading local coupons');
-        return this.getLocalCoupons();
+        console.warn('⚠️ No admin token found - user may need to login');
+        // Return empty array instead of throwing - this is not an error state
+        // The UI will show "No coupons found" which is appropriate
+        return [];
       }
 
-      const response = await fetch(`/api/offers/coupons?gymId=${gymId}`, {
+      if (!gymId) {
+        console.warn('⚠️ No gym ID found');
+        return [];
+      }
+
+      // Use the backend API module if available
+      if (window.CouponBackendAPI) {
+        console.log('📡 Using CouponBackendAPI module');
+        const result = await window.CouponBackendAPI.getCoupons(gymId, adminToken);
+        console.log('✅ Backend API response:', result);
+        return result.coupons || [];
+      }
+
+      // Fallback to direct fetch
+      console.log('🔄 Fetching coupons from backend for gym:', gymId);
+      
+      const apiBaseUrl = window.API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiBaseUrl}/api/offers/coupons?gymId=${gymId}`, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${adminToken}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const backendCoupons = data.coupons || [];
-        
-        // Also get locally claimed coupons (from user claims)
-        const localCoupons = this.getLocalCoupons();
-        
-        // Merge backend and local coupons, prioritizing backend data
-        const allCoupons = [...backendCoupons, ...localCoupons.filter(local => 
-          !backendCoupons.some(backend => backend.code === local.code)
-        )];
-        
-        console.log('✅ All coupons loaded:', allCoupons.length);
-        return allCoupons;
-      } else {
-        console.warn('Failed to load coupons from backend:', response.status);
-        return this.getLocalCoupons();
+      console.log('📥 Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          const errorData = await response.json();
+          console.error('🔒 Authentication error:', errorData);
+          throw new Error('Session expired. Please login again.');
+        } else if (response.status === 404) {
+          console.log('📋 No coupons found for this gym');
+          return [];
+        }
+        throw new Error(`Failed to fetch coupons (${response.status})`);
       }
+
+      const data = await response.json();
+      console.log('✅ Backend coupons loaded:', data);
+      
+      // Handle pagination response
+      if (data.coupons && Array.isArray(data.coupons)) {
+        return data.coupons;
+      }
+      
+      // Handle direct array response
+      if (Array.isArray(data)) {
+        return data;
+      }
+      
+      return [];
+
     } catch (error) {
-      console.error('Error loading coupons from backend:', error);
-      return this.getLocalCoupons();
+      console.error('❌ Error loading coupons from backend:', error);
+      throw error; // Throw to show error in UI
     }
   }
 
@@ -1855,41 +2402,37 @@ class OffersManager {
     try {
       const adminToken = this.getAdminToken();
       if (!adminToken) {
-        console.log('🔄 No admin token, using local stats only');
         return localStats;
       }
 
       const gymId = this.getGymId();
+      const apiBaseUrl = window.API_BASE_URL || 'http://localhost:5000';
       
       // Make this non-blocking - don't wait for backend response
-      fetch('/api/offers/analytics/sync', {
-        method: 'POST',
+      // Note: This endpoint may not exist yet, so we catch errors gracefully and silently
+      fetch(`${apiBaseUrl}/api/offers/stats?gymId=${gymId}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`,
-          'X-Gym-ID': gymId
-        },
-        body: JSON.stringify({
-          localStats,
-          timestamp: new Date().toISOString()
-        })
+          'Authorization': `Bearer ${adminToken}`
+        }
       }).then(response => {
         if (response.ok) {
           return response.json();
         } else {
-          throw new Error(`HTTP ${response.status}`);
+          // Silently ignore - this endpoint might not be implemented yet
+          return null;
         }
       }).then(backendStats => {
-        console.log('🔄 Stats synced with backend:', backendStats);
-        if (backendStats.data) {
+        if (backendStats && backendStats.data) {
           localStorage.setItem('lastBackendSync', new Date().toISOString());
         }
-      }).catch(error => {
-        console.warn('🔄 Backend sync failed (non-blocking):', error.message);
+      }).catch(() => {
+        // Silently fail - this is expected behavior if endpoint doesn't exist
       });
 
     } catch (error) {
-      console.warn('🔄 Backend sync setup failed, using local stats:', error.message);
+      // Silently fail - use local stats only
     }
     
     // Always return local stats immediately
@@ -1922,25 +2465,123 @@ class OffersManager {
       const adminToken = this.getAdminToken();
       
       if (!adminToken) {
-        return this.getDefaultAnalyticsData();
+        return this.calculateLocalAnalytics();
       }
 
-      const response = await fetch(`/api/offers/coupons/analytics?gymId=${gymId}`, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json'
+      // Fetch from multiple endpoints in parallel for comprehensive analytics
+      const [offersResponse, couponsResponse, statsResponse] = await Promise.all([
+        fetch(`http://localhost:5000/api/offers/offers?gymId=${gymId}`, {
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        }),
+        fetch(`http://localhost:5000/api/offers/coupons?gymId=${gymId}`, {
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        }),
+        fetch(`http://localhost:5000/api/offers/offers/stats?gymId=${gymId}`, {
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      ]);
+
+      let analytics = this.getDefaultAnalyticsData();
+      let hasBackendData = false;
+
+      // Merge offers data
+      if (offersResponse.ok) {
+        const offersData = await offersResponse.json();
+        const offers = offersData.offers || [];
+        
+        analytics.totalOffers = offers.length;
+        analytics.activeOffers = offers.filter(o => o.status === 'active').length;
+        
+        // Calculate total claims from offers
+        const totalClaims = offers.reduce((sum, offer) => sum + (offer.usageCount || 0), 0);
+        analytics.totalClaims = totalClaims;
+        
+        hasBackendData = true;
+        console.log('✅ Offers data loaded:', offers.length, 'offers');
+      }
+
+      // Merge coupons data
+      if (couponsResponse.ok) {
+        const couponsData = await couponsResponse.json();
+        const coupons = couponsData.coupons || [];
+        
+        analytics.activeCoupons = coupons.filter(c => c.status === 'active').length;
+        analytics.totalCoupons = coupons.length;
+        analytics.usedCoupons = coupons.filter(c => c.usageCount > 0).length;
+        
+        hasBackendData = true;
+        console.log('✅ Coupons data loaded:', coupons.length, 'coupons');
+      }
+
+      // Merge stats data
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        
+        if (statsData.totalRevenue) {
+          analytics.revenue = statsData.totalRevenue;
         }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Analytics loaded from backend:', data);
-        return data;
-      } else {
-        return this.getDefaultAnalyticsData();
+        if (statsData.totalRedemptions) {
+          analytics.totalRedemptions = statsData.totalRedemptions;
+        }
+        if (statsData.conversionRate) {
+          analytics.conversionRate = statsData.conversionRate;
+        }
+        
+        console.log('✅ Stats data loaded:', statsData);
       }
+
+      // If no backend data, fallback to local calculation
+      if (!hasBackendData) {
+        console.log('⚠️ No backend data, calculating from localStorage');
+        return this.calculateLocalAnalytics();
+      }
+
+      console.log('✅ Comprehensive analytics loaded:', analytics);
+      return analytics;
+
     } catch (error) {
       console.error('Error loading analytics from backend:', error);
+      return this.calculateLocalAnalytics();
+    }
+  }
+
+  // Calculate analytics from localStorage as fallback
+  calculateLocalAnalytics() {
+    try {
+      const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
+      const coupons = JSON.parse(localStorage.getItem('generatedCoupons') || '[]');
+      const claimedOffers = JSON.parse(localStorage.getItem('userClaimedOffers') || '[]');
+
+      const analytics = {
+        totalOffers: campaigns.length,
+        activeOffers: campaigns.filter(c => c.status === 'active').length,
+        totalClaims: campaigns.reduce((sum, c) => sum + (c.usageCount || c.claimsCount || 0), 0),
+        activeCoupons: coupons.filter(c => c.status === 'active').length,
+        totalCoupons: coupons.length,
+        usedCoupons: coupons.filter(c => c.usageCount > 0).length,
+        totalRedemptions: claimedOffers.length,
+        revenue: campaigns.reduce((sum, c) => {
+          const value = c.type === 'percentage' ? 0 : (parseFloat(c.value) || 0);
+          return sum + (value * (c.usageCount || 0));
+        }, 0),
+        conversionRate: campaigns.length > 0 ? 
+          ((claimedOffers.length / campaigns.length) * 100).toFixed(1) : '0.0'
+      };
+
+      console.log('📊 Analytics calculated from localStorage:', analytics);
+      return analytics;
+
+    } catch (error) {
+      console.error('Error calculating local analytics:', error);
       return this.getDefaultAnalyticsData();
     }
   }
@@ -1959,22 +2600,356 @@ class OffersManager {
   }
 
   // Coupon Management Functions
-  editCoupon(couponId) {
-    console.log('Editing coupon:', couponId);
-    this.showSuccess('Coupon editing feature coming soon!');
+  async editCoupon(couponId) {
+    console.log('✏️ Editing coupon:', couponId);
+    
+    try {
+      // Find the coupon
+      const coupon = this.coupons.find(c => c._id === couponId || c.id === couponId);
+      if (!coupon) {
+        this.showError('Coupon not found');
+        return;
+      }
+
+      // Show edit modal with pre-filled data
+      this.showEditCouponModal(coupon);
+      
+    } catch (error) {
+      console.error('Error editing coupon:', error);
+      this.showError('Failed to load coupon for editing');
+    }
   }
 
-  toggleCoupon(couponId) {
-    console.log('Toggling coupon:', couponId);
-    this.showSuccess('Coupon toggled successfully!');
-    this.loadCoupons();
+  showEditCouponModal(coupon) {
+    // Create and show modal with coupon data pre-filled
+    const modal = document.createElement('div');
+    modal.className = 'support-modal show';
+    modal.id = 'editCouponModal';
+    modal.innerHTML = `
+      <div class="support-modal-content large">
+        <div class="support-modal-header">
+          <h3><i class="fas fa-edit"></i> Edit Coupon</h3>
+          <button class="support-modal-close" onclick="offersManager.closeModal('editCouponModal')">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="support-modal-body">
+          <form id="editCouponForm">
+            <input type="hidden" id="editCouponId" value="${coupon._id || coupon.id}">
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Coupon Code</label>
+                <input type="text" id="editCouponCode" value="${coupon.code}" readonly style="background: #f5f5f5;">
+                <small>Code cannot be changed after creation</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="editCouponTitle" value="${coupon.title}" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Description</label>
+                <textarea id="editCouponDescription" rows="3">${coupon.description || ''}</textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Discount Type</label>
+                <select id="editDiscountType" required>
+                  <option value="percentage" ${coupon.discountType === 'percentage' ? 'selected' : ''}>Percentage</option>
+                  <option value="fixed" ${coupon.discountType === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Discount Value</label>
+                <input type="number" id="editDiscountValue" value="${coupon.discountValue}" min="0" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Minimum Amount</label>
+                <input type="number" id="editMinAmount" value="${coupon.minAmount || 0}" min="0">
+              </div>
+              
+              <div class="form-group">
+                <label>Usage Limit</label>
+                <input type="number" id="editUsageLimit" value="${coupon.usageLimit || ''}" placeholder="Unlimited">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Expiry Date</label>
+                <input type="date" id="editExpiryDate" value="${new Date(coupon.expiryDate || coupon.validTill).toISOString().split('T')[0]}" required>
+              </div>
+              
+              <div class="form-group">
+                <label>Status</label>
+                <select id="editCouponStatus" required>
+                  <option value="active" ${coupon.status === 'active' ? 'selected' : ''}>Active</option>
+                  <option value="disabled" ${coupon.status === 'disabled' ? 'selected' : ''}>Disabled</option>
+                  <option value="expired" ${coupon.status === 'expired' ? 'selected' : ''}>Expired</option>
+                </select>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="support-modal-footer">
+          <button class="btn-secondary" onclick="offersManager.closeModal('editCouponModal')">
+            Cancel
+          </button>
+          <button class="btn-primary" onclick="offersManager.saveEditedCoupon()">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
   }
 
-  deleteCoupon(couponId) {
-    if (confirm('Are you sure you want to delete this coupon? This action cannot be undone.')) {
-      console.log('Deleting coupon:', couponId);
-      this.showSuccess('Coupon deleted successfully!');
+  async saveEditedCoupon() {
+    try {
+      const couponId = document.getElementById('editCouponId').value;
+      const updates = {
+        title: document.getElementById('editCouponTitle').value,
+        description: document.getElementById('editCouponDescription').value,
+        discountType: document.getElementById('editDiscountType').value,
+        discountValue: parseFloat(document.getElementById('editDiscountValue').value),
+        minAmount: parseFloat(document.getElementById('editMinAmount').value) || 0,
+        usageLimit: parseInt(document.getElementById('editUsageLimit').value) || null,
+        expiryDate: new Date(document.getElementById('editExpiryDate').value),
+        status: document.getElementById('editCouponStatus').value
+      };
+
+      // Validate required fields
+      if (!updates.title || !updates.discountType || !updates.discountValue) {
+        this.showError('Please fill in all required fields');
+        return;
+      }
+
+      const adminToken = this.getAdminToken();
+      if (!adminToken) {
+        this.showError('Authentication required');
+        return;
+      }
+
+      // Use backend API if available
+      if (window.CouponBackendAPI) {
+        await window.CouponBackendAPI.updateCoupon(couponId, updates, adminToken);
+      } else {
+        // Fallback to direct fetch
+        const apiBaseUrl = window.API_BASE_URL || 'http://localhost:5000';
+        const response = await fetch(`${apiBaseUrl}/api/offers/coupons/${couponId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updates)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to update coupon');
+        }
+      }
+
+      this.showSuccess('Coupon updated successfully!');
+      this.closeModal('editCouponModal');
       this.loadCoupons();
+
+    } catch (error) {
+      console.error('Error updating coupon:', error);
+      this.showError(error.message || 'Failed to update coupon');
+    }
+  }
+
+  async toggleCoupon(couponId) {
+    console.log('🔄 Toggling coupon:', couponId);
+    
+    try {
+      const adminToken = this.getAdminToken();
+      if (!adminToken) {
+        this.showError('Authentication required');
+        return;
+      }
+
+      // Find the coupon to check current status
+      const coupon = this.coupons.find(c => c._id === couponId || c.id === couponId);
+      if (!coupon) {
+        this.showError('Coupon not found');
+        return;
+      }
+
+      // Toggle status
+      const newStatus = coupon.status === 'active' ? 'disabled' : 'active';
+
+      // Use backend API if available
+      if (window.CouponBackendAPI) {
+        await window.CouponBackendAPI.toggleCouponStatus(couponId, newStatus, adminToken);
+      } else {
+        // Fallback to direct fetch
+        const apiBaseUrl = window.API_BASE_URL || 'http://localhost:5000';
+        const response = await fetch(`${apiBaseUrl}/api/offers/coupons/${couponId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            status: newStatus,
+            isActive: newStatus === 'active'
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to toggle coupon');
+        }
+      }
+
+      this.showSuccess(`Coupon ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
+      this.loadCoupons();
+
+    } catch (error) {
+      console.error('Error toggling coupon:', error);
+      this.showError(error.message || 'Failed to toggle coupon status');
+    }
+  }
+
+  async deleteCoupon(couponId) {
+    // Use unified confirmation dialog
+    if (typeof window.showConfirmation === 'function') {
+      const confirmed = await window.showConfirmation(
+        'Delete Coupon',
+        'Are you sure you want to delete this coupon? This action cannot be undone.',
+        'Delete',
+        'Cancel'
+      );
+      
+      if (!confirmed) return;
+    } else {
+      // Fallback to standard confirm
+      if (!confirm('Are you sure you want to delete this coupon? This action cannot be undone.')) {
+        return;
+      }
+    }
+    
+    try {
+      const token = this.getAdminToken();
+      
+      if (token) {
+        // Delete from backend
+        const response = await fetch(`http://localhost:5000/api/offers/coupons/${couponId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          console.log('✅ Coupon deleted from backend');
+        }
+      }
+      
+      // Refresh coupon list and update counters
+      await this.loadCoupons();
+      this.updateOffersCountBadge();
+      this.showSuccess('Coupon deleted successfully!');
+      
+    } catch (error) {
+      console.error('Error deleting coupon:', error);
+      this.showError('Failed to delete coupon');
+    }
+  }
+
+  // Filter coupons by search query
+  filterCoupons(searchQuery) {
+    const query = searchQuery.toLowerCase().trim();
+    const couponsTableBody = document.getElementById('couponsTableBody');
+    
+    if (!couponsTableBody) return;
+
+    // Get all coupon rows
+    const rows = couponsTableBody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      if (query === '' || text.includes(query)) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    // Show empty state if no results
+    const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+    if (visibleRows.length === 0 && query !== '') {
+      couponsTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px;">
+            <div class="empty-state">
+              <i class="fas fa-search" style="font-size: 48px; color: #ccc; margin-bottom: 16px;"></i>
+              <p>No coupons found matching "${searchQuery}"</p>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  // Filter coupons by status
+  filterCouponsByStatus(status) {
+    const couponsTableBody = document.getElementById('couponsTableBody');
+    
+    if (!couponsTableBody) return;
+
+    // If "all" is selected, reload all coupons
+    if (status === 'all') {
+      this.loadCoupons();
+      return;
+    }
+
+    // Get all coupon rows
+    const rows = couponsTableBody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+      const statusBadge = row.querySelector('.status-badge');
+      if (!statusBadge) return;
+      
+      const rowStatus = statusBadge.classList.contains('status-active') ? 'active' : 
+                        statusBadge.classList.contains('status-expired') ? 'expired' : 'disabled';
+      
+      if (rowStatus === status) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    // Show empty state if no results
+    const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+    if (visibleRows.length === 0) {
+      couponsTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px;">
+            <div class="empty-state">
+              <i class="fas fa-filter" style="font-size: 48px; color: #ccc; margin-bottom: 16px;"></i>
+              <p>No ${status} coupons found</p>
+            </div>
+          </td>
+        </tr>
+      `;
     }
   }
 
@@ -2129,32 +3104,24 @@ class OffersManager {
   }
 
   updateOffersCountBadge() {
-    console.log('🔢 Updating offers count badge and stats cards...');
+    // Silently update counters - don't spam console logs
     const campaigns = JSON.parse(localStorage.getItem('activeCampaigns') || '[]');
     const activeCampaigns = campaigns.filter(c => c.status === 'active');
-    console.log('📊 Active campaigns count:', activeCampaigns.length);
     
     // Update campaigns tab counter (existing element in HTML)
     const campaignsTabCounter = document.getElementById('campaignsTabCounter');
     if (campaignsTabCounter) {
       campaignsTabCounter.textContent = activeCampaigns.length;
-      console.log('✅ Updated campaigns tab counter:', activeCampaigns.length);
-    } else {
-      console.error('❌ campaignsTabCounter element not found');
     }
     
     // Update template count - ensure templates are initialized
     if (!this.templates || this.templates.length === 0) {
-      console.log('🔄 Templates not initialized, loading now...');
       this.templates = this.getPreDesignedTemplates();
     }
     const templatesCount = this.templates ? this.templates.length : 6; // Fallback to expected count
     const templatesTabCounter = document.getElementById('templatesTabCounter');
     if (templatesTabCounter) {
       templatesTabCounter.textContent = templatesCount;
-      console.log('✅ Updated templates tab counter:', templatesCount);
-    } else {
-      console.error('❌ templatesTabCounter element not found');
     }
     
     // Update coupons count
@@ -2163,9 +3130,6 @@ class OffersManager {
     const couponsTabCounter = document.getElementById('couponsTabCounter');
     if (couponsTabCounter) {
       couponsTabCounter.textContent = activeCoupons.length;
-      console.log('✅ Updated coupons tab counter:', activeCoupons.length);
-    } else {
-      console.error('❌ couponsTabCounter element not found');
     }
 
     // Update analytics tab counter
@@ -2173,9 +3137,6 @@ class OffersManager {
     if (analyticsTabCounter) {
       const totalClaims = this.calculateTotalClaims();
       analyticsTabCounter.textContent = totalClaims;
-      console.log('✅ Updated analytics tab counter:', totalClaims);
-    } else {
-      console.error('❌ analyticsTabCounter element not found');
     }
     
     // Update stats cards
@@ -2184,7 +3145,7 @@ class OffersManager {
   }
 
   updateStatsDisplay(stats) {
-    console.log('📊 Updating stats display with:', stats);
+    // Silently update stats - don't spam console
     
     // Update stats cards with animation
     const statElements = {
@@ -2199,9 +3160,6 @@ class OffersManager {
       const element = document.getElementById(elementId);
       if (element) {
         this.animateStatCounter(element, value);
-        console.log(`✅ Updated ${elementId} to:`, value);
-      } else {
-        console.warn(`❌ Stats element not found: ${elementId}`);
       }
     });
   }
@@ -2396,10 +3354,101 @@ class OffersManager {
 
   async handleCouponSubmission(event) {
     event.preventDefault();
-    this.showSuccess('Coupon generated successfully!');
-    this.closeModal('couponGenerationModal');
-    this.loadOfferStats();
-    this.switchToTab('coupons');
+    console.log('📝 Coupon form submitted');
+
+    try {
+      const form = event.target;
+      const gymId = this.getGymId();
+      const adminToken = this.getAdminToken();
+
+      if (!gymId || !adminToken) {
+        this.showError('Authentication required. Please login again.');
+        return;
+      }
+
+      // Collect form data
+      const couponData = {
+        code: document.getElementById('couponCodeInput').value.toUpperCase(),
+        title: document.getElementById('couponTitle').value,
+        description: document.getElementById('couponDescription')?.value || '',
+        discountType: document.getElementById('couponType').value,
+        discountValue: parseFloat(document.getElementById('couponValue').value),
+        minAmount: parseFloat(document.getElementById('couponMinPurchase').value) || 0,
+        usageLimit: parseInt(document.getElementById('couponUsageLimit').value) || null,
+        expiryDate: new Date(document.getElementById('couponExpiryDate').value),
+        gymId: gymId,
+        applicableCategories: ['all'], // Default to all categories
+        newUsersOnly: document.getElementById('couponNewUsersOnly')?.checked || false,
+        userUsageLimit: parseInt(document.getElementById('couponUserLimit')?.value) || 1
+      };
+
+      // Validate required fields
+      if (!couponData.code || !couponData.title || !couponData.discountType || !couponData.discountValue) {
+        this.showError('Please fill in all required fields');
+        return;
+      }
+
+      // Show loading state
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        submitBtn.disabled = true;
+      }
+
+      console.log('🚀 Creating coupon:', couponData);
+
+      // Use backend API if available
+      let createdCoupon;
+      if (window.CouponBackendAPI) {
+        createdCoupon = await window.CouponBackendAPI.createCoupon(couponData, adminToken);
+      } else {
+        // Fallback to direct fetch
+        const apiBaseUrl = window.API_BASE_URL || 'http://localhost:5000';
+        const response = await fetch(`${apiBaseUrl}/api/offers/coupons`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(couponData)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to create coupon');
+        }
+
+        const data = await response.json();
+        createdCoupon = data.coupon;
+      }
+
+      console.log('✅ Coupon created successfully:', createdCoupon);
+
+      // Show success message
+      this.showSuccess(`Coupon "${couponData.code}" created successfully!`);
+
+      // Close modal and reset form
+      this.closeModal('couponGenerationModal');
+      form.reset();
+
+      // Reload coupons list
+      await this.loadCoupons();
+
+      // Update counters
+      this.updateOffersCountBadge();
+      this.switchToTab('coupons');
+
+    } catch (error) {
+      console.error('❌ Error creating coupon:', error);
+      this.showError(error.message || 'Failed to create coupon');
+      
+      // Restore submit button
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fas fa-plus"></i> Generate Coupon';
+        submitBtn.disabled = false;
+      }
+    }
   }
 
   generateCouponCode() {
@@ -2422,10 +3471,9 @@ class OffersManager {
 
   // Backend Integration Functions
   async loadOfferTemplates() {
-    console.log('📋 Loading offer templates...');
     const templatesGrid = document.getElementById('templatesGrid');
     if (!templatesGrid) {
-      console.warn('⚠️ Templates grid not found');
+      // Silently skip if DOM not ready - this is normal during tab switching
       return;
     }
 
@@ -2437,26 +3485,19 @@ class OffersManager {
                                currentContent.length < 50;
       
       if (needsLoadingState) {
-        console.log('📋 Showing loading state...');
         templatesGrid.innerHTML = '<div class="loading-state">Loading offer templates...</div>';
       }
 
       // Ensure templates are available
       if (!this.templates || this.templates.length === 0) {
-        console.log('📋 Initializing templates...');
         this.templates = this.getPreDesignedTemplates();
       }
       
-      console.log('📋 Templates available:', this.templates.length);
-      
       // Render templates immediately
       if (this.templates.length === 0) {
-        console.log('📋 No templates, showing create prompt');
         templatesGrid.innerHTML = this.renderCreateOfferPrompt();
       } else {
-        console.log('📋 Rendering templates to grid...');
         templatesGrid.innerHTML = this.templates.map(template => this.createTemplateCard(template)).join('');
-        console.log('✅ Templates rendered successfully');
       }
 
       // Mark templates as loaded
@@ -2824,10 +3865,32 @@ class OffersManager {
     return states[type] || '';
   }
 
-  showSuccess(message) { this.showNotification(message, 'success'); }
-  showError(message) { this.showNotification(message, 'error'); }
+  showSuccess(message) { 
+    // Use unified notification system
+    if (typeof window.showNotification === 'function') {
+      window.showNotification(message, 'success');
+    } else {
+      this.showNotification(message, 'success');
+    }
+  }
+  
+  showError(message) { 
+    // Use unified notification system
+    if (typeof window.showNotification === 'function') {
+      window.showNotification(message, 'error');
+    } else {
+      this.showNotification(message, 'error');
+    }
+  }
 
   showNotification(message, type = 'info') {
+    // Use unified notification system if available
+    if (typeof window.showNotification === 'function') {
+      window.showNotification(message, type);
+      return;
+    }
+    
+    // Fallback to custom notification
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.innerHTML = `<span>${message}</span>`;

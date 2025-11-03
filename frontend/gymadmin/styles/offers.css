@@ -2659,6 +2659,16 @@
   transform: translateY(-1px);
 }
 
+#offersTab .campaign-btn.danger {
+  background: #ff4757;
+  color: white;
+}
+
+#offersTab .campaign-btn.danger:hover {
+  background: #ee5a6f;
+  transform: translateY(-1px);
+}
+
 @media (max-width: 768px) {
   .campaigns-grid {
     grid-template-columns: 1fr;

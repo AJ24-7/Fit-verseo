@@ -23,6 +23,8 @@ const {
 
 // Middleware to verify admin authentication
 const verifyAdminToken = require('../middleware/adminAuth');
+// Middleware for gym admin authentication (compatible with gym tokens)
+const gymadminAuth = require('../middleware/gymadminAuth');
 
 // ==================== OFFER ROUTES ====================
 
@@ -49,17 +51,17 @@ router.get('/offers/valid/:gymId', getValidOffers);
 
 // ==================== COUPON ROUTES ====================
 
-// Get all coupons for a gym (admin)
-router.get('/coupons', verifyAdminToken, getCoupons);
+// Get all coupons for a gym (gym admin - uses gym-compatible auth)
+router.get('/coupons', gymadminAuth, getCoupons);
 
-// Create new coupon (admin)
-router.post('/coupons', verifyAdminToken, createCoupon);
+// Create new coupon (gym admin - uses gym-compatible auth)
+router.post('/coupons', gymadminAuth, createCoupon);
 
-// Update coupon (admin)
-router.put('/coupons/:id', verifyAdminToken, updateCoupon);
+// Update coupon (gym admin - uses gym-compatible auth)
+router.put('/coupons/:id', gymadminAuth, updateCoupon);
 
-// Delete coupon (admin)
-router.delete('/coupons/:id', verifyAdminToken, deleteCoupon);
+// Delete coupon (gym admin - uses gym-compatible auth)
+router.delete('/coupons/:id', gymadminAuth, deleteCoupon);
 
 // Validate coupon (public - for users)
 router.get('/coupons/validate/:code', validateCoupon);
@@ -67,11 +69,11 @@ router.get('/coupons/validate/:code', validateCoupon);
 // Use coupon (public - for users)
 router.post('/coupons/use/:code', useCoupon);
 
-// Get coupon analytics (admin)
-router.get('/coupons/analytics', verifyAdminToken, getCouponAnalytics);
+// Get coupon analytics (gym admin - uses gym-compatible auth)
+router.get('/coupons/analytics', gymadminAuth, getCouponAnalytics);
 
-// Export coupons to CSV (admin)
-router.get('/coupons/export', verifyAdminToken, exportCoupons);
+// Export coupons to CSV (gym admin - uses gym-compatible auth)
+router.get('/coupons/export', gymadminAuth, exportCoupons);
 
 // Public endpoints for frontend display (gym details page)
 router.get('/valid/:gymId', getValidOffersByGym);

@@ -466,8 +466,13 @@ app.use('/api/security', (req, res, next) => {
   next();
 }, securityRoutes);
 
-// Offers and Coupons Management routes
+// Offers and Coupons Management routes (admin access)
 app.use('/api/admin', (req, res, next) => {
+  next();
+}, offersRoutes);
+
+// Offers routes (public access for gym details page)
+app.use('/api/offers', (req, res, next) => {
   next();
 }, offersRoutes);
 

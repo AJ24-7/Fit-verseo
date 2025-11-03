@@ -29,10 +29,9 @@
     <script defer src="modules/settings.js"></script>
     <script defer src="utils/subscription-management.js"></script>
     <script defer src="modules/gym-profile.js"></script>
-    <script defer src="modules/notification-modal.js"></script>
-    <script defer src="modules/notification-system.js"></script>
     <script defer src="modules/support-reviews.js"></script>
     <script defer src="enhanced-support-integration.js"></script>
+    <script defer src="modules/coupon-backend-integration.js"></script>
     <script defer src="modules/attendance.js"></script>
     <script defer src="modules/trial-bookings.js"></script>
     <script defer src="modules/attendance-stats.js"></script>
@@ -46,7 +45,6 @@
     
 </head>
 <body>
-<!-- Hamburger Menu for Mobile (move outside sidebar, just after <body>) -->
 
 <!-- Backdrop for mobile sidebar -->
 <div id="mobileSidebarBackdrop" class="mobile-sidebar-backdrop"></div>
@@ -2336,6 +2334,12 @@
       .trainer-list-item > div:nth-child(3), .trainer-list-item > div:nth-child(4), .trainer-list-item > div:nth-child(5){display:none !important;}
       .trainer-actions{flex-direction:column;align-items:flex-end;}
     }
+    /* Detail drawer content styles */
+    .tm-sub-head{font-size:0.7rem;font-weight:600;color:#546e7a;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px 0;}
+    .tm-field-val{font-size:0.85rem;color:#263238;font-weight:500;}
+    .tm-bio{font-size:0.8rem;color:#455a64;line-height:1.5;background:#f8f9fa;padding:10px 14px;border-radius:8px;border-left:3px solid #1976d2;}
+    .tm-availability{font-size:0.75rem;color:#546e7a;line-height:1.6;}
+    .tm-availability strong{color:#263238;font-weight:600;}
   </style>
 
 
@@ -3402,7 +3406,7 @@
       <h2 class="content-title"><i class="fas fa-play-circle"></i> Active Marketing Campaigns</h2>
       <p>Monitor and manage your currently running offer campaigns</p>
     </div>
-   <div class="support-content-body"></div>
+   <div class="support-content-body">
       <div class="campaigns-list" id="campaignsList">
       <!-- Campaigns will be dynamically loaded here -->
         <div class="loading-template">
@@ -3412,6 +3416,7 @@
       </div>
     </div>
  </div>
+</div>
   <!-- Coupon Management Section -->
   <div id="couponsSection" class="support-section">
   <div class="support-content-container">
@@ -5443,11 +5448,8 @@
    <script src="modules/seven-day-allowance.js"></script>
    <!-- QR Code Generator System -->
    <script src="qr-code-generator.js"></script>
-   <!-- Notification integration with enhanced form handler compatibility -->
-   <script src="notification-integration.js"></script>
-   <!-- Notification Configuration -->
-   <script src="notification-config.js"></script>
    
+  
    <!-- Enhanced Security Info Modal Functions -->
    <script>
    function showChangePasswordModal() {

@@ -821,6 +821,8 @@ exports.claimOffer = async (req, res) => {
     const { offerId } = req.params;
     const { userId, gymId } = req.body;
 
+    console.log('📝 Claim offer request:', { offerId, userId, gymId });
+
     if (!userId) {
       return res.status(400).json({ 
         success: false,
@@ -858,7 +860,7 @@ exports.claimOffer = async (req, res) => {
     const existingCoupon = await Coupon.findOne({
       offerId: offerId,
       userId: userId,
-      status: 'active'
+      status: { $in: ['active', 'used'] }
     });
 
     if (existingCoupon) {
@@ -868,47 +870,75 @@ exports.claimOffer = async (req, res) => {
       });
     }
 
-    // Generate coupon code
+    // Generate unique coupon code
     const couponCode = offer.couponCode || `${offer.type.toUpperCase()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+    // Fetch user details for better tracking
+    const user = await User.findById(userId);
+    const userName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'User';
 
     // Create coupon for user
     const coupon = new Coupon({
       code: couponCode,
-      type: offer.type,
-      value: offer.value,
+      title: offer.title,
+      description: offer.description,
+      discountType: offer.type,
+      discountValue: offer.value,
       minAmount: offer.minAmount || 0,
-      gymId: gymId,
+      gymId: gymId || offer.gymId,
       offerId: offerId,
       userId: userId,
-      validFrom: offer.startDate,
-      validTill: offer.endDate,
+      expiryDate: offer.endDate,
       status: 'active',
-      description: offer.title
+      isActive: true,
+      createdBy: offer.createdBy
     });
 
     await coupon.save();
 
-    // Update offer usage count
-    await Offer.findByIdAndUpdate(offerId, {
-      $inc: { usageCount: 1 }
+    // CRITICAL: Increment offer usage count atomically
+    const updatedOffer = await Offer.findByIdAndUpdate(
+      offerId,
+      { 
+        $inc: { usageCount: 1 },
+        $set: { updatedAt: new Date() }
+      },
+      { new: true }
+    );
+
+    console.log('✅ Offer claimed successfully:', {
+      offerId,
+      userId,
+      userName,
+      couponCode,
+      previousCount: updatedOffer.usageCount - 1,
+      newCount: updatedOffer.usageCount
     });
 
+    // Send success response
     res.json({
       success: true,
       message: 'Offer claimed successfully',
       couponCode: couponCode,
       claimId: coupon._id,
+      usageCount: updatedOffer.usageCount,
+      maxUses: updatedOffer.maxUses,
       coupon: {
+        _id: coupon._id,
         code: couponCode,
-        type: offer.type,
-        value: offer.value,
-        validTill: offer.endDate,
-        description: offer.title
+        title: offer.title,
+        description: offer.description,
+        discountType: offer.type,
+        discountValue: offer.value,
+        minAmount: offer.minAmount,
+        validUntil: offer.endDate,
+        gymName: user?.gymName || 'Gym',
+        status: 'active'
       }
     });
 
   } catch (error) {
-    console.error('Error claiming offer:', error);
+    console.error('❌ Error claiming offer:', error);
     res.status(500).json({ 
       success: false,
       message: 'Failed to claim offer',

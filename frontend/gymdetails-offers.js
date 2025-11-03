@@ -35,11 +35,36 @@ class GymOffersManager {
             this.loadActiveOffers();
         });
 
-        // Setup claim buttons
+        // Setup offers button in hero section to trigger popup
+        const offersBtn = document.getElementById('offers-btn');
+        if (offersBtn) {
+            offersBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.activeOffers.length > 0) {
+                    this.createOffersPopup();
+                } else {
+                    this.showError('No active offers available at the moment.');
+                }
+            });
+        }
+
+        // Setup claim buttons - support both old and new class names
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('claim-offer-btn')) {
-                this.handleOfferClaim(e.target.dataset.offerId);
+            // Handle claim buttons
+            if (e.target.classList.contains('claim-offer-btn') || 
+                e.target.classList.contains('offer-claim-btn') ||
+                e.target.closest('.claim-offer-btn') || 
+                e.target.closest('.offer-claim-btn')) {
+                
+                const button = e.target.closest('.claim-offer-btn') || e.target.closest('.offer-claim-btn') || e.target;
+                const offerId = button.dataset.offerId || button.closest('[data-offer-id]')?.dataset.offerId;
+                
+                if (offerId) {
+                    this.handleOfferClaim(offerId);
+                }
             }
+            
+            // Handle coupon application
             if (e.target.classList.contains('apply-coupon-btn')) {
                 this.handleCouponApplication(e.target.dataset.couponCode);
             }
@@ -47,56 +72,153 @@ class GymOffersManager {
     }
 
     async loadActiveOffers() {
-        if (!this.currentGymId) return;
+        if (!this.currentGymId) {
+            console.warn('⚠️ No gym ID available yet');
+            return;
+        }
 
         try {
+            console.log('🔍 Loading active offers for gym:', this.currentGymId);
+            
             // Show loading state
             this.showOffersLoading();
 
-            let offersFromBackend = [];
             let offersFromLocalStorage = [];
+            let offersFromBackend = [];
 
-            // Try to fetch active offers from backend first
+            // PRIMARY SOURCE: Check localStorage for launched offers (from admin dashboard)
             try {
-                console.log('Loading offers for gym:', this.currentGymId);
+                // DEBUG: Show all gymOffers keys in localStorage
+                console.log('🔍 DEBUG: Checking all localStorage keys...');
+                const allKeys = Object.keys(localStorage);
+                const gymOffersKeys = allKeys.filter(k => k.startsWith('gymOffers_'));
+                console.log('📦 Found gymOffers keys:', gymOffersKeys);
+                if (gymOffersKeys.length > 0) {
+                    gymOffersKeys.forEach(key => {
+                        const offers = JSON.parse(localStorage.getItem(key) || '[]');
+                        console.log(`   ${key}: ${offers.length} offers`);
+                    });
+                }
+                
+                // Also check other gym ID keys
+                console.log('🆔 Gym ID values in localStorage:');
+                console.log('   gymId:', localStorage.getItem('gymId'));
+                console.log('   adminGymId:', localStorage.getItem('adminGymId'));
+                console.log('   currentGymId (this manager):', this.currentGymId);
+                
+                const gymOffersKey = `gymOffers_${this.currentGymId}`;
+                const storedOffers = localStorage.getItem(gymOffersKey);
+                console.log(`📦 Checking localStorage key: ${gymOffersKey}`);
+                
+                if (storedOffers) {
+                    const parsedOffers = JSON.parse(storedOffers);
+                    console.log(`📋 Found ${parsedOffers.length} total offers in localStorage`);
+                    
+                    // CRITICAL: Filter to only show LAUNCHED offers for THIS gym
+                    offersFromLocalStorage = parsedOffers.filter(offer => {
+                        // Check if offer is launched (not a template or draft)
+                        const isLaunched = offer.status === 'active' || offer.status === 'launched';
+                        const isActive = offer.isActive !== false;
+                        
+                        // FIXED: Accept offers that either:
+                        // 1. Have backendId (newly launched offers), OR
+                        // 2. Have id/_id AND are not templates (legacy offers)
+                        const hasIdentifier = offer.backendId || offer._id || offer.id;
+                        const isNotTemplate = offer.isTemplate !== true; // Templates have isTemplate: true
+                        
+                        // Verify it belongs to this gym
+                        const belongsToGym = offer.gymId === this.currentGymId || 
+                                            offer.gym === this.currentGymId;
+                        
+                        // Check expiry
+                        const validUntil = offer.validUntil || offer.endDate || offer.expiresAt;
+                        const isNotExpired = validUntil && new Date(validUntil) > new Date();
+                        
+                        const isValid = isLaunched && isActive && hasIdentifier && isNotTemplate && belongsToGym && isNotExpired;
+                        
+                        if (!isValid) {
+                            console.log(`❌ Filtered out: "${offer.title}" - launched:${isLaunched}, active:${isActive}, hasIdentifier:${hasIdentifier}, notTemplate:${isNotTemplate}, belongsToGym:${belongsToGym}, notExpired:${isNotExpired}`);
+                        } else {
+                            console.log(`✅ Accepted: "${offer.title}" (backendId: ${offer.backendId}, id: ${offer._id || offer.id})`);
+                        }
+                        
+                        return isValid;
+                    });
+                    
+                    console.log(`✅ ${offersFromLocalStorage.length} valid launched offers from localStorage`);
+                    if (offersFromLocalStorage.length > 0) {
+                        console.log('📋 Valid offers:', offersFromLocalStorage.map(o => `"${o.title}" (${o.discountType}: ${o.discountValue})`).join(', '));
+                    }
+                } else {
+                    console.log(`📭 No offers found in localStorage for key: ${gymOffersKey}`);
+                    
+                    // Check if offers exist for OTHER gym IDs
+                    if (gymOffersKeys.length > 0) {
+                        console.log('⚠️ FOUND OFFERS FOR OTHER GYMS!');
+                        console.log('   Current gym ID:', this.currentGymId);
+                        console.log('   Gym IDs with offers:', gymOffersKeys.map(k => k.replace('gymOffers_', '')));
+                        console.log('');
+                        console.log('❌ GYM ID MISMATCH DETECTED!');
+                        console.log('   The offers were launched for a different gym ID.');
+                        console.log('   Make sure the gym ID in the URL matches the admin gym ID.');
+                    } else {
+                        console.log('💡 To add offers: Go to Gym Admin Dashboard → Offers → Launch a template');
+                    }
+                }
+            } catch (localError) {
+                console.error('❌ Error loading from localStorage:', localError);
+            }
+
+            // SECONDARY SOURCE: Try backend (optional, as admin uses localStorage)
+            try {
+                console.log('🌐 Attempting backend fetch...');
                 const response = await fetch(`${this.baseUrl}/offers/gym/${this.currentGymId}/active`);
                 
                 if (response.ok) {
-                    offersFromBackend = await response.json();
-                    console.log('Active offers received from backend:', offersFromBackend.length);
+                    const backendData = await response.json();
+                    offersFromBackend = Array.isArray(backendData) ? backendData : (backendData.offers || []);
+                    console.log(`📡 ${offersFromBackend.length} offers from backend`);
+                } else {
+                    console.log(`⚠️ Backend returned ${response.status} - using localStorage only`);
                 }
             } catch (backendError) {
-                console.warn('Backend fetch failed, checking localStorage:', backendError);
+                console.log('⚠️ Backend not available - using localStorage only:', backendError.message);
             }
 
-            // Also check localStorage for offers (from admin dashboard)
-            try {
-                const gymOffersKey = `gymOffers_${this.currentGymId}`;
-                const localOffers = JSON.parse(localStorage.getItem(gymOffersKey) || '[]');
-                offersFromLocalStorage = localOffers.filter(offer => 
-                    offer.status === 'active' && 
-                    new Date(offer.validUntil) > new Date()
+            // Combine offers: localStorage is primary
+            const combinedOffers = [...offersFromLocalStorage];
+            
+            // Add backend offers that aren't already in localStorage
+            offersFromBackend.forEach(backendOffer => {
+                const existsInLocal = offersFromLocalStorage.some(localOffer => 
+                    localOffer._id === backendOffer._id || 
+                    localOffer.id === backendOffer.id ||
+                    localOffer.backendId === backendOffer._id
                 );
-                console.log('Active offers from localStorage:', offersFromLocalStorage.length);
-            } catch (localError) {
-                console.warn('LocalStorage fetch failed:', localError);
-            }
-
-            // Combine offers from both sources (localStorage takes precedence for same IDs)
-            const combinedOffers = [...offersFromBackend];
-            offersFromLocalStorage.forEach(localOffer => {
-                const existingIndex = combinedOffers.findIndex(o => 
-                    o._id === localOffer._id || o.id === localOffer.id
-                );
-                if (existingIndex >= 0) {
-                    combinedOffers[existingIndex] = localOffer; // LocalStorage takes precedence
-                } else {
-                    combinedOffers.push(localOffer);
+                if (!existsInLocal) {
+                    console.log('➕ Adding backend offer:', backendOffer.title);
+                    combinedOffers.push(backendOffer);
                 }
             });
 
-            this.activeOffers = combinedOffers;
-            console.log('Total active offers loaded:', this.activeOffers.length);
+            // Final validation
+            this.activeOffers = combinedOffers.filter(offer => {
+                const validUntil = offer.validUntil || offer.endDate || offer.expiresAt;
+                const isNotExpired = validUntil && new Date(validUntil) > new Date();
+                const belongsToGym = offer.gymId === this.currentGymId || offer.gym === this.currentGymId;
+                
+                return offer.title && isNotExpired && belongsToGym;
+            });
+            
+            console.log(`🎯 FINAL: ${this.activeOffers.length} valid active offers loaded`);
+            
+            if (this.activeOffers.length === 0) {
+                console.log('💡 NO OFFERS FOUND. To add offers:');
+                console.log('   1. Go to Gym Admin Dashboard');
+                console.log('   2. Click Offers & Coupons');
+                console.log('   3. Go to Templates tab');
+                console.log('   4. Click "Launch Offer" on any template');
+            }
 
             // Update offers tab
             this.updateOffersTab();
@@ -174,55 +296,98 @@ class GymOffersManager {
         const isAlreadyClaimed = this.userOffers.some(userOffer => 
             (userOffer._id === offerId || userOffer.id === offerId)
         );
-        const maxUses = offer.maxUses || 100; // Default if not set
-        const usageCount = offer.usageCount || 0;
+        
+        // Handle multiple field names for compatibility
+        const maxUses = offer.maxUses || offer.claimLimit || 100;
+        const usageCount = offer.usageCount || offer.claimedCount || 0;
         const canClaim = usageCount < maxUses && !isAlreadyClaimed;
 
         const card = document.createElement('div');
-        card.className = 'tab-offer-card';
-        card.dataset.offerId = offerId;
-
-        // Determine discount display based on offer type
+        
+        // Determine discount display and type
         let discountDisplay = 'Special Offer';
-        if (offer.type === 'percentage') {
-            discountDisplay = `${offer.value}% OFF`;
-        } else if (offer.type === 'fixed') {
-            discountDisplay = `₹${offer.value} OFF`;
-        } else if (offer.type === 'free_trial') {
+        let discountBadge = '';
+        const offerType = offer.type || offer.discountType || 'default';
+        const offerValue = offer.value || offer.discountValue || 0;
+        
+        if (offerType === 'percentage') {
+            discountDisplay = `${offerValue}% OFF`;
+            discountBadge = `${offerValue}%`;
+        } else if (offerType === 'fixed') {
+            discountDisplay = `₹${offerValue} OFF`;
+            discountBadge = `₹${offerValue}`;
+        } else if (offerType === 'free_trial') {
             discountDisplay = 'FREE TRIAL';
+            discountBadge = 'FREE';
         }
 
-        // Use template style if available, otherwise default
-        const templateStyle = offer.templateId || 'default';
-        const backgroundImage = offer.backgroundImage || '';
+        // Use template style if available
+        const templateType = offer.templateId || offer.templateStyle || 'default';
+        const templateIcon = offer.icon || 'fas fa-gift';
+        const duration = offer.duration || 'Limited Time';
+        
+        // Get gym details for branding
+        const gymName = localStorage.getItem('gymName') || offer.gymName || 'Gym';
+        const gymLogo = localStorage.getItem('gymLogo') || 'public/Gym-Wale.png';
+        
+        // Build features list
+        const features = offer.features || ['Special discount', 'Limited time offer', 'For all members'];
+        const featuresHTML = features.slice(0, 3).map(f => `<li><i class="fas fa-check"></i>${f}</li>`).join('');
+
+        card.className = `enhanced-offer-card ${templateType}`;
+        card.dataset.offerId = offerId;
 
         card.innerHTML = `
-            <div class="tab-offer-header ${templateStyle}" style="background-image: url('${backgroundImage}')">
-                <h4 class="tab-offer-title">${offer.title}</h4>
+            <div class="offer-background-animation">
+                <div class="animated-particles"></div>
+                <div class="gradient-overlay"></div>
             </div>
-            <div class="tab-offer-body">
-                <p class="tab-offer-description">${offer.description}</p>
-                <div class="tab-offer-meta">
-                    <span class="tab-offer-discount">${discountDisplay}</span>
-                    <span class="tab-offer-validity">Until: ${new Date(offer.endDate).toLocaleDateString()}</span>
+            
+            <div class="offer-gym-branding">
+                <img src="${gymLogo}" alt="${gymName}" class="gym-logo" onerror="this.src='public/Gym-Wale.png'">
+                <span class="gym-name">${gymName}</span>
+            </div>
+            
+            <div class="offer-header">
+                <div class="offer-icon-container">
+                    <div class="offer-icon"><i class="${templateIcon}"></i></div>
+                    <div class="offer-badge">${discountBadge} OFF</div>
                 </div>
-                <div class="tab-offer-progress">
-                    <div class="tab-progress-bar">
-                        <div class="tab-progress-fill" style="width: ${(usageCount / maxUses) * 100}%"></div>
-                    </div>
-                    <span class="tab-progress-text">${usageCount}/${maxUses} claimed</span>
-                </div>
-                <div class="tab-offer-action">
-                    ${canClaim ? 
-                        `<button class="tab-claim-btn claim-offer-btn" data-offer-id="${offerId}">
-                            <i class="fas fa-gift"></i> Claim Offer
-                        </button>` :
-                        `<button class="tab-claimed-btn" disabled>
-                            <i class="fas fa-check"></i> ${isAlreadyClaimed ? 'Already Claimed' : 'Limit Reached'}
-                        </button>`
-                    }
+                <h3 class="offer-title">${offer.title}</h3>
+                <p class="offer-description">${offer.description}</p>
+                <div class="offer-duration">
+                    <i class="fas fa-clock"></i> ${duration}
                 </div>
             </div>
+            
+            <div class="offer-features">
+                <div class="features-title">What's Included:</div>
+                <ul>${featuresHTML}</ul>
+            </div>
+            
+            <div class="offer-meta">
+                <div class="offer-discount-display">
+                    <i class="fas fa-tag"></i>
+                    <span class="discount-text">${discountDisplay}</span>
+                </div>
+                <div class="offer-validity-display">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span class="validity-text">Until ${new Date(offer.endDate || offer.validUntil).toLocaleDateString()}</span>
+                </div>
+            </div>
+            
+            <div class="offer-actions">
+                ${canClaim ? 
+                    `<button class="offer-claim-btn glow claim-offer-btn" data-offer-id="${offerId}">
+                        <i class="fas fa-gift"></i> Claim Offer
+                    </button>` :
+                    `<button class="offer-claimed-btn" disabled>
+                        <i class="fas fa-check"></i> ${isAlreadyClaimed ? 'Already Claimed' : 'Limit Reached'}
+                    </button>`
+                }
+            </div>
+            
+            <div class="offer-corner-decoration"></div>
         `;
 
         return card;
@@ -232,65 +397,230 @@ class GymOffersManager {
         const claimedListEl = document.getElementById('claimed-offers-list');
         if (!claimedListEl) return;
 
-        const gymCoupons = this.userCoupons.filter(coupon => 
-            coupon.status === 'active' && 
-            new Date(coupon.validUntil) > new Date() &&
+        const now = new Date();
+        
+        // Get all coupons for this gym
+        const allGymCoupons = this.userCoupons.filter(coupon => 
             coupon.gymId === this.currentGymId
+        );
+        
+        // Separate active and expired coupons
+        const activeCoupons = allGymCoupons.filter(coupon => 
+            coupon.status === 'active' && 
+            new Date(coupon.validUntil) > now &&
+            !coupon.used
+        );
+        
+        const usedCoupons = allGymCoupons.filter(coupon => coupon.used);
+        const expiredCoupons = allGymCoupons.filter(coupon => 
+            new Date(coupon.validUntil) <= now && !coupon.used
         );
 
         // Clear existing content
         claimedListEl.innerHTML = '';
 
-        if (gymCoupons.length === 0) {
+        if (allGymCoupons.length === 0) {
             claimedListEl.innerHTML = `
                 <div class="no-claimed-offers">
-                    <i class="fas fa-inbox"></i>
-                    <p>You haven't claimed any offers yet.</p>
-                    <p>Browse available offers above to start saving!</p>
+                    <i class="fas fa-ticket-alt"></i>
+                    <h4>No Coupons Yet</h4>
+                    <p>Claim an offer above to get your exclusive coupon code!</p>
                 </div>
             `;
             return;
         }
 
-        gymCoupons.forEach(coupon => {
-            const claimedItem = document.createElement('div');
-            claimedItem.className = 'claimed-offer-item';
-            claimedItem.innerHTML = `
-                <div class="claimed-offer-header">
-                    <h4 class="claimed-offer-title">
-                        ${coupon.discountType === 'percentage' ? coupon.discountValue + '% OFF' : 'FREE SERVICE'}
-                    </h4>
-                    <span class="claimed-offer-status">Active</span>
+        // Active Coupons Section
+        if (activeCoupons.length > 0) {
+            const activeSection = document.createElement('div');
+            activeSection.className = 'coupons-section active-section';
+            activeSection.innerHTML = `
+                <h4 class="section-title">
+                    <i class="fas fa-ticket-alt"></i>
+                    Active Coupons (${activeCoupons.length})
+                </h4>
+                <div class="coupons-grid" id="active-coupons-grid"></div>
+            `;
+            claimedListEl.appendChild(activeSection);
+            
+            const activeGrid = activeSection.querySelector('#active-coupons-grid');
+            activeCoupons.forEach(coupon => {
+                activeGrid.appendChild(this.createCouponCard(coupon, 'active'));
+            });
+        }
+        
+        // Used Coupons Section
+        if (usedCoupons.length > 0) {
+            const usedSection = document.createElement('div');
+            usedSection.className = 'coupons-section used-section';
+            usedSection.innerHTML = `
+                <h4 class="section-title">
+                    <i class="fas fa-check-circle"></i>
+                    Used Coupons (${usedCoupons.length})
+                </h4>
+                <div class="coupons-grid" id="used-coupons-grid"></div>
+            `;
+            claimedListEl.appendChild(usedSection);
+            
+            const usedGrid = usedSection.querySelector('#used-coupons-grid');
+            usedCoupons.forEach(coupon => {
+                usedGrid.appendChild(this.createCouponCard(coupon, 'used'));
+            });
+        }
+        
+        // Expired Coupons Section
+        if (expiredCoupons.length > 0) {
+            const expiredSection = document.createElement('div');
+            expiredSection.className = 'coupons-section expired-section';
+            expiredSection.innerHTML = `
+                <h4 class="section-title">
+                    <i class="fas fa-clock"></i>
+                    Expired Coupons (${expiredCoupons.length})
+                </h4>
+                <div class="coupons-grid" id="expired-coupons-grid"></div>
+            `;
+            claimedListEl.appendChild(expiredSection);
+            
+            const expiredGrid = expiredSection.querySelector('#expired-coupons-grid');
+            expiredCoupons.forEach(coupon => {
+                expiredGrid.appendChild(this.createCouponCard(coupon, 'expired'));
+            });
+        }
+    }
+    
+    createCouponCard(coupon, status) {
+        const couponCard = document.createElement('div');
+        couponCard.className = `coupon-card ${status}`;
+        
+        const now = new Date();
+        const validUntil = new Date(coupon.validUntil);
+        const daysLeft = Math.ceil((validUntil - now) / (1000 * 60 * 60 * 24));
+        const isExpiringSoon = daysLeft <= 7 && daysLeft > 0;
+        
+        let discountText = '';
+        if (coupon.discountType === 'percentage') {
+            discountText = `${coupon.discountValue}% OFF`;
+        } else if (coupon.discountType === 'fixed') {
+            discountText = `₹${coupon.discountValue} OFF`;
+        } else {
+            discountText = 'Special Discount';
+        }
+        
+        let statusBadgeHTML = '';
+        if (status === 'active') {
+            statusBadgeHTML = isExpiringSoon 
+                ? `<span class="coupon-status expiring"><i class="fas fa-exclamation-triangle"></i> Expiring Soon</span>`
+                : `<span class="coupon-status active"><i class="fas fa-check-circle"></i> Active</span>`;
+        } else if (status === 'used') {
+            statusBadgeHTML = `<span class="coupon-status used"><i class="fas fa-check-double"></i> Used</span>`;
+        } else {
+            statusBadgeHTML = `<span class="coupon-status expired"><i class="fas fa-times-circle"></i> Expired</span>`;
+        }
+        
+        couponCard.innerHTML = `
+            <div class="coupon-card-header">
+                <h5 class="coupon-title">${coupon.offerTitle}</h5>
+                ${statusBadgeHTML}
+            </div>
+            
+            <div class="coupon-code-box">
+                <label>Coupon Code</label>
+                <div class="code-display">
+                    <span class="code">${coupon.code}</span>
+                    ${status === 'active' ? `
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${coupon.code}'); this.innerHTML='<i class=\\'fas fa-check\\'></i>'; setTimeout(() => this.innerHTML='<i class=\\'fas fa-copy\\'></i>', 2000);">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    ` : ''}
                 </div>
-                <div class="claimed-offer-coupon">${coupon.code}</div>
-                <div class="claimed-offer-details">
-                    <span>Valid until: ${new Date(coupon.validUntil).toLocaleDateString()}</span>
-                    <button class="apply-coupon-btn" data-coupon-code="${coupon.code}" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8rem;">
-                        Apply Now
+            </div>
+            
+            <div class="coupon-details-grid">
+                <div class="detail-item">
+                    <i class="fas fa-tag"></i>
+                    <div>
+                        <span class="detail-label">Discount</span>
+                        <span class="detail-value">${discountText}</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <div>
+                        <span class="detail-label">${status === 'expired' ? 'Expired On' : status === 'used' ? 'Used On' : 'Valid Until'}</span>
+                        <span class="detail-value">${status === 'used' && coupon.usedAt ? new Date(coupon.usedAt).toLocaleDateString('en-IN') : validUntil.toLocaleDateString('en-IN')}</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-dumbbell"></i>
+                    <div>
+                        <span class="detail-label">Gym</span>
+                        <span class="detail-value">${coupon.gymName || 'Gym'}</span>
+                    </div>
+                </div>
+                ${status === 'active' && isExpiringSoon ? `
+                <div class="detail-item warning">
+                    <i class="fas fa-hourglass-half"></i>
+                    <div>
+                        <span class="detail-label">Days Left</span>
+                        <span class="detail-value expiring">${daysLeft} day${daysLeft !== 1 ? 's' : ''}</span>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            
+            ${status === 'active' ? `
+                <div class="coupon-actions">
+                    <button class="apply-coupon-btn" onclick="gymOffersManager.applyCouponToMembership('${coupon.code}')">
+                        <i class="fas fa-check"></i> Use This Coupon
                     </button>
                 </div>
-            `;
-            claimedListEl.appendChild(claimedItem);
-        });
+            ` : ''}
+        `;
+        
+        return couponCard;
+    }
+    
+    applyCouponToMembership(couponCode) {
+        // Store the selected coupon code for membership purchase
+        localStorage.setItem('selectedCouponCode', couponCode);
+        
+        // Show confirmation message
+        const message = document.createElement('div');
+        message.className = 'coupon-selected-toast show';
+        message.innerHTML = `
+            <div class="toast-content">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <h5>Coupon Selected!</h5>
+                    <p>Code <strong>${couponCode}</strong> will be applied at checkout</p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(message);
+        
+        setTimeout(() => {
+            message.remove();
+        }, 3000);
+        
+        // Scroll to membership plans section if available
+        const membershipSection = document.getElementById('membership-plans');
+        if (membershipSection) {
+            membershipSection.scrollIntoView({ behavior: 'smooth' });
+        }
     }
 
     showOffersPopup() {
-        if (this.activeOffers.length === 0) return;
-
-        // Check if user has already seen offers for this gym today
-        const lastShown = localStorage.getItem(`offersShown_${this.currentGymId}`);
-        const today = new Date().toDateString();
-        
-        if (lastShown === today) {
-            console.log('Offers already shown today for this gym');
+        if (this.activeOffers.length === 0) {
+            console.log('No active offers to show');
             return;
         }
 
+        // ALWAYS show popup on gym profile page load
+        // Remove the "shown today" check to ensure popup appears every time
+        console.log('Showing offers popup with', this.activeOffers.length, 'offers');
+        
         // Create and show offers popup
         this.createOffersPopup();
-        
-        // Mark as shown today
-        localStorage.setItem(`offersShown_${this.currentGymId}`, today);
     }
 
     createOffersPopup() {
@@ -304,23 +634,30 @@ class GymOffersManager {
         popup.id = 'gym-offers-popup';
         popup.className = 'gym-offers-popup';
         popup.innerHTML = `
-            <div class="offers-popup-overlay" onclick="this.parentElement.remove()"></div>
+            <div class="offers-popup-overlay"></div>
             <div class="offers-popup-content">
                 <div class="offers-popup-header">
-                    <h3>🎉 Exclusive Offers Available!</h3>
-                    <button class="close-popup-btn" onclick="this.closest('.gym-offers-popup').remove()">
+                    <div class="popup-header-icon">
+                        <i class="fas fa-gift"></i>
+                    </div>
+                    <h3>Exclusive Offers Available!</h3>
+                    <button class="close-popup-btn" aria-label="Close">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div class="offers-carousel">
-                    ${this.renderOfferCards()}
+                <div class="offers-carousel-container">
+                    <div class="offers-carousel">
+                        ${this.renderOfferCards()}
+                    </div>
                 </div>
                 <div class="offers-popup-footer">
-                    <button class="view-all-offers-btn" onclick="gymOffersManager.showAllOffersModal()">
-                        View All Offers
+                    <button class="view-all-offers-btn">
+                        <i class="fas fa-th-large"></i>
+                        <span>View All Offers</span>
                     </button>
-                    <button class="maybe-later-btn" onclick="this.closest('.gym-offers-popup').remove()">
-                        Maybe Later
+                    <button class="btn-secondary">
+                        <i class="fas fa-clock"></i>
+                        <span>Maybe Later</span>
                     </button>
                 </div>
             </div>
@@ -328,46 +665,138 @@ class GymOffersManager {
 
         document.body.appendChild(popup);
 
+        // Setup event listeners
+        const overlay = popup.querySelector('.offers-popup-overlay');
+        const closeBtn = popup.querySelector('.close-popup-btn');
+        const viewAllBtn = popup.querySelector('.view-all-offers-btn');
+        const laterBtn = popup.querySelector('.btn-secondary');
+
+        if (overlay) overlay.addEventListener('click', () => this.closeOffersPopup());
+        if (closeBtn) closeBtn.addEventListener('click', () => this.closeOffersPopup());
+        if (viewAllBtn) viewAllBtn.addEventListener('click', () => {
+            this.closeOffersPopup();
+            this.showAllOffersModal();
+        });
+        if (laterBtn) laterBtn.addEventListener('click', () => this.closeOffersPopup());
+
         // Animate in
         setTimeout(() => {
             popup.classList.add('show');
         }, 100);
     }
 
+    closeOffersPopup() {
+        const popup = document.getElementById('gym-offers-popup');
+        if (popup) {
+            popup.classList.remove('show');
+            setTimeout(() => popup.remove(), 300);
+        }
+    }
+
     renderOfferCards() {
-        return this.activeOffers.slice(0, 3).map(offer => {
-            const isAlreadyClaimed = this.userOffers.some(userOffer => userOffer.id === offer.id);
-            const canClaim = offer.claimedCount < offer.claimLimit && !isAlreadyClaimed;
+        if (!this.activeOffers || this.activeOffers.length === 0) {
+            return `
+                <div class="offers-carousel-empty">
+                    <i class="fas fa-gift"></i>
+                    <h4>No Active Offers</h4>
+                    <p>Check back soon for exciting deals and discounts!</p>
+                </div>
+            `;
+        }
+
+        return this.activeOffers.slice(0, 6).map(offer => {
+            const offerId = offer._id || offer.id;
+            const isAlreadyClaimed = this.userOffers.some(userOffer => 
+                (userOffer._id === offerId || userOffer.id === offerId)
+            );
+            
+            const maxUses = offer.maxUses || offer.claimLimit || 100;
+            const usageCount = offer.usageCount || offer.claimedCount || 0;
+            const canClaim = usageCount < maxUses && !isAlreadyClaimed;
+            
+            const offerType = offer.type || offer.discountType;
+            const offerValue = offer.value || offer.discountValue || 20;
+            const validDate = offer.validUntil || offer.endDate || offer.expiresAt;
+            
+            // Discount display for badge
+            let discountBadge = '';
+            let discountDisplay = 'Special Offer';
+            if (offerType === 'percentage') {
+                discountBadge = `${offerValue}%`;
+                discountDisplay = `${offerValue}% OFF`;
+            } else if (offerType === 'fixed') {
+                discountBadge = `₹${offerValue}`;
+                discountDisplay = `₹${offerValue} OFF`;
+            } else if (offerType === 'free_trial') {
+                discountBadge = 'FREE';
+                discountDisplay = 'FREE TRIAL';
+            }
+
+            // Template styling
+            const templateType = offer.templateId || offer.templateStyle || 'default';
+            const templateIcon = offer.icon || 'fas fa-gift';
+            const duration = offer.duration || 'Limited Time';
+            
+            // Get gym details for branding
+            const gymName = localStorage.getItem('gymName') || offer.gymName || 'Gym';
+            const gymLogo = localStorage.getItem('gymLogo') || 'public/Gym-Wale.png';
+            
+            // Build features list
+            const features = offer.features || ['Special discount', 'Limited time offer', 'For all members'];
+            const featuresHTML = features.slice(0, 3).map(f => `<li><i class="fas fa-check"></i>${f}</li>`).join('');
 
             return `
-                <div class="offer-card ${offer.templateStyle}" data-offer-id="${offer.id}">
-                    <div class="offer-background" style="background-image: url('${offer.backgroundImage}')"></div>
-                    <div class="offer-content">
-                        <h4>${offer.title}</h4>
-                        <p>${offer.description}</p>
-                        <div class="offer-details">
-                            <span class="discount-badge">
-                                ${offer.discountType === 'percentage' ? offer.discountValue + '% OFF' : 'FREE SERVICE'}
-                            </span>
-                            <span class="validity">Valid until: ${new Date(offer.validUntil).toLocaleDateString()}</span>
+                <div class="offer-card enhanced-popup-offer ${templateType}" data-offer-id="${offerId}">
+                    <div class="offer-background-animation">
+                        <div class="animated-particles"></div>
+                        <div class="gradient-overlay"></div>
+                    </div>
+                    
+                    <div class="offer-gym-branding">
+                        <img src="${gymLogo}" alt="${gymName}" class="gym-logo" onerror="this.src='public/Gym-Wale.png'">
+                        <span class="gym-name">${gymName}</span>
+                    </div>
+                    
+                    <div class="offer-header">
+                        <div class="offer-icon-container">
+                            <div class="offer-icon"><i class="${templateIcon}"></i></div>
+                            <div class="offer-badge">${discountBadge} OFF</div>
                         </div>
-                        <div class="offer-actions">
-                            ${canClaim ? 
-                                `<button class="claim-offer-btn" data-offer-id="${offer.id}">
-                                    <i class="fas fa-gift"></i> Claim Offer
-                                </button>` :
-                                `<button class="already-claimed-btn" disabled>
-                                    <i class="fas fa-check"></i> ${isAlreadyClaimed ? 'Already Claimed' : 'Limit Reached'}
-                                </button>`
-                            }
-                        </div>
-                        <div class="claim-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${(offer.claimedCount / offer.claimLimit) * 100}%"></div>
-                            </div>
-                            <span class="claim-count">${offer.claimedCount}/${offer.claimLimit} claimed</span>
+                        <h3 class="offer-title">${offer.title}</h3>
+                        <p class="offer-description">${offer.description}</p>
+                        <div class="offer-duration">
+                            <i class="fas fa-clock"></i> ${duration}
                         </div>
                     </div>
+                    
+                    <div class="offer-features">
+                        <div class="features-title">What's Included:</div>
+                        <ul>${featuresHTML}</ul>
+                    </div>
+                    
+                    <div class="offer-metadata">
+                        <div class="offer-discount">
+                            <i class="fas fa-tag"></i>
+                            <span>${discountDisplay}</span>
+                        </div>
+                        <div class="offer-validity">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Until ${new Date(validDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="offer-action">
+                        ${canClaim ? 
+                            `<button class="offer-claim-btn glow claim-offer-btn" data-offer-id="${offerId}">
+                                <i class="fas fa-gift"></i> Claim Offer
+                            </button>` :
+                            `<button class="offer-claimed-btn" disabled>
+                                <i class="fas fa-check-circle"></i> ${isAlreadyClaimed ? 'Already Claimed' : 'Limit Reached'}
+                            </button>`
+                        }
+                    </div>
+                    
+                    <div class="offer-corner-decoration"></div>
                 </div>
             `;
         }).join('');
@@ -377,80 +806,273 @@ class GymOffersManager {
         const offer = this.activeOffers.find(o => o._id === offerId || o.id === offerId);
         if (!offer) {
             console.error('Offer not found:', offerId);
+            this.showError('Offer not found. Please refresh and try again.');
             return;
         }
 
         try {
-            // Get user token (if user is logged in)
-            const userToken = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
+            // Check multiple authentication sources
+            const userToken = localStorage.getItem('token') || localStorage.getItem('userToken');
+            const userId = localStorage.getItem('userId') || localStorage.getItem('user_id');
+            const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('email');
+            const userName = localStorage.getItem('userName') || localStorage.getItem('name');
+            
+            console.log('🔐 Auth Check:', {
+                hasToken: !!userToken,
+                hasUserId: !!userId,
+                hasEmail: !!userEmail,
+                userName: userName
+            });
 
-            if (!userToken || !userId) {
-                alert('Please login to claim offers');
+            // Verify user is logged in with proper credentials
+            if (!userToken && !userId) {
+                console.warn('❌ No authentication found, showing login prompt');
+                this.showLoginPrompt();
+                return;
+            }
+            
+            // If we have userId but no token, user might be logged in but without token
+            // Allow local claim in this case
+            if (!userToken && userId) {
+                console.warn('⚠️ User ID found but no token - will process locally');
+            }
+
+            // Check if already claimed
+            const isAlreadyClaimed = this.userOffers.some(userOffer => 
+                (userOffer._id === offerId || userOffer.id === offerId)
+            );
+
+            if (isAlreadyClaimed) {
+                this.showError('You have already claimed this offer!');
                 return;
             }
 
-            // Claim via backend
-            const response = await fetch(`${this.baseUrl}/offers/${offerId}/claim`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`
-                },
-                body: JSON.stringify({
-                    userId: userId,
-                    gymId: this.currentGymId
-                })
+            // Show loading state on all claim buttons for this offer
+            const claimBtns = document.querySelectorAll(`[data-offer-id="${offerId}"]`);
+            claimBtns.forEach(btn => {
+                if (btn.classList.contains('claim-offer-btn') || btn.classList.contains('offer-claim-btn')) {
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Claiming...</span>';
+                    btn.disabled = true;
+                }
             });
 
-            if (response.ok) {
-                const result = await response.json();
-                this.processClaim(offer, result.couponCode);
+            // Try to claim via backend with proper error handling
+            let couponCode = null;
+            let backendSuccess = false;
+            
+            // Only attempt backend claim if we have a token
+            if (userToken && userId) {
+                try {
+                    console.log('🌐 Attempting backend claim for offer:', offerId);
+                    
+                    const response = await fetch(`${this.baseUrl}/offers/${offerId}/claim`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${userToken}`
+                        },
+                        body: JSON.stringify({
+                            userId: userId,
+                            gymId: this.currentGymId,
+                            offerId: offerId
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        couponCode = result.couponCode || result.code;
+                        backendSuccess = true;
+                        console.log('✅ Backend claim successful:', result);
+                    } else if (response.status === 401 || response.status === 403) {
+                        console.warn('⚠️ Authentication failed - will process locally');
+                        // Don't show login prompt, just process locally
+                    } else {
+                        const errorData = await response.json().catch(() => ({}));
+                        console.warn('⚠️ Backend claim failed:', response.status, errorData.message);
+                    }
+                } catch (backendError) {
+                    console.warn('⚠️ Backend error:', backendError.message);
+                }
             } else {
-                const error = await response.json();
-                console.error('Failed to claim offer:', error);
-                alert(error.message || 'Failed to claim offer. Please try again.');
+                console.log('ℹ️ No token available, processing claim locally');
             }
+
+            // Process claim (backend coupon code or generate new one)
+            // This works even if backend fails
+            this.processClaim(offer, couponCode, backendSuccess);
+
         } catch (error) {
-            console.error('Error claiming offer:', error);
-            alert('Failed to claim offer. Please check your connection and try again.');
+            console.error('❌ Error claiming offer:', error);
+            this.showError(error.message || 'Failed to claim offer. Please try again.');
+            
+            // Reset all claim buttons for this offer
+            const claimBtns = document.querySelectorAll(`[data-offer-id="${offerId}"]`);
+            claimBtns.forEach(btn => {
+                if (btn.classList.contains('claim-offer-btn') || btn.classList.contains('offer-claim-btn')) {
+                    btn.innerHTML = '<i class="fas fa-gift"></i> <span>Claim Offer</span>';
+                    btn.disabled = false;
+                    btn.classList.remove('loading');
+                }
+            });
         }
     }
 
-    processClaim(offer, couponCode = null) {
+    showLoginPrompt() {
+        const loginModal = document.createElement('div');
+        loginModal.className = 'login-prompt-modal show';
+        loginModal.innerHTML = `
+            <div class="login-prompt-overlay" onclick="this.parentElement.remove()"></div>
+            <div class="login-prompt-content">
+                <div class="login-prompt-icon">
+                    <i class="fas fa-user-lock"></i>
+                </div>
+                <h3>🔐 Login Required</h3>
+                <p>Please login to your account to claim this exclusive offer and unlock amazing benefits!</p>
+                <div class="login-benefits">
+                    <div class="benefit-item">
+                        <i class="fas fa-gift"></i>
+                        <span>Claim exclusive offers</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span>Get discount coupons</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="fas fa-star"></i>
+                        <span>Track your benefits</span>
+                    </div>
+                </div>
+                <div class="login-prompt-actions">
+                    <button class="btn-cancel" onclick="this.closest('.login-prompt-modal').remove()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <a href="public/login.html" class="btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Login / Signup
+                    </a>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(loginModal);
+    }
+
+    showError(message) {
+        const errorModal = document.createElement('div');
+        errorModal.className = 'error-notification';
+        errorModal.innerHTML = `
+            <div class="error-content">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        document.body.appendChild(errorModal);
+        setTimeout(() => errorModal.classList.add('show'), 10);
+        setTimeout(() => {
+            errorModal.classList.remove('show');
+            setTimeout(() => errorModal.remove(), 300);
+        }, 3000);
+    }
+
+    processClaim(offer, couponCode = null, fromBackend = false) {
         // Generate coupon code if not provided
         if (!couponCode) {
             couponCode = this.generateCouponCode(offer);
         }
 
+        const offerId = offer._id || offer.id;
+        const offerValue = offer.value || offer.discountValue || offer.discount;
+        const offerType = offer.type || offer.discountType;
+        
+        // Calculate validity period (use offer's endDate or default to 30 days)
+        const validUntil = offer.validUntil || offer.endDate || offer.expiresAt;
+        const validUntilDate = validUntil ? new Date(validUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        
+        // Ensure the date is in the future
+        if (validUntilDate < new Date()) {
+            console.warn('Offer expired, extending validity by 7 days');
+            validUntilDate.setDate(validUntilDate.getDate() + 7);
+        }
+
         // Add to user offers
         const claimedOffer = {
             ...offer,
+            _id: offerId,
+            id: offerId,
             claimedAt: new Date().toISOString(),
             couponCode: couponCode,
-            status: 'active'
+            status: 'active',
+            validUntil: validUntilDate.toISOString(),
+            used: false,
+            usedAt: null,
+            source: fromBackend ? 'backend' : 'local'
         };
 
         this.userOffers.push(claimedOffer);
         localStorage.setItem('userOffers', JSON.stringify(this.userOffers));
 
-        // Add to user coupons
+        // Add to user coupons with all necessary fields and usage tracking
         const coupon = {
+            _id: `coupon_${offerId}_${Date.now()}`,
             code: couponCode,
-            discountType: offer.discountType,
-            discountValue: offer.discountValue,
-            validUntil: offer.validUntil,
-            gymId: offer.gymId,
-            offerId: offer.id,
-            status: 'active'
+            discountType: offerType,
+            discountValue: offerValue,
+            validUntil: validUntilDate.toISOString(),
+            gymId: offer.gymId || offer.gym || this.currentGymId,
+            gymName: localStorage.getItem('gymName') || offer.gymName || 'Gym',
+            offerId: offerId,
+            offerTitle: offer.title,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            claimedAt: new Date().toISOString(),
+            used: false,
+            usedAt: null,
+            usageCount: 0,
+            maxUsage: 1, // Single use coupon
+            source: fromBackend ? 'backend' : 'local'
         };
 
         this.userCoupons.push(coupon);
         localStorage.setItem('userCoupons', JSON.stringify(this.userCoupons));
+        
+        console.log(`✅ Offer claimed successfully (${fromBackend ? 'via backend' : 'locally'}):`, {
+            code: couponCode,
+            validUntil: validUntilDate.toISOString(),
+            discountType: offerType,
+            discountValue: offerValue
+        });
+
+        // Update campaign claims count in both storage locations
+        if (window.OffersManager && window.OffersManager.updateCampaignClaims) {
+            window.OffersManager.updateCampaignClaims(offerId);
+        }
+
+        // Update claim counter in the offer object
+        const offerIndex = this.activeOffers.findIndex(o => (o._id || o.id) === offerId);
+        if (offerIndex !== -1) {
+            const currentCount = this.activeOffers[offerIndex].usageCount || this.activeOffers[offerIndex].claimedCount || 0;
+            this.activeOffers[offerIndex].usageCount = currentCount + 1;
+            this.activeOffers[offerIndex].claimedCount = currentCount + 1;
+            
+            // Update localStorage to persist the counter
+            const storageKey = `gymOffers_${this.currentGymId}`;
+            const storedOffers = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const storedOfferIndex = storedOffers.findIndex(o => (o._id || o.id) === offerId);
+            if (storedOfferIndex !== -1) {
+                storedOffers[storedOfferIndex].usageCount = currentCount + 1;
+                storedOffers[storedOfferIndex].claimedCount = currentCount + 1;
+                localStorage.setItem(storageKey, JSON.stringify(storedOffers));
+            }
+            
+            console.log(`📊 Updated claim counter for offer ${offerId}: ${currentCount} → ${currentCount + 1}`);
+        }
 
         // Update UI
-        this.showClaimSuccessMessage(offer, couponCode);
-        this.updateOfferCard(offer.id);
+        this.showClaimSuccessMessage(offer, couponCode, validUntilDate);
+        this.updateOfferCard(offerId);
+        
+        // Reload offers to reflect updated counts
+        setTimeout(() => {
+            this.loadActiveOffers();
+        }, 500);
     }
 
     generateCouponCode(offer) {
@@ -459,31 +1081,132 @@ class GymOffersManager {
         return `${prefix}${random}`;
     }
 
-    showClaimSuccessMessage(offer, couponCode) {
-        const message = document.createElement('div');
-        message.className = 'claim-success-message';
-        message.innerHTML = `
-            <div class="success-content">
-                <i class="fas fa-check-circle"></i>
-                <h4>Offer Claimed Successfully!</h4>
-                <p>Your coupon code: <strong>${couponCode}</strong></p>
-                <p>Use this code during membership purchase to get your discount.</p>
-                <button onclick="this.parentElement.parentElement.remove()">Got it!</button>
+    showClaimSuccessMessage(offer, couponCode, validUntilDate) {
+        const offerValue = offer.value || offer.discountValue || 0;
+        const offerType = offer.type || offer.discountType;
+        let discountText = '';
+        
+        if (offerType === 'percentage') {
+            discountText = `${offerValue}% discount`;
+        } else if (offerType === 'fixed') {
+            discountText = `₹${offerValue} discount`;
+        } else {
+            discountText = 'Special discount';
+        }
+        
+        const expiryDate = validUntilDate ? new Date(validUntilDate).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        }) : 'Check details';
+        
+        // Create modal with consistent structure matching other modals
+        const modal = document.createElement('div');
+        modal.className = 'claim-success-modal';
+        modal.innerHTML = `
+            <div class="claim-success-overlay"></div>
+            <div class="claim-success-content">
+                <button class="close-success-modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <div class="success-header">
+                    <div class="success-icon-circle">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3>🎉 Offer Claimed Successfully!</h3>
+                    <p class="success-subtitle">Your coupon code is ready to use</p>
+                </div>
+                
+                <div class="coupon-details-box">
+                    <div class="coupon-code-section">
+                        <label class="coupon-label">Your Coupon Code</label>
+                        <div class="coupon-code-display">
+                            <div class="code-value">${couponCode}</div>
+                            <button class="copy-code-btn" onclick="navigator.clipboard.writeText('${couponCode}'); this.innerHTML='<i class=\\'fas fa-check\\'></i> Copied!'; setTimeout(() => this.innerHTML='<i class=\\'fas fa-copy\\'></i> Copy', 2000);">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="coupon-info-grid">
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-tag"></i>
+                            </div>
+                            <div class="info-details">
+                                <span class="info-label">Discount</span>
+                                <span class="info-value">${discountText}</span>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="info-details">
+                                <span class="info-label">Valid Until</span>
+                                <span class="info-value">${expiryDate}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="usage-tip">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Use this code during membership purchase to get your discount. Find it anytime in "My Coupons" section.</p>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="btn-secondary close-modal-btn">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                    <button class="btn-primary view-coupons-btn">
+                        <i class="fas fa-ticket-alt"></i> View My Coupons
+                    </button>
+                </div>
             </div>
         `;
 
-        document.body.appendChild(message);
+        document.body.appendChild(modal);
 
-        setTimeout(() => {
-            message.classList.add('show');
-        }, 100);
+        // Setup event listeners
+        const overlay = modal.querySelector('.claim-success-overlay');
+        const closeBtn = modal.querySelector('.close-success-modal');
+        const closeModalBtn = modal.querySelector('.close-modal-btn');
+        const viewCouponsBtn = modal.querySelector('.view-coupons-btn');
+        
+        const closeModal = () => {
+            modal.classList.remove('show');
+            setTimeout(() => modal.remove(), 300);
+        };
+        
+        if (overlay) overlay.addEventListener('click', closeModal);
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+        
+        if (viewCouponsBtn) {
+            viewCouponsBtn.addEventListener('click', () => {
+                closeModal();
+                setTimeout(() => {
+                    const couponsSection = document.getElementById('claimed-offers-list');
+                    if (couponsSection) {
+                        couponsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100);
+            });
+        }
 
-        // Auto remove after 5 seconds
+        // Animate in
         setTimeout(() => {
-            if (message.parentElement) {
-                message.remove();
+            modal.classList.add('show');
+        }, 50);
+
+        // Auto remove after 15 seconds
+        setTimeout(() => {
+            if (modal.parentElement) {
+                closeModal();
             }
-        }, 5000);
+        }, 15000);
     }
 
     updateOfferCard(offerId) {
@@ -529,56 +1252,123 @@ class GymOffersManager {
         const popup = document.getElementById('gym-offers-popup');
         if (popup) popup.remove();
 
-        // Create full offers modal
+        // Create full offers modal with scrollable design
         const modal = document.createElement('div');
         modal.id = 'all-offers-modal';
-        modal.className = 'support-modal active';
+        modal.className = 'gym-offers-popup show';
         modal.innerHTML = `
-            <div class="support-modal-content">
-                <div class="support-modal-header">
-                    <h2>All Available Offers</h2>
-                    <button class="close-modal-btn" onclick="this.closest('.support-modal').remove()">
+            <div class="offers-popup-overlay"></div>
+            <div class="offers-popup-content all-offers-modal-content">
+                <div class="offers-popup-header">
+                    <div class="popup-header-icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h3>All Available Offers</h3>
+                    <button class="close-popup-btn" aria-label="Close">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div class="offers-grid">
-                    ${this.renderAllOffers()}
-                </div>
-                <div class="my-coupons-section">
-                    <h3>My Claimed Coupons</h3>
-                    <div class="coupons-list">
-                        ${this.renderMyCoupons()}
+                <div class="offers-carousel-container">
+                    <div class="offers-carousel all-offers-grid">
+                        ${this.renderAllOffers()}
                     </div>
+                    
+                    ${this.renderMyCouponsSection()}
                 </div>
             </div>
         `;
 
         document.body.appendChild(modal);
+        
+        // Setup event listeners
+        const overlay = modal.querySelector('.offers-popup-overlay');
+        const closeBtn = modal.querySelector('.close-popup-btn');
+        
+        if (overlay) overlay.addEventListener('click', () => modal.remove());
+        if (closeBtn) closeBtn.addEventListener('click', () => modal.remove());
+        
+        // Animate in
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+    }
+    
+    renderMyCouponsSection() {
+        const activeCoupons = this.userCoupons.filter(coupon => 
+            coupon.status === 'active' && 
+            new Date(coupon.validUntil) > new Date() &&
+            coupon.gymId === this.currentGymId
+        );
+        
+        if (activeCoupons.length === 0) {
+            return '';
+        }
+        
+        return `
+            <div class="my-coupons-section">
+                <h3><i class="fas fa-ticket-alt"></i> My Claimed Coupons</h3>
+                <div class="coupons-list">
+                    ${this.renderMyCoupons()}
+                </div>
+            </div>
+        `;
     }
 
     renderAllOffers() {
-        return this.activeOffers.map(offer => {
-            const isAlreadyClaimed = this.userOffers.some(userOffer => userOffer.id === offer.id);
-            const canClaim = offer.claimedCount < offer.claimLimit && !isAlreadyClaimed;
-
+        if (!this.activeOffers || this.activeOffers.length === 0) {
             return `
-                <div class="full-offer-card ${offer.templateStyle}" data-offer-id="${offer.id}">
-                    <div class="offer-image" style="background-image: url('${offer.backgroundImage}')"></div>
-                    <div class="offer-info">
-                        <h4>${offer.title}</h4>
-                        <p>${offer.description}</p>
-                        <div class="offer-meta">
-                            <span class="discount">
-                                ${offer.discountType === 'percentage' ? offer.discountValue + '% OFF' : 'FREE SERVICE'}
-                            </span>
-                            <span class="validity">Until: ${new Date(offer.validUntil).toLocaleDateString()}</span>
+                <div class="offers-carousel-empty">
+                    <i class="fas fa-gift"></i>
+                    <h4>No Offers Available</h4>
+                    <p>Check back later for new offers!</p>
+                </div>
+            `;
+        }
+        
+        // Use same card rendering as popup for consistency
+        return this.activeOffers.map(offer => {
+            const offerId = offer._id || offer.id;
+            const isAlreadyClaimed = this.userOffers.some(userOffer => 
+                (userOffer._id === offerId || userOffer.id === offerId)
+            );
+            
+            // Handle multiple field names
+            const maxUses = offer.maxUses || offer.claimLimit || offer.totalClaimLimit || 100;
+            const usageCount = offer.usageCount || offer.claimedCount || offer.claimsCount || offer.usedCount || 0;
+            const canClaim = usageCount < maxUses && !isAlreadyClaimed;
+            
+            const discountValue = offer.value || offer.discountValue || offer.discount;
+            const discountType = offer.type || offer.discountType;
+            const validUntil = offer.validUntil || offer.endDate || offer.expiresAt;
+            const templateStyle = offer.templateStyle || offer.templateId || 'default';
+            
+            return `
+                <div class="offer-card ${templateStyle}" data-offer-id="${offerId}">
+                    <div class="offer-card-header ${templateStyle}">
+                        <div class="offer-icon">
+                            <i class="fas fa-tag"></i>
                         </div>
-                        <div class="claim-info">
-                            <span>${offer.claimedCount}/${offer.claimLimit} claimed</span>
+                        <h4 class="offer-card-title">${offer.title}</h4>
+                        <p class="offer-card-description">${offer.description || ''}</p>
+                    </div>
+                    <div class="offer-card-body">
+                        <div class="offer-metadata">
+                            <div class="offer-discount">
+                                <i class="fas fa-percent"></i>
+                                <span>Get <strong>${discountValue}${discountType === 'percentage' ? '%' : '₹'} OFF</strong></span>
+                            </div>
+                            <div class="offer-validity">
+                                <i class="fas fa-clock"></i>
+                                <span>Valid until ${new Date(validUntil).toLocaleDateString('en-IN')}</span>
+                            </div>
+                        </div>
+                        <div class="offer-action">
                             ${canClaim ? 
-                                `<button class="claim-offer-btn" data-offer-id="${offer.id}">Claim</button>` :
-                                `<button class="claimed-btn" disabled>
-                                    ${isAlreadyClaimed ? 'Claimed' : 'Full'}
+                                `<button class="offer-claim-btn" data-offer-id="${offerId}">
+                                    <i class="fas fa-gift"></i><span>Claim Now</span>
+                                </button>` :
+                                `<button class="offer-claimed-btn" disabled>
+                                    <i class="fas fa-check"></i><span>${isAlreadyClaimed ? 'Already Claimed' : 'Limit Reached'}</span>
                                 </button>`
                             }
                         </div>

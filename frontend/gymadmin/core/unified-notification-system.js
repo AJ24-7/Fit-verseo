@@ -333,6 +333,10 @@ class UnifiedNotificationSystem {
 
         if (addedCount > 0) {
             this.unreadCount += addedCount;
+            
+            // Save to cache
+            this.saveNotificationsToCache();
+            
             this.updateNotificationUI();
             this.updateRecentActivities(newNotifications.slice(0, addedCount));
             this.playNotificationSound();
@@ -374,9 +378,15 @@ class UnifiedNotificationSystem {
                             <div class="notification-time">${this.formatTime(notification.timestamp)}</div>
                         </div>
                         <div class="notification-actions">
-                            <button onclick="window.unifiedNotificationSystem.markAsRead('${notification.id}')" class="mark-read-btn">
-                                <i class="fas fa-check"></i>
-                            </button>
+                            ${!notification.read ? `
+                                <button onclick="window.unifiedNotificationSystem.markAsRead('${notification.id}')" class="mark-read-btn" title="Mark as read">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            ` : `
+                                <button class="mark-read-btn read-indicator" disabled title="Already read">
+                                    <i class="fas fa-check-double"></i>
+                                </button>
+                            `}
                         </div>
                     </div>
                 `).join('');
@@ -639,31 +649,65 @@ class UnifiedNotificationSystem {
     }
 
     /**
-     * Show toast notification
+     * Show toast notification with enhanced UI
      */
     showToast(message, type = 'info') {
-        // Use existing toast system or create simple one
+        // Remove any existing toasts of the same message to prevent duplicates
+        const existingToasts = Array.from(document.querySelectorAll('.unified-toast'));
+        existingToasts.forEach(existingToast => {
+            if (existingToast.textContent.includes(message)) {
+                existingToast.remove();
+            }
+        });
+
+        // Icon mapping for different toast types
+        const icons = {
+            'success': 'fa-check-circle',
+            'error': 'fa-times-circle',
+            'warning': 'fa-exclamation-triangle',
+            'info': 'fa-info-circle'
+        };
+
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('unifiedToastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'unifiedToastContainer';
+            toastContainer.className = 'unified-toast-container';
+            document.body.appendChild(toastContainer);
+        }
+
+        // Create toast element
         const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
+        toast.className = `unified-toast unified-toast-${type}`;
         toast.innerHTML = `
-            <div class="toast-content">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
-                <span>${message}</span>
+            <div class="unified-toast-icon">
+                <i class="fas ${icons[type] || icons.info}"></i>
             </div>
+            <div class="unified-toast-content">
+                <div class="unified-toast-message">${message}</div>
+            </div>
+            <button class="unified-toast-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
         `;
         
-        document.body.appendChild(toast);
+        toastContainer.appendChild(toast);
         
+        // Trigger animation
         setTimeout(() => {
-            toast.classList.add('show');
+            toast.classList.add('unified-toast-show');
         }, 100);
         
+        // Auto remove after 4 seconds
         setTimeout(() => {
-            toast.classList.remove('show');
+            toast.classList.add('unified-toast-hide');
             setTimeout(() => {
-                document.body.removeChild(toast);
+                if (toast.parentElement) {
+                    toast.remove();
+                }
             }, 300);
-        }, 3000);
+        }, 4000);
     }
 
     /**
@@ -689,6 +733,11 @@ class UnifiedNotificationSystem {
             if (notification && !notification.read) {
                 notification.read = true;
                 this.unreadCount = Math.max(0, this.unreadCount - 1);
+                
+                // Save to localStorage immediately
+                this.saveNotificationsToCache();
+                
+                // Update UI
                 this.updateNotificationUI();
                 
                 // Update on server
@@ -696,12 +745,16 @@ class UnifiedNotificationSystem {
                 await fetch(apiURL, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                        'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+                        'Content-Type': 'application/json'
                     }
                 });
+                
+                this.showToast('Notification marked as read', 'success');
             }
         } catch (error) {
             console.error('Failed to mark notification as read:', error);
+            this.showToast('Failed to mark notification as read', 'error');
         }
     }
 
@@ -712,6 +765,11 @@ class UnifiedNotificationSystem {
         try {
             this.notifications.forEach(n => n.read = true);
             this.unreadCount = 0;
+            
+            // Save to localStorage immediately
+            this.saveNotificationsToCache();
+            
+            // Update UI
             this.updateNotificationUI();
             
             // Update on server
@@ -719,11 +777,15 @@ class UnifiedNotificationSystem {
             await fetch(apiURL, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+                    'Content-Type': 'application/json'
                 }
             });
+            
+            this.showToast('All notifications marked as read', 'success');
         } catch (error) {
             console.error('Failed to mark all notifications as read:', error);
+            this.showToast('Failed to mark all notifications as read', 'error');
         }
     }
 
@@ -732,17 +794,34 @@ class UnifiedNotificationSystem {
      */
     async loadExistingNotifications() {
         try {
+            // First, try to load from cache
+            const cachedNotifications = this.loadNotificationsFromCache();
+            if (cachedNotifications) {
+                this.notifications = cachedNotifications;
+                this.unreadCount = this.notifications.filter(n => !n.read).length;
+                this.updateNotificationUI();
+            }
+            
+            // Then fetch from server
             const fetchFunction = window.cachedFetch || fetch;
             const apiURL = window.API_CONFIG ? window.API_CONFIG.getURL('/api/notifications/all') : '/api/notifications/all';
             const response = await fetchFunction(apiURL, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
+                    'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`,
+                    'Content-Type': 'application/json'
                 }
             });
             
             if (response.ok) {
                 const data = await response.json();
-                this.notifications = data.notifications || [];
+                const serverNotifications = data.notifications || [];
+                
+                // Merge with cached notifications, preserving read status
+                this.mergeNotifications(serverNotifications);
+                
+                // Save to cache
+                this.saveNotificationsToCache();
+                
                 this.unreadCount = this.notifications.filter(n => !n.read).length;
                 this.updateNotificationUI();
             }
@@ -750,10 +829,67 @@ class UnifiedNotificationSystem {
             console.error('Failed to load existing notifications:', error);
             console.error('Error details:', {
                 message: error.message,
-                stack: error.stack,
-                url: apiURL
+                stack: error.stack
             });
         }
+    }
+    
+    /**
+     * Save notifications to localStorage
+     */
+    saveNotificationsToCache() {
+        try {
+            const cacheKey = `notifications_${localStorage.getItem('gymAdminToken')?.substring(0, 10)}`;
+            localStorage.setItem(cacheKey, JSON.stringify({
+                notifications: this.notifications,
+                timestamp: Date.now()
+            }));
+        } catch (error) {
+            console.error('Failed to save notifications to cache:', error);
+        }
+    }
+    
+    /**
+     * Load notifications from localStorage
+     */
+    loadNotificationsFromCache() {
+        try {
+            const cacheKey = `notifications_${localStorage.getItem('gymAdminToken')?.substring(0, 10)}`;
+            const cached = localStorage.getItem(cacheKey);
+            
+            if (cached) {
+                const data = JSON.parse(cached);
+                const age = Date.now() - data.timestamp;
+                
+                // Use cache if less than 5 minutes old
+                if (age < 5 * 60 * 1000) {
+                    return data.notifications;
+                }
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Failed to load notifications from cache:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Merge server notifications with cached ones, preserving read status
+     */
+    mergeNotifications(serverNotifications) {
+        const existingMap = new Map(this.notifications.map(n => [n.id, n]));
+        
+        serverNotifications.forEach(serverNotif => {
+            const existing = existingMap.get(serverNotif.id);
+            
+            if (existing) {
+                // Preserve local read status if it's marked as read
+                serverNotif.read = existing.read || serverNotif.read;
+            }
+        });
+        
+        this.notifications = serverNotifications;
     }
 
     /**
@@ -915,41 +1051,71 @@ class UnifiedNotificationSystem {
                 text-align: center;
             }
             button.mark-read-btn {
-             /* Basic layout */
-  display: inline-flex; /* Use flexbox for easy centering of icon */
-  align-items: center;
-  justify-content: center;
-  
-  /* Sizing and spacing */
-  padding: 8px 12px; /* Increased padding for better clickability */
-  min-width: 44px; /* Ensure minimum touch target size */
-  min-height: 44px; /* Ensure minimum touch target size */
-  
-  /* Appearance */
-  background-color: #007bff; /* A common primary blue */
-  color: white;
-  border: none;
-  border-radius: 4px; /* Slightly rounded corners */
-  cursor: pointer; /* Important for usability */
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 14px;
-  font-weight: 500; /* Slightly bolder text */
-  text-decoration: none; /* Remove any default underline */
-  transition: background-color 0.2s ease, transform 0.1s ease; /* Smooth transitions */
-}
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px;
+                min-width: 32px;
+                min-height: 32px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+            }
 
-button.mark-read-btn:hover {
-  background-color: #0056b3; /* Darker blue on hover */
-}
+            button.mark-read-btn:hover:not(:disabled) {
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+            }
 
-button.mark-read-btn:active {
-  background-color: #004085; /* Even darker on active */
-  transform: translateY(1px); /* Slight press effect */
-}
+            button.mark-read-btn:active:not(:disabled) {
+                transform: translateY(0);
+                box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
+            }
 
             button.mark-read-btn:focus {
-             outline: 2px solid #007bff; /* Accessibility outline */
-             outline-offset: 2px;
+                outline: 2px solid #10b981;
+                outline-offset: 2px;
+            }
+            
+            button.mark-read-btn.read-indicator {
+                background: #e5e7eb;
+                color: #6b7280;
+                cursor: not-allowed;
+                box-shadow: none;
+            }
+            
+            button.mark-read-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+            
+            .mark-all-read {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+            }
+            
+            .mark-all-read:hover {
+                background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            }
+            
+            .mark-all-read:active {
+                transform: translateY(0);
             }
             .compose-notification {
                 background: var(--primary);
@@ -1020,41 +1186,173 @@ button.mark-read-btn:active {
                 margin-right: 8px;
             }
             
-            .toast {
+            /* Enhanced Toast Notification Styles */
+            .unified-toast-container {
                 position: fixed;
-                top: 20px;
+                top: 80px;
                 right: 20px;
-                padding: 15px 20px;
-                border-radius: 6px;
-                color: white;
-                font-weight: 500;
                 z-index: 10000;
-                opacity: 0;
-                transform: translateX(100%);
-                transition: all 0.3s ease;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                pointer-events: none;
             }
             
-            .toast.show {
-                opacity: 1;
-                transform: translateX(0);
-            }
-            
-            .toast-success {
-                background: #28a745;
-            }
-            
-            .toast-error {
-                background: #dc3545;
-            }
-            
-            .toast-info {
-                background: #17a2b8;
-            }
-            
-            .toast-content {
+            .unified-toast {
                 display: flex;
                 align-items: center;
-                gap: 10px;
+                gap: 12px;
+                min-width: 320px;
+                max-width: 450px;
+                padding: 16px 20px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+                opacity: 0;
+                transform: translateX(120%) scale(0.9);
+                transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                pointer-events: auto;
+                border-left: 4px solid;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .unified-toast::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, currentColor, transparent);
+                animation: shimmer 2s infinite;
+            }
+            
+            @keyframes shimmer {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+            
+            .unified-toast-show {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+            
+            .unified-toast-hide {
+                opacity: 0;
+                transform: translateX(120%) scale(0.8);
+            }
+            
+            .unified-toast-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                flex-shrink: 0;
+                animation: iconPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            }
+            
+            @keyframes iconPop {
+                0% { transform: scale(0); }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); }
+            }
+            
+            .unified-toast-content {
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .unified-toast-message {
+                font-size: 14px;
+                font-weight: 500;
+                color: #1f2937;
+                line-height: 1.5;
+                word-wrap: break-word;
+            }
+            
+            .unified-toast-close {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                border: none;
+                background: #f3f4f6;
+                color: #6b7280;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                transition: all 0.2s ease;
+                opacity: 0.7;
+            }
+            
+            .unified-toast-close:hover {
+                background: #e5e7eb;
+                color: #374151;
+                opacity: 1;
+                transform: scale(1.1);
+            }
+            
+            /* Success Toast */
+            .unified-toast-success {
+                border-left-color: #10b981;
+            }
+            
+            .unified-toast-success .unified-toast-icon {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            }
+            
+            /* Error Toast */
+            .unified-toast-error {
+                border-left-color: #ef4444;
+            }
+            
+            .unified-toast-error .unified-toast-icon {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            }
+            
+            /* Warning Toast */
+            .unified-toast-warning {
+                border-left-color: #f59e0b;
+            }
+            
+            .unified-toast-warning .unified-toast-icon {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                color: white;
+                box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+            }
+            
+            /* Info Toast */
+            .unified-toast-info {
+                border-left-color: #3b82f6;
+            }
+            
+            .unified-toast-info .unified-toast-icon {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: white;
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            }
+            
+            /* Responsive */
+            @media (max-width: 640px) {
+                .unified-toast-container {
+                    left: 10px;
+                    right: 10px;
+                    top: 70px;
+                }
+                
+                .unified-toast {
+                    min-width: auto;
+                    max-width: 100%;
+                }
             }
         `;
         

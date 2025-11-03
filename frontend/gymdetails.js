@@ -135,6 +135,14 @@ function populateGymDetails(gym) {
         statusElement.innerHTML = '<span class="status-badge pending">Pending</span>';
     }
     
+    // Store gym name and logo in localStorage for offers module
+    localStorage.setItem('gymName', gym.gymName || 'Gym');
+    if (logoUrl && logoUrl !== 'https://via.placeholder.com/120x120.png?text=No+Logo') {
+        localStorage.setItem('gymLogo', logoUrl);
+    } else {
+        localStorage.setItem('gymLogo', 'public/Gym-Wale.png');
+    }
+    
     // Gym description
     document.getElementById('gym-description-text').textContent = 
         gym.description || 'No description available.';
