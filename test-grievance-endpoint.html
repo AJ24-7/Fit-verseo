@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Grievance Endpoint</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Grievance Endpoint</h1>
+        <p>This page tests the <code>POST /api/communications/grievances</code> endpoint.</p>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="gymId">Gym ID *</label>
+                <input type="text" id="gymId" value="6808bc380d3a005a225fc891" required>
+                <small>Default is set to test gym</small>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category *</label>
+                <select id="category" required>
+                    <option value="cleanliness">Cleanliness</option>
+                    <option value="equipment">Equipment</option>
+                    <option value="staff">Staff Behavior</option>
+                    <option value="facilities">Facilities</option>
+                    <option value="safety">Safety</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="priority">Priority *</label>
+                <select id="priority" required>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="subject">Subject *</label>
+                <input type="text" id="subject" placeholder="Brief description" value="Test Grievance" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description *</label>
+                <textarea id="description" placeholder="Detailed description" required>This is a test grievance to verify the endpoint is working correctly.</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="contactNumber">Contact Number</label>
+                <input type="tel" id="contactNumber" placeholder="1234567890" value="9876543210">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="test@example.com" value="test@example.com">
+            </div>
+
+            <button type="submit" id="submitBtn">Submit Test Grievance</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('testForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultDiv = document.getElementById('result');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const grievanceData = {
+                gymId: document.getElementById('gymId').value,
+                category: document.getElementById('category').value,
+                priority: document.getElementById('priority').value,
+                subject: document.getElementById('subject').value,
+                description: document.getElementById('description').value,
+                contactNumber: document.getElementById('contactNumber').value,
+                email: document.getElementById('email').value
+            };
+
+            console.log('📤 Submitting grievance:', grievanceData);
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            resultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/communications/grievances', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Optional: Add token if you have one
+                        // 'Authorization': 'Bearer YOUR_TOKEN_HERE'
+                    },
+                    body: JSON.stringify(grievanceData)
+                });
+
+                const data = await response.json();
+
+                console.log('📥 Response:', data);
+
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p><strong>Ticket ID:</strong> ${data.grievance.ticketId}</p>
+                        <p><strong>Status:</strong> ${data.grievance.status}</p>
+                        <p><strong>Priority:</strong> ${data.grievance.priority}</p>
+                        <p><strong>Created:</strong> ${new Date(data.grievance.createdAt).toLocaleString()}</p>
+                        <details>
+                            <summary>View Full Response</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    `;
+                } else {
+                    throw new Error(data.message || 'Unknown error');
+                }
+
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>${error.message}</p>
+                    <details>
+                        <summary>Error Details</summary>
+                        <pre>${error.stack || error.toString()}</pre>
+                    </details>
+                `;
+                resultDiv.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Test Grievance';
+            }
+        });
+
+        // Display current endpoint info
+        console.log('🎯 Testing endpoint: POST http://127.0.0.1:5000/api/communications/grievances');
+        console.log('📝 This test does NOT require authentication (token is optional)');
+    </script>
+</body>
+</html>
