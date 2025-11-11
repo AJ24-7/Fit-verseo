@@ -6,7 +6,7 @@
 
 class EnhancedSupportIntegration {
     constructor() {
-        this.BASE_URL = 'http://localhost:5000';
+        this.BASE_URL = window.API_CONFIG.BASE_URL;
         this.currentGymId = localStorage.getItem('gymId');
         this.gymProfile = JSON.parse(localStorage.getItem('gymProfile') || '{}');
         this.supportTickets = new Map();

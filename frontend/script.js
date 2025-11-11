@@ -124,9 +124,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // === DYNAMIC BASE URL FOR API (works on mobile and desktop) ===
-const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:5000' 
-  : `${window.location.protocol}//${window.location.hostname}:5000`;
+// Using centralized config from config.js
+const BASE_URL = window.API_CONFIG.BASE_URL;
 //gym search logic //
 // Default location (Delhi) - will be overridden when user allows geolocation
 let userLocation = { lat: 28.357353, lng: 77.295289 };
@@ -365,9 +364,9 @@ function renderGymCards() {
       // Convert relative path to full URL if needed (same as gymadmin.js)
       if (url && !url.startsWith('http')) {
         if (url.startsWith('/')) {
-          fullLogoPath = `http://localhost:5000${url}`;
+          fullLogoPath = `${BASE_URL}${url}`;
         } else {
-          fullLogoPath = `http://localhost:5000/${url}`;
+          fullLogoPath = `${BASE_URL}/${url}`;
         }
       } else {
         fullLogoPath = url;

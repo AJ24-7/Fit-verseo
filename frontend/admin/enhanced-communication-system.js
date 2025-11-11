@@ -3,7 +3,7 @@
 
 class EnhancedCommunicationSystem {
     constructor() {
-        this.BASE_URL = "http://localhost:5000";
+        this.BASE_URL = window.API_CONFIG.BASE_URL;
         this.notifications = new Map(); // For deduplication
         this.activeTickets = new Map();
         this.notificationQueue = [];

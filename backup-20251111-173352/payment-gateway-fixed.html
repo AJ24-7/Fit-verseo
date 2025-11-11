@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway - Gym-Wale</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .payment-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .payment-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .payment-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .payment-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 600px;
+        }
+
+        .payment-summary {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%);
+            padding: 40px 30px;
+            border-right: 1px solid #e0e7ff;
+        }
+
+        .payment-methods {
+            padding: 40px 30px;
+        }
+
+        .summary-section {
+            margin-bottom: 25px;
+        }
+
+        .summary-section h3 {
+            color: #1e40af;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            color: #1e40af;
+            font-size: 1.1rem;
+        }
+
+        .payment-method {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .payment-method:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .payment-method.selected {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .payment-method i {
+            font-size: 24px;
+            color: #3b82f6;
+        }
+
+        .method-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .method-desc {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .payment-form {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .pay-button {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pay-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .pay-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert.success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #16a34a;
+        }
+
+        .alert.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert.warning {
+            background: #fffbeb;
+            color: #d97706;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .payment-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="payment-header">
+            <h1><i class="fas fa-credit-card"></i> Secure Payment</h1>
+            <p>Complete your gym membership registration</p>
+        </div>
+
+        <div id="alertArea"></div>
+
+        <div class="payment-container">
+            <!-- Payment Summary -->
+            <div class="payment-summary">
+                <div class="summary-section">
+                    <h3><i class="fas fa-user"></i> Member Details</h3>
+                    <div class="summary-item">
+                        <span>Name:</span>
+                        <span id="memberName">Loading...</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Email:</span>
+                        <span id="memberEmail">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3><i class="fas fa-dumbbell"></i> Membership Plan</h3>
+                    <div class="summary-item">
+                        <span>Plan:</span>
+                        <span id="membershipPlan">Loading...</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Duration:</span>
+                        <span id="planDuration">Loading...</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Monthly Fee:</span>
+                        <span id="planAmount">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3><i class="fas fa-receipt"></i> Payment Summary</h3>
+                    <div class="summary-item">
+                        <span>Tax:</span>
+                        <span id="taxAmount">₹0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span><strong>Total Amount:</strong></span>
+                        <span id="totalAmount"><strong>Loading...</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="payment-methods">
+                <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-credit-card"></i> Choose Payment Method
+                </h3>
+                
+                <div class="payment-methods-list">
+                    <div class="payment-method" data-method="razorpay">
+                        <i class="fas fa-credit-card"></i>
+                        <div>
+                            <div class="method-name">Razorpay</div>
+                            <div class="method-desc">Credit/Debit Cards, UPI, Net Banking</div>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-method" data-method="upi">
+                        <i class="fas fa-mobile-alt"></i>
+                        <div>
+                            <div class="method-name">UPI Direct</div>
+                            <div class="method-desc">Pay directly with UPI apps</div>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-method" data-method="stripe">
+                        <i class="fas fa-globe-americas"></i>
+                        <div>
+                            <div class="method-name">Stripe</div>
+                            <div class="method-desc">International Cards</div>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-method" data-method="paypal">
+                        <i class="fab fa-paypal"></i>
+                        <div>
+                            <div class="method-name">PayPal</div>
+                            <div class="method-desc">PayPal Account</div>
+                        </div>
+                    </div>
+
+                    <div class="payment-method" data-method="cash" id="cashPaymentMethod">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <div>
+                            <div class="method-name">Cash Payment</div>
+                            <div class="method-desc">Pay at gym counter</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <div class="payment-form" id="paymentForm">
+                    <h4 style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-credit-card"></i> Enter Payment Details
+                    </h4>
+                    <div class="form-group">
+                        <label><i class="fas fa-credit-card"></i> Card Number</label>
+                        <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar"></i> Expiry Date</label>
+                            <input type="text" id="expiryDate" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> CVV</label>
+                            <input type="text" id="cvv" placeholder="123" maxlength="4">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Cardholder Name</label>
+                        <input type="text" id="cardholderName" placeholder="Full Name">
+                    </div>
+                </div>
+
+                <button class="pay-button" id="payButton" disabled>
+                    <div class="loading-spinner" style="display: none;"></div>
+                    <i class="fas fa-credit-card"></i>
+                    <span>Select Payment Method</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let paymentData = {};
+        let selectedMethod = null;
+
+        // Initialize payment page
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                console.log('🚀 Initializing payment gateway...');
+                
+                // Get URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const type = urlParams.get('type');
+                
+                console.log('Payment type:', type);
+                console.log('All URL params:', Object.fromEntries(urlParams.entries()));
+                
+                if (type === 'membership') {
+                    await loadMembershipPaymentData(urlParams);
+                } else {
+                    showAlert('Invalid payment type. Please restart from gym details page.', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error initializing payment gateway:', error);
+                showAlert('Failed to initialize payment gateway. Please try again.', 'error');
+            }
+        });
+
+        // Load membership payment data
+        async function loadMembershipPaymentData(urlParams) {
+            try {
+                console.log('🔍 Loading membership payment data...');
+                
+                const membershipDataString = sessionStorage.getItem('membershipRegistrationData');
+                const userToken = sessionStorage.getItem('userToken');
+                
+                console.log('Session Storage Data:', membershipDataString);
+                console.log('User Token:', userToken ? 'Present' : 'Missing');
+                
+                // Parse membership data
+                let membershipData = {};
+                try {
+                    membershipData = membershipDataString ? JSON.parse(membershipDataString) : {};
+                } catch (parseError) {
+                    console.error('❌ Error parsing session data:', parseError);
+                }
+                
+                // Fetch user profile if no member data and token exists
+                if (!membershipData.memberName && userToken) {
+                    try {
+                        console.log('🔄 Fetching user profile...');
+                        const response = await fetch('/api/users/profile', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${userToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const userData = await response.json();
+                            console.log('✅ User profile fetched:', userData);
+                            
+                            membershipData.memberName = userData.name || userData.username;
+                            membershipData.email = userData.email;
+                            membershipData.phone = userData.phone;
+                            membershipData.age = userData.age || 25;
+                            membershipData.gender = userData.gender || 'Other';
+                            membershipData.address = userData.address || '';
+                        } else {
+                            console.warn('⚠️ Failed to fetch user profile');
+                        }
+                    } catch (profileError) {
+                        console.error('❌ Error fetching user profile:', profileError);
+                    }
+                }
+                
+                // Extract payment data
+                const duration = parseInt(urlParams.get('duration')) || 1;
+                const monthlyPrice = parseFloat(urlParams.get('monthlyPrice')) || parseFloat(urlParams.get('amount')) || 0;
+                const totalAmount = parseFloat(urlParams.get('amount')) || (monthlyPrice * duration);
+                
+                const durationText = duration === 1 ? '1 Month' : `${duration} Months`;
+
+                // Build payment data object
+                paymentData = {
+                    type: 'membership',
+                    planName: urlParams.get('planName') || 'Membership Plan',
+                    totalAmount: totalAmount,
+                    duration: duration,
+                    durationText: durationText,
+                    monthlyPrice: monthlyPrice,
+                    username: urlParams.get('name') || membershipData.memberName || 'Member',
+                    email: urlParams.get('email') || membershipData.email || 'member@example.com',
+                    phone: urlParams.get('phone') || membershipData.phone || 'N/A',
+                    gymId: urlParams.get('gymId') || 'unknown',
+                    gymName: urlParams.get('gymName') || 'Gym',
+                    userToken: userToken,
+                    isOnlineRegistration: true
+                };
+
+                console.log('Final Payment Data:', paymentData);
+
+                // Update UI
+                updateUI();
+                
+                // Hide cash payment for online registration
+                hideCashPaymentForOnlineMembers();
+                
+            } catch (error) {
+                console.error('❌ Error loading membership payment data:', error);
+                showAlert('Failed to load payment data. Please try again.', 'error');
+            }
+        }
+
+        // Update UI elements
+        function updateUI() {
+            document.getElementById('memberName').textContent = paymentData.username;
+            document.getElementById('memberEmail').textContent = paymentData.email;
+            document.getElementById('membershipPlan').textContent = paymentData.planName;
+            document.getElementById('planAmount').textContent = `₹${paymentData.monthlyPrice}/month`;
+            document.getElementById('planDuration').textContent = paymentData.durationText;
+            document.getElementById('totalAmount').textContent = `₹${paymentData.totalAmount}`;
+        }
+
+        // Hide cash payment for online registration
+        function hideCashPaymentForOnlineMembers() {
+            if (paymentData.isOnlineRegistration) {
+                const cashMethod = document.getElementById('cashPaymentMethod');
+                if (cashMethod) {
+                    cashMethod.style.display = 'none';
+                    console.log('🚫 Cash payment hidden for online registration');
+                    
+                    // Add notice
+                    const methodsList = document.querySelector('.payment-methods-list');
+                    const notice = document.createElement('div');
+                    notice.className = 'alert warning';
+                    notice.innerHTML = `
+                        <i class="fas fa-info-circle"></i>
+                        <span>Cash payment is not available for online membership registration. Please choose a digital payment method.</span>
+                    `;
+                    methodsList.insertBefore(notice, methodsList.firstChild);
+                }
+            }
+        }
+
+        // Payment method selection
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                if (this.style.display === 'none') return;
+                
+                // Remove selection from all methods
+                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+                
+                // Select this method
+                this.classList.add('selected');
+                selectedMethod = this.dataset.method;
+                
+                // Update pay button
+                const payButton = document.getElementById('payButton');
+                const methodName = this.querySelector('.method-name').textContent;
+                
+                payButton.disabled = false;
+                payButton.innerHTML = `
+                    <i class="fas fa-credit-card"></i>
+                    <span>Pay ₹${paymentData.totalAmount} via ${methodName}</span>
+                `;
+                
+                // Show payment form for card methods
+                const paymentForm = document.getElementById('paymentForm');
+                if (selectedMethod === 'stripe' || selectedMethod === 'razorpay') {
+                    paymentForm.style.display = 'block';
+                } else {
+                    paymentForm.style.display = 'none';
+                }
+            });
+        });
+
+        // Pay button click handler
+        document.getElementById('payButton').addEventListener('click', async function() {
+            if (!selectedMethod) {
+                showAlert('Please select a payment method', 'error');
+                return;
+            }
+
+            try {
+                this.disabled = true;
+                this.querySelector('.loading-spinner').style.display = 'inline-block';
+                this.querySelector('span').textContent = 'Processing...';
+
+                // Process payment
+                await processPayment();
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                showAlert('Payment failed. Please try again.', 'error');
+            } finally {
+                this.disabled = false;
+                this.querySelector('.loading-spinner').style.display = 'none';
+                this.querySelector('span').textContent = `Pay ₹${paymentData.totalAmount}`;
+            }
+        });
+
+        // Process payment
+        async function processPayment() {
+            console.log('🔄 Processing payment with method:', selectedMethod);
+            
+            // Register member first
+            const registrationResponse = await fetch('/api/members/register-online', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${paymentData.userToken}`
+                },
+                body: JSON.stringify({
+                    gymId: paymentData.gymId,
+                    memberData: {
+                        name: paymentData.username,
+                        email: paymentData.email,
+                        phone: paymentData.phone,
+                        age: 25,
+                        gender: 'Other',
+                        address: 'Online Registration'
+                    },
+                    planData: {
+                        planName: paymentData.planName,
+                        duration: paymentData.duration,
+                        amount: paymentData.totalAmount,
+                        monthlyPrice: paymentData.monthlyPrice
+                    },
+                    paymentData: {
+                        method: selectedMethod,
+                        amount: paymentData.totalAmount,
+                        status: 'completed'
+                    }
+                })
+            });
+
+            if (registrationResponse.ok) {
+                const result = await registrationResponse.json();
+                console.log('✅ Registration successful:', result);
+                
+                showAlert('Registration completed successfully!', 'success');
+                
+                // Clear session data
+                sessionStorage.removeItem('membershipRegistrationData');
+                sessionStorage.removeItem('userToken');
+                
+                // Redirect to success page
+                setTimeout(() => {
+                    window.location.href = `/frontend/payment-success.html?member=${result.member.membershipId}&gym=${paymentData.gymName}&plan=${paymentData.planName}&amount=${paymentData.totalAmount}`;
+                }, 2000);
+            } else {
+                const error = await registrationResponse.json();
+                throw new Error(error.message || 'Registration failed');
+            }
+        }
+
+        // Show alert function
+        function showAlert(message, type = 'info') {
+            const alertArea = document.getElementById('alertArea');
+            const iconMap = {
+                'success': 'fa-check-circle',
+                'error': 'fa-exclamation-triangle',
+                'warning': 'fa-exclamation-circle',
+                'info': 'fa-info-circle'
+            };
+            
+            alertArea.innerHTML = `
+                <div class="alert ${type}">
+                    <i class="fas ${iconMap[type]}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    alertArea.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // Format card number input
+        document.getElementById('cardNumber')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+
+        // Format expiry date input
+        document.getElementById('expiryDate')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        // CVV input validation
+        document.getElementById('cvv')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            e.target.value = value.substring(0, 3);
+        });
+    </script>
+</body>
+</html>

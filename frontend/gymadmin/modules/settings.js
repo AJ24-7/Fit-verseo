@@ -84,6 +84,7 @@ function showAlert(message, type = 'info') {
 // ===== BIOMETRIC AGENT MANAGEMENT =====
 class BiometricAgentManager {
     constructor() {
+    this.BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://localhost:5000';
         this.agentUrl = 'http://localhost:5001';
         this.agentStatus = 'unknown';
         this.checkInterval = null;
@@ -7331,7 +7332,7 @@ Keep these codes secure and don't share them with anyone.`;
       }
     };
 
-    const response = await fetch(`http://localhost:5000${endpoint}`, {
+    const response = await fetch(`${this.BASE_URL}${endpoint}`, {
       ...defaultOptions,
       ...options,
       headers: { ...defaultOptions.headers, ...options.headers }
@@ -7807,7 +7808,7 @@ class LoginNotificationsManager {
       }
     };
 
-    const response = await fetch(`http://localhost:5000${endpoint}`, {
+    const response = await fetch(`${this.BASE_URL}${endpoint}`, {
       ...defaultOptions,
       ...options,
       headers: { ...defaultOptions.headers, ...options.headers }
@@ -8156,7 +8157,7 @@ class SessionTimeoutManager {
       }
     };
 
-    const response = await fetch(`http://localhost:5000${endpoint}`, {
+    const response = await fetch(`${this.BASE_URL}${endpoint}`, {
       ...defaultOptions,
       ...options,
       headers: { ...defaultOptions.headers, ...options.headers }

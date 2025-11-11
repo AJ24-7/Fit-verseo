@@ -1,6 +1,7 @@
 // Trial Bookings Management System
 class TrialBookingsManager {
     constructor() {
+    this.BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://localhost:5000';
         this.trialBookings = [];
         this.filteredBookings = [];
         this.currentFilters = {
@@ -166,7 +167,7 @@ class TrialBookingsManager {
                 return;
             }
 
-            const response = await fetch(`http://localhost:5000/api/gyms/trial-bookings/${gymId}`, {
+            const response = await fetch(`${this.BASE_URL}/api/gyms/trial-bookings/${gymId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -338,12 +339,12 @@ class TrialBookingsManager {
         const profileImageSrc = hasProfilePicture ? 
             (booking.userProfile.profilePicture.startsWith('http') ? 
                 booking.userProfile.profilePicture : 
-                `http://localhost:5000${booking.userProfile.profilePicture}`) : 
-            `http://localhost:5000/uploads/profile-pics/default.png`;
+                `${this.BASE_URL}${booking.userProfile.profilePicture}`) : 
+            `${this.BASE_URL}/uploads/profile-pics/default.png`;
 
         const profileDisplay = hasProfilePicture ? 
             `<img src="${profileImageSrc}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" 
-                  onerror="this.src='http://localhost:5000/uploads/profile-pics/default.png'">` :
+                  onerror="this.src='${this.BASE_URL}/uploads/profile-pics/default.png'">` :
             `<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 1.1rem;">
                 ${(booking.customerName || 'N').charAt(0).toUpperCase()}
             </div>`;
@@ -636,7 +637,7 @@ class TrialBookingsManager {
                 return;
             }
 
-            const response = await fetch(`http://localhost:5000/api/gyms/trial-bookings/${bookingId}/status`, {
+            const response = await fetch(`${this.BASE_URL}/api/gyms/trial-bookings/${bookingId}/status`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -767,7 +768,7 @@ class DashboardTrialBookingsManager {
                 return;
             }
 
-            const response = await fetch(`http://localhost:5000/api/gyms/trial-bookings/${gymId}`, {
+            const response = await fetch(`${this.BASE_URL}/api/gyms/trial-bookings/${gymId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -888,9 +889,9 @@ class DashboardTrialBookingsManager {
         if (booking.userProfile && booking.userProfile.profilePicture) {
             profilePicUrl = booking.userProfile.profilePicture.startsWith('http') ? 
                 booking.userProfile.profilePicture : 
-                `http://localhost:5000${booking.userProfile.profilePicture}`;
+                `${this.BASE_URL}${booking.userProfile.profilePicture}`;
         } else {
-            profilePicUrl = `http://localhost:5000/uploads/profile-pics/default.png`;
+            profilePicUrl = `${this.BASE_URL}/uploads/profile-pics/default.png`;
         }
 
         // Handle different field names that might come from the API
@@ -911,7 +912,7 @@ class DashboardTrialBookingsManager {
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <img src="${profilePicUrl}" alt="Profile" 
                              style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"
-                             onerror="this.src='http://localhost:5000/uploads/profile-pics/default.png'">
+                             onerror="this.src='${this.BASE_URL}/uploads/profile-pics/default.png'">
                         <div>
                             <div style="font-weight: 600; color: #1f2937;">${customerName}</div>
                             <div style="font-size: 0.85rem; color: #6b7280;">${activity}</div>
@@ -959,7 +960,7 @@ class DashboardTrialBookingsManager {
                 return;
             }
 
-            const response = await fetch(`http://localhost:5000/api/gyms/trial-bookings/${bookingId}/status`, {
+            const response = await fetch(`${this.BASE_URL}/api/gyms/trial-bookings/${bookingId}/status`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,

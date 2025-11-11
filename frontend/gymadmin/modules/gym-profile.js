@@ -5,6 +5,7 @@
 
 class GymProfileManager {
     constructor() {
+    this.BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://localhost:5000';
         this.isEditMode = false;
         this.originalData = {};
         this.currentGymData = {};
@@ -106,7 +107,7 @@ class GymProfileManager {
             }
 
             // Direct API call
-            const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+            const response = await fetch('${this.BASE_URL}/api/gyms/profile/me', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
                 }
@@ -190,7 +191,7 @@ class GymProfileManager {
         if (gymLogoImageEl && data.logoUrl) {
             let logoUrl = data.logoUrl;
             if (!logoUrl.startsWith('http')) {
-                logoUrl = `http://localhost:5000${logoUrl.startsWith('/') ? logoUrl : '/' + logoUrl}`;
+                logoUrl = `${this.BASE_URL}${logoUrl.startsWith('/') ? logoUrl : '/' + logoUrl}`;
             }
             gymLogoImageEl.src = logoUrl;
         }
@@ -287,7 +288,7 @@ class GymProfileManager {
                 formData.append('gymLogo', logoInput.files[0]);
             }
 
-            const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+            const response = await fetch('${this.BASE_URL}/api/gyms/profile/me', {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
@@ -397,7 +398,7 @@ class GymProfileManager {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/gyms/change-password', {
+            const response = await fetch('${this.BASE_URL}/api/gyms/change-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

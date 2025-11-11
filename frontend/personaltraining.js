@@ -713,7 +713,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
   // Try to fetch user profile if token exists
-  fetch('http://localhost:5000/api/users/profile', {
+  const BASE_URL = window.API_CONFIG.BASE_URL;
+  fetch(`${BASE_URL}/api/users/profile`, {
     method: 'GET',
     headers: {
       'Content-Type': "application/json",
@@ -729,8 +730,8 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .then(user => {
       const profilePicUrl = user.profileImage
-         ? (user.profileImage.startsWith('http') ? user.profileImage : `http://localhost:5000${user.profileImage}`)
-        : `http://localhost:5000/uploads/profile-pics/default.png`;
+         ? (user.profileImage.startsWith('http') ? user.profileImage : `${BASE_URL}${user.profileImage}`)
+        : `${BASE_URL}/uploads/profile-pics/default.png`;
 
       const userIconImage = document.getElementById("profile-icon-img");
       if (userIconImage) userIconImage.src = profilePicUrl;

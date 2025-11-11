@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | FIT-verse</title>
+    <link rel="stylesheet" href="contact.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script defer src="contact.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner">
+            <i class="fas fa-envelope fa-spin"></i>
+            <p>Loading contact information...</p>
+        </div>
+    </div>
+    
+    <header>
+        <nav class="navbar">
+              <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+              <img class="logo" src="public/Gym-Wale.png" alt="Gym-Wale Logo">
+              <h3 class="brand-title">Gym<span>-Wale</span></h3>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-item"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-item"><i class="fas fa-concierge-bell"></i> Services</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="personaltraining.html"><i class="fas fa-user-tie"></i> Personal Training</a></li>
+                        <li><a href="membership-plans.html"><i class="fas fa-id-card"></i> Membership Plans</a></li>
+                        <li><a href="dietplans.html"><i class="fas fa-apple-alt"></i> Diet Plans</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html" class="active"><i class="fas fa-envelope"></i> Contact</a></li>
+                 <!-- 👤 Shown only when user is logged in -->
+                 <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                    <a href="/frontend/public/userprofile.html" class="nav-item">
+                        <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="edit-profile.html"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+                        <li><a href="settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </li>
+                
+                <!-- 🔐 Shown only when user is logged out -->
+                <li class="nav-item" id="login-signup-nav" style="display: none;">
+                    <a href="/frontend/public/login.html"><i class="fas fa-sign-in-alt"></i> Login / Signup</a>
+                </li>
+            </ul>
+            <div class="menu-toggle">&#9776;</div>
+                
+           
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="fade-in">Get In Touch</h1>
+            <p class="slide-up">We're here to help you on your fitness journey</p>
+        </div>
+    </section>
+
+    <section class="contact-section">
+        <div class="container">
+            <div class="section-title slide-up">
+                <h2>Contact Us</h2>
+                <p>Have questions about our gyms, services, or membership options? Reach out to us and we'll get back to you as soon as possible.</p>
+            </div>
+
+            <div class="contact-container">
+                <div class="contact-info slide-up">
+                    <h3>Contact Information</h3>
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div class="info-content">
+                            <h4>Address</h4>
+                            <p>123 Fitness Street, Health District, Faridabad, 120005</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-phone-alt"></i>
+                        <div class="info-content">
+                            <h4>Phone</h4>
+                            <p><a href="tel:+911234567890">+91 12345 67890</a></p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div class="info-content">
+                            <h4>Email</h4>
+                            <p><a href="mailto:info@fit-verse.com">info@fit-verse.com</a></p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <div class="info-content">
+                            <h4>Working Hours</h4>
+                            <p>Monday - Friday: 6:00 AM - 10:00 PM<br>Saturday - Sunday: 7:00 AM - 9:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-form slide-up">
+                    <h3>Send Us a Message</h3>
+                    
+                    <!-- Quick Messages Section -->
+                    <div class="quick-messages-section">
+                        <h4>Quick Message Options</h4>
+                        <p>Select a common inquiry or write your custom message below:</p>
+                        <div class="quick-messages-grid" id="quickMessagesGrid">
+                            <!-- Quick message buttons will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Success Modal Dialog -->
+                    <div class="success-modal" id="successModal">
+                        <div class="modal-backdrop"></div>
+                        <div class="modal-container">
+                            <div class="modal-header">
+                                <div class="success-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <h3>Message Sent Successfully!</h3>
+                                <button class="modal-close" id="closeSuccessModal">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p id="successModalMessage">Thank you for contacting us! Your message has been received and we'll get back to you within 24 hours.</p>
+                                <div class="success-details">
+                                    <div class="detail-item">
+                                        <i class="fas fa-ticket-alt"></i>
+                                        <span>Ticket ID: <strong id="ticketIdDisplay">#-</strong></span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-envelope"></i>
+                                        <span>Confirmation sent to: <strong id="emailDisplay">-</strong></span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Expected response time: <strong>Within 24 hours</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-primary" id="okSuccessModal">
+                                    <i class="fas fa-thumbs-up"></i> Got it, Thanks!
+                                </button>
+                                <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+                                    <i class="fas fa-home"></i> Return to Home
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Modal Dialog -->
+                    <div class="error-modal" id="errorModal">
+                        <div class="modal-backdrop"></div>
+                        <div class="modal-container">
+                            <div class="modal-header error">
+                                <div class="error-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <h3>Oops! Something went wrong</h3>
+                                <button class="modal-close" id="closeErrorModal">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p id="errorModalMessage">We encountered an issue while sending your message. Please try again.</p>
+                                <div class="error-help">
+                                    <h4>What you can do:</h4>
+                                    <ul>
+                                        <li>Check your internet connection</li>
+                                        <li>Verify all required fields are filled</li>
+                                        <li>Try refreshing the page and submitting again</li>
+                                        <li>Contact us directly at support@fit-verse.com</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-danger" id="retryErrorModal">
+                                    <i class="fas fa-redo"></i> Try Again
+                                </button>
+                                <button class="btn btn-secondary" id="okErrorModal">
+                                    <i class="fas fa-times"></i> Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Legacy messages (hidden) -->
+                    <div class="success-message" id="successMessage" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Thank you for your message! We'll get back to you soon.</span>
+                    </div>
+                    
+                    <div class="error-message" id="errorMessage" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="errorText">Something went wrong. Please try again.</span>
+                    </div>
+
+                    <form id="contactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">Your Name <span class="required">*</span></label>
+                                <input type="text" id="name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Your Email <span class="required">*</span></label>
+                                <input type="email" id="email" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="category">Category <span class="required">*</span></label>
+                                <select id="category" class="form-control" required>
+                                    <option value="">Select category</option>
+                                    <option value="membership">Membership Inquiry</option>
+                                    <option value="technical">Technical Support</option>
+                                    <option value="general">General Question</option>
+                                    <option value="service">Service Information</option>
+                                    <option value="facilities">Facilities & Equipment</option>
+                                    <option value="partnership">Partnership</option>
+                                    <option value="complaint">Complaint/Feedback</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subject">Subject <span class="required">*</span></label>
+                            <input type="text" id="subject" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message">Your Message <span class="required">*</span></label>
+                            <textarea id="message" class="form-control" rows="5" required placeholder="Describe your inquiry or concern in detail..."></textarea>
+                        </div>
+                        
+                        <div class="form-group activities-section" id="activitiesSection" style="display: none;">
+                            <label>Interested Activities (Optional)</label>
+                            <div class="activities-grid">
+                                <div class="activity-checkbox">
+                                    <input type="checkbox" id="cardio" name="activities" value="cardio">
+                                    <label for="cardio"><i class="fas fa-heartbeat"></i> Cardio</label>
+                                </div>
+                                <div class="activity-checkbox">
+                                    <input type="checkbox" id="strength" name="activities" value="strength">
+                                    <label for="strength"><i class="fas fa-dumbbell"></i> Strength</label>
+                                </div>
+                                <div class="activity-checkbox">
+                                    <input type="checkbox" id="zumba" name="activities" value="zumba">
+                                    <label for="zumba"><i class="fas fa-music"></i> Zumba</label>
+                                </div>
+                                <div class="activity-checkbox">
+                                    <input type="checkbox" id="yoga" name="activities" value="yoga">
+                                    <label for="yoga"><i class="fas fa-leaf"></i> Yoga</label>
+                                </div>
+                                <div class="activity-checkbox">
+                                    <input type="checkbox" id="crossfit" name="activities" value="crossfit">
+                                    <label for="crossfit"><i class="fas fa-fire"></i> CrossFit</label>
+                                </div>
+                                <div class="activity-checkbox">
+                                    <input type="checkbox" id="swimming" name="activities" value="swimming">
+                                    <label for="swimming"><i class="fas fa-swimmer"></i> Swimming</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn submit-btn" id="submitBtn">
+                            <span class="btn-text">Send Message</span>
+                            <div class="btn-loading" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Sending...
+                            </div>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="map-container slide-up">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3508.123456789012!2d77.319456!3d28.123456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjjCsDA3JzI0LjQiTiA3N8KwMTknMTQuMSJF!5e0!3m2!1sen!2sin!4v1234567890123!5m2!1sen!2sin" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <section class="gym-locations">
+        <div class="container">
+            <div class="section-title slide-up">
+                <h2>Our Gym Locations</h2>
+                <p>Find the nearest FIT-verse gym to start your fitness journey today</p>
+            </div>
+
+            <div class="location-cards">
+                <div class="location-card slide-up">
+                    <div class="location-img">
+                        <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Strength Fitness Gym">
+                    </div>
+                    <div class="location-info">
+                        <h3>Strength Fitness Gym</h3>
+                        <div class="location-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> Faridabad</span>
+                            <span><i class="fas fa-location-arrow"></i> 0.44 km</span>
+                            <span><i class="fas fa-code"></i> 12005</span>
+                        </div>
+                        <div class="location-activities">
+                            <span class="activity-tag">Strength</span>
+                            <span class="activity-tag">Crossfit</span>
+                            <span class="activity-tag">Zumba</span>
+                        </div>
+                        <div class="location-price">₹2,099/month</div>
+                        <a href="#" class="location-link">View Full Profile <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <div class="location-card slide-up" style="animation-delay: 0.2s;">
+                    <div class="location-img">
+                        <img src="https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1351&q=80" alt="Cardio Plus Gym">
+                    </div>
+                    <div class="location-info">
+                        <h3>Cardio Plus Gym</h3>
+                        <div class="location-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> Faridabad</span>
+                            <span><i class="fas fa-location-arrow"></i> 1.2 km</span>
+                            <span><i class="fas fa-code"></i> 12003</span>
+                        </div>
+                        <div class="location-activities">
+                            <span class="activity-tag">Cardio</span>
+                            <span class="activity-tag">Yoga</span>
+                            <span class="activity-tag">Pilates</span>
+                        </div>
+                        <div class="location-price">₹1,899/month</div>
+                        <a href="#" class="location-link">View Full Profile <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <div class="location-card slide-up" style="animation-delay: 0.4s;">
+                    <div class="location-img">
+                        <img src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Yoga Harmony Studio">
+                    </div>
+                    <div class="location-info">
+                        <h3>Yoga Harmony Studio</h3>
+                        <div class="location-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> Faridabad</span>
+                            <span><i class="fas fa-location-arrow"></i> 2.1 km</span>
+                            <span><i class="fas fa-code"></i> 12009</span>
+                        </div>
+                        <div class="location-activities">
+                            <span class="activity-tag">Yoga</span>
+                            <span class="activity-tag">Meditation</span>
+                            <span class="activity-tag">Pranayama</span>
+                        </div>
+                        <div class="location-price">₹1,599/month</div>
+                        <a href="#" class="location-link">View Full Profile <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <div class="container">
+            <div class="section-title slide-up">
+                <h2>Frequently Asked Questions</h2>
+                <p>Find answers to common questions about our gyms and services</p>
+            </div>
+
+            <div class="faq-container">
+                <div class="faq-item slide-up">
+                    <div class="faq-question">
+                        <span>What are your membership options?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We offer flexible membership options including monthly, quarterly, and annual plans. We also have special packages for students, seniors, and corporate clients. Visit our Services page or contact us for detailed pricing information.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item slide-up" style="animation-delay: 0.1s;">
+                    <div class="faq-question">
+                        <span>Do you offer personal training services?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we have certified personal trainers available at all our locations. You can choose from one-on-one sessions or small group training. Our trainers will work with you to create a customized fitness plan based on your goals and fitness level.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item slide-up" style="animation-delay: 0.2s;">
+                    <div class="faq-question">
+                        <span>What safety measures are in place?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Your safety is our priority. All our gyms follow strict hygiene protocols, including regular sanitization of equipment, social distancing measures, and mandatory temperature checks. Our staff is fully vaccinated and trained in COVID-19 safety procedures.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item slide-up" style="animation-delay: 0.3s;">
+                    <div class="faq-question">
+                        <span>Can I freeze my membership?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we understand that circumstances change. You can freeze your membership for up to 3 months per year with proper documentation (medical certificate, travel proof, etc.). Please contact our support team to initiate a freeze.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item slide-up" style="animation-delay: 0.4s;">
+                    <div class="faq-question">
+                        <span>Do you have women-only sections?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Most of our locations have dedicated women-only workout areas with separate changing rooms. Please check with your specific location for details about their women's section facilities.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-col">
+                    <h3>FIT-verse</h3>
+                    <p>Join the best gyms near you and achieve your fitness goals with our state-of-the-art facilities and expert trainers.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="login.html">Login</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Services</h3>
+                    <ul>
+                        <li><a href="#">Personal Training</a></li>
+                        <li><a href="#">Group Classes</a></li>
+                        <li><a href="#">Nutrition Plans</a></li>
+                        <li><a href="#">Corporate Wellness</a></li>
+                        <li><a href="#">Virtual Training</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> 123 Fitness Street, Faridabad</li>
+                        <li><i class="fas fa-phone-alt"></i> +91 12345 67890</li>
+                        <li><i class="fas fa-envelope"></i> info@fit-verse.com</li>
+                        <li><i class="fas fa-clock"></i> Mon-Fri: 6AM-10PM</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 FIT-verse. All Rights Reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+   
+</body>
+</html>

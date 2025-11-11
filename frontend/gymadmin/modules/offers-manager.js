@@ -8,6 +8,7 @@ console.log('🚀 OFFERS MANAGER SCRIPT LOADING...');
 
 class OffersManager {
   constructor() {
+    this.BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://localhost:5000';
     console.log('🏗️ OffersManager constructor called');
     this.currentTab = 'templates';
     this.offers = [];
@@ -662,7 +663,7 @@ class OffersManager {
     if (gymData.logoUrl) {
       gymLogo = gymData.logoUrl.startsWith('http') 
         ? gymData.logoUrl 
-        : `http://localhost:5000${gymData.logoUrl.startsWith('/') ? gymData.logoUrl : '/' + gymData.logoUrl}`;
+        : `${this.BASE_URL}${gymData.logoUrl.startsWith('/') ? gymData.logoUrl : '/' + gymData.logoUrl}`;
     }
     
     const gymName = gymData.gymName || gymData.name || 'Your Gym';
@@ -1853,7 +1854,7 @@ class OffersManager {
           const gymId = this.getGymId();
           
           if (token && gymId) {
-            const response = await fetch(`http://localhost:5000/api/offers/offers/${campaignId}`, {
+            const response = await fetch(`${this.BASE_URL}/api/offers/offers/${campaignId}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -1911,7 +1912,7 @@ class OffersManager {
       try {
         const token = this.getAdminToken();
         if (token) {
-          const response = await fetch(`http://localhost:5000/api/offers/offers/${campaignId}/toggle`, {
+          const response = await fetch(`${this.BASE_URL}/api/offers/offers/${campaignId}/toggle`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
@@ -1966,7 +1967,7 @@ class OffersManager {
       try {
         const token = this.getAdminToken();
         if (token) {
-          const response = await fetch(`http://localhost:5000/api/offers/offers/${campaignId}`, {
+          const response = await fetch(`${this.BASE_URL}/api/offers/offers/${campaignId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -2425,19 +2426,19 @@ class OffersManager {
 
       // Fetch from multiple endpoints in parallel for comprehensive analytics
       const [offersResponse, couponsResponse, statsResponse] = await Promise.all([
-        fetch(`http://localhost:5000/api/offers/offers?gymId=${gymId}`, {
+        fetch(`${this.BASE_URL}/api/offers/offers?gymId=${gymId}`, {
           headers: {
             'Authorization': `Bearer ${adminToken}`,
             'Content-Type': 'application/json'
           }
         }),
-        fetch(`http://localhost:5000/api/offers/coupons?gymId=${gymId}`, {
+        fetch(`${this.BASE_URL}/api/offers/coupons?gymId=${gymId}`, {
           headers: {
             'Authorization': `Bearer ${adminToken}`,
             'Content-Type': 'application/json'
           }
         }),
-        fetch(`http://localhost:5000/api/offers/offers/stats?gymId=${gymId}`, {
+        fetch(`${this.BASE_URL}/api/offers/offers/stats?gymId=${gymId}`, {
           headers: {
             'Authorization': `Bearer ${adminToken}`,
             'Content-Type': 'application/json'

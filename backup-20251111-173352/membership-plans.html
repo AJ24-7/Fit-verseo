@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym-Wale - Gym Memberships Near You</title>
+    <link rel="stylesheet" href="membership-plans.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="membership-plans.js"></script>
+    
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner">
+            <i class="fas fa-dumbbell fa-spin"></i>
+            <p>Finding the best gyms for you...</p>
+        </div>
+    </div>
+
+    <header>
+        <nav class="navbar">
+            <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+                <img class="logo" src="public/Gym-Wale.png" alt="Gym-Wale Logo">
+                <h3 class="brand-title">Gym<span>-Wale</span></h3>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-item"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-item active"><i class="fas fa-concierge-bell"></i> Services ⬇</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="personaltraining.html"><i class="fas fa-user-tie"></i> Personal Training</a></li>
+                        <li><a href="membership-plans.html" class="active"><i class="fas fa-id-card"></i> Membership Plans</a></li>
+                        <li><a href="dietplans.html"><i class="fas fa-apple-alt"></i> Diet Plans</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html" class="nav-item"><i class="fas fa-envelope"></i> Contact</a></li>
+                <!-- 👤 Shown only when user is logged in -->
+                <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                    <a href="/frontend/public/userprofile.html" class="nav-item">
+                        <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="edit-profile.html"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+                        <li><a href="settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </li>
+                
+                <!-- 🔐 Shown only when user is logged out -->
+                <li class="nav-item" id="login-signup-nav" style="display: none;">
+                    <a href="/frontend/public/login.html"><i class="fas fa-sign-in-alt"></i> Login / Signup</a>
+                </li>
+            </ul>
+            <div class="menu-toggle">&#9776;</div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h1>Find the Perfect Gym Membership</h1>
+            <p>Discover top-rated gyms near you with flexible membership options to fit your lifestyle and budget.</p>
+            
+            <div class="search-controls">
+                <div class="location-filter">
+                    <select id="locationSelect">
+                        <option value="">All Cities</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Faridabad">Faridabad</option>
+                        <option value="Gurugram">Gurugram</option>
+                        <option value="Noida">Noida</option>
+                    </select>
+                    <button id="nearMeBtn" class="near-me-btn">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Near Me
+                    </button>
+                </div>
+                
+                <!-- Filter Tabs -->
+                <div class="filter-tabs">
+                    <button class="tab-btn active" data-filter="rating">
+                        <i class="fas fa-star"></i>
+                        Top Rated
+                    </button>
+                    <button class="tab-btn" data-filter="budget">
+                        <i class="fas fa-rupee-sign"></i>
+                        Budget Friendly
+                    </button>
+                    <button class="tab-btn" data-filter="activities">
+                        <i class="fas fa-dumbbell"></i>
+                        Most Activities
+                    </button>
+                    <button class="tab-btn" data-filter="all">
+                        <i class="fas fa-th-large"></i>
+                        All Gyms
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="results-section">
+            <div class="results-header">
+                <h2 id="resultsTitle">Top Rated Gyms</h2>
+                <span id="resultsCount" class="results-count">Loading...</span>
+            </div>
+            
+            <div class="gym-profiles" id="gymProfilesContainer">
+                <!-- Gym profiles will be dynamically inserted here -->
+                <div class="loading-placeholder">
+                    <div class="placeholder-card"></div>
+                    <div class="placeholder-card"></div>
+                    <div class="placeholder-card"></div>
+                    <div class="placeholder-card"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <!-- About Section -->
+                <div class="footer-section about">
+                    <h2>Gym-Wale</h2>
+                    <p>Manage your fitness journey with ease. Find the best gyms, membership plans, and exciting offers.</p>
+                </div>
+    
+                <!-- Useful Links -->
+                <div class="footer-section links">
+                    <h2>Useful Links</h2>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="membership-plans.html">Membership Plans</a></li>
+                        <li><a href="personaltraining.html">Personal Training</a></li>
+                        <li><a href="dietplans.html">Diet Plans</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                    </ul>
+                </div>
+    
+                <!-- Social Media Links -->
+                <div class="footer-section social">
+                    <h2>Follow Us</h2>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Copyright Section -->
+            <div class="footer-bottom">
+                <p>&copy; 2025 Gym-Wale | Designed by Aayush & Team</p>
+            </div>
+        </div>
+    </footer>
+    <!-- Font Awesome for icons (in a real app, you might want to use the actual kit) -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>

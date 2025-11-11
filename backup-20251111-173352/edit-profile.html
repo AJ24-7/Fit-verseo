@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym-Wale | Edit Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="edit-profile.css">
+    <script>
+        // Define BASE_URL globally before other scripts load
+        const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+    </script>
+</head>
+<body>
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+              <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+              <img class="logo" src="public/Gym-Wale.png" alt="Gym-Wale Logo">
+              <h3 class="brand-title">Gym<span>-Wale</span></h3>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-item"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-item"><i class="fas fa-concierge-bell"></i> Services</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="personaltraining.html"><i class="fas fa-user-tie"></i> Personal Training</a></li>
+                        <li><a href="membership-plans.html"><i class="fas fa-id-card"></i> Membership Plans</a></li>
+                        <li><a href="dietplans.html"><i class="fas fa-apple-alt"></i> Diet Plans</a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html" class="nav-item"><i class="fas fa-envelope"></i> Contact</a></li>
+                <!-- 👤 Shown only when user is logged in -->
+                <li class="dropdown user-profile" id="user-profile-nav" style="display: none;">
+                    <a href="/frontend/public/userprofile.html" class="active">
+                        <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="edit-profile.html" class="active"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+                        <li><a href="settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </li>
+                
+                <!-- 🔐 Shown only when user is logged out -->
+                <li class="nav-item" id="login-signup-nav" style="display: none;">
+                    <a href="/frontend/public/login.html"><i class="fas fa-sign-in-alt"></i> Login / Signup</a>
+                </li>
+            </ul>
+            <div class="menu-toggle">&#9776;</div>
+        </nav>
+    </header>
+    <div class="profile-edit-container">
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+            <div class="step active" data-step="1">
+                <div class="step-circle">1</div>
+                <div class="step-label">Basic Info</div>
+            </div>
+            <div class="step" data-step="2">
+                <div class="step-circle">2</div>
+                <div class="step-label">Fitness Details</div>
+            </div>
+            <!-- Step 3 removed - preferences managed by settings page -->
+            <!-- <div class="step" data-step="3">
+                <div class="step-circle">3</div>
+                <div class="step-label">Preferences</div>
+            </div> -->
+        </div>
+
+        <!-- Multi-step Form -->
+        <form id="edit-profile-form">
+            <!-- Step 1: Basic Info -->
+            <div class="form-section" data-step="1">
+                <h2><i class="fas fa-user-edit"></i> Basic Information</h2>
+                
+                <div class="profile-pic-container">
+                    <div class="profile-pic-wrapper">
+                        <img id="profile-pic" src="/uploads/profile-pics/default.png" alt="Profile Picture">
+                        <div class="upload-overlay">
+                            <i class="fas fa-camera"></i>
+                            <span>Change Photo</span>
+                        </div>
+                        <input type="file" id="upload-pic" name="profileImage" accept="image/*">
+
+                    </div>
+                    <div class="pic-actions">
+                        
+                        <button type="button" class="btn-secondary" id="remove-pic">Remove</button>
+                        <button type="button" class="btn-secondary" id="take-pic">Take Photo</button>
+                         <video id="camera-stream" width="200" height="200" autoplay style="display:none; border-radius:50%;"></video>
+  <canvas id="capture-canvas" width="200" height="200" style="display:none;"></canvas>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="first-name">First Name</label>
+                        <input type="text" id="first-name" placeholder="Enter first name" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="last-name">Last Name</label>
+                        <input type="text" id="last-name" placeholder="Enter last name" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon">@</span>
+                            <input type="text" id="username" placeholder="username" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="birthdate">Date of Birth</label>
+                        <input type="date" id="birthdate" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="phone">Phone Number</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon"><i class="fas fa-phone"></i></span>
+                            <input type="tel" id="phone" placeholder="+91 __________" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="email">Email</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                            <input type="email" id="email" placeholder="your.email@example.com" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Fitness Details -->
+            <div class="form-section" data-step="2" style="display:none;">
+                <h2><i class="fas fa-dumbbell"></i> Fitness Details</h2>
+                
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="height">Height</label>
+                        <div class="dual-input">
+                            <input type="number" id="height-feet" placeholder="Feet" min="0" max="8">
+                            <span class="unit-label">ft</span>
+                            <input type="number" id="height-inches" placeholder="Inches" min="0" max="11">
+                            <span class="unit-label">in</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="weight">Weight</label>
+                        <div class="input-with-icon">
+                            <input type="number" id="weight" placeholder="kgs" min="0">
+                            <span class="input-icon-right">kgs</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="fitness-level">Fitness Level</label>
+                        <select id="fitness-level">
+                            <option value="">Select your level</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                            <option value="athlete">Athlete</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="primary-goal">Primary Goal</label>
+                        <select id="primary-goal">
+                            <option value="">Select your goal</option>
+                            <option value="weight-loss">Weight Loss</option>
+                            <option value="muscle-gain">Muscle Gain</option>
+                            <option value="endurance">Endurance</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="rehabilitation">Rehabilitation</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Workout Preferences</label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="workout-pref" value="cardio">
+                            <span class="custom-checkbox"></span>
+                            Cardio
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="workout-pref" value="strength">
+                            <span class="custom-checkbox"></span>
+                            Strength Training
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="workout-pref" value="hiit">
+                            <span class="custom-checkbox"></span>
+                            HIIT
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="workout-pref" value="yoga">
+                            <span class="custom-checkbox"></span>
+                            Yoga
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="workout-pref" value="pilates">
+                            <span class="custom-checkbox"></span>
+                            Pilates
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="workout-pref" value="crossfit">
+                            <span class="custom-checkbox"></span>
+                            CrossFit
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            
+<!-- Form Navigation (updated for 2 steps instead of 3) -->
+<div class="form-navigation">
+    <button type="button" class="btn-secondary" id="prev-btn" disabled>
+        <i class="fas fa-arrow-left"></i> Previous
+    </button>
+    <button type="button" class="btn-primary" id="next-btn">
+        Next <i class="fas fa-arrow-right"></i>
+    </button>
+    <button type="submit" class="btn-success" id="submit-btn">
+        <i class="fas fa-save"></i> Save Profile
+    </button>
+</div>
+</form>
+
+        <!-- Success Modal -->
+        <div class="modal" id="success-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-check-circle"></i> Profile Updated Successfully!</h3>
+                    <span class="close" id="close-success-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <p>Your changes have been saved successfully. You can continue using Gym-Wale.</p>
+                    <div class="modal-buttons">
+                        <button class="btn-primary" id="modal-close-btn">
+                            <i class="fas fa-arrow-right"></i> Continue
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Modal -->
+        <div class="modal" id="error-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Error</h3>
+                    <span class="close" id="close-error-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-icon error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <p id="error-message">An error occurred. Please try again.</p>
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" id="error-modal-close-btn">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Modal -->
+        <div class="modal" id="info-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-info-circle"></i> Information</h3>
+                    <span class="close" id="close-info-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-icon info">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <p id="info-message">Information message.</p>
+                    <div class="modal-buttons">
+                        <button class="btn-primary" id="info-modal-close-btn">
+                            <i class="fas fa-check"></i> OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Password Modal -->
+        <div class="modal" id="confirm-password-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-lock"></i> Confirm Your Password</h3>
+                    <span class="close" id="close-confirm-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>Please enter your password to save the profile changes:</p>
+                    <div class="input-group">
+                        <label for="confirm-password-input">Current Password</label>
+                        <div class="input-with-icon password-field">
+                            <input type="password" id="confirm-password-input" placeholder="Enter your current password" required>
+                            <span class="input-icon-right toggle-password" id="toggle-confirm-password">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="forgot-password-link">
+                        <a href="#" id="forgot-password-link">
+                            <i class="fas fa-key"></i> Forgot your password?
+                        </a>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" class="btn-secondary" id="cancel-confirm-btn">Cancel</button>
+                        <button type="button" class="btn-primary" id="confirm-save-btn">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div class="modal" id="forgot-password-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-key"></i> Reset Password</h3>
+                    <span class="close" id="close-forgot-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="forgot-step-1">
+                        <p>Enter your email address to receive a password reset OTP:</p>
+                        <div class="input-group">
+                            <label for="forgot-email">Email Address</label>
+                            <div class="input-with-icon">
+                                <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                                <input type="email" id="forgot-email" placeholder="your.email@example.com" required>
+                            </div>
+                        </div>
+                        <div class="modal-buttons">
+                            <button type="button" class="btn-secondary" id="cancel-forgot-btn">Cancel</button>
+                            <button type="button" class="btn-primary" id="send-otp-btn">
+                                <i class="fas fa-paper-plane"></i> Send OTP
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="forgot-step-2" style="display:none;">
+                        <p>Enter the 6-digit OTP sent to your email:</p>
+                        <div class="input-group">
+                            <label for="otp-input">OTP Code</label>
+                            <input type="text" id="otp-input" placeholder="Enter 6-digit OTP" maxlength="6" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="new-password-forgot">New Password</label>
+                            <div class="input-with-icon password-field">
+                                <input type="password" id="new-password-forgot" placeholder="Enter new password" required>
+                                <span class="input-icon-right toggle-password" id="toggle-new-password">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="confirm-new-password-forgot">Confirm New Password</label>
+                            <div class="input-with-icon password-field">
+                                <input type="password" id="confirm-new-password-forgot" placeholder="Confirm new password" required>
+                                <span class="input-icon-right toggle-password" id="toggle-confirm-new-password">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="modal-buttons">
+                            <button type="button" class="btn-secondary" id="back-to-email-btn">Back</button>
+                            <button type="button" class="btn-primary" id="reset-password-btn">
+                                <i class="fas fa-check"></i> Reset Password
+                            </button>
+                        </div>
+                        <div class="resend-otp">
+                            <p>Didn't receive OTP? <a href="#" id="resend-otp-link">Resend OTP</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Modal -->
+        <div class="modal" id="loading-modal">
+            <div class="modal-content loading-content">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p id="loading-text">Processing...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="edit-profile.js"></script>
+</body>
+</html>

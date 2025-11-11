@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Test - Gym-Wale</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        button {
+            background: #0d4d89;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0a3d6f;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .login-form {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Gym-Wale Email Test</h1>
+            <p>Test the email notification system</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Login Required</h3>
+            <p>You need to login first to test email functionality.</p>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="email">Admin Email:</label>
+                    <input type="email" id="email" placeholder="your-gym@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Your password">
+                </div>
+                <button onclick="testLogin()">Login & Get Token</button>
+            </div>
+
+            <div id="loginResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📧 Email Tests</h3>
+            <p>Test different types of email notifications</p>
+            
+            <button onclick="testLoginNotification()" id="testLoginBtn" disabled>
+                📬 Test Login Notification
+            </button>
+            
+            <button onclick="test2FAEmail()" id="test2FABtn" disabled>
+                🔐 Test 2FA Email
+            </button>
+            
+            <div id="emailResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>⚡ Performance Test</h3>
+            <p>Test login speed and device detection</p>
+            
+            <button onclick="testLoginSpeed()">⏱️ Test Login Speed</button>
+            <button onclick="testDeviceInfo()">📱 Test Device Detection</button>
+            
+            <div id="performanceResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = '';
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const result = document.getElementById('loginResult');
+            
+            if (!email || !password) {
+                showResult('loginResult', 'Please enter email and password', 'error');
+                return;
+            }
+
+            showResult('loginResult', 'Logging in...', 'info');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/gyms/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.token) {
+                    authToken = data.token;
+                    showResult('loginResult', 'Login successful! Email tests are now enabled.', 'success');
+                    
+                    // Enable email test buttons
+                    document.getElementById('testLoginBtn').disabled = false;
+                    document.getElementById('test2FABtn').disabled = false;
+                } else {
+                    showResult('loginResult', `Login failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('loginResult', `Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLoginNotification() {
+            if (!authToken) {
+                showResult('emailResult', 'Please login first', 'error');
+                return;
+            }
+
+            showResult('emailResult', 'Sending test login notification...', 'info');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/gyms/test-email', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ testType: 'login' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('emailResult', `✅ ${data.message}`, 'success');
+                } else {
+                    showResult('emailResult', `❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('emailResult', `Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function test2FAEmail() {
+            showResult('emailResult', '2FA email test not implemented yet', 'info');
+        }
+
+        async function testLoginSpeed() {
+            const startTime = performance.now();
+            
+            try {
+                showResult('performanceResult', 'Testing login speed...', 'info');
+                
+                // Simulate the optimized login process
+                const deviceInfo = getDeviceInfo();
+                const locationPromise = getQuickLocation();
+                
+                // This should be very fast now
+                const deviceTime = performance.now() - startTime;
+                
+                const location = await locationPromise;
+                const totalTime = performance.now() - startTime;
+                
+                showResult('performanceResult', 
+                    `⚡ Speed Test Results:\n` +
+                    `Device Info: ${deviceTime.toFixed(2)}ms\n` +
+                    `Location Detection: ${totalTime.toFixed(2)}ms\n` +
+                    `Total: ${totalTime.toFixed(2)}ms\n` +
+                    `Location: ${location.city}, ${location.country}`, 'success');
+            } catch (error) {
+                showResult('performanceResult', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDeviceInfo() {
+            try {
+                const deviceInfo = getDeviceInfo();
+                showResult('performanceResult', 
+                    `📱 Device Information:\n` +
+                    `Browser: ${deviceInfo.browser}\n` +
+                    `OS: ${deviceInfo.os}\n` +
+                    `Screen: ${deviceInfo.screen.width}x${deviceInfo.screen.height}\n` +
+                    `Language: ${deviceInfo.language}\n` +
+                    `Timezone: ${deviceInfo.timezone}`, 'success');
+            } catch (error) {
+                showResult('performanceResult', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Device info collection (same as in login)
+        function getDeviceInfo() {
+            const userAgent = navigator.userAgent;
+            let browser = 'Unknown', browserVersion = 'Unknown', os = 'Unknown';
+            
+            if (userAgent.indexOf('Chrome') > -1) {
+                browser = 'Chrome';
+                browserVersion = userAgent.match(/Chrome\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (userAgent.indexOf('Firefox') > -1) {
+                browser = 'Firefox';
+                browserVersion = userAgent.match(/Firefox\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') === -1) {
+                browser = 'Safari';
+                browserVersion = userAgent.match(/Version\/([0-9.]+)/)?.[1] || 'Unknown';
+            }
+            
+            if (userAgent.indexOf('Windows') > -1) os = 'Windows';
+            else if (userAgent.indexOf('Mac OS X') > -1) os = 'macOS';
+            else if (userAgent.indexOf('Linux') > -1) os = 'Linux';
+            else if (userAgent.indexOf('Android') > -1) os = 'Android';
+            else if (userAgent.indexOf('iPhone') > -1 || userAgent.indexOf('iPad') > -1) os = 'iOS';
+            
+            return {
+                browser: `${browser} ${browserVersion}`,
+                os,
+                userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screen: { width: window.screen.width, height: window.screen.height },
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            };
+        }
+
+        // Quick location detection (same as optimized version)
+        async function getQuickLocation() {
+            return new Promise((resolve) => {
+                const defaultLocation = {
+                    city: 'Unknown', country: 'Unknown', 
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                };
+
+                if (navigator.geolocation) {
+                    const timeoutId = setTimeout(() => {
+                        resolve(defaultLocation);
+                    }, 1000);
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            clearTimeout(timeoutId);
+                            resolve({
+                                city: `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`,
+                                country: 'GPS Location',
+                                timezone: defaultLocation.timezone
+                            });
+                        },
+                        () => {
+                            clearTimeout(timeoutId);
+                            resolve(defaultLocation);
+                        },
+                        { enableHighAccuracy: false, timeout: 800, maximumAge: 600000 }
+                    );
+                } else {
+                    resolve(defaultLocation);
+                }
+            });
+        }
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            // Auto-hide after 10 seconds for non-error messages
+            if (type !== 'error') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 10000);
+            }
+        }
+    </script>
+</body>
+</html>

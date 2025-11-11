@@ -5,7 +5,7 @@
 
 class GymChatSystem {
     constructor() {
-        this.BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+        const BASE_URL = window.API_CONFIG.BASE_URL;
         this.currentGymId = null;
         this.currentChatId = null;
         this.messages = [];

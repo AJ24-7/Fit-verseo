@@ -100,7 +100,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!token) {
     if (loginNav) loginNav.style.display = "block";
   } else {
-    fetch('http://localhost:5000/api/users/profile', {
+    const BASE_URL = window.API_CONFIG.BASE_URL;
+    fetch(`${BASE_URL}/api/users/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': "application/json",
@@ -116,8 +117,8 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(user => {
         const profilePicUrl = user.profileImage
-         ? (user.profileImage.startsWith('http') ? user.profileImage : `http://localhost:5000${user.profileImage}`)
-        : `http://localhost:5000/uploads/profile-pics/default.png`;
+         ? (user.profileImage.startsWith('http') ? user.profileImage : `${BASE_URL}${user.profileImage}`)
+        : `${BASE_URL}/uploads/profile-pics/default.png`;
 
         const userIconImage = document.getElementById("profile-icon-img");
         if (userIconImage) userIconImage.src = profilePicUrl;
@@ -154,8 +155,9 @@ document.addEventListener('DOMContentLoaded', function () {
   loadUserProfile();
 
   async function loadQuickMessages() {
+    const BASE_URL = window.API_CONFIG.BASE_URL;
     try {
-      const response = await fetch('http://localhost:5000/api/admin/communication/contact/quick-messages');
+      const response = await fetch(`${BASE_URL}/api/admin/communication/contact/quick-messages`);
       if (response.ok) {
         const result = await response.json();
         displayQuickMessages(result.data);
@@ -233,8 +235,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const token = localStorage.getItem("token");
     if (!token) return;
 
+    const BASE_URL = window.API_CONFIG.BASE_URL;
     try {
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch(`${BASE_URL}/api/users/profile`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -361,6 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
     btnLoading.style.display = 'flex';
     submitBtn.disabled = true;
 
+    const BASE_URL = window.API_CONFIG.BASE_URL;
     try {
       const formData = getFormData();
       const token = localStorage.getItem("token");
@@ -373,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function () {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('http://localhost:5000/api/admin/communication/public/contact', {
+      const response = await fetch(`${BASE_URL}/api/admin/communication/public/contact`, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(formData)

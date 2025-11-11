@@ -886,7 +886,7 @@ function initFormSubmissionModule() {
 
       // Submit to server
       console.log('🌐 Sending request to server...');
-      const response = await fetch('http://localhost:5000/api/gyms/register', {
+      const response = await fetch('${this.BASE_URL}/api/gyms/register', {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: {

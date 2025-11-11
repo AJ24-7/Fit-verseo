@@ -1,5 +1,5 @@
 console.log('[DEBUG] admin.js script started');
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = window.API_CONFIG.BASE_URL;
 
 document.addEventListener('DOMContentLoaded', function () {
     

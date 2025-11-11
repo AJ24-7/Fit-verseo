@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biometric Functions Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .test-button:hover {
+            background: #1976D2;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+            background: #f0f8ff;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            border-left-color: #4CAF50;
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-fingerprint"></i> Biometric Functions Test</h1>
+        <p>Test biometric functionality and function availability</p>
+        
+        <div style="margin: 20px 0;">
+            <h3>Function Availability Tests</h3>
+            <button class="test-button" onclick="testFunctionAvailability()">
+                <i class="fas fa-search"></i> Test Function Definitions
+            </button>
+            <button class="test-button" onclick="testBiometricFeedback()">
+                <i class="fas fa-comment"></i> Test Biometric Feedback
+            </button>
+            <button class="test-button" onclick="testDeviceConfiguration()">
+                <i class="fas fa-cogs"></i> Test Device Configuration
+            </button>
+            <button class="test-button" onclick="testBiometricEnrollment()">
+                <i class="fas fa-user-plus"></i> Test Biometric Enrollment
+            </button>
+        </div>
+        
+        <div id="testResults"></div>
+    </div>
+
+    <!-- Include settings.js to test functions -->
+    <script>
+        // Load settings.js dynamically and test functions
+        const script = document.createElement('script');
+        script.src = '/frontend/gymadmin/settings.js';
+        script.onload = function() {
+            console.log('Settings.js loaded successfully');
+            // Run tests after settings.js loads
+            setTimeout(() => {
+                testFunctionAvailability();
+            }, 1000);
+        };
+        script.onerror = function() {
+            console.error('Failed to load settings.js');
+            addResult('❌ Failed to load settings.js', 'error');
+        };
+        document.head.appendChild(script);
+    </script>
+    
+    <script>
+        function addResult(message, type = 'result') {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function testFunctionAvailability() {
+            addResult('Testing function availability...', 'result');
+            
+            const functionsToTest = [
+                'showBiometricFeedback',
+                'showDeviceConfigurationModal',
+                'testBiometricConnection',
+                'openBiometricEnrollment', 
+                'openBiometricReports',
+                'openBiometricDeviceSetup',
+                'createBiometricModal',
+                'scanForDevices'
+            ];
+            
+            let allPassed = true;
+            
+            functionsToTest.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    addResult(`✅ ${funcName} is defined and available`, 'success');
+                } else {
+                    addResult(`❌ ${funcName} is NOT defined`, 'error');
+                    allPassed = false;
+                }
+            });
+            
+            // Also test if biometric agent manager exists
+            if (window.biometricAgentManager) {
+                addResult('✅ biometricAgentManager is available', 'success');
+            } else {
+                addResult('❌ biometricAgentManager is NOT available', 'error');
+                allPassed = false;
+            }
+            
+            if (allPassed) {
+                addResult('🎉 All biometric functions are available!', 'success');
+            } else {
+                addResult('⚠️ Some biometric functions are missing', 'error');
+            }
+        }
+
+        function testBiometricFeedback() {
+            if (typeof showBiometricFeedback === 'function') {
+                showBiometricFeedback('Test feedback message - SUCCESS!', 'success');
+                showBiometricFeedback('Test feedback message - INFO', 'info');
+                showBiometricFeedback('Test feedback message - WARNING', 'warning');
+                showBiometricFeedback('Test feedback message - ERROR', 'error');
+                addResult('✅ Biometric feedback function tested - check for toast notifications', 'success');
+            } else {
+                addResult('❌ showBiometricFeedback function not available', 'error');
+            }
+        }
+
+        function testDeviceConfiguration() {
+            if (typeof showDeviceConfigurationModal === 'function') {
+                addResult('✅ Attempting to open device configuration modal...', 'success');
+                try {
+                    showDeviceConfigurationModal();
+                    addResult('✅ Device configuration modal function called successfully', 'success');
+                } catch (error) {
+                    addResult(`❌ Error calling device configuration: ${error.message}`, 'error');
+                }
+            } else {
+                addResult('❌ showDeviceConfigurationModal function not available', 'error');
+            }
+        }
+
+        function testBiometricEnrollment() {
+            if (typeof openBiometricEnrollment === 'function') {
+                addResult('✅ Attempting to open biometric enrollment...', 'success');
+                try {
+                    openBiometricEnrollment();
+                    addResult('✅ Biometric enrollment function called successfully', 'success');
+                } catch (error) {
+                    addResult(`❌ Error calling biometric enrollment: ${error.message}`, 'error');
+                }
+            } else {
+                addResult('❌ openBiometricEnrollment function not available', 'error');
+            }
+        }
+
+        // Auto-run function availability test when page loads
+        // Removed auto-run since we're now doing it after script loads
+    </script>
+</body>
+</html>

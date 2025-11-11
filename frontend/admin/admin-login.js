@@ -3,7 +3,7 @@
 
 class AdminLogin {
     constructor() {
-        this.baseURL = 'http://localhost:5000/api/admin/auth';
+        this.baseURL = (window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://localhost:5000') + '/api/admin/auth';
         this.deviceFingerprint = this.generateDeviceFingerprint();
         this.isSubmitting = false; // Add submission state
         this.initializeEventListeners();
@@ -74,8 +74,9 @@ class AdminLogin {
 
     async checkExistingSession() {
         // First check if any admin exists
+        const BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://localhost:5000';
         try {
-            const adminExistsResponse = await fetch('http://localhost:5000/api/admin/check-admin-exists');
+            const adminExistsResponse = await fetch(`${BASE_URL}/api/admin/check-admin-exists`);
             const adminExistsResult = await adminExistsResponse.json();
             
             if (!adminExistsResult.adminExists) {
@@ -89,7 +90,7 @@ class AdminLogin {
         const token = localStorage.getItem('adminToken');
         if (token) {
             try {
-                const response = await fetch('http://localhost:5000/api/admin/profile', {
+                const response = await fetch(`${BASE_URL}/api/admin/profile`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - Gym Membership</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1976d2;
+            --primary-dark: #1565c0;
+            --success: #4caf50;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --background: #f0f2f5;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .success-header {
+            background: linear-gradient(135deg, var(--success) 0%, #388e3c 100%);
+            color: white;
+            padding: 40px 30px;
+            position: relative;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: checkmark 0.6s ease-in-out;
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: scale(0) rotate(-45deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2) rotate(-45deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .success-header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .success-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .member-card {
+            background: linear-gradient(135deg, #e3f2fd 0%, #fff 100%);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--primary);
+            text-align: left;
+        }
+
+        .member-card h3 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 0;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-row strong {
+            color: var(--text-primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-row span:last-child {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .confetti {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .membership-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .membership-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-conic-gradient(
+                transparent 0deg 2deg,
+                rgba(255, 255, 255, 0.1) 2deg 4deg
+            );
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .btn {
+                justify-content: center;
+            }
+            
+            .content {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-header">
+            <div class="confetti" id="confetti"></div>
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1>Payment Successful!</h1>
+            <p>Welcome to our gym family</p>
+        </div>
+
+        <div class="content">
+            <!-- Member Information -->
+            <div class="member-card">
+                <h3><i class="fas fa-user-check"></i> Registration Complete</h3>
+                <div class="detail-row">
+                    <strong><i class="fas fa-user"></i> Member Name:</strong>
+                    <span id="memberName">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <strong><i class="fas fa-envelope"></i> Email:</strong>
+                    <span id="memberEmail">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <strong><i class="fas fa-dumbbell"></i> Membership Plan:</strong>
+                    <span id="membershipPlan">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <strong><i class="fas fa-calendar-alt"></i> Validity:</strong>
+                    <span id="validityPeriod">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <strong><i class="fas fa-rupee-sign"></i> Amount Paid:</strong>
+                    <span id="amountPaid">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Digital Membership Card -->
+            <div class="membership-card">
+                <div class="card-content">
+                    <h3 style="margin-bottom: 16px;">
+                        <i class="fas fa-id-card"></i> Digital Membership Card
+                    </h3>
+                    <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;" id="cardMemberName">
+                        Member Name
+                    </div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;" id="cardMemberId">
+                        Member ID: #12345
+                    </div>
+                    <div style="margin-top: 16px; font-size: 0.9rem; opacity: 0.8;">
+                        Valid until: <span id="cardExpiryDate">Dec 31, 2024</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Actions -->
+            <div class="actions">
+                <button class="btn btn-primary" onclick="downloadMembershipCard()">
+                    <i class="fas fa-download"></i>
+                    Download Card
+                </button>
+                <button class="btn btn-secondary" onclick="shareSuccess()">
+                    <i class="fas fa-share-alt"></i>
+                    Share Success
+                </button>
+                <a href="/frontend" class="btn btn-secondary">
+                    <i class="fas fa-home"></i>
+                    Back to Home
+                </a>
+            </div>
+
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; font-size: 0.9rem; color: var(--text-secondary);">
+                <i class="fas fa-info-circle"></i>
+                <strong>Next Steps:</strong> You can now visit the gym and start your fitness journey. Present your digital membership card or member ID at the front desk.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize success page
+        window.addEventListener('load', () => {
+            loadSuccessData();
+            createConfetti();
+        });
+
+        function loadSuccessData() {
+            try {
+                // Get URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const paymentId = urlParams.get('payment');
+                const memberName = urlParams.get('member') || 'Valued Member';
+                const planName = urlParams.get('plan') || 'Membership Plan';
+                const amount = urlParams.get('amount') || '1000';
+                const duration = urlParams.get('duration') || '1';
+                const email = urlParams.get('email') || 'member@example.com';
+                
+                // Calculate validity period
+                const durationMonths = parseInt(duration) || 1;
+                const validUntil = new Date();
+                validUntil.setMonth(validUntil.getMonth() + durationMonths);
+                
+                const durationText = durationMonths === 1 ? '1 Month' : 
+                                  durationMonths === 3 ? '3 Months' : 
+                                  durationMonths === 6 ? '6 Months' : 
+                                  durationMonths === 12 ? '1 Year' : `${durationMonths} Months`;
+                
+                // Generate member ID
+                const memberId = 'GM' + Date.now().toString().substr(-6);
+                
+                // Update UI
+                document.getElementById('memberName').textContent = decodeURIComponent(memberName);
+                document.getElementById('memberEmail').textContent = decodeURIComponent(email);
+                document.getElementById('membershipPlan').textContent = decodeURIComponent(planName);
+                document.getElementById('validityPeriod').textContent = durationText;
+                document.getElementById('amountPaid').textContent = `₹${amount}`;
+                
+                // Update membership card
+                document.getElementById('cardMemberName').textContent = decodeURIComponent(memberName);
+                document.getElementById('cardMemberId').textContent = `Member ID: ${memberId}`;
+                document.getElementById('cardExpiryDate').textContent = validUntil.toLocaleDateString('en-IN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                console.log('Success data loaded for payment:', paymentId);
+                
+            } catch (error) {
+                console.error('Error loading success data:', error);
+            }
+        }
+
+        function createConfetti() {
+            const confettiContainer = document.getElementById('confetti');
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                confettiContainer.appendChild(confetti);
+            }
+        }
+
+        function downloadMembershipCard() {
+            const memberName = document.getElementById('cardMemberName').textContent;
+            const memberId = document.getElementById('cardMemberId').textContent;
+            const expiryDate = document.getElementById('cardExpiryDate').textContent;
+            const planName = document.getElementById('membershipPlan').textContent;
+            
+            // Create a simple membership card for download
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 250;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 400, 250);
+            gradient.addColorStop(0, '#1976d2');
+            gradient.addColorStop(1, '#1565c0');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 400, 250);
+            
+            // Card content
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('GYM MEMBERSHIP CARD', 20, 40);
+            
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText(memberName, 20, 80);
+            
+            ctx.font = '14px Arial';
+            ctx.fillText(memberId, 20, 110);
+            ctx.fillText(`Plan: ${planName}`, 20, 140);
+            ctx.fillText(`Valid until: ${expiryDate}`, 20, 170);
+            
+            // Download
+            const link = document.createElement('a');
+            link.download = `membership-card-${memberName.replace(/\s+/g, '-')}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function shareSuccess() {
+            const memberName = document.getElementById('memberName').textContent;
+            const planName = document.getElementById('membershipPlan').textContent;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Gym Membership Activated!',
+                    text: `${memberName} just joined our gym with ${planName}! 💪`,
+                    url: window.location.href
+                });
+            } else {
+                // Fallback - copy to clipboard
+                const text = `🎉 ${memberName} just joined our gym with ${planName}! Ready to start the fitness journey! 💪`;
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Success message copied to clipboard!');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+                    <i class="fas fa-receipt"></i> Payment Details
+                </h3>
+                <div class="detail-row">
+                    <span>Payment ID:</span>
+                    <span id="paymentId">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <span>Amount Paid:</span>
+                    <span id="amountPaid">₹0</span>
+                </div>
+                <div class="detail-row">
+                    <span>Payment Date:</span>
+                    <span id="paymentDate">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <span>Payment Method:</span>
+                    <span id="paymentMethod">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <span>Membership Plan:</span>
+                    <span id="membershipPlan">Loading...</span>
+                </div>
+                <div class="detail-row">
+                    <span>Valid Until:</span>
+                    <span id="validUntil">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h3><i class="fas fa-list-check"></i> What's Next?</h3>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Visit the Gym</strong><br>
+                        Show this confirmation or your Member ID to start your workout
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Download Our App</strong><br>
+                        Track your workouts, book classes, and manage your membership
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Meet Your Trainer</strong><br>
+                        Get a personalized fitness assessment and workout plan
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Join Our Community</strong><br>
+                        Connect with other members and participate in group activities
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gym Contact Information -->
+            <div class="contact-info">
+                <h4><i class="fas fa-info-circle"></i> Need Help? Contact Your Gym</h4>
+                <div class="contact-detail">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="gymAddress">Loading gym address...</span>
+                </div>
+                <div class="contact-detail">
+                    <i class="fas fa-phone"></i>
+                    <span id="gymPhone">Loading contact number...</span>
+                </div>
+                <div class="contact-detail">
+                    <i class="fas fa-envelope"></i>
+                    <span id="gymEmail">Loading email...</span>
+                </div>
+                <div class="contact-detail">
+                    <i class="fas fa-clock"></i>
+                    <span>Mon-Sat: 6:00 AM - 11:00 PM, Sun: 7:00 AM - 9:00 PM</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="margin-top: 30px;">
+                <a href="/registration-complete" class="btn">
+                    <i class="fas fa-home"></i> Go to Dashboard
+                </a>
+                <a href="javascript:window.print()" class="btn secondary">
+                    <i class="fas fa-print"></i> Print Receipt
+                </a>
+            </div>
+
+            <!-- Download Receipt -->
+            <div style="margin-top: 20px;">
+                <button onclick="downloadReceipt()" class="btn secondary">
+                    <i class="fas fa-download"></i> Download Receipt (PDF)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize success page
+        window.addEventListener('load', async () => {
+            console.log('🎉 Payment success page loaded');
+            
+            // Get payment details from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentId = urlParams.get('payment');
+            const planName = urlParams.get('plan');
+            const amount = urlParams.get('amount');
+            const duration = urlParams.get('duration');
+            const method = urlParams.get('method');
+            
+            if (paymentId) {
+                await loadPaymentDetails(paymentId, planName, amount, duration, method);
+            } else {
+                // Load demo data
+                loadDemoData();
+            }
+        });
+
+        async function loadPaymentDetails(paymentId, planName, amount, duration, method) {
+            try {
+                console.log('Loading payment details for:', paymentId);
+                
+                // Try to fetch from backend first
+                try {
+                    const response = await fetch(`/api/payment/status/${paymentId}`);
+                    
+                    if (response.ok) {
+                        const payment = await response.json();
+                        displayPaymentDetails(payment);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Backend fetch failed, using URL parameters');
+                }
+                
+                // Fallback to URL parameters if backend fails
+                if (planName && amount) {
+                    const mockPayment = {
+                        id: paymentId,
+                        amount: parseFloat(amount) || 0,
+                        createdAt: new Date().toISOString(),
+                        paymentMethod: method || 'Cash Payment',
+                        plan: { name: planName },
+                        duration: duration || '1',
+                        member: { id: 'member_' + Date.now() }
+                    };
+                    
+                    displayPaymentDetails(mockPayment);
+                } else {
+                    loadDemoData();
+                }
+            } catch (error) {
+                console.error('Error loading payment details:', error);
+                loadDemoData();
+            }
+        }
+
+        function displayPaymentDetails(payment) {
+            // Update payment details
+            document.getElementById('paymentId').textContent = payment.id;
+            document.getElementById('amountPaid').textContent = `₹${payment.amount}`;
+            document.getElementById('paymentDate').textContent = new Date(payment.createdAt).toLocaleDateString();
+            document.getElementById('paymentMethod').textContent = payment.paymentMethod || 'Online';
+            document.getElementById('membershipPlan').textContent = payment.plan?.name || 'Membership Plan';
+            
+            // Generate member ID
+            const memberId = `MEM-${payment.member?.id?.slice(-8).toUpperCase() || 'DEMO1234'}`;
+            document.getElementById('memberId').textContent = memberId;
+            
+            // Calculate valid until date (assume 1 month from now)
+            const validUntil = new Date();
+            validUntil.setMonth(validUntil.getMonth() + 1);
+            document.getElementById('validUntil').textContent = validUntil.toLocaleDateString();
+            
+            console.log('Payment details displayed:', payment);
+        }
+
+        function loadDemoData() {
+            // Demo data for testing
+            document.getElementById('paymentId').textContent = 'PAY-DEMO-123456';
+            document.getElementById('amountPaid').textContent = '₹1,180';
+            document.getElementById('paymentDate').textContent = new Date().toLocaleDateString();
+            document.getElementById('paymentMethod').textContent = 'Razorpay';
+            document.getElementById('membershipPlan').textContent = 'Basic Monthly Plan';
+            document.getElementById('memberId').textContent = 'MEM-DEMO-1234';
+            
+            const validUntil = new Date();
+            validUntil.setMonth(validUntil.getMonth() + 1);
+            document.getElementById('validUntil').textContent = validUntil.toLocaleDateString();
+            
+            // Demo gym info
+            document.getElementById('gymAddress').textContent = '123 Fitness Street, Health City, HC 12345';
+            document.getElementById('gymPhone').textContent = '+91 98765 43210';
+            document.getElementById('gymEmail').textContent = 'info@fitnessgym.com';
+        }
+
+        function downloadReceipt() {
+            // Create receipt content
+            const receiptContent = `
+                PAYMENT RECEIPT
+                ===============
+                
+                Payment ID: ${document.getElementById('paymentId').textContent}
+                Member ID: ${document.getElementById('memberId').textContent}
+                Amount: ${document.getElementById('amountPaid').textContent}
+                Date: ${document.getElementById('paymentDate').textContent}
+                Method: ${document.getElementById('paymentMethod').textContent}
+                Plan: ${document.getElementById('membershipPlan').textContent}
+                Valid Until: ${document.getElementById('validUntil').textContent}
+                
+                Thank you for joining our gym!
+                
+                For support, contact: ${document.getElementById('gymPhone').textContent}
+            `;
+
+            // Create download link
+            const blob = new Blob([receiptContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gym-receipt-${document.getElementById('paymentId').textContent}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Confetti animation for celebration
+        function createConfetti() {
+            const colors = ['#4CAF50', '#2E7D32', '#81C784', '#A5D6A7'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.top = '-10px';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = '50%';
+                    confetti.style.zIndex = '9999';
+                    confetti.style.pointerEvents = 'none';
+                    confetti.style.animation = 'fall 3s linear forwards';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 3000);
+                }, i * 100);
+            }
+        }
+
+        // Add CSS for confetti animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                to {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Start confetti animation
+        setTimeout(createConfetti, 500);
+    </script>
+</body>
+</html>

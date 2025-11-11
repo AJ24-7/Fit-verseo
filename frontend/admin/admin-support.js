@@ -1,7 +1,7 @@
 // Support System JavaScript
 class SupportSystem {
     constructor() {
-        this.BASE_URL = "http://localhost:5000";
+        this.BASE_URL = window.API_CONFIG.BASE_URL;
         this.currentTab = 'users';
         this.currentFilters = {
             priority: 'all',
@@ -1112,7 +1112,7 @@ class MainAdminCommunicationBridge {
     constructor() {
         this.gymAdminChannels = new Map();
         this.activeCommunications = new Map();
-        this.BASE_URL = "http://localhost:5000";
+        this.BASE_URL = window.API_CONFIG.BASE_URL;
         this.isIntegrated = false;
         this.integrationRetries = 0;
         this.maxRetries = 10; // Maximum retry attempts

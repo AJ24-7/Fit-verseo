@@ -1,3 +1,7 @@
+// === Gym Admin Dashboard JavaScript ===
+// Centralized BASE_URL configuration
+const BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://localhost:5000';
+
 // === Profile Dropdown Menu Toggle ===
 document.addEventListener('DOMContentLoaded', function() {
   const userProfileToggle = document.getElementById('userProfileToggle');
@@ -116,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const token = localStorage.getItem('gymAdminToken');
         if (!token) return;
         
-        const res = await fetch('http://localhost:5000/api/gyms/profile/me', {
+        const res = await fetch('${BASE_URL}/api/gyms/profile/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         data = await res.json();
@@ -318,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const token = localStorage.getItem('gymAdminToken');
       if (!token) return showDialog({ title: 'Not Authenticated', message: 'Please log in again.' });
       try {
-        const res = await fetch('http://localhost:5000/api/gyms/activities', {
+        const res = await fetch('${BASE_URL}/api/gyms/activities', {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -583,7 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (!token || !gymId) return [];
     try {
-      const res = await fetch(`http://localhost:5000/api/trainers?status=${status}&gym=${gymId}`,
+      const res = await fetch(`${BASE_URL}/api/trainers?status=${status}&gym=${gymId}`,
         { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) throw new Error('Failed to fetch trainers');
       const trainers = await res.json();
@@ -634,9 +638,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Support both 'photo' and 'image' (backend may send either)
     let imgSrc = 'https://via.placeholder.com/80?text=Photo';
     if (trainer.photo && typeof trainer.photo === 'string' && trainer.photo.startsWith('/')) {
-      imgSrc = `http://localhost:5000${trainer.photo}`;
+      imgSrc = `${BASE_URL}${trainer.photo}`;
     } else if (trainer.image && typeof trainer.image === 'string' && trainer.image.startsWith('/')) {
-      imgSrc = `http://localhost:5000${trainer.image}`;
+      imgSrc = `${BASE_URL}${trainer.image}`;
     } else if (trainer.photo && typeof trainer.photo === 'string') {
       imgSrc = trainer.photo;
     } else if (trainer.image && typeof trainer.image === 'string') {
@@ -791,7 +795,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function submitTrainerRegistration(formData) {
-      const res = await fetch('http://localhost:5000/api/trainers/register', {
+      const res = await fetch('${BASE_URL}/api/trainers/register', {
         method: 'POST',
         body: formData
       });
@@ -871,7 +875,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchPlans() {
     try {
       const token = localStorage.getItem('gymAdminToken');
-      const res = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+      const res = await fetch('${BASE_URL}/api/gyms/membership-plans', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -1121,7 +1125,7 @@ function showPlanIconColorPicker(idx) {
       // Save to backend
       try {
         const token = localStorage.getItem('gymAdminToken');
-        const res = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+        const res = await fetch('${BASE_URL}/api/gyms/membership-plans', {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1260,7 +1264,7 @@ document.addEventListener('DOMContentLoaded', function () {
           onConfirm: async function () {
             const token = localStorage.getItem('gymAdminToken');
             try {
-              const res = await fetch('http://localhost:5000/api/members', {
+              const res = await fetch('${BASE_URL}/api/members', {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
               const members = await res.json();
@@ -1281,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', function () {
               }
               let removed = 0;
               for (const m of expired) {
-                await fetch(`http://localhost:5000/api/members/${m._id}`, {
+                await fetch(`${BASE_URL}/api/members/${m._id}`, {
                   method: 'DELETE',
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -1600,7 +1604,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Fetch and render members
     const token = localStorage.getItem('gymAdminToken');
-    fetch('http://localhost:5000/api/members', {
+    fetch('${BASE_URL}/api/members', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => res.json())
@@ -1666,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', function () {
                  class="custom-remove-checkbox member-checkbox" 
                  value="${m.membershipId || ''}" 
                  onclick="event.stopPropagation();">
-          <img src="${m.profileImage ? `http://localhost:5000${m.profileImage}` : 'https://via.placeholder.com/40x40/e9ecef/6c757d?text=' + (m.memberName?.[0] || 'M')}" 
+          <img src="${m.profileImage ? `${BASE_URL}${m.profileImage}` : 'https://via.placeholder.com/40x40/e9ecef/6c757d?text=' + (m.memberName?.[0] || 'M')}" 
                alt="${m.memberName || 'Member'}" 
                class="member-avatar"
                onerror="this.src='https://via.placeholder.com/40x40/e9ecef/6c757d?text=' + '${(m.memberName?.[0] || 'M')}'">
@@ -1753,7 +1757,7 @@ document.addEventListener('DOMContentLoaded', function () {
                   iconHtml: '<i class="fas fa-spinner fa-spin" style="color: #1976d2; font-size: 2rem;"></i>'
                 });
 
-                const res = await fetch('http://localhost:5000/api/members/bulk', {
+                const res = await fetch('${BASE_URL}/api/members/bulk', {
                   method: 'DELETE',
                   headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1869,7 +1873,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Use the alternative token
-        const response = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+        const response = await fetch('${BASE_URL}/api/gyms/membership-plans', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${alternativeToken}`,
@@ -1894,7 +1898,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return;
       }
-            const response = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+            const response = await fetch('${BASE_URL}/api/gyms/membership-plans', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1938,7 +1942,7 @@ document.addEventListener('DOMContentLoaded', function() {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+        const response = await fetch('${BASE_URL}/api/gyms/profile/me', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -2373,7 +2377,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (isEditMode && memberId) {
           // Update existing member
-          res = await fetch(`http://localhost:5000/api/members/${memberId}`, {
+          res = await fetch(`${BASE_URL}/api/members/${memberId}`, {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -2420,7 +2424,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         } else {
           // Add new member
-          res = await fetch('http://localhost:5000/api/members', {
+          res = await fetch('${BASE_URL}/api/members', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -2496,7 +2500,7 @@ document.addEventListener('DOMContentLoaded', function() {
               // Try again with forceAdd flag
               formData.set('forceAdd', 'true');
               try {
-                const forceRes = await fetch('http://localhost:5000/api/members', {
+                const forceRes = await fetch('${BASE_URL}/api/members', {
                   method: 'POST',
                   headers: { 'Authorization': `Bearer ${token}` },
                   body: formData
@@ -2655,7 +2659,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function sendMembershipEmail({ token, memberEmail, memberName, membershipId, plan, monthlyPlan, validDate, gymName }) {
       
-      fetch('http://localhost:5000/api/members/send-membership-email', {
+      fetch('${BASE_URL}/api/members/send-membership-email', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2745,7 +2749,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      const response = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+      const response = await fetch('${BASE_URL}/api/gyms/membership-plans', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2988,7 +2992,7 @@ document.addEventListener('DOMContentLoaded', function() {
           allowanceExpiryDate: is7DayAllowance ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
         };
         
-        const response = await fetch(`http://localhost:5000/api/members/renew/${memberId}`, {
+        const response = await fetch(`${BASE_URL}/api/members/renew/${memberId}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -3222,12 +3226,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function handleMissingToken() {
         console.error("No authentication token found after retry. Redirecting to login.");
-        window.location.replace('http://localhost:5000/public/admin-login.html');
+        window.location.replace('${BASE_URL}/public/admin-login.html');
     }
     
     async function fetchAdminProfile(token) {
        
-        const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+        const response = await fetch('${BASE_URL}/api/gyms/profile/me', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -3244,7 +3248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (responseData.status === 401 || responseData.status === 403) {
             console.error('Unauthorized access. Clearing tokens.');
             localStorage.removeItem('gymAdminToken');
-            window.location.replace('http://localhost:5000/public/admin-login.html');
+            window.location.replace('${BASE_URL}/public/admin-login.html');
         } else {
             throw new Error(responseData.data.message || 'Failed to fetch profile');
         }
@@ -3272,19 +3276,19 @@ document.addEventListener('DOMContentLoaded', function() {
       
             if (logoUrl && !logoUrl.startsWith('http')) {
                 if (logoUrl.startsWith('/')) {
-                    logoUrl = `http://localhost:5000${logoUrl}`;
+                    logoUrl = `${BASE_URL}${logoUrl}`;
                 } else {
-                    logoUrl = `http://localhost:5000/${logoUrl}`;
+                    logoUrl = `${BASE_URL}/${logoUrl}`;
                 }
             }
             
-            if (!logoUrl) logoUrl = `http://localhost:5000/uploads/gym-logos/default-logo.png`;
+            if (!logoUrl) logoUrl = `${BASE_URL}/uploads/gym-logos/default-logo.png`;
             
             
             // Auto-fix logo path if it's using wrong directory - standardize to gym-logos
             if (logoUrl && (logoUrl.includes('/uploads/gymImages/') || logoUrl.includes('/uploads/gymPhotos/') || logoUrl.includes('/uploads/images/'))) {
                 const filename = logoUrl.split('/').pop();
-                const altUrl = `http://localhost:5000/uploads/gym-logos/${filename}`;
+                const altUrl = `${BASE_URL}/uploads/gym-logos/${filename}`;
                 logoUrl = altUrl;
             }
             
@@ -3292,7 +3296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             adminAvatarElement.src = logoUrl;
             adminAvatarElement.onerror = function() {
                 this.onerror = null; // Prevent infinite loop
-                this.src = 'http://localhost:5000/uploads/gym-logos/default-logo.png';
+                this.src = '${BASE_URL}/uploads/gym-logos/default-logo.png';
             };
            
         }
@@ -3340,7 +3344,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function fetchGymPhotos() {
         const token = localStorage.getItem('gymAdminToken');
         try {
-            const response = await fetch('http://localhost:5000/api/gyms/photos', {
+            const response = await fetch('${BASE_URL}/api/gyms/photos', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -3385,9 +3389,9 @@ document.addEventListener('DOMContentLoaded', function () {
             // Convert relative path to full URL if needed (registration photos use relative paths)
             if (url && !url.startsWith('http')) {
                 if (url.startsWith('/')) {
-                    url = `http://localhost:5000${url}`;
+                    url = `${BASE_URL}${url}`;
                 } else {
-                    url = `http://localhost:5000/${url}`;
+                    url = `${BASE_URL}/${url}`;
                 }
             }
             
@@ -3520,7 +3524,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!pendingDeletePhotoId) return;
                 const token = localStorage.getItem('gymAdminToken');
                 try {
-                    const res = await fetch(`http://localhost:5000/api/gyms/photos/${pendingDeletePhotoId}`, {
+                    const res = await fetch(`${BASE_URL}/api/gyms/photos/${pendingDeletePhotoId}`, {
                         method: 'DELETE',
                         headers: {
                             'Authorization': `Bearer ${token}`
@@ -3581,7 +3585,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 formData.append('photo', fileInput.files[0]);
             }
             try {
-                const res = await fetch(`http://localhost:5000/api/gyms/photos/${photoId}`, {
+                const res = await fetch(`${BASE_URL}/api/gyms/photos/${photoId}`, {
                     method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -3635,7 +3639,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const formData = new FormData(uploadGymPhotoForm);
                     const token = localStorage.getItem('gymAdminToken');
                     try {
-                        const res = await fetch('http://localhost:5000/api/gyms/photos', {
+                        const res = await fetch('${BASE_URL}/api/gyms/photos', {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` },
                             body: formData
@@ -3755,16 +3759,16 @@ function clearUploadPhotoMsgAndCloseModal() {
             
             if (logoUrl && !logoUrl.startsWith('http')) {
                 if (logoUrl.startsWith('/')) {
-                    logoUrl = `http://localhost:5000${logoUrl}`;
+                    logoUrl = `${BASE_URL}${logoUrl}`;
                 } else {
-                    logoUrl = `http://localhost:5000/${logoUrl}`;
+                    logoUrl = `${BASE_URL}/${logoUrl}`;
                 }
             }
             
             // Auto-fix logo path if it's using wrong directory - standardize to gym-logos
             if (logoUrl && (logoUrl.includes('/uploads/gymImages/') || logoUrl.includes('/uploads/gymPhotos/') || logoUrl.includes('/uploads/images/'))) {
                 const filename = logoUrl.split('/').pop();
-                const altUrl = `http://localhost:5000/uploads/gym-logos/${filename}`;
+                const altUrl = `${BASE_URL}/uploads/gym-logos/${filename}`;
                 logoUrl = altUrl;
             }
             
@@ -3775,7 +3779,7 @@ function clearUploadPhotoMsgAndCloseModal() {
                 // Add error handling for logo preview
                 logoPreviewImage.onerror = function() {
                     this.onerror = null; // Prevent infinite loop
-                    this.src = 'http://localhost:5000/uploads/gym-logos/default-logo.png';
+                    this.src = '${BASE_URL}/uploads/gym-logos/default-logo.png';
                 };
             } else {
                 logoPreviewImage.src = '#';
@@ -3790,7 +3794,7 @@ function clearUploadPhotoMsgAndCloseModal() {
             logoutLink.addEventListener('click', function(event) {
                 event.preventDefault(); // Prevent default anchor behavior
                localStorage.removeItem('gymAdminToken');
-                window.location.href = 'http://localhost:5000/public/admin-login.html'; // Redirect to login page
+                window.location.href = '${BASE_URL}/public/admin-login.html'; // Redirect to login page
             });
         }
 
@@ -4042,7 +4046,7 @@ function clearUploadPhotoMsgAndCloseModal() {
             // Profile update submission function
             async function submitProfileUpdate(formData) {
                 try {
-                    const response = await fetch('http://localhost:5000/api/gyms/profile/me', {
+                    const response = await fetch('${BASE_URL}/api/gyms/profile/me', {
                         method: 'PUT',
                         headers: {
                             'Authorization': `Bearer ${localStorage.getItem('gymAdminToken')}`
@@ -4057,7 +4061,7 @@ function clearUploadPhotoMsgAndCloseModal() {
                             let logoPath = result.gym.logoUrl;
                             // Always construct full URL for logo
                             if (!logoPath.startsWith('http')) {
-                                logoPath = `http://localhost:5000/${logoPath.replace(/^\/+/, '')}`;
+                                logoPath = `${BASE_URL}/${logoPath.replace(/^\/+/, '')}`;
                             }
                             const cacheBustedLogo = `${logoPath}?${new Date().getTime()}`;
                             const logoPreviewImage = document.getElementById('logoPreviewImage');
@@ -4280,7 +4284,7 @@ async function updateStatCardData() {
 // Individual stat fetching functions
 async function fetchMembersStats(token) {
   try {
-    const response = await fetch('http://localhost:5000/api/members', {
+    const response = await fetch('${BASE_URL}/api/members', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.ok) {
@@ -4310,7 +4314,7 @@ async function fetchMembersStats(token) {
 
 async function fetchPaymentsStats(token) {
   try {
-    const response = await fetch('http://localhost:5000/api/payments/stats', {
+    const response = await fetch('${BASE_URL}/api/payments/stats', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.ok) {
@@ -4326,7 +4330,7 @@ async function fetchPaymentsStats(token) {
     console.warn('Using fallback for payments stats:', error.message);
     // Try alternative approach - get recent payments and calculate manually
     try {
-      const recentResponse = await fetch('http://localhost:5000/api/payments/recent', {
+      const recentResponse = await fetch('${BASE_URL}/api/payments/recent', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (recentResponse.ok) {
@@ -4344,7 +4348,7 @@ async function fetchPaymentsStats(token) {
 async function fetchAttendanceStats(token) {
   try {
     // Try to get attendance data if available
-    const response = await fetch('http://localhost:5000/api/attendance/stats', {
+    const response = await fetch('${BASE_URL}/api/attendance/stats', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.ok) {
@@ -4359,7 +4363,7 @@ async function fetchAttendanceStats(token) {
     console.warn('Using fallback for attendance stats:', error.message);
     // Calculate basic attendance based on members
     try {
-      const membersResponse = await fetch('http://localhost:5000/api/members', {
+      const membersResponse = await fetch('${BASE_URL}/api/members', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (membersResponse.ok) {
@@ -4381,7 +4385,7 @@ async function fetchAttendanceStats(token) {
 
 async function fetchTrainersStats(token) {
   try {
-    const response = await fetch('http://localhost:5000/api/trainers', {
+    const response = await fetch('${BASE_URL}/api/trainers', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.ok) {
@@ -4560,7 +4564,7 @@ window.testStatCards = async function() {
     
     // Test members endpoint
     try {
-      const membersResponse = await fetch('http://localhost:5000/api/members', {
+      const membersResponse = await fetch('${BASE_URL}/api/members', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (membersResponse.ok) {
@@ -4572,7 +4576,7 @@ window.testStatCards = async function() {
     
     // Test payments endpoint
     try {
-      const paymentsResponse = await fetch('http://localhost:5000/api/payments/stats', {
+      const paymentsResponse = await fetch('${BASE_URL}/api/payments/stats', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (paymentsResponse.ok) {
@@ -4584,7 +4588,7 @@ window.testStatCards = async function() {
     
     // Test trainers endpoint
     try {
-      const trainersResponse = await fetch('http://localhost:5000/api/trainers', {
+      const trainersResponse = await fetch('${BASE_URL}/api/trainers', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (trainersResponse.ok) {
@@ -4627,7 +4631,7 @@ window.debugMembersFetch = async function() {
     const gymId = payload.admin?.id || payload.admin?.gymId || payload.gym?.id || payload.id;
     
     // Test API call
-    const url = `http://localhost:5000/api/members?gym=${gymId}`;
+    const url = `${BASE_URL}/api/members?gym=${gymId}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -4777,7 +4781,7 @@ async function fetchAndDisplayMembers() {
     }
     
     // Build API URL with gym ID parameter
-    const apiUrl = `http://localhost:5000/api/members?gym=${gymId}`;
+    const apiUrl = `${BASE_URL}/api/members?gym=${gymId}`;
     
     const res = await fetch(apiUrl, {
       method: 'GET',
@@ -4894,7 +4898,7 @@ function renderMembersTable(members) {
   today.setHours(0,0,0,0);
   
   members.forEach((member, index) => {
-    const imgSrc = member.profileImage ? `http://localhost:5000${member.profileImage}` : 'https://via.placeholder.com/48?text=Photo';
+    const imgSrc = member.profileImage ? `${BASE_URL}${member.profileImage}` : 'https://via.placeholder.com/48?text=Photo';
     const joinDate = member.joinDate ? new Date(member.joinDate).toLocaleDateString() : '';
     const membershipId = member.membershipId || '';
     const validUntilRaw = member.membershipValidUntil;
@@ -5051,7 +5055,7 @@ function openMembersDetailCard() {
     if (existingMembersList) existingMembersList.innerHTML = '';
     const token = localStorage.getItem('gymAdminToken');
     try {
-      const res = await fetch('http://localhost:5000/api/members', {
+      const res = await fetch('${BASE_URL}/api/members', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -5390,7 +5394,7 @@ function setupDrawerEventListeners(member) {
         onConfirm: async () => {
           try {
             const token = localStorage.getItem('gymAdminToken');
-            const response = await fetch(`http://localhost:5000/api/members/bulk`, {
+            const response = await fetch(`${BASE_URL}/api/members/bulk`, {
               method: 'DELETE',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -5606,7 +5610,7 @@ async function submitMemberDetailEdit(originalMember) {
   try {
     const token = localStorage.getItem('gymAdminToken');
     // Use the backend API: PUT /api/members/:_id
-    const response = await fetch(`http://localhost:5000/api/members/${memberObjectId}`,
+    const response = await fetch(`${BASE_URL}/api/members/${memberObjectId}`,
       {
         method: 'PUT',
         headers: {
@@ -5723,7 +5727,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   async function fetchMembers(token) {
-    const res = await fetch('http://localhost:5000/api/members', {
+    const res = await fetch('${BASE_URL}/api/members', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();

@@ -29,7 +29,7 @@ class UserCouponsManager {
                 return;
             }
 
-            const baseUrl = window.BASE_URL || 'http://localhost:5000';
+            const baseUrl = window.API_CONFIG.BASE_URL;
             const response = await fetch(`${baseUrl}/api/users/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -102,7 +102,7 @@ class UserCouponsManager {
             if (!this.currentUser?.id) return [];
 
             const token = localStorage.getItem('token');
-            const baseUrl = window.BASE_URL || 'http://localhost:5000';
+            const baseUrl = window.API_CONFIG.BASE_URL;
             const response = await fetch(`${baseUrl}/api/users/${this.currentUser.id}/coupons`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,

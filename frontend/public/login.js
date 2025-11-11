@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const showLoginBtn = document.getElementById("show-login");
   const showSignupBtn = document.getElementById("show-signup");
   
-  const API_BASE_URL = "http://localhost:5000/api/users";
+  const API_BASE_URL = window.API_CONFIG.BASE_URL + "/api/users";
 
   // Check if user was redirected for membership purchase
   const urlParams = new URLSearchParams(window.location.search);

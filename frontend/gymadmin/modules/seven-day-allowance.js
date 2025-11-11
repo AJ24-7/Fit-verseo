@@ -19,7 +19,7 @@ class SevenDayAllowanceManager {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/gyms/membership-plans', {
+      const response = await fetch('${this.BASE_URL}/api/gyms/membership-plans', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -169,7 +169,7 @@ class SevenDayAllowanceManager {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/members/${memberId}`, {
+      const response = await fetch(`${this.BASE_URL}/api/members/${memberId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -334,7 +334,7 @@ class SevenDayAllowanceManager {
       submitBtn.textContent = 'Processing...';
       submitBtn.disabled = true;
 
-      const response = await fetch('http://localhost:5000/api/members/seven-day-allowance', {
+      const response = await fetch('${this.BASE_URL}/api/members/seven-day-allowance', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -401,7 +401,7 @@ class SevenDayAllowanceManager {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/members/${memberId}`, {
+      const response = await fetch(`${this.BASE_URL}/api/members/${memberId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -520,7 +520,7 @@ class SevenDayAllowanceManager {
       }
 
       // Get member details first to calculate amounts and dates
-      const memberResponse = await fetch(`http://localhost:5000/api/members/${memberId}`, {
+      const memberResponse = await fetch(`${this.BASE_URL}/api/members/${memberId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -620,7 +620,7 @@ class SevenDayAllowanceManager {
       };
 
       // Update member payment status and renewal dates using the correct endpoint
-      const updateResponse = await fetch(`http://localhost:5000/api/members/${memberId}/renew-membership`, {
+      const updateResponse = await fetch(`${this.BASE_URL}/api/members/${memberId}/renew-membership`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -642,7 +642,7 @@ class SevenDayAllowanceManager {
 
       // Send email notification to member
       try {
-        await fetch('http://localhost:5000/api/members/send-renewal-email', {
+        await fetch('${this.BASE_URL}/api/members/send-renewal-email', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -680,7 +680,7 @@ class SevenDayAllowanceManager {
       };
 
       try {
-        const paymentResponse = await fetch('http://localhost:5000/api/payments', {
+        const paymentResponse = await fetch('${this.BASE_URL}/api/payments', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

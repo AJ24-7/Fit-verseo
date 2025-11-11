@@ -107,9 +107,9 @@ function populateGymDetails(gym) {
         // Convert relative path to full URL if needed (same as gymadmin.js)
         if (url && !url.startsWith('http')) {
             if (url.startsWith('/')) {
-                logoUrl = `http://localhost:5000${url}`;
+                logoUrl = `${BASE_URL}${url}`;
             } else {
-                logoUrl = `http://localhost:5000/${url}`;
+                logoUrl = `${BASE_URL}/${url}`;
             }
         } else {
             logoUrl = url;
@@ -194,9 +194,9 @@ function populatePhotos(photos) {
             // Convert relative path to full URL if needed (same as gymadmin.js)
             if (url && !url.startsWith('http')) {
                 if (url.startsWith('/')) {
-                    imageUrl = `http://localhost:5000${url}`;
+                    imageUrl = `${BASE_URL}${url}`;
                 } else {
-                    imageUrl = `http://localhost:5000/${url}`;
+                    imageUrl = `${BASE_URL}/${url}`;
                 }
             } else {
                 imageUrl = url;
@@ -314,8 +314,8 @@ function displayFilteredEquipment(category) {
                 imageUrl = mainPhoto;
             } else {
                 imageUrl = mainPhoto.startsWith('/') ? 
-                    `http://localhost:5000${mainPhoto}` : 
-                    `http://localhost:5000/${mainPhoto}`;
+                    `${BASE_URL}${mainPhoto}` : 
+                    `${BASE_URL}/${mainPhoto}`;
             }
         }
         
@@ -410,8 +410,8 @@ function openEquipmentModal(equipmentId) {
         let mainImageUrl = equipment.photos[0];
         if (!mainImageUrl.startsWith('http')) {
             mainImageUrl = mainImageUrl.startsWith('/') ? 
-                `http://localhost:5000${mainImageUrl}` : 
-                `http://localhost:5000/${mainImageUrl}`;
+                `${BASE_URL}${mainImageUrl}` : 
+                `${BASE_URL}/${mainImageUrl}`;
         }
         mainImageElement.src = mainImageUrl;
         
@@ -421,8 +421,8 @@ function openEquipmentModal(equipmentId) {
                 let photoUrl = photo;
                 if (!photoUrl.startsWith('http')) {
                     photoUrl = photoUrl.startsWith('/') ? 
-                        `http://localhost:5000${photoUrl}` : 
-                        `http://localhost:5000/${photoUrl}`;
+                        `${BASE_URL}${photoUrl}` : 
+                        `${BASE_URL}/${photoUrl}`;
                 }
                 
                 return `
@@ -1592,9 +1592,9 @@ function updatePhotoModal() {
         // Convert relative path to full URL if needed (same as gymadmin.js)
         if (url && !url.startsWith('http')) {
             if (url.startsWith('/')) {
-                imageUrl = `http://localhost:5000${url}`;
+                imageUrl = `${BASE_URL}${url}`;
             } else {
-                imageUrl = `http://localhost:5000/${url}`;
+                imageUrl = `${BASE_URL}/${url}`;
             }
         } else {
             imageUrl = url;

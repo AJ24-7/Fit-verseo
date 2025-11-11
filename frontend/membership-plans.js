@@ -12,7 +12,7 @@ let filteredGyms = [];
 let userLocation = null;
 
 // Base URL for API calls
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = window.API_CONFIG.BASE_URL;
 
 // DOM Elements
 const loadingScreen = document.getElementById('loading-screen');

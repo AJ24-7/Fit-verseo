@@ -204,7 +204,10 @@ app.get('/simple-biometric-agent.zip', (req, res) => {
 });
 
 
+// ===== CORS CONFIGURATION =====
+// Updated for production deployment (Vercel + Render)
 const allowedOrigins = [
+  // Development origins
   'http://localhost:5500',
   'http://127.0.0.1:5500',
   'http://localhost:5501',
@@ -213,18 +216,41 @@ const allowedOrigins = [
   'http://127.0.0.1:5502',
   'http://localhost:5000',
   'http://127.0.0.1:5000',
+  'http://localhost:3000',
+  'http://localhost:8000',
+  // Production origin (set via environment variable)
+  process.env.FRONTEND_URL,
   null
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('❌ Not allowed by CORS'));
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) {
+      return callback(null, true);
     }
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Allow all Vercel preview deployments (*.vercel.app)
+    if (origin.match(/^https:\/\/.*\.vercel\.app$/)) {
+      return callback(null, true);
+    }
+    
+    // Allow all Render deployments (*.onrender.com)
+    if (origin.match(/^https:\/\/.*\.onrender\.com$/)) {
+      return callback(null, true);
+    }
+    
+    console.warn('⚠️ CORS blocked origin:', origin);
+    callback(new Error('❌ Not allowed by CORS'));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // ===== QR REGISTRATION ROUTES (MUST BE BEFORE OTHER API ROUTES) =====

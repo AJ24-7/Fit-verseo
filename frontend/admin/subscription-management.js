@@ -1,7 +1,7 @@
 // Subscription Management for Admin Dashboard
 class SubscriptionManager {
   constructor() {
-    this.BASE_URL = "http://localhost:5000";
+    this.BASE_URL = window.API_CONFIG.BASE_URL;
     this.currentPage = 1;
     this.itemsPerPage = 10;
     this.currentFilters = {};

@@ -6,7 +6,7 @@ class AdminNotificationSystem {
     this.notifications = new Map(); // For deduplication
     this.unreadCount = 0;
     this.pollingInterval = null;
-    this.BASE_URL = "http://localhost:5000";
+    this.BASE_URL = window.API_CONFIG.BASE_URL;
     this.lastFetchTime = null;
     
     // Prevent duplicate initialization

@@ -5,6 +5,7 @@ class AttendanceManager {
         return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}`;
     }
     constructor() {
+    this.BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://localhost:5000';
         this.currentDate = new Date();
         this.currentTab = 'members';
         this.attendanceData = {};
@@ -156,7 +157,7 @@ class AttendanceManager {
             }
 
             // Load members data
-            const membersResponse = await fetch('http://localhost:5000/api/members', {
+            const membersResponse = await fetch('${this.BASE_URL}/api/members', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -183,7 +184,7 @@ class AttendanceManager {
             // Fetch gymId from admin profile if not already set
             if (!this.gymId) {
                 try {
-                    const profileResponse = await fetch('http://localhost:5000/api/gyms/profile/me', {
+                    const profileResponse = await fetch('${this.BASE_URL}/api/gyms/profile/me', {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
@@ -213,7 +214,7 @@ class AttendanceManager {
             }
 
             // Load trainers data (status=approved, gym=<gymId>)
-            let trainersUrl = 'http://localhost:5000/api/trainers?status=approved';
+            let trainersUrl = '${this.BASE_URL}/api/trainers?status=approved';
             if (this.gymId) trainersUrl += `&gym=${this.gymId}`;
 
             const trainersResponse = await fetch(trainersUrl, {
@@ -264,8 +265,8 @@ class AttendanceManager {
                 return;
             }
 
-            console.log(`🌐 Fetching attendance from: http://localhost:5000/api/attendance/${dateStr}`);
-            const response = await fetch(`http://localhost:5000/api/attendance/${dateStr}`, {
+            console.log(`🌐 Fetching attendance from: ${this.BASE_URL}/api/attendance/${dateStr}`);
+            const response = await fetch(`${this.BASE_URL}/api/attendance/${dateStr}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -490,7 +491,7 @@ class AttendanceManager {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/attendance', {
+            const response = await fetch('${this.BASE_URL}/api/attendance', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -794,7 +795,7 @@ class AttendanceManager {
         if (expiredMembers.length === 0) return;
 
         try {
-            const response = await fetch('http://localhost:5000/api/members/remove-expired', {
+            const response = await fetch('${this.BASE_URL}/api/members/remove-expired', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1080,7 +1081,7 @@ class AttendanceManager {
 
             console.log(`Fetching attendance history for ${personId} from ${startDate} to ${endDate}`);
 
-            const response = await fetch(`http://localhost:5000/api/attendance/history/${personId}?startDate=${startDate}&endDate=${endDate}`, {
+            const response = await fetch(`${this.BASE_URL}/api/attendance/history/${personId}?startDate=${startDate}&endDate=${endDate}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1175,7 +1176,7 @@ class AttendanceManager {
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 const dateStr = d.toISOString().split('T')[0];
                 
-                const promise = fetch(`http://localhost:5000/api/attendance/${dateStr}`, {
+                const promise = fetch(`${this.BASE_URL}/api/attendance/${dateStr}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -1859,7 +1860,7 @@ class AttendanceManager {
             statusElement.textContent = 'Saving enrollment data...';
             progressBar.style.width = '80%';
             
-            const backendResponse = await fetch('http://localhost:5000/api/biometric/enroll', {
+            const backendResponse = await fetch('${this.BASE_URL}/api/biometric/enroll', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1987,7 +1988,7 @@ class AttendanceManager {
             }
 
             // Step 2: Mark attendance on backend
-            const response = await fetch('http://localhost:5000/api/biometric/verify-attendance', {
+            const response = await fetch('${this.BASE_URL}/api/biometric/verify-attendance', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

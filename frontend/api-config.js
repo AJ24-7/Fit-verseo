@@ -5,9 +5,9 @@
 
 const API_CONFIG = {
     // Automatically detect if running in development or production
-    BASE_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:5000' 
-        : window.location.origin,
+    BASE_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000'
+        : 'https://your-backend.onrender.com', // Replace with your production backend URL
     
     // API endpoints
     ENDPOINTS: {

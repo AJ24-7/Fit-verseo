@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Member Dashboard | FIT-verse</title>
+  <link rel="stylesheet" href="userprofile.css">
+  <link rel="stylesheet" href="attendance-modal.css">
+  <link rel="stylesheet" href="id-pass.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <script src="../api-config.js?v=3.0"></script>
+  <script defer src="userprofile.js?v=3.0"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header>
+    <nav class="navbar">
+  <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+              <img class="logo" src="Gym-Wale.png" alt="Gym-Wale Logo">
+              <h3 class="brand-title">Gym<span>-Wale</span></h3>
+            </a>
+      <ul class="nav-links">
+        <li><a href="../index.html" class="nav-item"><i class="fas fa-home"></i> Home</a></li>
+        <li><a href="#" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
+        <li class="dropdown">
+          <a href="#" class="nav-item"><i class="fas fa-concierge-bell"></i> Services ⬇</a>
+          <ul class="dropdown-menu">
+            <li><a href="../personaltraining.html"><i class="fas fa-user-tie"></i> Personal Training</a></li>
+            <li><a href="../membership-plans.html"><i class="fas fa-id-card"></i> Membership Plans</a></li>
+            <li><a href="../dietplans.html"><i class="fas fa-apple-alt"></i> Diet Plans</a></li>
+          </ul>
+        </li>
+        <li><a href="../contact.html" class="nav-item"><i class="fas fa-envelope"></i> Contact</a></li>
+        <li class="dropdown user-profile">
+          <a href="#" class="active">
+            <img id="profile-icon-img" src="/uploads/profile-pics/default.png" alt="User" class="user-icon" />
+          </a>
+          <ul class="dropdown-menu">
+            <li><a href="../edit-profile.html"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+            <li><a href="../settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+          </ul>
+        </li>
+      </ul>
+
+      <!-- Hamburger Menu Icon -->
+      <div class="menu-toggle">&#9776;</div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Enhanced Profile Info Section -->
+    <div class="profile-section">
+      <!-- Profile Header -->
+      <div class="profile-header">
+        <div class="profile-avatar-container">
+          <div class="profile-completion-wrapper">
+            <div class="profile-completion-circle" id="profileCompletionCircle">
+              <svg width="136" height="136">
+                <circle class="completion-bg" cx="68" cy="68" r="64" />
+                <circle class="completion-progress" cx="68" cy="68" r="64" 
+                        stroke-dasharray="0 402" id="completionProgress" />
+              </svg>
+            </div>
+            <div class="profile-completion-percentage" id="completionPercentage">0%</div>
+            <img id="profileImage" src="/uploads/profile-pics/default.png" alt="Profile Picture" />
+            <div class="online-indicator"></div>
+            <div class="loading-overlay" id="profileImageLoader" style="display: none;">
+              <div class="loading-spinner"></div>
+            </div>
+          </div>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name-section">
+            <h1 id="username" class="profile-name">
+              <span class="loading-text">Loading...</span>
+            </h1>
+            <span id="userTitle" class="profile-title">Member</span>
+            <div class="profile-badges">
+              <span class="badge premium" id="membershipBadge">Premium</span>
+              <span class="badge verified" id="verifiedBadge" style="display: none;">
+                <i class="fas fa-check-circle"></i> Verified
+              </span>
+            </div>
+          </div>
+          <div class="profile-stats-quick">
+            <div class="quick-stat">
+              <span class="stat-number" id="memberSince">-</span>
+              <span class="stat-label">Member Since</span>
+            </div>
+            <div class="quick-stat">
+              <span class="stat-number" id="totalWorkouts">-</span>
+              <span class="stat-label">Total Workouts</span>
+            </div>
+            <div class="quick-stat">
+              <span class="stat-number" id="currentStreak">-</span>
+              <span class="stat-label">Day Streak</span>
+            </div>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button class="btn-primary" onclick="window.location.href='../edit-profile.html'">
+            <i class="fas fa-edit"></i> Edit Profile
+          </button>
+          <button class="btn-secondary" onclick="shareProfile()">
+            <i class="fas fa-share-alt"></i> Share
+          </button>
+        </div>
+      </div>
+
+      <!-- Profile Completion Banner (shown for incomplete profiles) -->
+      <div class="profile-completion-banner" id="profileCompletionBanner" style="display: none;">
+        <h4><i class="fas fa-exclamation-triangle"></i> Complete Your Profile</h4>
+        <p>Your profile is <span id="completionText">0%</span> complete. Fill in missing information to get a better experience!</p>
+        <div class="completion-actions">
+          <a href="../edit-profile.html" class="btn-fill">
+            <i class="fas fa-user-edit"></i> Complete Profile
+          </a>
+          <button class="btn-fill" onclick="showIncompleteFields()">
+            <i class="fas fa-list"></i> Show Missing Fields
+          </button>
+        </div>
+      </div>
+
+      <!-- Enhanced Profile Details Grid -->
+      <div class="profile-details-grid">
+        <!-- Contact Information -->
+        <div class="detail-card" id="contactInfoCard">
+          <div class="detail-header">
+            <i class="fas fa-address-book"></i>
+            <h3>Contact Information</h3>
+          </div>
+          <div class="detail-content">
+            <div class="detail-item">
+              <i class="fas fa-envelope"></i>
+              <div class="detail-info">
+                <span class="detail-label">Email</span>
+                <span class="detail-value" id="useremail">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="emailIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Email not verified</span>
+                  <button class="btn-fill" onclick="verifyEmail()">Verify</button>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-phone"></i>
+              <div class="detail-info">
+                <span class="detail-label">Phone</span>
+                <span class="detail-value" id="userphone">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="phoneIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Phone number missing</span>
+                  <a href="../edit-profile.html" class="btn-fill">Add Phone</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-birthday-cake"></i>
+              <div class="detail-info">
+                <span class="detail-label">Date of Birth</span>
+                <span class="detail-value" id="userbirthdate">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="birthdateIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Date of birth missing</span>
+                  <a href="../edit-profile.html" class="btn-fill">Add DOB</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-calendar-alt"></i>
+              <div class="detail-info">
+                <span class="detail-label">Member Since</span>
+                <span class="detail-value" id="joinDate">
+                  <span class="loading-text">Loading...</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fitness Profile -->
+        <div class="detail-card" id="fitnessProfileCard">
+          <div class="detail-header">
+            <i class="fas fa-dumbbell"></i>
+            <h3>Fitness Profile</h3>
+          </div>
+          <div class="detail-content">
+            <div class="detail-item">
+              <i class="fas fa-ruler-vertical"></i>
+              <div class="detail-info">
+                <span class="detail-label">Height</span>
+                <span class="detail-value" id="userheight">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="heightIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Height not provided</span>
+                  <a href="../edit-profile.html" class="btn-fill">Add Height</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-weight"></i>
+              <div class="detail-info">
+                <span class="detail-label">Weight</span>
+                <span class="detail-value" id="userweight">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="weightIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Weight not provided</span>
+                  <a href="../edit-profile.html" class="btn-fill">Add Weight</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-chart-line"></i>
+              <div class="detail-info">
+                <span class="detail-label">Fitness Level</span>
+                <span class="detail-value" id="userfitnessLevel">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="fitnessLevelIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Fitness level not set</span>
+                  <a href="../edit-profile.html" class="btn-fill">Set Level</a>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-bullseye"></i>
+              <div class="detail-info">
+                <span class="detail-label">Primary Goal</span>
+                <span class="detail-value" id="userprimaryGoal">
+                  <span class="loading-text">Loading...</span>
+                </span>
+                <div class="incomplete-field" id="primaryGoalIncomplete" style="display: none;">
+                  <span style="color: #FF9800; font-size: 0.8rem;">Primary goal not set</span>
+                  <a href="../edit-profile.html" class="btn-fill">Set Goal</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+   <!-- Member ID Pass Card -->
+<div class="id-pass-card loading" id="idPassCard">
+  <div id="id-pass-section">
+    <div class="id-pass-header">
+      <h3><i class="fas fa-id-card"></i> My Member ID Pass</h3>
+      <div class="pass-status-badge" id="passStatusBadge">
+        <i class="fas fa-check-circle"></i> Active
+      </div>
+    </div>
+
+    <!-- ID Pass Preview -->
+    <div class="id-pass-preview" id="idPassPreview">
+      <div class="pass-visual">
+        <div class="pass-top-bar">
+          <div class="pass-branding">
+            <span class="pass-logo">Gym<span class="logo-accent">-Wale</span></span>
+            <span class="pass-tagline">Your Fitness Partner</span>
+          </div>
+          <div class="pass-id-badge">
+            <span class="pass-id-label">MEMBER ID</span>
+            <span class="pass-id-value" id="passIdDisplay">Loading...</span>
+          </div>
+        </div>
+        
+        <div class="pass-content">
+          <div class="pass-photo-section">
+            <div class="pass-photo" id="passPhotoDisplay">
+              <img src="/uploads/profile-pics/default.png" alt="Member Photo" id="passMemberPhoto">
+            </div>
+            <div class="pass-qr-code" id="passQRDisplay">
+              <img src="" alt="QR Code" id="passQRImage" style="display: none;">
+              <div class="qr-placeholder">
+                <i class="fas fa-qrcode"></i>
+                <span>Generating...</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="pass-info-section">
+            <div class="pass-member-name" id="passMemberName">Loading...</div>
+            <div class="pass-plan-badges">
+              <span class="pass-plan-badge" id="passPlanBadge">Premium</span>
+              <span class="pass-duration-badge" id="passDurationBadge">6 Months</span>
+            </div>
+            
+            <div class="pass-details-grid">
+              <div class="pass-detail-item">
+                <i class="fas fa-envelope"></i>
+                <span id="passEmail">email@example.com</span>
+              </div>
+              <div class="pass-detail-item">
+                <i class="fas fa-phone"></i>
+                <span id="passPhone">+91 00000 00000</span>
+              </div>
+              <div class="pass-detail-item">
+                <i class="fas fa-dumbbell"></i>
+                <span id="passActivity">General Fitness</span>
+              </div>
+            </div>
+
+            <div class="pass-validity-section">
+              <div class="validity-item">
+                <span class="validity-label">Valid From</span>
+                <span class="validity-value" id="passValidFrom">DD MMM YYYY</span>
+              </div>
+              <div class="validity-item">
+                <span class="validity-label">Valid Until</span>
+                <span class="validity-value" id="passValidUntil">DD MMM YYYY</span>
+              </div>
+              <div class="validity-item">
+                <span class="validity-label">Status</span>
+                <span class="validity-value">
+                  <span class="status-indicator" id="passStatusIndicator">ACTIVE</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="pass-gym-info" id="passGymInfo">
+              <i class="fas fa-map-marker-alt"></i>
+              <span id="passGymName">Gym Name, City</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pass-footer">
+          <span class="pass-footer-text">This is a digital member pass. Please carry it during gym visits.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ID Pass Actions -->
+    <div class="id-pass-actions">
+      <button class="btn-download-pass" onclick="downloadIDPass()">
+        <i class="fas fa-download"></i> Download Pass
+      </button>
+      <button class="btn-regenerate-pass" onclick="regenerateIDPass()">
+        <i class="fas fa-sync-alt"></i> Regenerate
+      </button>
+      <button class="btn-view-attendance" onclick="openAttendanceModal()">
+        <i class="fas fa-calendar-check"></i> View Attendance
+      </button>
+    </div>
+
+    <!-- QR Code Scanner Info -->
+    <div class="qr-scanner-info">
+      <i class="fas fa-info-circle"></i>
+      <div class="scanner-info-content">
+        <h4>How to use your QR Code:</h4>
+        <ul>
+          <li>Show this QR code at gym entrance for quick check-in</li>
+          <li>QR contains your verified member information</li>
+          <li>Valid only during active membership period</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Pass Message (shown if pass not generated yet) -->
+  <div id="no-pass-message" style="display:none;text-align:center;padding:32px 0;">
+    <i class="fas fa-id-card" style="font-size:2.2em;color:#3b82f6;"></i>
+    <h3 style="margin:16px 0 8px 0;">Generate Your Member Pass</h3>
+    <p style="margin-bottom:18px;">Get your personalized Gym-Wale member pass with QR code for easy gym access.</p>
+    <button class="btn-generate-pass" onclick="generateIDPass()" style="display:inline-block;">
+      <i class="fas fa-plus-circle"></i> Generate Pass
+    </button>
+  </div>
+
+  <!-- No Membership Message -->
+  <div id="no-membership-for-pass" style="display:none;text-align:center;padding:32px 0;">
+    <i class="fas fa-info-circle" style="font-size:2.2em;color:#ff9800;"></i>
+    <h3 style="margin:16px 0 8px 0;">No Active Membership</h3>
+    <p style="margin-bottom:18px;">You need an active gym membership to generate your member pass.</p>
+    <a href="../membership-plans.html" class="btn-join-now" style="display:inline-block;margin-top:8px;">
+      <i class="fas fa-plus-circle"></i> Join Now
+    </a>
+  </div>
+</div>
+
+<!-- Attendance Modal -->
+<div id="attendanceModal" class="modal" style="display: none;">
+  <div class="modal-content attendance-modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-calendar-check"></i> My Attendance History</h2>
+      <span class="close" onclick="closeAttendanceModal()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <!-- Membership Information Display -->
+      <div id="membershipInfoDisplay" class="membership-info-display" style="display: none;">
+        <h4><i class="fas fa-id-card"></i> Membership Information</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Plan:</span>
+            <span class="info-value" id="membershipPlan">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Duration:</span>
+            <span class="info-value" id="membershipDuration">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Join Date:</span>
+            <span class="info-value" id="membershipJoinDate">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Valid Until:</span>
+            <span class="info-value" id="membershipValidUntil">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Status:</span>
+            <span class="info-value" id="membershipStatus">
+              <span class="membership-status-badge" title="Membership status">
+                <i id="membershipStatusIcon" class="fas fa-check-circle" style="color: #4caf50;"></i>
+                <span id="membershipStatusText">Active</span>
+              </span>
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Gym:</span>
+            <span class="info-value" id="membershipGym">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Streak Section -->
+      <div class="streak-section">
+        <div class="streak-card current-streak">
+          <div class="streak-icon">
+            <i class="fas fa-fire"></i>
+          </div>
+          <div class="streak-content">
+            <h3 id="currentStreakDays">0</h3>
+            <p>Current Streak</p>
+            <small id="streakMessage">Keep it up!</small>
+          </div>
+        </div>
+        <div class="streak-card best-streak">
+          <div class="streak-icon">
+            <i class="fas fa-trophy"></i>
+          </div>
+          <div class="streak-content">
+            <h3 id="bestStreakDays">0</h3>
+            <p>Best Streak</p>
+            <small>Personal Record</small>
+          </div>
+        </div>
+        <div class="streak-card attendance-rate">
+          <div class="streak-icon">
+            <i class="fas fa-percentage"></i>
+          </div>
+          <div class="streak-content">
+            <h3 id="attendanceRate">0%</h3>
+            <p>Attendance Rate</p>
+            <small>This Month</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar Navigation -->
+      <div class="calendar-controls">
+        <button class="btn-nav" onclick="previousMonth()">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <h3 id="currentMonthYear">Loading...</h3>
+        <button class="btn-nav" onclick="nextMonth()">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- Attendance Calendar -->
+      <div class="attendance-calendar">
+        <div class="calendar-header">
+          <div class="day-header">Mon</div>
+          <div class="day-header">Tue</div>
+          <div class="day-header">Wed</div>
+          <div class="day-header">Thu</div>
+          <div class="day-header">Fri</div>
+          <div class="day-header">Sat</div>
+          <div class="day-header">Sun</div>
+        </div>
+        <div class="calendar-body" id="calendarBody">
+          <!-- Calendar days will be dynamically generated -->
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="calendar-legend">
+        <div class="legend-item">
+          <div class="legend-color present"></div>
+          <span>Present</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color absent"></div>
+          <span>Absent</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color sunday"></div>
+          <span>Sunday (Rest Day)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color future"></div>
+          <span>Future Date</span>
+        </div>
+      </div>
+
+      <!-- Monthly Stats -->
+      <div class="monthly-stats">
+        <div class="stat-item">
+          <div class="stat-number" id="monthlyPresent">0</div>
+          <div class="stat-label">Days Present</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="monthlyAbsent">0</div>
+          <div class="stat-label">Days Absent</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="monthlyWorkouts">0</div>
+          <div class="stat-label">Total Workouts</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="monthlyHours">0</div>
+          <div class="stat-label">Hours Trained</div>
+        </div>
+        <div class="stat-item attendance-rate">
+          <div class="stat-number" id="monthlyAttendanceRate">0%</div>
+          <div class="stat-label">Attendance Rate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- My Coupons & Offers Section -->
+<div class="coupons-offers-section">
+  <div class="section-header">
+    <h3><i class="fas fa-gift"></i> My Coupons & Offers</h3>
+    <div class="section-actions">
+      <button class="btn-find-offers" onclick="findNewOffers()">
+        <i class="fas fa-search"></i> Find New Offers
+      </button>
+      <button class="btn-refresh-coupons" onclick="refreshCoupons()">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="coupons-stats">
+    <div class="stat-card active-coupons">
+      <div class="stat-icon">
+        <i class="fas fa-ticket-alt"></i>
+      </div>
+      <div class="stat-content">
+        <h4 id="active-coupons-count">0</h4>
+        <p>Active Coupons</p>
+      </div>
+    </div>
+    <div class="stat-card total-savings">
+      <div class="stat-icon">
+        <i class="fas fa-piggy-bank"></i>
+      </div>
+      <div class="stat-content">
+        <h4 id="total-savings">₹0</h4>
+        <p>Total Savings</p>
+      </div>
+    </div>
+    <div class="stat-card expiring-soon">
+      <div class="stat-icon">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="stat-content">
+        <h4 id="expiring-soon-count">0</h4>
+        <p>Expiring Soon</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coupons Categories -->
+  <div class="coupons-categories">
+    <div class="category-tabs">
+      <button class="category-tab active" data-category="active">
+        <i class="fas fa-check-circle"></i> Active Coupons
+      </button>
+      <button class="category-tab" data-category="expired">
+        <i class="fas fa-times-circle"></i> Expired
+      </button>
+      <button class="category-tab" data-category="used">
+        <i class="fas fa-shopping-cart"></i> Used
+      </button>
+    </div>
+
+    <!-- Active Coupons -->
+    <div class="coupons-grid active" id="active-coupons-grid">
+      <div class="coupons-loading" id="coupons-loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading your coupons...</p>
+      </div>
+    </div>
+
+    <!-- Expired Coupons -->
+    <div class="coupons-grid" id="expired-coupons-grid" style="display: none;">
+      <!-- Expired coupons will be loaded here -->
+    </div>
+
+    <!-- Used Coupons -->
+    <div class="coupons-grid" id="used-coupons-grid" style="display: none;">
+      <!-- Used coupons will be loaded here -->
+    </div>
+
+    <!-- No Coupons State -->
+    <div class="no-coupons-state" id="no-coupons-state" style="display: none;">
+      <div class="no-coupons-icon">
+        <i class="fas fa-gift"></i>
+      </div>
+      <h4>No Coupons Yet</h4>
+      <p>Start exploring gyms and claim exciting offers to save on your fitness journey!</p>
+      <button class="btn-explore-offers" onclick="exploreOffers()">
+        <i class="fas fa-search"></i> Explore Offers
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Diet Plan Section -->
+<div class="diet-plan">
+  <div class="section-header">
+    <h3><i class="fas fa-utensils"></i> Today's Diet Plan</h3>
+    <button class="btn-generate">Generate New Plan <i class="fas fa-magic"></i></button>
+  </div>
+  
+  <div class="meals-container">
+    <div class="meal-card">
+      <div class="meal-header">
+        <i class="fas fa-sun"></i>
+        <h4>Breakfast</h4>
+        <span class="calories">420 cal</span>
+      </div>
+      <ul class="meal-items">
+        <li>Oatmeal with berries</li>
+        <li>2 boiled eggs</li>
+        <li>Green tea</li>
+      </ul>
+    </div>
+    
+    <div class="meal-card">
+      <div class="meal-header">
+        <i class="fas fa-cloud-sun"></i>
+        <h4>Lunch</h4>
+        <span class="calories">580 cal</span>
+      </div>
+      <ul class="meal-items">
+        <li>Grilled chicken breast</li>
+        <li>Quinoa salad</li>
+        <li>Steamed vegetables</li>
+      </ul>
+    </div>
+    
+    <div class="meal-card">
+      <div class="meal-header">
+        <i class="fas fa-moon"></i>
+        <h4>Dinner</h4>
+        <span class="calories">450 cal</span>
+      </div>
+      <ul class="meal-items">
+        <li>Baked salmon</li>
+        <li>Roasted sweet potatoes</li>
+        <li>Mixed greens</li>
+      </ul>
+    </div>
+    
+    <div class="meal-card snacks">
+      <div class="meal-header">
+        <i class="fas fa-apple-alt"></i>
+        <h4>Snacks</h4>
+        <span class="calories">210 cal</span>
+      </div>
+      <ul class="meal-items">
+        <li>Protein shake</li>
+        <li>Handful of almonds</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="macros-summary">
+    <div class="macro">
+      <div class="macro-progress" data-value="45">
+        <svg viewBox="0 0 36 36">
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="3"/>
+          <path class="macro-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#4CAF50" stroke-width="3" stroke-dasharray="45, 100"/>
+        </svg>
+        <span>45%</span>
+      </div>
+      <h5>Carbs</h5>
+      <p>210g</p>
+    </div>
+    
+    <div class="macro">
+      <div class="macro-progress" data-value="30">
+        <svg viewBox="0 0 36 36">
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="3"/>
+          <path class="macro-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2196F3" stroke-width="3" stroke-dasharray="30, 100"/>
+        </svg>
+        <span>30%</span>
+      </div>
+      <h5>Protein</h5>
+      <p>140g</p>
+    </div>
+    
+    <div class="macro">
+      <div class="macro-progress" data-value="25">
+        <svg viewBox="0 0 36 36">
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="3"/>
+          <path class="macro-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FF9800" stroke-width="3" stroke-dasharray="25, 100"/>
+        </svg>
+        <span>25%</span>
+      </div>
+      <h5>Fats</h5>
+      <p>60g</p>
+    </div>
+  </div>
+</div>
+
+<!-- Workout Schedule Creator -->
+<div class="workout-scheduler">
+  <div class="section-header">
+    <h3><i class="fas fa-calendar-plus"></i> Create Weekly Workout Schedule</h3>
+    <div class="schedule-actions">
+      <button class="btn-suggest"><i class="fas fa-lightbulb"></i> Suggest Workout</button>
+      <button class="btn-clear"><i class="fas fa-trash"></i> Clear</button>
+    </div>
+  </div>
+
+  <div class="schedule-builder">
+    <div class="day-selector">
+      <div class="day-pill active" data-day="Monday">Mon</div>
+      <div class="day-pill" data-day="Tuesday">Tue</div>
+      <div class="day-pill" data-day="Wednesday">Wed</div>
+      <div class="day-pill" data-day="Thursday">Thu</div>
+      <div class="day-pill" data-day="Friday">Fri</div>
+      <div class="day-pill" data-day="Saturday">Sat</div>
+      <div class="day-pill" data-day="Sunday">Sun</div>
+    </div>
+
+    <div class="workout-form">
+      <div class="form-group">
+        <label><i class="fas fa-dumbbell"></i> Exercise Type</label>
+        <select id="exercise-type">
+          <option>Select Exercise</option>
+          <option>Back</option>
+          <option>Biceps</option>
+          <option>Chest</option>
+          <option>Cardio</option>
+          <option>Triceps</option>
+          <option>Shoulders</option>
+          <option>Legs</option>
+          <option>Abs</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-clock"></i> Duration</label>
+        <select id="exercise-duration">
+          <option>30 minutes</option>
+          <option>45 minutes</option>
+          <option>60 minutes</option>
+          <option>90 minutes</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-sun"></i> Time Slot</label>
+        <select id="exercise-time">
+          <option>Morning</option>
+          <option>Evening</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-tag"></i> Tag (optional)</label>
+        <input type="text" placeholder="e.g., Dumbbells, Home, Gym">
+      </div>
+
+      <button class="btn-add">
+        <i class="fas fa-plus"></i> Add to Day
+      </button>
+    </div>
+
+    <!-- Dynamic container: Will update according to selected day -->
+    <div class="scheduled-workouts">
+      <h4><i class="fas fa-list"></i> Monday's Workouts</h4>
+      <div class="workout-list" id="workout-list">
+        <!-- Dynamically added workouts go here -->
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-save-schedule">
+    <i class="fas fa-save"></i> Save Weekly Schedule
+  </button>
+</div>
+
+<!-- Recent Activity with Interactive Timeline -->
+<div class="recent-activity">
+  <div class="section-header">
+    <h3><i class="fas fa-history"></i> Recent Activity</h3>
+    <div class="view-options">
+      <button class="active">This Week</button>
+      <button>This Month</button>
+    </div>
+  </div>
+  
+  <div class="activity-timeline">
+    <div class="timeline-item completed">
+      <div class="timeline-icon"><i class="fas fa-running"></i></div>
+      <div class="timeline-content">
+        <h5>Cardio Session</h5>
+        <p>Treadmill run at moderate pace</p>
+        <div class="timeline-meta">
+          <span><i class="fas fa-clock"></i> Today, 7:30 AM - 45 min</span>
+          <span><i class="fas fa-fire"></i> 420 cal</span>
+        </div>
+      </div>
+      <button class="btn-log"><i class="fas fa-ellipsis-v"></i></button>
+    </div>
+    
+    <div class="timeline-item completed">
+      <div class="timeline-icon"><i class="fas fa-dumbbell"></i></div>
+      <div class="timeline-content">
+        <h5>Strength Training</h5>
+        <p>Upper body focus with free weights</p>
+        <div class="timeline-meta">
+          <span><i class="fas fa-clock"></i> Yesterday, 6:00 PM - 1 hour</span>
+          <span><i class="fas fa-fire"></i> 580 cal</span>
+        </div>
+      </div>
+      <button class="btn-log"><i class="fas fa-ellipsis-v"></i></button>
+    </div>
+    
+    <div class="timeline-item">
+      <div class="timeline-icon"><i class="fas fa-spa"></i></div>
+      <div class="timeline-content">
+        <h5>Yoga Class</h5>
+        <p>Vinyasa flow for flexibility</p>
+        <div class="timeline-meta">
+          <span><i class="fas fa-clock"></i> Scheduled: Tomorrow, 8:00 AM</span>
+          <span><i class="fas fa-bell"></i> Reminder set</span>
+        </div>
+      </div>
+      <button class="btn-log"><i class="fas fa-ellipsis-v"></i></button>
+    </div>
+  </div>
+  
+  <button class="btn-view-all">
+    <i class="fas fa-list"></i> View All Activity
+  </button>
+</div>
+  </div>
+
+    <!-- Load User Coupons Manager -->
+    <script src="../user-coupons-manager.js?v=3.0"></script>
+ 
+</body>
+</html>

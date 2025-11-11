@@ -186,7 +186,8 @@ class CouponManager {
             
             if (!coupon) {
                 // Try backend validation
-                const response = await fetch(`${window.BASE_URL || 'http://localhost:5000'}/api/offers/coupon/${couponCode}/validate`, {
+                const BASE_URL = window.API_CONFIG.BASE_URL;
+                const response = await fetch(`${BASE_URL}/api/offers/coupon/${couponCode}/validate`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
