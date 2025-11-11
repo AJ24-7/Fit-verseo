@@ -1,0 +1,14 @@
+# Ignore backend/server files and large folders not needed for frontend-only deploy
+node_modules/
+backend/
+server.js
+package.json
+package-lock.json
+.env
+.env.*
+.vscode/
+uploads/
+biometric-agent/
+backup-*/
+*.log
+.git/
