@@ -1,3 +1,7 @@
+// === GLOBAL VARIABLES ===
+// Default location (Delhi) - will be overridden when user allows geolocation
+let userLocation = { lat: 28.357353, lng: 77.295289 };
+
 // === LOADING SCREEN ===
 document.addEventListener('DOMContentLoaded', function () {
   const loadingScreen = document.getElementById('loading-screen');
@@ -127,8 +131,6 @@ document.addEventListener("DOMContentLoaded", function () {
 // Using centralized config from config.js
 const BASE_URL = window.API_CONFIG.BASE_URL;
 //gym search logic //
-// Default location (Delhi) - will be overridden when user allows geolocation
-let userLocation = { lat: 28.357353, lng: 77.295289 };
 
 // Haversine formula for calculating distance between two points on Earth
 function getDistance(loc1, loc2) {
